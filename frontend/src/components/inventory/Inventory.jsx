@@ -5,6 +5,7 @@ import CameraScanner from '../common/CameraScanner';
 import { validarCodigoBarras } from '../../utils';
 import Swal from 'sweetalert2';
 import * as XLSX from 'xlsx';
+import BulkImportModal from './BulkImportModal';
 
 // Icons
 import {
@@ -28,7 +29,7 @@ const Inventory = () => {
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5;
+    const itemsPerPage = 20;
 
     // Actions Menu State
     const [activeMenuId, setActiveMenuId] = useState(null);
@@ -44,6 +45,7 @@ const Inventory = () => {
 
     // Modal State
     const [showModal, setShowModal] = useState(false);
+    const [showImportModal, setShowImportModal] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
 
     // Form State
@@ -51,7 +53,10 @@ const Inventory = () => {
         name: '',
         barcode: '',
         price: '',
+        cost_price: '',
+        wholesale_price: '',
         stock: '',
+        min_stock: '',
         image: '',
         category: ''
     });
@@ -111,7 +116,10 @@ const Inventory = () => {
             name: '',
             barcode: '',
             price: '',
+            cost_price: '',
+            wholesale_price: '',
             stock: '',
+            min_stock: '',
             image: '',
             category: ''
         });
@@ -128,7 +136,10 @@ const Inventory = () => {
                 name: product.name,
                 barcode: product.barcode || '',
                 price: product.price,
+                cost_price: product.cost_price || '',
+                wholesale_price: product.wholesale_price || '',
                 stock: product.stock,
+                min_stock: product.min_stock || '',
                 image: product.image_url || '',
                 category: productCategory
             });
@@ -219,7 +230,10 @@ const Inventory = () => {
                 name: formData.name,
                 barcode: formData.barcode,
                 price: parseFloat(formData.price),
+                cost_price: parseFloat(formData.cost_price || 0),
+                wholesale_price: parseFloat(formData.wholesale_price || 0),
                 stock: parseInt(formData.stock),
+                min_stock: parseInt(formData.min_stock || 0),
                 image: formData.image,
                 category: category
             };
@@ -322,10 +336,7 @@ const Inventory = () => {
     // Función para generar SKU basado en barcode o ID
     const getSKU = (product) => {
         if (product.barcode) {
-            // Si hay barcode, usar las primeras 3 letras y 5 dígitos
-            const categoryCode = getCategory(product.name).name.substring(0, 3).toUpperCase();
-            const numbers = product.barcode.replace(/\D/g, '').substring(0, 5);
-            return `${categoryCode}-${numbers || product.id.toString().padStart(5, '0')}`;
+            return product.barcode;
         }
         // Si no hay barcode, generar SKU desde ID y categoría
         const categoryCode = getCategory(product.name).name.substring(0, 3).toUpperCase();
@@ -593,6 +604,10 @@ const Inventory = () => {
                         <button className="control-btn" onClick={handleExport}>
                             <FiDownload className="btn-icon" />
                             Exportar
+                        </button>
+                        <button className="control-btn" onClick={() => setShowImportModal(true)}>
+                            <FiUploadCloud className="btn-icon" />
+                            Importar Excel
                         </button>
                         <button className="control-btn primary" onClick={() => handleOpenModal()}>
                             <FiPlus className="btn-icon" />
@@ -928,42 +943,96 @@ const Inventory = () => {
                                         </div>
                                     </div>
 
-                                    {/* Precio */}
-                                    <div className="new-product-form-group col-span-12 md-col-span-4">
-                                        <label className="new-product-label" htmlFor="price">
-                                            Precio <span className="text-red-500">*</span>
-                                        </label>
-                                        <div className="new-product-price-wrapper">
-                                            <span className="new-product-price-symbol">$</span>
-                                            <input
-                                                id="price"
-                                                className="new-product-input new-product-price-input"
-                                                type="number"
-                                                name="price"
-                                                value={formData.price}
-                                                onChange={handleInputChange}
-                                                placeholder="0.00"
-                                                step="0.01"
-                                                required
-                                            />
+                                    {/* Precios Group */}
+                                    <div className="new-product-form-group col-span-12">
+                                        <label className="new-product-label">Configuración de Precios</label>
+                                        <div className="grid grid-cols-12 gap-4">
+                                            {/* Costo */}
+                                            <div className="col-span-12 md:col-span-4">
+                                                <label className="text-xs text-gray-500 mb-1 block">Precio Costo</label>
+                                                <div className="new-product-price-wrapper">
+                                                    <span className="new-product-price-symbol">$</span>
+                                                    <input
+                                                        className="new-product-input new-product-price-input"
+                                                        type="number"
+                                                        name="cost_price"
+                                                        value={formData.cost_price}
+                                                        onChange={handleInputChange}
+                                                        placeholder="0.00"
+                                                        step="0.01"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Venta */}
+                                            <div className="col-span-12 md:col-span-4">
+                                                <label className="text-xs text-gray-500 mb-1 block">Precio Venta <span className="text-red-500">*</span></label>
+                                                <div className="new-product-price-wrapper">
+                                                    <span className="new-product-price-symbol">$</span>
+                                                    <input
+                                                        className="new-product-input new-product-price-input"
+                                                        type="number"
+                                                        name="price"
+                                                        value={formData.price}
+                                                        onChange={handleInputChange}
+                                                        placeholder="0.00"
+                                                        step="0.01"
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Mayoreo */}
+                                            <div className="col-span-12 md:col-span-4">
+                                                <label className="text-xs text-gray-500 mb-1 block">Precio Mayoreo</label>
+                                                <div className="new-product-price-wrapper">
+                                                    <span className="new-product-price-symbol">$</span>
+                                                    <input
+                                                        className="new-product-input new-product-price-input"
+                                                        type="number"
+                                                        name="wholesale_price"
+                                                        value={formData.wholesale_price}
+                                                        onChange={handleInputChange}
+                                                        placeholder="0.00"
+                                                        step="0.01"
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    {/* Stock Inicial */}
+                                    {/* Stock Group */}
                                     <div className="new-product-form-group col-span-12">
-                                        <label className="new-product-label" htmlFor="stock">
-                                            Stock Inicial <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            id="stock"
-                                            className="new-product-input"
-                                            type="number"
-                                            name="stock"
-                                            value={formData.stock}
-                                            onChange={handleInputChange}
-                                            placeholder="0"
-                                            required
-                                        />
+                                        <label className="new-product-label">Inventario</label>
+                                        <div className="grid grid-cols-12 gap-4">
+                                            {/* Stock Actual */}
+                                            <div className="col-span-12 md:col-span-6">
+                                                <label className="text-xs text-gray-500 mb-1 block">Existencia Actual <span className="text-red-500">*</span></label>
+                                                <input
+                                                    id="stock"
+                                                    className="new-product-input"
+                                                    type="number"
+                                                    name="stock"
+                                                    value={formData.stock}
+                                                    onChange={handleInputChange}
+                                                    placeholder="0"
+                                                    required
+                                                />
+                                            </div>
+
+                                            {/* Stock Minimo */}
+                                            <div className="col-span-12 md:col-span-6">
+                                                <label className="text-xs text-gray-500 mb-1 block">Inventario Mínimo</label>
+                                                <input
+                                                    className="new-product-input"
+                                                    type="number"
+                                                    name="min_stock"
+                                                    value={formData.min_stock}
+                                                    onChange={handleInputChange}
+                                                    placeholder="5"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </form>
@@ -1194,6 +1263,15 @@ const Inventory = () => {
                         </div>
                     </div>
                 </div>
+            )}
+            {showImportModal && (
+                <BulkImportModal 
+                    onClose={() => setShowImportModal(false)} 
+                    onSuccess={() => {
+                        fetchProducts();
+                        // Optionally refresh categories if needed
+                    }} 
+                />
             )}
         </div>
     );

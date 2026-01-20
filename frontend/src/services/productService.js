@@ -18,7 +18,10 @@ export const productService = {
         const insertData = {
             name: product.name,
             price: parseFloat(product.price),
+            cost_price: parseFloat(product.cost_price || 0),
+            wholesale_price: parseFloat(product.wholesale_price || 0),
             stock: parseInt(product.stock),
+            min_stock: parseInt(product.min_stock || 0),
             barcode: product.barcode || null,
             image_url: product.image || null,
             user_id: userData.user.id
@@ -45,7 +48,10 @@ export const productService = {
         const dbUpdates = {
             name: updates.name,
             price: parseFloat(updates.price),
+            cost_price: parseFloat(updates.cost_price || 0),
+            wholesale_price: parseFloat(updates.wholesale_price || 0),
             stock: parseInt(updates.stock),
+            min_stock: parseInt(updates.min_stock || 0),
             barcode: updates.barcode || null,
             image_url: updates.image || null
         };
@@ -98,5 +104,31 @@ export const productService = {
 
         if (error) throw error;
         return data || [];
+    },
+
+    // Crear múltiples productos (Carga Masiva)
+    bulkCreateProducts: async (products) => {
+        const { data: userData } = await supabase.auth.getUser();
+        
+        const productsToInsert = products.map(product => ({
+            name: product.name,
+            price: parseFloat(product.price),
+            cost_price: parseFloat(product.cost_price || 0),
+            wholesale_price: parseFloat(product.wholesale_price || 0),
+            stock: parseInt(product.stock),
+            min_stock: parseInt(product.min_stock || 0),
+            barcode: product.barcode || null,
+            image_url: product.image || null,
+            category: product.category || null,
+            user_id: userData.user.id
+        }));
+
+        const { data, error } = await supabase
+            .from('products')
+            .insert(productsToInsert)
+            .select();
+
+        if (error) throw error;
+        return data;
     }
 };

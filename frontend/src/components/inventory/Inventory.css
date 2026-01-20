@@ -186,7 +186,8 @@
     background-color: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 12px;
-    overflow: hidden;
+    overflow-y: auto;
+    max-height: 65vh; /* Adjustable based on viewport */
     box-shadow: 0 2px 10px -3px rgba(0, 0, 0, 0.05);
 }
 
@@ -211,6 +212,9 @@
     letter-spacing: 0.05em;
     background-color: #ffffff;
     border-bottom: 2px solid #e5e7eb;
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .products-table th.checkbox-col {
