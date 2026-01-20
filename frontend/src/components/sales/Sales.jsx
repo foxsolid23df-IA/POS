@@ -6,14 +6,17 @@ import { formatearDinero, validarCodigoBarras } from '../../utils'
 import { buscarProductoPorCodigo } from '../../utils/api'
 import { productService } from '../../services/productService'
 import { salesService } from '../../services/salesService'
+import { activeCartService } from '../../services/activeCartService'
 import { useApi } from '../../hooks/useApi'
 import { useCart } from '../../hooks/useCart'
+import { useAuth } from '../../hooks/useAuth'
 import { useGlobalScanner } from '../../hooks/scanner'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import './Sales.css'
 
 export const Sales = () => {
     // HOOKS PERSONALIZADOS
+    const { user, cashSession } = useAuth()
     const { cargando, ejecutarPeticion } = useApi()
     const { isMobile, isTouchDevice } = useIsMobile()
     const mostrarError = (mensaje, esAdvertencia = false) => {
@@ -100,6 +103,39 @@ export const Sales = () => {
             setMostrarSugerencias(false)
         }
     }, [codigoEscaneado, productos])
+    
+    // SINCRONIZACIÓN CON PANTALLA DEL CLIENTE
+    useEffect(() => {
+        const syncCart = async () => {
+            if (user && !mostrarModalPago) {
+                try {
+                    await activeCartService.updateCart(carrito, total, cashSession?.id);
+                } catch (err) {
+                    console.error('Error sincronizando carrito:', err);
+                }
+            }
+        };
+        syncCart();
+    }, [carrito, total, user, cashSession, mostrarModalPago]);
+
+    // Sincronizar info de pago cuando cambia
+    useEffect(() => {
+        const syncPayment = async () => {
+            if (user && mostrarModalPago) {
+                try {
+                    await activeCartService.updatePaymentInfo({
+                        method: metodoPago,
+                        received: parseFloat(montoRecibido) || 0,
+                        change: calcularCambio(),
+                        status: 'processing'
+                    });
+                } catch (err) {
+                    console.error('Error sincronizando pago:', err);
+                }
+            }
+        };
+        syncPayment();
+    }, [metodoPago, montoRecibido, mostrarModalPago, user, total]);
 
     // Seleccionar producto de las sugerencias
     const seleccionarProducto = (producto) => {
@@ -221,15 +257,18 @@ export const Sales = () => {
     }
 
     const manejarTecladoNumerico = (valor) => {
-        if (valor === 'backspace') {
-            setMontoRecibido(prev => prev.slice(0, -1))
-        } else if (valor === '.') {
-            if (!montoRecibido.includes('.')) {
-                setMontoRecibido(prev => prev + '.')
+        setMontoRecibido(prev => {
+            if (valor === 'backspace') {
+                return prev.slice(0, -1)
+            } else if (valor === '.') {
+                if (!prev.includes('.')) {
+                    return prev + '.'
+                }
+                return prev
+            } else {
+                return prev + valor
             }
-        } else {
-            setMontoRecibido(prev => prev + valor)
-        }
+        })
     }
 
     const calcularCambio = () => {
@@ -323,10 +362,25 @@ export const Sales = () => {
         setCodigoEscaneado(e.target.value)
     }
 
+    // Ref para el monto, permitiendo acceso en el listener sin reiniciar el efecto
+    const montoRecibidoRef = useRef(montoRecibido);
+    useEffect(() => {
+        montoRecibidoRef.current = montoRecibido;
+    }, [montoRecibido]);
+
     const manejarEnter = (e) => {
-        if (e.key === 'Enter' && codigoEscaneado.trim()) {
-            buscarProductoManual(codigoEscaneado.trim())
-            setCodigoEscaneado('')
+        if (e.key === 'Enter') {
+            // Si hay sugerencias visibles, seleccionar la primera
+            if (mostrarSugerencias && sugerencias.length > 0) {
+                seleccionarProducto(sugerencias[0])
+                return
+            }
+            
+            // Si no, búsqueda manual estándar
+            if (codigoEscaneado.trim()) {
+                buscarProductoManual(codigoEscaneado.trim())
+                setCodigoEscaneado('')
+            }
         }
     }
 
@@ -340,6 +394,59 @@ export const Sales = () => {
         setMostrarModal(false)
         setVentaCompletada(null)
     }
+
+    // MANEJAR TECLADO FÍSICO EN MODAL DE PAGO
+    useEffect(() => {
+        if (!mostrarModalPago) return;
+
+        const handleKeyDown = (e) => {
+            // Enter: Finalizar venta
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                // Usamos la ref para obtener el valor más reciente sin depender del ciclo de render
+                const montoActual = parseFloat(montoRecibidoRef.current) || 0;
+                
+                // Validación rápida antes de intentar finalizar
+                if (metodoPago === 'efectivo' && montoActual < total) {
+                     mostrarModalPersonalizado(
+                        'Monto insuficiente',
+                        `El monto recibido ($${montoActual.toFixed(2)}) es menor al total.`,
+                        'warning'
+                    );
+                    return;
+                }
+                
+                // Dispara la finalización (finalizarVenta usará el estado actual del render, 
+                // pero como estamos en un evento, deberíamos asegurarnos de llamarlo correctamente)
+                // Nota: finalizarVenta usa el state `montoRecibido`, que debería estar sincronizado 
+                // por el re-render de React, pero por seguridad forzamos el chequeo.
+                finalizarVenta();
+                return;
+            }
+
+            // Escape: Cerrar modal
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                cerrarModalPago();
+                return;
+            }
+
+            // Números para pago en efectivo
+            if (metodoPago === 'efectivo') {
+                if (/^[0-9]$/.test(e.key)) {
+                    manejarTecladoNumerico(e.key);
+                } else if (e.key === '.' || e.key === ',') {
+                    manejarTecladoNumerico('.');
+                } else if (e.key === 'Backspace') {
+                    manejarTecladoNumerico('backspace');
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+        // Quitamos 'montoRecibido' de las dependencias para que no se recree el listener al escribir
+    }, [mostrarModalPago, metodoPago, total]); 
 
     // MANEJAR ESCANEO POR CÁMARA
     const manejarEscaneoCamara = async (codigo) => {
@@ -587,16 +694,28 @@ export const Sales = () => {
                                 <h1 className="sales-title">AREA DE COBRO</h1>
                                 <p className="sales-subtitle">Gestiona y procesa tus ventas con precisión</p>
                             </div>
-                            <button 
-                                onClick={() => {
-                                    document.documentElement.classList.toggle('dark');
-                                    localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
-                                }}
-                                className="hidden md:flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm hover:shadow-md transition-all text-slate-600 dark:text-slate-300 font-bold text-xs"
-                            >
-                                <span className="material-symbols-outlined text-[18px]">dark_mode</span>
-                                <span>Modo Oscuro</span>
-                            </button>
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={() => {
+                                        const url = `${window.location.origin}${window.location.pathname}#/customer-display?u=${user?.id}`;
+                                        window.open(url, '_blank', 'width=1024,height=768');
+                                    }}
+                                    className="hidden md:flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-xl shadow-sm hover:bg-emerald-600 transition-all font-bold text-xs"
+                                >
+                                    <span className="material-symbols-outlined text-[18px]">monitor</span>
+                                    <span>Pantalla Cliente</span>
+                                </button>
+                                <button 
+                                    onClick={() => {
+                                        document.documentElement.classList.toggle('dark');
+                                        localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+                                    }}
+                                    className="hidden md:flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm hover:shadow-md transition-all text-slate-600 dark:text-slate-300 font-bold text-xs"
+                                >
+                                    <span className="material-symbols-outlined text-[18px]">dark_mode</span>
+                                    <span>Modo Oscuro</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -845,7 +964,7 @@ export const Sales = () => {
                                             className={`payment-method-btn ${metodoPago === 'tarjeta' ? 'active' : ''}`}
                                             onClick={() => {
                                                 setMetodoPago('tarjeta')
-                                                setMontoRecibido(formatearDinero(total).replace('$', '').replace(',', ''))
+                                                setMontoRecibido(total.toFixed(2))
                                             }}
                                         >
                                             <span className="material-symbols-outlined">credit_card</span>
@@ -855,7 +974,7 @@ export const Sales = () => {
                                             className={`payment-method-btn ${metodoPago === 'transferencia' ? 'active' : ''}`}
                                             onClick={() => {
                                                 setMetodoPago('transferencia')
-                                                setMontoRecibido(formatearDinero(total).replace('$', '').replace(',', ''))
+                                                setMontoRecibido(total.toFixed(2))
                                             }}
                                         >
                                             <span className="material-symbols-outlined">account_balance</span>

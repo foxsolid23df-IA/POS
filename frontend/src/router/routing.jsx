@@ -11,6 +11,7 @@ import { CashFundModal } from "../components/auth/CashFundModal"
 import { UserManager } from "../components/admin/UserManager"
 import Suppliers from "../components/suppliers/Suppliers"
 import { AuthProvider, useAuth } from "../hooks/useAuth"
+import CustomerDisplay from "../components/customer/CustomerDisplay"
 
 const PrivateLayout = ({ children }) => {
     const { 
@@ -82,6 +83,7 @@ export const Routing = () => {
                     <Route path="/proveedores" element={<PrivateLayout><Suppliers /></PrivateLayout>} />
                     <Route path="/historial" element={<PrivateLayout><Historial /></PrivateLayout>} />
                     <Route path="/estadisticas" element={<PrivateLayout><Stats /></PrivateLayout>} />
+                    <Route path="/customer-display" element={<CustomerDisplay />} />
 
                     {/* Gestión de Usuarios solo para Admin */}
                     <Route path="/usuarios" element={
