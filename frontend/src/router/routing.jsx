@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Routes, Route, HashRouter, Link, Navigate } from "react-router-dom"
 import { Sidebar } from "../components/sidebar/Sidebar"
 import { Sales } from "../components/sales/Sales"
@@ -13,6 +13,8 @@ import Suppliers from "../components/suppliers/Suppliers"
 import { AuthProvider, useAuth } from "../hooks/useAuth"
 import CustomerDisplay from "../components/customer/CustomerDisplay"
 import ExchangeRateSettings from "../components/admin/ExchangeRateSettings";
+import { TerminalSetup } from "../components/config/TerminalSetup";
+import { terminalService } from "../services/terminalService";
 
 const PrivateLayout = ({ children }) => {
     const { 
@@ -26,6 +28,8 @@ const PrivateLayout = ({ children }) => {
         storeName
     } = useAuth();
 
+    const [isTerminalConfigured, setIsTerminalConfigured] = useState(!!terminalService.getTerminalId());
+
     // Verificar sesión de caja cuando el usuario está desbloqueado
     useEffect(() => {
         if (user && activeStaff && !isLocked) {
@@ -36,10 +40,15 @@ const PrivateLayout = ({ children }) => {
     if (loading) return <div className="loading-screen">Cargando...</div>;
     if (!user) return <Navigate to="/login" />;
 
-    // Si la pantalla está bloqueada, mostrar pantalla de PIN
+    // 1. Verificación de Terminal (Fundamental para operar)
+    if (!isTerminalConfigured) {
+        return <TerminalSetup onTerminalConfigured={() => setIsTerminalConfigured(true)} />;
+    }
+
+    // 2. Si la pantalla está bloqueada, mostrar pantalla de PIN
     if (isLocked) return <LockScreen />;
 
-    // Si necesita ingresar fondo de caja, mostrar modal
+    // 3. Si necesita ingresar fondo de caja, mostrar modal
     if (needsCashFund) {
         return (
             <CashFundModal 

@@ -1,14 +1,19 @@
 import { supabase } from '../supabase';
+import { terminalService } from './terminalService';
 
 export const cashSessionService = {
     /**
-     * Obtiene la sesión de caja activa del usuario actual
+     * Obtiene la sesión de caja activa del usuario actual en ESTA terminal
      */
     async getActiveSession() {
+        const terminalId = terminalService.getTerminalId();
+        if (!terminalId) return null;
+
         const { data, error } = await supabase
             .from('cash_sessions')
             .select('*')
             .eq('status', 'open')
+            .eq('terminal_id', terminalId)
             .order('opened_at', { ascending: false })
             .limit(1)
             .single();
@@ -25,7 +30,10 @@ export const cashSessionService = {
      * Abre una nueva sesión de caja con el fondo inicial
      */
     async openSession(staffName, openingFund, staffId = null) {
-        // 1. Seguridad: Cerrar cualquier sesión que haya quedado abierta por error
+        const terminalId = terminalService.getTerminalId();
+        if (!terminalId) throw new Error("Terminal no configurada");
+
+        // 1. Seguridad: Cerrar cualquier sesión que haya quedado abierta por error EN ESTA TERMINAL
         try {
             const { data: userData } = await supabase.auth.getUser();
             if (userData?.user) {
@@ -36,6 +44,7 @@ export const cashSessionService = {
                         closed_at: new Date().toISOString() 
                     })
                     .eq('user_id', userData.user.id)
+                    .eq('terminal_id', terminalId)
                     .eq('status', 'open');
             }
         } catch (e) {
@@ -50,7 +59,8 @@ export const cashSessionService = {
                 staff_id: staffId,
                 opening_fund: openingFund,
                 status: 'open',
-                opened_at: new Date().toISOString()
+                opened_at: new Date().toISOString(),
+                terminal_id: terminalId
             }])
             .select()
             .single();
@@ -67,6 +77,8 @@ export const cashSessionService = {
      * Cierra la sesión de caja actual
      */
     async closeSession(sessionId) {
+        const terminalId = terminalService.getTerminalId();
+
         // Primero intentamos cerrar la sesión específica
         const { data, error } = await supabase
             .from('cash_sessions')
@@ -79,10 +91,10 @@ export const cashSessionService = {
             .single();
 
         // Como medida de seguridad adicional, nos aseguramos de que NO queden otras sesiones abiertas
-        // para este usuario (para evitar el problema de "vuelve a abrir con el monto anterior")
+        // para este usuario EN ESTA TERMINAL (para evitar el problema de "vuelve a abrir con el monto anterior")
         try {
             const { data: userData } = await supabase.auth.getUser();
-            if (userData?.user) {
+            if (userData?.user && terminalId) {
                 await supabase
                     .from('cash_sessions')
                     .update({ 
@@ -90,6 +102,7 @@ export const cashSessionService = {
                         closed_at: new Date().toISOString() 
                     })
                     .eq('user_id', userData.user.id)
+                    .eq('terminal_id', terminalId)
                     .eq('status', 'open');
             }
         } catch (e) {
@@ -105,12 +118,14 @@ export const cashSessionService = {
     },
 
     /**
-     * Obtiene el historial de sesiones de caja
+     * Obtiene el historial de sesiones de caja (filtrado por terminal opcionalmente, 
+     * pero generalmente el historial muestra todo, aunque para reportes locales quizás solo terminal)
+     * Por ahora mostramos todo para el admin, o filtrado por usuario si es cajero.
      */
     async getSessionHistory(limit = 10) {
         const { data, error } = await supabase
             .from('cash_sessions')
-            .select('*')
+            .select('*, terminals(name)')
             .order('opened_at', { ascending: false })
             .limit(limit);
 

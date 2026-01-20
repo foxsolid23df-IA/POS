@@ -1,9 +1,15 @@
 import { supabase } from '../supabase';
+import { terminalService } from './terminalService';
 
 export const salesService = {
     // Crear una nueva venta
     createSale: async (saleData) => {
         const { data: userData } = await supabase.auth.getUser();
+        const terminalId = terminalService.getTerminalId();
+
+        if (!terminalId) {
+            throw new Error("Terminal no configurada. No se puede realizar la venta.");
+        }
 
         // 1. Crear la venta principal
         const { data: sale, error: saleError } = await supabase
@@ -14,7 +20,8 @@ export const salesService = {
                 currency: saleData.currency || 'MXN',
                 exchange_rate: saleData.exchange_rate || null,
                 amount_usd: saleData.amount_usd || null,
-                payment_method: saleData.metodoPago || 'efectivo'
+                payment_method: saleData.metodoPago || 'efectivo',
+                terminal_id: terminalId
             }])
             .select()
             .single();
@@ -37,14 +44,20 @@ export const salesService = {
 
         if (itemsError) throw itemsError;
 
-        // 3. Actualizar stock de productos
-        for (const item of saleData.items) {
-            const { error: stockError } = await supabase
-                .from('products')
-                .update({ stock: item.stock - item.quantity })
-                .eq('id', item.id);
+        // 3. Actualizar stock de productos (Atomic RPC w/ Concurrency Check)
+        const itemsForStockUpdate = saleData.items.map(item => ({
+            id: item.id,
+            quantity: item.quantity
+        }));
 
-            if (stockError) console.error('Error actualizando stock:', stockError);
+        const { error: stockError } = await supabase
+            .rpc('decrement_stock', { items: itemsForStockUpdate });
+
+        if (stockError) {
+            console.error('Error actualizando stock (RPC):', stockError);
+            // Idealmente aquí deberíamos revertir la venta o notificar al admin
+            // Por ahora mantenemos el comportamiento de logging pero el error es más informativo
+            // throw stockError; // Descomentar si queremos fallar la transacción completa (pero la venta ya se creó)
         }
 
         return sale;

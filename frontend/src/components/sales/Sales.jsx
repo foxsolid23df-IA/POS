@@ -13,6 +13,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useGlobalScanner } from '../../hooks/scanner'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import { exchangeRateService } from '../../services/exchangeRateService'
+import { supabase } from '../../supabase'
 import './Sales.css'
 
 export const Sales = () => {
@@ -97,6 +98,30 @@ export const Sales = () => {
         }
         cargarDatos()
     }, [])
+
+    // SINCRONIZACIÓN EN TIEMPO REAL (MULTICAJA)
+    useEffect(() => {
+        const channel = supabase
+            .channel('sales-products-sync')
+            .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'products' },
+                (payload) => {
+                    // Actualizar el producto en el estado local
+                    const updatedProduct = payload.new;
+                    setProductos(prevProductos => 
+                        prevProductos.map(p => 
+                            p.id === updatedProduct.id ? { ...p, ...updatedProduct } : p
+                        )
+                    );
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, []);
 
     // BÚSQUEDA POR NOMBRE - Filtrar sugerencias cuando cambia el texto
     useEffect(() => {
