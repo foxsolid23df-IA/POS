@@ -12,6 +12,7 @@ import { UserManager } from "../components/admin/UserManager"
 import Suppliers from "../components/suppliers/Suppliers"
 import { AuthProvider, useAuth } from "../hooks/useAuth"
 import CustomerDisplay from "../components/customer/CustomerDisplay"
+import ExchangeRateSettings from "../components/admin/ExchangeRateSettings";
 
 const PrivateLayout = ({ children }) => {
     const { 
@@ -91,6 +92,12 @@ export const Routing = () => {
                             <AdminRoute>
                                 <UserManager />
                             </AdminRoute>
+                        </PrivateLayout>
+                    } />
+
+                    <Route path="/configuracion-dolares" element={
+                        <PrivateLayout>
+                            <ExchangeRateSettings />
                         </PrivateLayout>
                     } />
 

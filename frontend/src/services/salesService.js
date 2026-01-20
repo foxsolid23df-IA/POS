@@ -10,7 +10,11 @@ export const salesService = {
             .from('sales')
             .insert([{
                 total: saleData.total,
-                user_id: userData.user.id
+                user_id: userData.user.id,
+                currency: saleData.currency || 'MXN',
+                exchange_rate: saleData.exchange_rate || null,
+                amount_usd: saleData.amount_usd || null,
+                payment_method: saleData.metodoPago || 'efectivo'
             }])
             .select()
             .single();

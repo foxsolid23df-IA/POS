@@ -41,7 +41,10 @@ export const cashCutService = {
                 sales_total: cutData.salesTotal,
                 expected_cash: cutData.expectedCash,
                 actual_cash: cutData.actualCash || null,
-                difference: cutData.actualCash ? (cutData.actualCash - cutData.expectedCash) : null,
+                difference: cutData.difference,
+                expected_usd: cutData.expectedUSD || 0,
+                actual_usd: cutData.actualUSD || 0,
+                difference_usd: cutData.differenceUSD || 0,
                 notes: cutData.notes || null,
                 user_id: userData.user.id
             }])

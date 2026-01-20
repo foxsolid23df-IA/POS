@@ -12,6 +12,7 @@ import { useCart } from '../../hooks/useCart'
 import { useAuth } from '../../hooks/useAuth'
 import { useGlobalScanner } from '../../hooks/scanner'
 import { useIsMobile } from '../../hooks/useIsMobile'
+import { exchangeRateService } from '../../services/exchangeRateService'
 import './Sales.css'
 
 export const Sales = () => {
@@ -39,8 +40,9 @@ export const Sales = () => {
     
     // ESTADOS PARA MODAL DE PAGO
     const [mostrarModalPago, setMostrarModalPago] = useState(false)
-    const [metodoPago, setMetodoPago] = useState('efectivo') // 'efectivo', 'tarjeta', 'transferencia'
+    const [metodoPago, setMetodoPago] = useState('efectivo') // 'efectivo', 'tarjeta', 'transferencia', 'dolares'
     const [montoRecibido, setMontoRecibido] = useState('')
+    const [tipoCambio, setTipoCambio] = useState(null)
 
     // ESTADOS PARA BÚSQUEDA POR NOMBRE
     const [productos, setProductos] = useState([])
@@ -76,17 +78,24 @@ export const Sales = () => {
         })
     }
 
-    // CARGAR PRODUCTOS DE SUPABASE AL INICIAR
+    // CARGAR PRODUCTOS Y TIPO DE CAMBIO
     useEffect(() => {
-        const cargarProductos = async () => {
+        const cargarDatos = async () => {
             try {
-                const data = await productService.getProducts()
-                setProductos(data)
+                const [prods, rate] = await Promise.all([
+                    productService.getProducts(),
+                    exchangeRateService.getActiveRate()
+                ])
+                setProductos(prods)
+                
+                if (rate && rate.is_active) {
+                    setTipoCambio(parseFloat(rate.rate))
+                }
             } catch (error) {
-                console.error('Error cargando productos:', error)
+                console.error('Error cargando datos iniciales:', error)
             }
         }
-        cargarProductos()
+        cargarDatos()
     }, [])
 
     // BÚSQUEDA POR NOMBRE - Filtrar sugerencias cuando cambia el texto
@@ -272,13 +281,23 @@ export const Sales = () => {
     }
 
     const calcularCambio = () => {
-        if (!montoRecibido || metodoPago !== 'efectivo') return 0
+        if (!montoRecibido) return 0
         const monto = parseFloat(montoRecibido) || 0
+        
+        if (metodoPago === 'dolares' && tipoCambio) {
+            // Convertir dólares recibidos a pesos
+            const totalEnPesos = monto * tipoCambio;
+            // Calcular cambio en pesos
+            return totalEnPesos - total;
+        }
+
+        if (metodoPago !== 'efectivo' && metodoPago !== 'dolares') return 0
+        
         return monto - total
     }
 
     const formatearMontoRecibido = () => {
-        if (metodoPago === 'efectivo') {
+        if (metodoPago === 'efectivo' || metodoPago === 'dolares') {
             if (!montoRecibido) return '0.00'
             const monto = parseFloat(montoRecibido) || 0
             return monto.toFixed(2)
@@ -289,7 +308,7 @@ export const Sales = () => {
 
     const finalizarVenta = async () => {
         if (carrito.length === 0) {
-            mostrarModalPersonalizado(
+             mostrarModalPersonalizado(
                 'Carrito vacío',
                 'No puedes finalizar una venta sin productos en el carrito.',
                 'warning'
@@ -305,6 +324,20 @@ export const Sales = () => {
                     'Monto insuficiente',
                     `El monto recibido (${formatearDinero(monto)}) es menor al total (${formatearDinero(total)}).`,
                     'warning'
+                )
+                return
+            }
+        }
+        
+        // Validar monto si es dólares
+        if (metodoPago === 'dolares') {
+            const monto = parseFloat(montoRecibido) || 0
+            const totalEnPesos = monto * tipoCambio
+            if (!monto || totalEnPesos < total - 0.1) { // Pequeña tolerancia
+                mostrarModalPersonalizado(
+                    'Monto insuficiente',
+                    `El pago en dólares (${monto} USD = $${totalEnPesos.toFixed(2)} MXN) no cubre el total de ${formatearDinero(total)}.`,
+                    'error'
                 )
                 return
             }
@@ -325,19 +358,30 @@ export const Sales = () => {
                 })),
                 total: total,
                 metodoPago: metodoPago,
-                montoRecibido: metodoPago === 'efectivo' ? parseFloat(montoRecibido) || 0 : total,
-                cambio: metodoPago === 'efectivo' ? calcularCambio() : 0
+                currency: metodoPago === 'dolares' ? 'USD' : 'MXN',
+                exchange_rate: metodoPago === 'dolares' ? tipoCambio : null,
+                amount_usd: metodoPago === 'dolares' ? parseFloat(montoRecibido) : null,
+                montoRecibido: (metodoPago === 'efectivo' || metodoPago === 'dolares') ? parseFloat(montoRecibido) || 0 : total,
+                cambio: calcularCambio()
             }
 
             // Crear venta en Supabase
             const ventaCreada = await salesService.createSale(ventaData)
+            
+            // Actualizar activeCartService
+            try {
+                 await activeCartService.updateCart({ items: [], total: 0, lastUpdate: Date.now() });
+            } catch(e) { console.error(e) }
 
             setVentaCompletada({
                 ...ventaCreada,
                 productos: carrito,
+                items: carrito, // Backup por si ticket usa items
                 metodoPago: metodoPago,
                 montoRecibido: ventaData.montoRecibido,
-                cambio: ventaData.cambio
+                cambio: ventaData.cambio,
+                currency: ventaData.currency,
+                exchange_rate: ventaData.exchange_rate
             })
 
             // Recargar productos para actualizar stock
@@ -980,18 +1024,43 @@ export const Sales = () => {
                                             <span className="material-symbols-outlined">account_balance</span>
                                             <span>Transferencia</span>
                                         </button>
+                                        
+                                        {tipoCambio && (
+                                            <button
+                                                className={`payment-method-btn ${metodoPago === 'dolares' ? 'active' : ''}`}
+                                                onClick={() => {
+                                                    setMetodoPago('dolares')
+                                                    setMontoRecibido('')
+                                                }}
+                                            >
+                                                <span className="material-symbols-outlined">currency_exchange</span>
+                                                <span>Dólares</span>
+                                            </button>
+                                        )}
                                     </div>
 
                                     <div className="payment-amount-section">
                                         <div className="payment-amount-input-section">
-                                            <label className="payment-amount-label">MONTO RECIBIDO</label>
+                                            <label className="payment-amount-label">
+                                                {metodoPago === 'dolares' ? 'MONTO RECIBIDO (USD)' : 'MONTO RECIBIDO'}
+                                            </label>
                                             <div className="payment-amount-display">
                                                 <span className="payment-amount-value">
-                                                    ${formatearMontoRecibido()}
+                                                    {metodoPago === 'dolares' ? '$' : '$'}
+                                                    {formatearMontoRecibido()}
                                                 </span>
                                             </div>
                                             
-                                            {metodoPago === 'efectivo' && (
+                                            {metodoPago === 'dolares' && (
+                                                <div className="text-center mt-2 text-sm text-slate-500 font-bold">
+                                                    Tipo de cambio: ${tipoCambio} MXN
+                                                    <div className="text-emerald-600 mt-1">
+                                                        Total a cubrir: ${(total / tipoCambio).toFixed(2)} USD
+                                                    </div>
+                                                </div>
+                                            )}
+                                            
+                                            {(metodoPago === 'efectivo' || metodoPago === 'dolares') && (
                                                 <div className="payment-keypad">
                                                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0, '.', 'backspace'].map((num) => (
                                                         <button
@@ -1010,7 +1079,7 @@ export const Sales = () => {
                                             )}
                                         </div>
 
-                                        {metodoPago === 'efectivo' && (
+                                        {(metodoPago === 'efectivo' || metodoPago === 'dolares') && (
                                             <div className="payment-change-section">
                                                 <div className="payment-change-box">
                                                     <p className="payment-change-label">CAMBIO</p>

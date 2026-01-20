@@ -11,6 +11,7 @@ export const CashCut = ({ onClose }) => {
     const [summary, setSummary] = useState(null);
     const [salesDetails, setSalesDetails] = useState([]);
     const [actualCash, setActualCash] = useState('');
+    const [actualUSD, setActualUSD] = useState('');
     const [notes, setNotes] = useState('');
     const [cutType, setCutType] = useState('turno');
     const [submitting, setSubmitting] = useState(false);
@@ -27,9 +28,45 @@ export const CashCut = ({ onClose }) => {
         try {
             setLoading(true);
             const data = await cashCutService.getCurrentShiftSummary();
-            setSummary(data);
-            setSalesDetails(data.sales || []);
-            setActualCash(data.salesTotal.toFixed(2));
+            
+            // Calculate Expectatives
+            const sales = data.sales || [];
+            
+            // 1. Calculate Expected USD
+            const usdSales = sales.filter(s => s.currency === 'USD' || s.payment_method === 'dolares');
+            const totalUSD = usdSales.reduce((acc, curr) => acc + (parseFloat(curr.amount_usd) || 0), 0);
+            
+            // 2. Calculate Expected MXN
+            // Start with opening fund
+            let expectedMXN = parseFloat(cashSession?.opening_fund) || 0;
+            
+            // Add Cash Sales (MXN)
+            const cashSales = sales.filter(s => s.payment_method === 'efectivo');
+            expectedMXN += cashSales.reduce((acc, curr) => acc + (parseFloat(curr.total) || 0), 0);
+            
+            // Handle USD Sales (Add Sale Value in MXN, Subtract Change given in MXN)
+            // Effectively: Net Change to MXN Drawer = SaleTotal - (USDAmount * ExchangeRate)
+            // Example: Sale 100, Pay 10USD (200MXN). Change 100. Desk gets +10USD, -100MXN.
+            // 100 - 200 = -100. Correct.
+            const usdSalesMixed = sales.filter(s => s.payment_method === 'dolares');
+            expectedMXN += usdSalesMixed.reduce((acc, curr) => {
+                const saleTotal = parseFloat(curr.total) || 0;
+                const usdVal = (parseFloat(curr.amount_usd) || 0) * (parseFloat(curr.exchange_rate) || 0);
+                return acc + (saleTotal - usdVal);
+            }, 0);
+
+            setSummary({
+                ...data,
+                totalUSD,
+                expectedMXN
+            });
+            setSalesDetails(sales);
+            
+            // Initialize inputs
+            // We don't autofill actual cash to prevent assumption, or we can defaulting to 0 or expected?
+            // Previous code initialized to salesTotal, which was wrong. Let's start empty or 0.
+            // setActualCash(data.salesTotal.toFixed(2)); // Removing this autocalc to force counting
+            
         } catch (error) {
             console.error('Error cargando resumen:', error);
             Swal.fire('Error', 'No se pudo cargar el resumen del turno', 'error');
@@ -38,10 +75,10 @@ export const CashCut = ({ onClose }) => {
         }
     };
 
-    const formatMoney = (amount) => {
+    const formatMoney = (amount, currency = 'MXN') => {
         return new Intl.NumberFormat('es-MX', {
             style: 'currency',
-            currency: 'MXN'
+            currency: currency
         }).format(amount);
     };
 
@@ -64,14 +101,23 @@ export const CashCut = ({ onClose }) => {
     const handleSubmit = async () => {
         if (submitting) return;
 
+        const diffMXN = (parseFloat(actualCash) || 0) - (summary?.expectedMXN || 0);
+        const diffUSD = (parseFloat(actualUSD) || 0) - (summary?.totalUSD || 0);
+
         const result = await Swal.fire({
             title: cutType === 'dia' ? '¿Cerrar el día?' : '¿Cerrar turno?',
             html: `
-                <p><strong>Fondo Inicial:</strong> ${formatMoney(parseFloat(cashSession?.opening_fund) || 0)}</p>
-                <p><strong>Ventas:</strong> ${summary.salesCount}</p>
-                <p><strong>Total en Caja Esperado:</strong> ${formatMoney(summary.salesTotal + (parseFloat(cashSession?.opening_fund) || 0))}</p>
-                <p><strong>Efectivo contado:</strong> ${formatMoney(parseFloat(actualCash) || 0)}</p>
-                <p><strong>Diferencia:</strong> ${formatMoney((parseFloat(actualCash) || 0) - (summary.salesTotal + (parseFloat(cashSession?.opening_fund) || 0)))}</p>
+                <div style="text-align: left; font-size: 0.9em;">
+                    <p><strong>Fondo Inicial:</strong> ${formatMoney(parseFloat(cashSession?.opening_fund) || 0)}</p>
+                    <hr style="margin: 5px 0;">
+                    <p><strong>Esperado MXN:</strong> ${formatMoney(summary.expectedMXN || 0)}</p>
+                    <p><strong>Contado MXN:</strong> ${formatMoney(parseFloat(actualCash) || 0)}</p>
+                    <p style="color: ${diffMXN !== 0 ? 'red' : 'green'}"><strong>Diferencia MXN:</strong> ${formatMoney(diffMXN)}</p>
+                    <hr style="margin: 5px 0;">
+                    <p><strong>Esperado USD:</strong> ${formatMoney(summary.totalUSD || 0, 'USD')}</p>
+                    <p><strong>Contado USD:</strong> ${formatMoney(parseFloat(actualUSD) || 0, 'USD')}</p>
+                    <p style="color: ${diffUSD !== 0 ? 'red' : 'green'}"><strong>Diferencia USD:</strong> ${formatMoney(diffUSD, 'USD')}</p>
+                </div>
             `,
             icon: 'question',
             showCancelButton: true,
@@ -91,19 +137,24 @@ export const CashCut = ({ onClose }) => {
                 startTime: summary.startTime,
                 salesCount: summary.salesCount,
                 salesTotal: summary.salesTotal,
-                expectedCash: summary.salesTotal + (parseFloat(cashSession?.opening_fund) || 0),
-                actualCash: parseFloat(actualCash) || null,
+                expectedCash: summary.expectedMXN,
+                actualCash: parseFloat(actualCash) || 0,
+                difference: diffMXN,
+                expectedUSD: summary.totalUSD,
+                actualUSD: parseFloat(actualUSD) || 0,
+                differenceUSD: diffUSD,
                 notes
             };
 
             const savedCut = await cashCutService.createCashCut(cutData);
 
-            // Guardar resultado para el ticket
+                // Guardar resultado para el ticket
             setCutResult({
                 ...savedCut,
                 ...cutData,
                 endTime: new Date().toISOString(),
-                difference: (parseFloat(actualCash) || 0) - (summary.salesTotal + (parseFloat(cashSession?.opening_fund) || 0))
+                difference: diffMXN,
+                differenceUSD: diffUSD
             });
 
             // Mostrar ticket antes de bloquear
@@ -179,8 +230,11 @@ export const CashCut = ({ onClose }) => {
     };
 
     // Cálculos en tiempo real para la UI
-    const expectedTotalValue = (summary?.salesTotal || 0) + (parseFloat(cashSession?.opening_fund) || 0);
-    const diffValue = (parseFloat(actualCash) || 0) - expectedTotalValue;
+    const expectedMXN = summary?.expectedMXN || 0;
+    const diffMXN = (parseFloat(actualCash) || 0) - expectedMXN;
+    
+    const expectedUSD = summary?.totalUSD || 0;
+    const diffUSD = (parseFloat(actualUSD) || 0) - expectedUSD;
 
     // Efecto para recargar el resumen si cambia el tipo (proactivo por si el servicio se expande)
     useEffect(() => {
@@ -240,20 +294,38 @@ export const CashCut = ({ onClose }) => {
                                     <span className="font-bold">{formatMoney(cutResult.salesTotal)}</span>
                                 </div>
                                 <div className="flex justify-between items-center bg-emerald-50 dark:bg-emerald-900/10 p-3 rounded-lg border border-emerald-100 dark:border-emerald-900/20">
-                                    <span className="text-xs uppercase font-bold text-emerald-600 dark:text-emerald-400">Total Esperado:</span>
+                                    <span className="text-xs uppercase font-bold text-emerald-600 dark:text-emerald-400">Total Esperado (MXN):</span>
                                     <span className="font-bold text-emerald-600 dark:text-emerald-400 text-lg">{formatMoney(cutResult.expectedCash)}</span>
                                 </div>
+                                {cutResult.expectedUSD > 0 && (
+                                    <div className="flex justify-between items-center bg-blue-50 dark:bg-blue-900/10 p-3 rounded-lg border border-blue-100 dark:border-blue-900/20">
+                                        <span className="text-xs uppercase font-bold text-blue-600 dark:text-blue-400">Total Esperado (USD):</span>
+                                        <span className="font-bold text-blue-600 dark:text-blue-400 text-lg">{formatMoney(cutResult.expectedUSD, 'USD')}</span>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="pt-4 border-t-2 border-dashed border-slate-200 dark:border-slate-700 text-center space-y-2">
                                 <div className="flex justify-between text-slate-900 dark:text-white font-bold">
-                                    <span>EFECTIVO CONTADO:</span>
+                                    <span>EFECTIVO MXN:</span>
                                     <span>{formatMoney(cutResult.actualCash || 0)}</span>
                                 </div>
                                 <div className={`flex justify-between font-black text-lg ${cutResult.difference === 0 ? 'text-slate-900 dark:text-white' : cutResult.difference > 0 ? 'text-blue-500' : 'text-red-500'}`}>
-                                    <span>DIFERENCIA:</span>
+                                    <span>DIFERENCIA MXN:</span>
                                     <span>{cutResult.difference === 0 ? 'CORRECTO' : formatMoney(cutResult.difference)}</span>
                                 </div>
+                                {cutResult.expectedUSD > 0 && (
+                                    <>
+                                        <div className="flex justify-between text-slate-900 dark:text-white font-bold mt-2 pt-2 border-t border-dotted border-slate-300">
+                                            <span>EFECTIVO USD:</span>
+                                            <span>{formatMoney(cutResult.actualUSD || 0, 'USD')}</span>
+                                        </div>
+                                        <div className={`flex justify-between font-black text-lg ${cutResult.differenceUSD === 0 ? 'text-slate-900 dark:text-white' : cutResult.differenceUSD > 0 ? 'text-blue-500' : 'text-red-500'}`}>
+                                            <span>DIFERENCIA USD:</span>
+                                            <span>{cutResult.differenceUSD === 0 ? 'CORRECTO' : formatMoney(cutResult.differenceUSD, 'USD')}</span>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -354,67 +426,143 @@ export const CashCut = ({ onClose }) => {
                             </div>
                             <div className="bg-emerald-500 p-5 rounded-2xl shadow-lg shadow-emerald-500/20">
                                 <div className="text-2xl font-black text-white mb-1 leading-none">
-                                    {formatMoney(expectedTotalValue)}
+                                    {formatMoney(expectedMXN)}
                                 </div>
-                                <div className="text-[9px] uppercase font-bold text-emerald-100 tracking-widest">Total Esperado</div>
+                                <div className="text-[9px] uppercase font-bold text-slate-400 tracking-widest">Esperado MXN</div>
                             </div>
                         </div>
+                        {summary?.totalUSD > 0 && (
+                            <div className="mt-4 bg-emerald-50 dark:bg-emerald-900/10 p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/20 flex items-center justify-between">
+                                <span className="text-sm font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-widest">
+                                    <span className="material-symbols-rounded align-middle mr-2">currency_exchange</span>
+                                    Total Dólares Recibidos
+                                </span>
+                                <span className="text-xl font-black text-emerald-600 dark:text-emerald-400">
+                                    {formatMoney(summary.totalUSD, 'USD')}
+                                </span>
+                            </div>
+                        )}
                     </section>
 
-                    {/* Efectivo en Caja Input */}
-                    <section>
-                        <label className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-black uppercase tracking-widest text-xs mb-4">
-                            <span className="material-symbols-rounded text-emerald-500">payments</span>
-                            Efectivo en Caja (Contado)
-                        </label>
-                        <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
-                                <span className="text-3xl font-black text-emerald-500 transition-all duration-300 group-focus-within:scale-120">$</span>
+                    {/* Efectivo en Caja Inputs */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <section>
+                            <label className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-black uppercase tracking-widest text-xs mb-4">
+                                <span className="material-symbols-rounded text-emerald-500">payments</span>
+                                Efectivo en Caja (MXN)
+                            </label>
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
+                                    <span className="text-3xl font-black text-emerald-500 transition-all duration-300 group-focus-within:scale-120">$</span>
+                                </div>
+                                <input 
+                                    className="block w-full pl-14 pr-6 py-7 bg-slate-50 dark:bg-slate-800/80 border-2 border-slate-100 dark:border-slate-700 rounded-3xl text-4xl font-black text-slate-900 dark:text-white focus:ring-0 focus:border-emerald-500 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600 shadow-inner"
+                                    placeholder="0.00" 
+                                    type="number"
+                                    step="0.01"
+                                    value={actualCash}
+                                    onChange={(e) => setActualCash(e.target.value)}
+                                />
+                                <div className="absolute top-2 right-4 text-[10px] font-bold text-slate-400">ESPERADO: {formatMoney(expectedMXN)}</div>
                             </div>
-                            <input 
-                                className="block w-full pl-14 pr-6 py-7 bg-slate-50 dark:bg-slate-800/80 border-2 border-slate-100 dark:border-slate-700 rounded-3xl text-4xl font-black text-slate-900 dark:text-white focus:ring-0 focus:border-emerald-500 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600 shadow-inner"
-                                placeholder="0.00" 
-                                type="number"
-                                step="0.01"
-                                value={actualCash}
-                                onChange={(e) => setActualCash(e.target.value)}
-                            />
-                        </div>
-                    </section>
+                        </section>
+
+                        {/* USD Input Section */}
+                        {(summary?.totalUSD > 0 || actualUSD > 0) && (
+                            <section>
+                                <label className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-black uppercase tracking-widest text-xs mb-4">
+                                    <span className="material-symbols-rounded text-emerald-500">currency_exchange</span>
+                                    Efectivo en Caja (USD)
+                                </label>
+                                <div className="relative group">
+                                    <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
+                                        <span className="text-2xl font-black text-emerald-500 transition-all duration-300 group-focus-within:scale-120">US$</span>
+                                    </div>
+                                    <input 
+                                        className="block w-full pl-16 pr-6 py-7 bg-slate-50 dark:bg-slate-800/80 border-2 border-slate-100 dark:border-slate-700 rounded-3xl text-4xl font-black text-slate-900 dark:text-white focus:ring-0 focus:border-emerald-500 transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600 shadow-inner"
+                                        placeholder="0.00" 
+                                        type="number"
+                                        step="0.01"
+                                        value={actualUSD}
+                                        onChange={(e) => setActualUSD(e.target.value)}
+                                    />
+                                    <div className="absolute top-2 right-4 text-[10px] font-bold text-slate-400">ESPERADO: {formatMoney(expectedUSD, 'USD')}</div>
+                                </div>
+                            </section>
+                        )}
+                    </div>
 
                     {/* Diferencia Display con feedback visual mejorado */}
-                    <div className={`p-6 rounded-2xl border-2 flex items-center justify-between transition-all duration-500 ${
-                        diffValue === 0 
-                        ? 'bg-emerald-50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-500/20' 
-                        : diffValue > 0 
-                        ? 'bg-blue-50 dark:bg-blue-500/5 border-blue-100 dark:border-blue-500/20'
-                        : 'bg-rose-50 dark:bg-rose-500/5 border-rose-100 dark:border-rose-500/20'
-                    }`}>
-                        <div>
-                            <span className={`text-[10px] font-black uppercase tracking-[0.2em] block mb-1 ${
-                                diffValue === 0 ? 'text-emerald-500' :
-                                diffValue > 0 ? 'text-blue-500' :
-                                'text-rose-500'
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div className={`p-6 rounded-2xl border-2 flex items-center justify-between transition-all duration-500 ${
+                            diffMXN === 0 
+                            ? 'bg-emerald-50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-500/20' 
+                            : diffMXN > 0 
+                            ? 'bg-blue-50 dark:bg-blue-500/5 border-blue-100 dark:border-blue-500/20'
+                            : 'bg-rose-50 dark:bg-rose-500/5 border-rose-100 dark:border-rose-500/20'
+                        }`}>
+                            <div>
+                                <span className={`text-[10px] font-black uppercase tracking-[0.2em] block mb-1 ${
+                                    diffMXN === 0 ? 'text-emerald-500' :
+                                    diffMXN > 0 ? 'text-blue-500' :
+                                    'text-rose-500'
+                                }`}>
+                                    Balance MXN
+                                </span>
+                                <span className={`text-sm font-bold ${
+                                    diffMXN === 0 ? 'text-emerald-700 dark:text-emerald-300' :
+                                    diffMXN > 0 ? 'text-blue-700 dark:text-blue-300' :
+                                    'text-rose-700 dark:text-rose-300'
+                                }`}>
+                                    {diffMXN === 0 ? '✓ MXN Correcto' : 
+                                    diffMXN > 0 ? '⬆ Sobrante MXN' : 
+                                    '⬇ Faltante MXN'}
+                                </span>
+                            </div>
+                            <span className={`text-4xl font-black tabular-nums transition-all ${
+                                diffMXN === 0 ? 'text-emerald-600' :
+                                diffMXN > 0 ? 'text-blue-600' :
+                                'text-rose-600'
                             }`}>
-                                Balance de Arqueo
-                            </span>
-                            <span className={`text-sm font-bold ${
-                                diffValue === 0 ? 'text-emerald-700 dark:text-emerald-300' :
-                                diffValue > 0 ? 'text-blue-700 dark:text-blue-300' :
-                                'text-rose-700 dark:text-rose-300'
-                            }`}>
-                                {diffValue === 0 ? '✓ Los montos coinciden perfectamente' : 
-                                 diffValue > 0 ? '⬆ Existe un sobrante en caja' : 
-                                 '⬇ Existe un faltante en el arqueo'}
+                                {diffMXN === 0 ? 'OK' : formatMoney(diffMXN)}
                             </span>
                         </div>
-                        <span className={`text-4xl font-black tabular-nums transition-all ${
-                            diffValue === 0 ? 'text-emerald-600' :
-                            diffValue > 0 ? 'text-blue-600' :
-                            'text-rose-600'
-                        }`}>
-                            {diffValue === 0 ? '0.00' : formatMoney(diffValue)}
-                        </span>
+
+                        {(summary?.totalUSD > 0 || actualUSD > 0) && (
+                            <div className={`p-6 rounded-2xl border-2 flex items-center justify-between transition-all duration-500 ${
+                                diffUSD === 0 
+                                ? 'bg-emerald-50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-500/20' 
+                                : diffUSD > 0 
+                                ? 'bg-blue-50 dark:bg-blue-500/5 border-blue-100 dark:border-blue-500/20'
+                                : 'bg-rose-50 dark:bg-rose-500/5 border-rose-100 dark:border-rose-500/20'
+                            }`}>
+                                <div>
+                                    <span className={`text-[10px] font-black uppercase tracking-[0.2em] block mb-1 ${
+                                        diffUSD === 0 ? 'text-emerald-500' :
+                                        diffUSD > 0 ? 'text-blue-500' :
+                                        'text-rose-500'
+                                    }`}>
+                                        Balance USD
+                                    </span>
+                                    <span className={`text-sm font-bold ${
+                                        diffUSD === 0 ? 'text-emerald-700 dark:text-emerald-300' :
+                                        diffUSD > 0 ? 'text-blue-700 dark:text-blue-300' :
+                                        'text-rose-700 dark:text-rose-300'
+                                    }`}>
+                                        {diffUSD === 0 ? '✓ USD Correcto' : 
+                                        diffUSD > 0 ? '⬆ Sobrante USD' : 
+                                        '⬇ Faltante USD'}
+                                    </span>
+                                </div>
+                                <span className={`text-4xl font-black tabular-nums transition-all ${
+                                    diffUSD === 0 ? 'text-emerald-600' :
+                                    diffUSD > 0 ? 'text-blue-600' :
+                                    'text-rose-600'
+                                }`}>
+                                    {diffUSD === 0 ? 'OK' : formatMoney(diffUSD, 'USD')}
+                                </span>
+                            </div>
+                        )}
                     </div>
 
                     {/* Observaciones */}
