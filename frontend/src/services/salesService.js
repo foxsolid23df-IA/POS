@@ -79,8 +79,11 @@ export const salesService = {
     },
 
     // Obtener ventas desde una fecha (con items)
-    getSalesSince: async (startTime) => {
-        const { data, error } = await supabase
+    getSalesSince: async (startTime, terminalId = null) => {
+        // Validación de UUID para terminalId
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        
+        let query = supabase
             .from('sales')
             .select(`
                 *,
@@ -88,6 +91,14 @@ export const salesService = {
             `)
             .gte('created_at', startTime)
             .order('created_at', { ascending: false });
+
+        if (terminalId && uuidRegex.test(terminalId)) {
+            query = query.eq('terminal_id', terminalId);
+        } else if (terminalId) {
+            console.warn('getSalesSince: terminalId provisto no es un UUID válido:', terminalId);
+        }
+
+        const { data, error } = await query;
 
         if (error) throw error;
         return data || [];

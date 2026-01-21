@@ -6,6 +6,7 @@ import './TerminalSetup.css';
 export const TerminalSetup = ({ onTerminalConfigured }) => {
     const [name, setName] = useState('');
     const [location, setLocation] = useState('');
+    const [isMain, setIsMain] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleSubmit = async (e) => {
@@ -19,7 +20,7 @@ export const TerminalSetup = ({ onTerminalConfigured }) => {
         setIsSubmitting(true);
 
         try {
-            const terminal = await terminalService.registerTerminal(name.trim(), location.trim());
+            const terminal = await terminalService.registerTerminal(name.trim(), location.trim(), isMain);
             
             Swal.fire({
                 title: '¡Terminal Configurada!',
@@ -72,6 +73,24 @@ export const TerminalSetup = ({ onTerminalConfigured }) => {
                             placeholder="Ej: Entrada Principal, Piso 2"
                             disabled={isSubmitting}
                         />
+                    </div>
+
+                    <div className="form-group checkbox-group">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={isMain}
+                                onChange={(e) => setIsMain(e.target.checked)}
+                                disabled={isSubmitting}
+                                className="w-5 h-5 accent-emerald-500"
+                            />
+                            <span className="font-bold text-slate-700 dark:text-slate-300">
+                                Esta es la Caja Principal
+                            </span>
+                        </label>
+                        <p className="text-xs text-slate-500 mt-1 ml-7">
+                            Solo la caja principal puede realizar el Cierre de Día.
+                        </p>
                     </div>
 
                     <button

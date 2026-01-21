@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { cashCutService } from '../../services/cashCutService';
 import { salesService } from '../../services/salesService';
+import { terminalService } from '../../services/terminalService';
 import Swal from 'sweetalert2';
 import './CashCut.css';
 
@@ -27,7 +28,7 @@ export const CashCut = ({ onClose }) => {
     const loadSummary = async () => {
         try {
             setLoading(true);
-            const data = await cashCutService.getCurrentShiftSummary();
+            const data = await cashCutService.getCurrentShiftSummary(cutType);
             
             // Calculate Expectatives
             const sales = data.sales || [];
@@ -69,7 +70,7 @@ export const CashCut = ({ onClose }) => {
             
         } catch (error) {
             console.error('Error cargando resumen:', error);
-            Swal.fire('Error', 'No se pudo cargar el resumen del turno', 'error');
+            Swal.fire('Error', error.message || 'No se pudo cargar el resumen del turno', 'error');
         } finally {
             setLoading(false);
         }
@@ -100,6 +101,40 @@ export const CashCut = ({ onClose }) => {
 
     const handleSubmit = async () => {
         if (submitting) return;
+
+        if (submitting) return;
+
+        // Validaciones para Cierre de Día
+        try {
+            if (cutType === 'dia') {
+                const isMain = await terminalService.checkIfMainTerminal();
+                if (!isMain) {
+                    Swal.fire('Acceso Denegado', 'El Cierre de Día solo puede realizarse desde la Caja Principal.', 'warning');
+                    return;
+                }
+
+                const blockingSessions = await cashCutService.checkBlockingSessions();
+                if (blockingSessions.length > 0) {
+                    const sessionList = blockingSessions.map(s => 
+                        `<li><strong>${s.terminals?.name || 'Terminal desconocida'}</strong>: ${s.staff_name}</li>`
+                    ).join('');
+                    
+                    Swal.fire({
+                        title: 'No se puede cerrar el día',
+                        html: `
+                            <p>Hay cajas con turno abierto. Deben realizar su corte primero:</p>
+                            <ul style="text-align: left; margin-top: 10px;">${sessionList}</ul>
+                        `,
+                        icon: 'error'
+                    });
+                    return;
+                }
+            }
+        } catch (error) {
+            console.error('Error en validaciones de cierre:', error);
+            Swal.fire('Error', 'Ocurrió un error verificando los permisos de cierre. Por favor revisa la conexión.', 'error');
+            return;
+        }
 
         const diffMXN = (parseFloat(actualCash) || 0) - (summary?.expectedMXN || 0);
         const diffUSD = (parseFloat(actualUSD) || 0) - (summary?.totalUSD || 0);
