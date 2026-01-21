@@ -1,6 +1,6 @@
 .maintenance-container {
-    padding: 1rem;
-    max-width: 900px;
+    padding: 1.5rem;
+    max-width: 1200px;
     margin: 0 auto;
     color: #333;
 }
@@ -104,19 +104,24 @@ html.dark .lock-card input {
 }
 
 .maintenance-header {
-    margin-bottom: 0.5rem;
+    margin-bottom: 1rem;
     border-bottom: 1px solid #eee;
-    padding-bottom: 0.15rem;
+    padding-bottom: 0.5rem;
 }
 
 .maintenance-header h1 {
-    font-size: 1.25rem;
+    font-size: 1.75rem;
     color: #2c3e50;
-    margin-bottom: 0;
+    margin-bottom: 0.25rem;
+}
+
+html.dark .maintenance-header h1 {
+    color: #f8fafc;
 }
 
 .maintenance-header p {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
+    color: #64748b;
 }
 
 .maintenance-card.warning {
@@ -124,9 +129,9 @@ html.dark .lock-card input {
     align-items: center;
     background-color: #fff3cd;
     border-left: 4px solid #ffc107;
-    padding: 0.25rem 0.75rem;
-    border-radius: 4px;
-    margin-bottom: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
 }
 
 .warning-icon {
@@ -135,155 +140,185 @@ html.dark .lock-card input {
 }
 
 .warning-content h2 {
-    font-size: 0.95rem;
+    font-size: 1rem;
     color: #856404;
     margin-bottom: 0;
     font-weight: bold;
 }
 
 .warning-content p {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     margin: 0;
 }
 
 .maintenance-content {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    align-items: stretch;
+}
+
+/* La lista de terminales y el reset nuclear ocupan todo el ancho */
+.maintenance-content > .maintenance-section,
+.maintenance-container > .nuclear {
+    grid-column: 1 / -1;
 }
 
 .reset-section {
     background: white;
-    padding: 1.25rem;
+    padding: 1.5rem;
     border-radius: 12px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
 }
 
 .options-grid {
-    margin: 0.75rem 0;
+    margin: 1rem 0;
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5rem;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
 }
 
 .option-item {
     display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
-    padding: 0.5rem;
-    border: 1px solid #eee;
-    border-radius: 6px;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
     cursor: pointer;
-    transition: background 0.2s;
-    font-size: 0.9rem;
+    transition: all 0.2s;
+    background: #f8fafc;
+}
+
+html.dark .option-item {
+    background: #0f172a;
+    border-color: #334155;
 }
 
 .option-item:hover {
-    background: #f8f9fa;
+    border-color: #3b82f6;
+    background: #f1f5f9;
+}
+
+html.dark .option-item:hover {
+    background: #1e293b;
 }
 
 .option-item input {
-    margin-top: 5px;
     width: 20px;
     height: 20px;
+    accent-color: #3b82f6;
 }
 
 .option-item span strong {
     display: block;
     margin-bottom: 0.1rem;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
+    color: #1e293b;
+}
+
+html.dark .option-item span strong {
+    color: #f8fafc;
 }
 
 .option-item span small {
-    color: #666;
-    font-size: 0.75rem;
-    line-height: 1.1;
+    color: #64748b;
+    font-size: 0.8rem;
+    line-height: 1.2;
     display: block;
 }
 
 .confirmation-box {
-    margin-top: 0.5rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid #eee;
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+html.dark .confirmation-box {
+    border-color: #334155;
 }
 
 .confirmation-box p {
-    font-size: 0.85rem;
-    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    color: #475569;
+}
+
+html.dark .confirmation-box p {
+    color: #94a3b8;
 }
 
 .confirmation-box input {
     width: 100%;
-    padding: 0.5rem;
-    margin: 0.5rem 0;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 0.9rem;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1rem;
     text-align: center;
     font-weight: bold;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
+}
+
+html.dark .confirmation-box input {
+    background: #0f172a;
+    border-color: #334155;
+    color: #f8fafc;
 }
 
 .btn-reset {
     width: 100%;
-    padding: 0.65rem;
+    padding: 0.75rem;
     border: none;
-    border-radius: 6px;
-    background: #ccc;
-    color: white;
+    border-radius: 8px;
+    background: #e2e8f0;
+    color: #94a3b8;
     font-weight: bold;
-    font-size: 0.95rem;
+    font-size: 1rem;
     cursor: not-allowed;
     transition: all 0.3s;
 }
 
 .btn-reset.active {
-    background: #dc3545;
+    background: #ef4444;
+    color: white;
     cursor: pointer;
+    box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);
 }
 
 .btn-reset.active:hover {
-    background: #c82333;
-}
-
-.info-section {
-    background: #e9ecef;
-    padding: 0.75rem;
-    border-radius: 8px;
-    margin-top: 0.5rem;
-}
-
-.info-section h3 {
-    margin-bottom: 0.25rem;
-    font-size: 0.9rem;
-}
-
-.info-section p {
-    font-size: 0.8rem;
-    margin: 0;
+    background: #dc2626;
+    transform: translateY(-1px);
 }
 
 .status-message {
     margin-top: 1rem;
-    padding: 1rem;
-    border-radius: 6px;
+    padding: 0.75rem;
+    border-radius: 8px;
     text-align: center;
+    font-size: 0.9rem;
+    font-weight: 500;
 }
 
 .status-message.success {
-    background: #d4edda;
-    color: #155724;
+    background: #dcfce7;
+    color: #166534;
 }
 
 .status-message.error {
-    background: #f8d7da;
-    color: #721c24;
+    background: #fee2e2;
+    color: #991b1b;
 }
 
 .reset-section.nuclear {
+    grid-column: 1 / -1;
     border: 2px solid #ef4444;
     background: #fff5f5;
-    margin-top: 0.5rem;
-    padding: 0.75rem 1rem;
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    border-radius: 12px;
 }
 
 .reset-section.nuclear h3 {
@@ -345,7 +380,7 @@ html.dark .nuclear-input {
     color: #f87171 !important;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
     .maintenance-content {
         grid-template-columns: 1fr;
     }
@@ -354,10 +389,11 @@ html.dark .nuclear-input {
 /* Nuevos estilos para Gestión de Terminales */
 .maintenance-section {
     background: white;
-    padding: 1.25rem;
+    padding: 1.5rem;
     border-radius: 12px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.05);
     margin-top: 1rem;
+    grid-column: 1 / -1; /* Forzar ancho completo */
 }
 
 html.dark .maintenance-section {
@@ -366,15 +402,15 @@ html.dark .maintenance-section {
 }
 
 .section-description {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     color: #64748b;
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
 }
 
 .maintenance-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
 }
 
 .maintenance-table th {
