@@ -191,6 +191,35 @@ const Maintenance = () => {
                         </div>
                     )}
                 </section>
+
+                <section className="reset-section">
+                    <h3>Gestión de Sesiones de Caja</h3>
+                    <p className="section-description">
+                        Usa esta herramienta si no puedes realizar el Cierre de Día porque hay otras cajas abiertas que no tienes a la mano.
+                    </p>
+                    <div className="utility-box">
+                        <button 
+                            className="btn-warning"
+                            onClick={async () => {
+                                if (window.confirm('¿Deseas forzar el cierre de TODAS las cajas abiertas en el sistema? Esto permitirá realizar el Cierre de Día. Los cajeros deberán abrir turno de nuevo.')) {
+                                    setLoading(true);
+                                    try {
+                                        await maintenanceService.forceCloseAllSessions();
+                                        setMessage({ text: 'Todas las sesiones han sido cerradas con éxito.', type: 'success' });
+                                    } catch (e) {
+                                        setMessage({ text: 'Error: ' + e.message, type: 'error' });
+                                    } finally {
+                                        setLoading(false);
+                                    }
+                                }
+                            }}
+                            disabled={loading}
+                        >
+                            <span className="material-icons-outlined">lock_reset</span>
+                            {loading ? 'Cerrando...' : 'Forzar Cierre de Todas las Cajas'}
+                        </button>
+                    </div>
+                </section>
             </div>
 
             <section className="reset-section nuclear">

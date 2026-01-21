@@ -38,5 +38,21 @@ export const maintenanceService = {
     localStorage.removeItem('pos_terminal_id');
     localStorage.removeItem('pos_terminal_name');
     localStorage.removeItem('pos_is_main_terminal');
+  },
+
+  /**
+   * Fuerza el cierre de todas las sesiones de caja abiertas
+   */
+  async forceCloseAllSessions() {
+    const { data, error } = await supabase
+      .from('cash_sessions')
+      .update({ 
+        status: 'closed', 
+        closed_at: new Date().toISOString() 
+      })
+      .eq('status', 'open');
+
+    if (error) throw error;
+    return { success: true };
   }
 };

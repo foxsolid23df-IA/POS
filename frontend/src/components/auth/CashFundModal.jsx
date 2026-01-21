@@ -154,6 +154,32 @@ export const CashFundModal = ({ staffName, staffId, onSessionCreated }) => {
                     )}
                 </button>
 
+                {/* Opción para administradores: Ver sistema sin abrir caja */}
+                {(useAuth().isAdmin) && (
+                    <button 
+                        className="cash-fund-skip-btn"
+                        onClick={() => window.location.hash = '#/inventario'}
+                        style={{
+                            marginTop: '10px',
+                            background: 'transparent',
+                            color: '#64748b',
+                            border: '1px solid #e2e8f0',
+                            padding: '10px',
+                            borderRadius: '10px',
+                            fontSize: '0.9rem',
+                            width: '100%',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '5px'
+                        }}
+                    >
+                        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>visibility</span>
+                        Solo ver Inventario / Estadísticas
+                    </button>
+                )}
+
                 <p className="cash-fund-note">
                     💡 El fondo inicial será considerado en el corte de caja
                 </p>

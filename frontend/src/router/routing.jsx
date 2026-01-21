@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Routes, Route, HashRouter, Link, Navigate } from "react-router-dom"
+import { Routes, Route, HashRouter, Link, Navigate, useLocation } from "react-router-dom"
 import { Sidebar } from "../components/sidebar/Sidebar"
 import { Sales } from "../components/sales/Sales"
 import { Inventory } from "../components/inventory/Inventory"
@@ -28,6 +28,9 @@ const PrivateLayout = ({ children }) => {
         openCashSession,
         storeName
     } = useAuth();
+
+    const location = useLocation();
+    const isPOSRoute = location.pathname === '/' || location.pathname === '/ventas';
 
     const [isTerminalConfigured, setIsTerminalConfigured] = useState(!!terminalService.getTerminalId());
     const [isValidating, setIsValidating] = useState(false);
@@ -80,8 +83,8 @@ const PrivateLayout = ({ children }) => {
     // 2. Si la pantalla está bloqueada, mostrar pantalla de PIN
     if (isLocked) return <LockScreen />;
 
-    // 3. Si necesita ingresar fondo de caja, mostrar modal
-    if (needsCashFund) {
+    // 3. Si necesita ingresar fondo de caja y está en Ventas, mostrar modal
+    if (needsCashFund && isPOSRoute) {
         return (
             <CashFundModal 
                 staffName={activeStaff?.name || storeName || 'Operador'}
