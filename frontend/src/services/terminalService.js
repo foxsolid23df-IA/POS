@@ -25,17 +25,17 @@ export const terminalService = {
             .single();
 
         if (existing) {
-             // Si existe, la usamos (y actualizamos si es main si se solicita)
+             // Si existe, la reactivamos (si estaba inactiva) y actualizamos is_main
+             const updates = { is_active: true };
              if (isMain !== undefined && existing.is_main !== isMain) {
-                 await supabase.from('terminals').update({ is_main: isMain }).eq('id', existing.id);
-                 existing.is_main = isMain;
+                 updates.is_main = isMain;
              }
-             // Si forzamos isMain true arriba, aseguramos que este específico quede true (por si el update global lo afectó, aunque el orden de ejecución debería prevenirlo, es mejor ser explícito en el siguiente paso o confiar en la lógica actual).
-             // En este bloque 'if (existing)', si isMain es true, ya hicimos update global false, y luego update local true. Correcto.
+
+             await supabase.from('terminals').update(updates).eq('id', existing.id);
 
              localStorage.setItem(TERMINAL_ID_KEY, existing.id);
              localStorage.setItem(TERMINAL_NAME_KEY, existing.name);
-             return existing;
+             return { ...existing, ...updates };
         }
 
         // Si no existe y no hubo error de conexión (PGRST116 es "no found", que está bien aquí)
@@ -61,20 +61,23 @@ export const terminalService = {
          const { data, error } = await supabase
             .from('terminals')
             .select('*')
+            .eq('is_active', true) // Solo terminales activas
             .order('name');
          if (error) throw error;
          return data;
     },
 
     async deleteTerminal(id) {
+        // En un sistema contable, no borramos físicamente si hay historial. 
+        // Inactivamos la terminal (Soft Delete).
         const { error } = await supabase
             .from('terminals')
-            .delete()
+            .update({ is_active: false })
             .eq('id', id);
         
         if (error) throw error;
         
-        // Si borramos la terminal actual, limpiar localStorage
+        // Si inactivamos la terminal actual, limpiar localStorage
         if (id === this.getTerminalId()) {
             this.resetLocalTerminal();
         }
