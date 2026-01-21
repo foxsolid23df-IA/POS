@@ -32,9 +32,16 @@ const PrivateLayout = ({ children }) => {
     const [isTerminalConfigured, setIsTerminalConfigured] = useState(!!terminalService.getTerminalId());
     const [isValidating, setIsValidating] = useState(false);
 
-    // Validar existencia de terminal solo una vez al cargar o cuando cambie el usuario
+    // Validar existencia de terminal solo una vez al cargar la app
     useEffect(() => {
         if (!user || isValidating) return;
+
+        // Flag para evitar múltiples ejecuciones durante la misma sesión de carga
+        const terminalValidatedSession = sessionStorage.getItem('terminal_validated');
+        if (terminalValidatedSession === 'true') {
+            console.log('[Routing] Terminal ya validada en esta pestaña.');
+            return;
+        }
 
         const validateTerminal = async () => {
             if (isTerminalConfigured) {
@@ -43,6 +50,8 @@ const PrivateLayout = ({ children }) => {
                     const isValid = await terminalService.validateTerminalExistence();
                     if (!isValid) {
                         setIsTerminalConfigured(false);
+                    } else {
+                        sessionStorage.setItem('terminal_validated', 'true');
                     }
                 } finally {
                     setIsValidating(false);
@@ -51,7 +60,7 @@ const PrivateLayout = ({ children }) => {
         };
 
         validateTerminal();
-    }, [user?.id]); // Solo re-validar si cambia la cuenta del usuario
+    }, [user?.id]); // Solo re-validar si cambia el usuario (login/logout)
 
     // Verificar sesión de caja por separado
     useEffect(() => {

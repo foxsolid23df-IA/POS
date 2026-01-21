@@ -95,33 +95,43 @@ export const terminalService = {
      */
     async validateTerminalExistence() {
         const terminalId = this.getTerminalId();
-        if (!terminalId) return false;
+        const terminalName = this.getTerminalName();
+        
+        console.log(`[TerminalService] Validando terminal: ${terminalName} (${terminalId})`);
+        
+        if (!terminalId) {
+            console.log('[TerminalService] No hay terminal configurada localmente.');
+            return false;
+        }
 
         try {
+            // Pequeña espera para asegurar que la sesión de Supabase esté estable
+            await new Promise(resolve => setTimeout(resolve, 500));
+
             const { data, error } = await supabase
                 .from('terminals')
-                .select('id')
+                .select('id, name')
                 .eq('id', terminalId)
-                .single();
+                .maybeSingle(); // Usar maybeSingle para evitar errores si no existe
 
-            // Si llegamos aquí y no hay error, la terminal es válida
-            if (!error && data) return true;
+            if (error) {
+                console.error('[TerminalService] Error de DB validando terminal:', error);
+                // Si es un error de red o similar, no borrar configuración
+                return true; 
+            }
 
-            // SI HAY ERROR:
-            // Caso A: El error es 'PGRST116' (No encontrado). La terminal fue borrada de la DB.
-            if (error && error.code === 'PGRST116') {
-                console.warn('La terminal guardada ya no existe en la base de datos. Reseteando...');
+            if (!data) {
+                console.warn(`[TerminalService] La terminal ${terminalId} no existe en la base de datos.`);
+                // Solo borrar si estamos SEGUROS de que no existe (es decir, data es null y no hay error)
                 this.resetLocalTerminal();
                 return false;
             }
 
-            // Caso B: Otros errores (Internet, timeout, etc). NO borrar configuración,
-            // simplemente asumir que es válida por ahora para no interrumpir al usuario.
-            console.error('Error de red validando terminal, manteniendo config local:', error);
+            console.log(`[TerminalService] Terminal validada con éxito: ${data.name}`);
             return true;
         } catch (err) {
-            console.error('Error crítico validando terminal:', err);
-            return true; // Ante la duda, no borrar
+            console.error('[TerminalService] Error crítico en validación:', err);
+            return true; // No borrar en caso de error desconocido
         }
     }
 };
