@@ -65,6 +65,21 @@ export const terminalService = {
          if (error) throw error;
          return data;
     },
+
+    async deleteTerminal(id) {
+        const { error } = await supabase
+            .from('terminals')
+            .delete()
+            .eq('id', id);
+        
+        if (error) throw error;
+        
+        // Si borramos la terminal actual, limpiar localStorage
+        if (id === this.getTerminalId()) {
+            this.resetLocalTerminal();
+        }
+        return true;
+    },
     
     // Función para resetear la terminal local (útil para pruebas o reconfiguración)
     resetLocalTerminal() {

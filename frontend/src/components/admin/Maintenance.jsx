@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../../supabase';
 import { maintenanceService } from '../../services/maintenanceService';
+import { terminalService } from '../../services/terminalService';
 import './Maintenance.css';
 
 const Maintenance = () => {
@@ -16,6 +17,23 @@ const Maintenance = () => {
         resetTransactions: true,
         resetProfiles: false
     });
+
+    const [terminals, setTerminals] = useState([]);
+
+    const fetchTerminals = async () => {
+        try {
+            const data = await terminalService.getTerminals();
+            setTerminals(data);
+        } catch (error) {
+            console.error('Error fetching terminals:', error);
+        }
+    };
+
+    React.useEffect(() => {
+        if (isAuthorized) {
+            fetchTerminals();
+        }
+    }, [isAuthorized]);
 
     const handlePinSubmit = (e) => {
         e.preventDefault();
@@ -218,6 +236,68 @@ const Maintenance = () => {
                             <span className="material-icons-outlined">lock_reset</span>
                             {loading ? 'Cerrando...' : 'Forzar Cierre de Todas las Cajas'}
                         </button>
+                    </div>
+                </section>
+                <section className="maintenance-section">
+                    <h3>Dispositivos Registrados</h3>
+                    <p className="section-description">
+                        Lista de equipos autorizados. Elimina los que ya no se utilicen para liberar espacio.
+                    </p>
+                    <div className="terminals-list">
+                        {terminals.length === 0 ? (
+                            <p className="empty-msg">No hay terminales registradas.</p>
+                        ) : (
+                            <table className="maintenance-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Ubicación</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {terminals.map(t => (
+                                        <tr key={t.id}>
+                                            <td>
+                                                <div className="terminal-name-cell">
+                                                    <span className="material-icons-outlined">desktop_windows</span>
+                                                    <strong>{t.name}</strong>
+                                                </div>
+                                            </td>
+                                            <td>{t.location || 'Sin ubicación'}</td>
+                                            <td>
+                                                <span className={`status-badge ${t.is_main ? 'main' : 'secondary'}`}>
+                                                    {t.is_main ? 'Caja Principal' : 'Caja Secundaria'}
+                                                </span>
+                                            </td>
+                                            <td className="actions-cell">
+                                                <button 
+                                                    className="btn-icon delete"
+                                                    title="Eliminar Dispositivo"
+                                                    onClick={async () => {
+                                                        if (window.confirm(`¿Seguro que deseas eliminar la terminal "${t.name}"? El dispositivo perderá acceso inmediato.`)) {
+                                                            setLoading(true);
+                                                            try {
+                                                                await terminalService.deleteTerminal(t.id);
+                                                                await fetchTerminals();
+                                                                setMessage({ text: `Terminal "${t.name}" eliminada correctamente.`, type: 'success' });
+                                                            } catch (e) {
+                                                                setMessage({ text: 'Error: ' + e.message, type: 'error' });
+                                                            } finally {
+                                                                setLoading(false);
+                                                            }
+                                                        }
+                                                    }}
+                                                >
+                                                    <span className="material-icons-outlined">delete_forever</span>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
                     </div>
                 </section>
             </div>
