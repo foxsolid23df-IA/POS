@@ -1,6 +1,22 @@
 import { supabase } from '../supabase';
 
 export const staffService = {
+    // Verificar si un PIN ya existe para esta tienda
+    checkPinDuplicate: async (pin, excludeId = null) => {
+        let query = supabase
+            .from('staff')
+            .select('id')
+            .eq('pin', pin);
+        
+        if (excludeId) {
+            query = query.neq('id', excludeId);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        return data.length > 0;
+    },
+
     // Obtener todos los empleados de la tienda actual
     getStaff: async () => {
         const { data, error } = await supabase

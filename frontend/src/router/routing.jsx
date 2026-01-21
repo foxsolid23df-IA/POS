@@ -31,12 +31,23 @@ const PrivateLayout = ({ children }) => {
 
     const [isTerminalConfigured, setIsTerminalConfigured] = useState(!!terminalService.getTerminalId());
 
-    // Verificar sesión de caja cuando el usuario está desbloqueado
+    // Validar existencia de terminal y sesión de caja
     useEffect(() => {
-        if (user && activeStaff && !isLocked) {
+        const validateTerminal = async () => {
+            if (isTerminalConfigured) {
+                const isValid = await terminalService.validateTerminalExistence();
+                if (!isValid) {
+                    setIsTerminalConfigured(false);
+                }
+            }
+        };
+
+        validateTerminal();
+
+        if (user && activeStaff && !isLocked && isTerminalConfigured) {
             checkCashSession();
         }
-    }, [user, activeStaff, isLocked]);
+    }, [user, activeStaff, isLocked, isTerminalConfigured]);
 
     if (loading) return <div className="loading-screen">Cargando...</div>;
     if (!user) return <Navigate to="/login" />;

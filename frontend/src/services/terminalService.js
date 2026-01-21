@@ -72,9 +72,6 @@ export const terminalService = {
         localStorage.removeItem(TERMINAL_NAME_KEY);
     },
 
-    /**
-     * Verifica si la terminal actual es la caja principal
-     */
     async checkIfMainTerminal() {
         const terminalId = this.getTerminalId();
         if (!terminalId) return false;
@@ -91,5 +88,30 @@ export const terminalService = {
         }
 
         return data?.is_main || false;
+    },
+
+    /**
+     * Valida si el ID de terminal en localStorage realmente existe en la DB
+     */
+    async validateTerminalExistence() {
+        const terminalId = this.getTerminalId();
+        if (!terminalId) return false;
+
+        const { data, error } = await supabase
+            .from('terminals')
+            .select('id')
+            .eq('id', terminalId)
+            .single();
+
+        if (error || !data) {
+            if (error && error.code !== 'PGRST116') {
+                console.error('Error validando terminal:', error);
+            }
+            // Si no existe o hay error, limpiar para forzar re-configuración
+            this.resetLocalTerminal();
+            return false;
+        }
+
+        return true;
     }
 };

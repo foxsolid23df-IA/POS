@@ -70,6 +70,18 @@ export const UserManager = () => {
         }
 
         try {
+            // Validar PIN duplicado
+            const isDuplicate = await staffService.checkPinDuplicate(formData.pin, editingStaff?.id);
+            
+            if (isDuplicate) {
+                Swal.fire({
+                    title: 'PIN Duplicado',
+                    text: 'Este PIN ya está siendo usado por otro empleado. Por razones de seguridad, cada empleado debe tener un PIN único.',
+                    icon: 'error'
+                });
+                return;
+            }
+
             if (editingStaff) {
                 await staffService.updateStaff(editingStaff.id, formData);
                 Swal.fire('Actualizado', 'Empleado actualizado correctamente', 'success');
@@ -81,7 +93,22 @@ export const UserManager = () => {
             loadStaff();
         } catch (error) {
             console.error('Error al guardar:', error);
-            Swal.fire('Error', 'Error al guardar el empleado', 'error');
+            
+            // Manejar específicamente el error de PIN duplicado (código 23505 de Postgres)
+            if (error.code === '23505' || error.message?.includes('duplicate key')) {
+                Swal.fire({
+                    title: '¡PIN ya en uso!',
+                    html: `El PIN <strong>${formData.pin}</strong> ya está registrado para otro empleado.<br><br>Por favor, asigna un código diferente para mantener la seguridad.`,
+                    icon: 'warning',
+                    confirmButtonColor: '#3085d6'
+                });
+            } else {
+                Swal.fire({
+                    title: 'Error de Guardado',
+                    text: 'No pudimos registrar los cambios: ' + (error.message || 'Error de conexión'),
+                    icon: 'error'
+                });
+            }
         }
     };
 
