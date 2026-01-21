@@ -97,21 +97,31 @@ export const terminalService = {
         const terminalId = this.getTerminalId();
         if (!terminalId) return false;
 
-        const { data, error } = await supabase
-            .from('terminals')
-            .select('id')
-            .eq('id', terminalId)
-            .single();
+        try {
+            const { data, error } = await supabase
+                .from('terminals')
+                .select('id')
+                .eq('id', terminalId)
+                .single();
 
-        if (error || !data) {
-            if (error && error.code !== 'PGRST116') {
-                console.error('Error validando terminal:', error);
+            // Si llegamos aquí y no hay error, la terminal es válida
+            if (!error && data) return true;
+
+            // SI HAY ERROR:
+            // Caso A: El error es 'PGRST116' (No encontrado). La terminal fue borrada de la DB.
+            if (error && error.code === 'PGRST116') {
+                console.warn('La terminal guardada ya no existe en la base de datos. Reseteando...');
+                this.resetLocalTerminal();
+                return false;
             }
-            // Si no existe o hay error, limpiar para forzar re-configuración
-            this.resetLocalTerminal();
-            return false;
-        }
 
-        return true;
+            // Caso B: Otros errores (Internet, timeout, etc). NO borrar configuración,
+            // simplemente asumir que es válida por ahora para no interrumpir al usuario.
+            console.error('Error de red validando terminal, manteniendo config local:', error);
+            return true;
+        } catch (err) {
+            console.error('Error crítico validando terminal:', err);
+            return true; // Ante la duda, no borrar
+        }
     }
 };

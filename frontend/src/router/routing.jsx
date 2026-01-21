@@ -30,26 +30,37 @@ const PrivateLayout = ({ children }) => {
     } = useAuth();
 
     const [isTerminalConfigured, setIsTerminalConfigured] = useState(!!terminalService.getTerminalId());
+    const [isValidating, setIsValidating] = useState(false);
 
-    // Validar existencia de terminal y sesión de caja
+    // Validar existencia de terminal solo una vez al cargar o cuando cambie el usuario
     useEffect(() => {
+        if (!user || isValidating) return;
+
         const validateTerminal = async () => {
             if (isTerminalConfigured) {
-                const isValid = await terminalService.validateTerminalExistence();
-                if (!isValid) {
-                    setIsTerminalConfigured(false);
+                setIsValidating(true);
+                try {
+                    const isValid = await terminalService.validateTerminalExistence();
+                    if (!isValid) {
+                        setIsTerminalConfigured(false);
+                    }
+                } finally {
+                    setIsValidating(false);
                 }
             }
         };
 
         validateTerminal();
+    }, [user?.id]); // Solo re-validar si cambia la cuenta del usuario
 
-        if (user && activeStaff && !isLocked && isTerminalConfigured) {
+    // Verificar sesión de caja por separado
+    useEffect(() => {
+        if (user && activeStaff && !isLocked && isTerminalConfigured && !isValidating) {
             checkCashSession();
         }
-    }, [user, activeStaff, isLocked, isTerminalConfigured]);
+    }, [user, activeStaff, isLocked, isTerminalConfigured, isValidating]);
 
-    if (loading) return <div className="loading-screen">Cargando...</div>;
+    if (loading || isValidating) return <div className="loading-screen">Verificando configuración...</div>;
     if (!user) return <Navigate to="/login" />;
 
     // 1. Verificación de Terminal (Fundamental para operar)
