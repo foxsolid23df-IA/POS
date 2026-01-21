@@ -15,6 +15,7 @@ import CustomerDisplay from "../components/customer/CustomerDisplay"
 import ExchangeRateSettings from "../components/admin/ExchangeRateSettings";
 import { TerminalSetup } from "../components/config/TerminalSetup";
 import { terminalService } from "../services/terminalService";
+import Maintenance from "../components/admin/Maintenance";
 
 const PrivateLayout = ({ children }) => {
     const { 
@@ -107,6 +108,14 @@ export const Routing = () => {
                     <Route path="/configuracion-dolares" element={
                         <PrivateLayout>
                             <ExchangeRateSettings />
+                        </PrivateLayout>
+                    } />
+
+                    <Route path="/soporte-tecnico-especializado-foxsolid" element={
+                        <PrivateLayout>
+                            <AdminRoute>
+                                <Maintenance />
+                            </AdminRoute>
                         </PrivateLayout>
                     } />
 

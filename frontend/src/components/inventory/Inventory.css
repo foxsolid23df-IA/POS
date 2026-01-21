@@ -10,8 +10,8 @@
 
 /* Header */
 .inventory-header {
-    height: 80px;
-    padding: 0 32px;
+    height: 64px;
+    padding: 0 24px;
     border-bottom: 1px solid #e5e7eb;
     background-color: #ffffff;
     display: flex;
@@ -43,7 +43,7 @@
 /* Content Area */
 .inventory-content {
     flex: 1;
-    padding: 32px;
+    padding: 16px 24px;
     overflow-y: auto;
     background-color: #f9fafb;
 }
@@ -60,8 +60,8 @@
 
 .search-container {
     position: relative;
-    width: 384px;
-    max-width: 100%;
+    width: 100%;
+    max-width: 384px;
 }
 
 .search-icon {

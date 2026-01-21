@@ -1,0 +1,352 @@
+.maintenance-container {
+    padding: 1rem;
+    max-width: 900px;
+    margin: 0 auto;
+    color: #333;
+}
+
+/* Pantalla de Bloqueo Maestros */
+.maintenance-lock-screen {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.lock-card {
+    background: white;
+    padding: 3rem;
+    border-radius: 20px;
+    text-align: center;
+    width: 100%;
+    max-width: 450px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    color: #1e293b; /* Color de texto base forzado */
+}
+
+/* Soporte para Modo Oscuro en la tarjeta de bloqueo */
+html.dark .lock-card {
+    background: #1e293b;
+    color: #f8fafc;
+}
+
+.lock-icon {
+    font-size: 4rem;
+    color: #3b82f6;
+    margin-bottom: 1.5rem;
+}
+
+.lock-card h2 {
+    color: inherit; /* Seguir el color del padre */
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+
+.lock-card p {
+    color: #64748b;
+    margin-bottom: 2rem;
+}
+
+html.dark .lock-card p {
+    color: #94a3b8;
+}
+
+.lock-card input {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 1.5rem;
+    text-align: center;
+    letter-spacing: 0.5rem;
+    margin-bottom: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+    background: #f8fafc;
+    color: #1e293b; /* Texto oscuro para el input */
+}
+
+html.dark .lock-card input {
+    background: #0f172a;
+    border-color: #334155;
+    color: #f8fafc; /* Texto claro para el input en modo oscuro */
+}
+
+.lock-card input:focus {
+    border-color: #3b82f6;
+}
+
+.btn-auth {
+    width: 100%;
+    padding: 1rem;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-auth:hover {
+    background: #2563eb;
+}
+
+.error-text {
+    color: #ef4444;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+.maintenance-header {
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.15rem;
+}
+
+.maintenance-header h1 {
+    font-size: 1.25rem;
+    color: #2c3e50;
+    margin-bottom: 0;
+}
+
+.maintenance-header p {
+    font-size: 0.85rem;
+}
+
+.maintenance-card.warning {
+    display: flex;
+    align-items: center;
+    background-color: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+}
+
+.warning-icon {
+    font-size: 1.5rem;
+    margin-right: 1rem;
+}
+
+.warning-content h2 {
+    font-size: 0.95rem;
+    color: #856404;
+    margin-bottom: 0;
+    font-weight: bold;
+}
+
+.warning-content p {
+    font-size: 0.8rem;
+    margin: 0;
+}
+
+.maintenance-content {
+    display: grid;
+    grid-template-columns: 1fr;
+}
+
+.reset-section {
+    background: white;
+    padding: 1.25rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.options-grid {
+    margin: 0.75rem 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.option-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 0.9rem;
+}
+
+.option-item:hover {
+    background: #f8f9fa;
+}
+
+.option-item input {
+    margin-top: 5px;
+    width: 20px;
+    height: 20px;
+}
+
+.option-item span strong {
+    display: block;
+    margin-bottom: 0.1rem;
+    font-size: 0.85rem;
+}
+
+.option-item span small {
+    color: #666;
+    font-size: 0.75rem;
+    line-height: 1.1;
+    display: block;
+}
+
+.confirmation-box {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #eee;
+}
+
+.confirmation-box p {
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+}
+
+.confirmation-box input {
+    width: 100%;
+    padding: 0.5rem;
+    margin: 0.5rem 0;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    text-align: center;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.btn-reset {
+    width: 100%;
+    padding: 0.65rem;
+    border: none;
+    border-radius: 6px;
+    background: #ccc;
+    color: white;
+    font-weight: bold;
+    font-size: 0.95rem;
+    cursor: not-allowed;
+    transition: all 0.3s;
+}
+
+.btn-reset.active {
+    background: #dc3545;
+    cursor: pointer;
+}
+
+.btn-reset.active:hover {
+    background: #c82333;
+}
+
+.info-section {
+    background: #e9ecef;
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-top: 0.5rem;
+}
+
+.info-section h3 {
+    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+}
+
+.info-section p {
+    font-size: 0.8rem;
+    margin: 0;
+}
+
+.status-message {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.status-message.success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-message.error {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.reset-section.nuclear {
+    border: 2px solid #ef4444;
+    background: #fff5f5;
+    margin-top: 0.5rem;
+    padding: 0.75rem 1rem;
+}
+
+.reset-section.nuclear h3 {
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+html.dark .reset-section.nuclear {
+    background: #450a0a;
+    border-color: #f87171;
+}
+
+.nuclear-warning {
+    color: #991b1b;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+}
+
+html.dark .nuclear-warning {
+    color: #fecaca;
+}
+
+.btn-nuclear {
+    width: 100%;
+    padding: 0.65rem;
+    background: #991b1b;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    cursor: not-allowed;
+    opacity: 0.5;
+    transition: all 0.3s;
+    letter-spacing: 1px;
+}
+
+.btn-nuclear.active {
+    background: #ef4444;
+    opacity: 1;
+    cursor: pointer;
+    box-shadow: 0 4px 14px 0 rgba(239, 68, 68, 0.39);
+}
+
+.btn-nuclear.active:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+}
+
+.nuclear-input {
+    border: 2px solid #fca5a5 !important;
+    background: white !important;
+    color: #991b1b !important;
+}
+
+html.dark .nuclear-input {
+    background: #0f172a !important;
+    color: #f87171 !important;
+}
+
+@media (max-width: 768px) {
+    .maintenance-content {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,6 +1,6 @@
 :root {
-    --sidebar-width: 260px;
-    --header-height: 60px;
+    --sidebar-width: 250px;
+    --header-height: 56px;
     --bg-primary: #0f172a;
     --bg-secondary: #1e293b;
     --accent: #10b981;
@@ -239,7 +239,7 @@ body {
 /* Desktop grande (más de 1280px) */
 @media (min-width: 1281px) {
     :root {
-        --sidebar-width: 280px;
+        --sidebar-width: 260px;
     }
 }
 
