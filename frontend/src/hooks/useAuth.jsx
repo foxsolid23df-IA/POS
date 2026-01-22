@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { staffService } from '../services/staffService';
 import { cashSessionService } from '../services/cashSessionService';
+import { activeCartService } from '../services/activeCartService';
 
 const AuthContext = createContext();
 
@@ -128,11 +129,15 @@ export const AuthProvider = ({ children }) => {
     const logout = async () => {
         await supabase.auth.signOut();
         setProfile(null);
-        setUser(null);
         setSession(null);
         setActiveStaff(null);
         setCashSession(null);
         setNeedsCashFund(false);
+        try {
+            await activeCartService.clearCart('closed');
+        } catch (e) {
+            console.error('Error clearing cart on logout:', e);
+        }
     };
 
     // Login de empleado por PIN
@@ -196,6 +201,11 @@ export const AuthProvider = ({ children }) => {
         await cashSessionService.closeSession(cashSession.id);
         setCashSession(null);
         setNeedsCashFund(true);
+        try {
+            await activeCartService.clearCart('closed');
+        } catch (e) {
+            console.error('Error clearing cart on session close:', e);
+        }
     };
 
     // Verificar permisos basados en el empleado ACTIVO

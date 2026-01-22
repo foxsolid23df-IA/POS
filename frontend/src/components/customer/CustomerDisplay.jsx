@@ -76,7 +76,7 @@ const CustomerDisplay = () => {
 
     const cartData = (cart?.cart_data && Array.isArray(cart.cart_data)) ? cart.cart_data : [];
     const currentStatus = cart?.status || 'active';
-    const isEmpty = !cart || (cartData.length === 0 && (currentStatus === 'active' || currentStatus === 'completed'));
+    const isEmpty = !cart || (cartData.length === 0 && (currentStatus === 'active' || currentStatus === 'completed' || currentStatus === 'closed'));
 
     // Función para refresco manual
     const handleManualRefresh = async () => {

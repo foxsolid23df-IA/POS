@@ -163,6 +163,12 @@ export const Sales = () => {
     
     // SINCRONIZACIÓN CON PANTALLA DEL CLIENTE (Debounced)
     useEffect(() => {
+        // Sincronización inicial inmediata
+        if (user && !mostrarModalPago) {
+            activeCartService.updateCart(carrito, total, cashSession?.id)
+                .catch(err => console.error('Error sincronización inicial:', err));
+        }
+
         const timeoutId = setTimeout(async () => {
             if (user && !mostrarModalPago) {
                 try {
