@@ -54,12 +54,55 @@ Sistema de Punto de Venta (POS) profesional desarrollado con React y Supabase, d
 - ✅ **Módulo de Auditoría**: Historial detallado de transacciones para supervisión.
 - ✅ **Arqueo Ciego**: Comparación de efectivo esperado vs contado para evitar discrepancias.
 
-### Seguridad
+### Seguridad y Privacidad
 
-- ✅ Autenticación con Supabase Auth
-- ✅ Row Level Security (RLS) en todas las tablas
-- ✅ Aislamiento de datos por tienda (multi-tenant)
-- ✅ Verificación de contraseña para acceso de propietario
+- ✅ **Row Level Security (RLS)**: Protección de datos a nivel de base de datos en Supabase.
+- ✅ **Aislamiento Multi-tienda**: Arquitectura SaaS para gestionar múltiples clientes de forma aislada.
+- ✅ **Repositorio Privado**: Este código es propiedad intelectual y está diseñado para despliegues privados.
+
+---
+
+## 🚀 Guía de Inicio Profesional
+
+### 1. Requisitos del Sistema
+
+- **Node.js**: v18.0.0 o superior.
+- **Base de Datos**: Instancia de Supabase configurada.
+- **Navegador**: Chrome/Edge (recomendado para soporte de escáner HID).
+
+### 2. Estructura del Ecosistema
+
+El proyecto está dividido en tres áreas clave:
+
+- `frontend/`: Aplicación SPA construida con React 19 + Vite.
+- `backend/`: Microservicio para gestión de sesiones locales y lógica offline.
+- `supabase/`: Definiciones de esquemas para la nube.
+
+---
+
+## 🛠 Configuración Rápida (Quickstart)
+
+1. **Clonación Segura**:
+
+   ```bash
+   git clone https://github.com/foxsolid23df-IA/POS.git
+   cd POS
+   ```
+
+2. **Despliegue de Frontend**:
+
+   ```bash
+   cd frontend
+   npm install
+   npm run build
+   ```
+
+3. **Variables Críticas**:
+   Crea un archivo `.env` en `frontend/` con tus credenciales:
+   ```env
+   VITE_SUPABASE_URL=tu_url_de_supabase
+   VITE_SUPABASE_ANON_KEY=tu_llave_anonima
+   ```
 
 ---
 

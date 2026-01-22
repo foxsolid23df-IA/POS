@@ -1,5 +1,5 @@
 {
-  "name": "sistema-ventas",
+  "name": "pos-frontend",
   "homepage": "https://ginorobia.github.io/sistema-ventas",
   "scripts": {
     "dev": "vite",
