@@ -17,31 +17,50 @@ const CustomerDisplay = () => {
     useEffect(() => {
         if (!userId) return;
 
-        // Carga inicial
-        const fetchInitialCart = async () => {
+        // Función de carga reutilizable
+        const fetchCart = async () => {
             try {
                 const data = await activeCartService.getActiveCart(userId);
                 if (data) {
+                    console.log('Datos del carrito cargados con éxito');
                     setCart(data);
+                    return true;
                 }
+                return false;
             } catch (error) {
                 console.error('Error fetching initial cart:', error);
+                return false;
             }
         };
 
-        fetchInitialCart();
+        // Carga inicial inmediata
+        fetchCart();
+
+        // Reintento automático cada 3 segundos si no hay datos aún
+        const retryInterval = setInterval(async () => {
+            if (!cart) {
+                console.log('Intentando recarga automática...');
+                const success = await fetchCart();
+                if (success) clearInterval(retryInterval);
+            } else {
+                clearInterval(retryInterval);
+            }
+        }, 3000);
 
         // Suscripción en tiempo real
         const subscription = activeCartService.subscribeToCart(userId, (newCart) => {
             if (newCart) {
+                console.log('Actualización recibida por Realtime');
                 setCart(newCart);
+                clearInterval(retryInterval);
             }
         });
 
         return () => {
+            clearInterval(retryInterval);
             if (subscription) subscription.unsubscribe();
         };
-    }, [userId]);
+    }, [userId, !!cart]); // Se reinicia si cart cambia a null (reinicio manual)
 
     if (!userId) {
         return (
@@ -59,6 +78,12 @@ const CustomerDisplay = () => {
     const currentStatus = cart?.status || 'active';
     const isEmpty = !cart || (cartData.length === 0 && (currentStatus === 'active' || currentStatus === 'completed'));
 
+    // Función para refresco manual
+    const handleManualRefresh = async () => {
+        const data = await activeCartService.getActiveCart(userId);
+        if (data) setCart(data);
+    };
+
     // Si está vacío y no es una venta recién completada (que queremos mostrar a 0), mostrar bienvenida
     if (isEmpty && currentStatus !== 'completed') {
         return (
@@ -71,7 +96,17 @@ const CustomerDisplay = () => {
                     Estamos listos para atenderle. <br />
                     Sus productos aparecerán aquí conforme sean escaneados.
                 </p>
-                <div className="footer-clock" style={{marginTop: '4rem', opacity: 0.5}}>
+                
+                {/* Botón de refresco manual discreto */}
+                <button 
+                    onClick={handleManualRefresh}
+                    className="manual-refresh-btn"
+                >
+                    <span className="material-icons-outlined">refresh</span>
+                    ¿No ves tu compra? Clic aquí para reintentar
+                </button>
+
+                <div className="footer-clock" style={{marginTop: '2rem', opacity: 0.5}}>
                     {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
             </div>
