@@ -1,5 +1,5 @@
 // ===== COMPONENTE PUNTO DE VENTA OPTIMIZADO =====
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import TicketVenta from './TicketVenta'
 import CameraScanner from '../common/CameraScanner'
 import { formatearDinero, validarCodigoBarras } from '../../utils'
@@ -44,9 +44,13 @@ export const Sales = () => {
     const [metodoPago, setMetodoPago] = useState('efectivo') // 'efectivo', 'tarjeta', 'transferencia', 'dolares'
     const [montoRecibido, setMontoRecibido] = useState('')
     const [tipoCambio, setTipoCambio] = useState(null)
+    
+    // ID de transacción estable para el modal
+    const transactionId = useMemo(() => Math.floor(Math.random() * 90000) + 10000, [mostrarModalPago]);
 
     // ESTADOS PARA BÚSQUEDA POR NOMBRE
     const [productos, setProductos] = useState([])
+    const [productosLoaded, setProductosLoaded] = useState(false)
     const [sugerencias, setSugerencias] = useState([])
     const [mostrarSugerencias, setMostrarSugerencias] = useState(false)
 
@@ -81,22 +85,36 @@ export const Sales = () => {
 
     // CARGAR PRODUCTOS Y TIPO DE CAMBIO
     useEffect(() => {
+        let isMounted = true;
+        setProductosLoaded(false); // Reset al montar
+        
         const cargarDatos = async () => {
             try {
                 const [prods, rate] = await Promise.all([
                     productService.getProducts(),
                     exchangeRateService.getActiveRate()
                 ])
-                setProductos(prods)
                 
-                if (rate && rate.is_active) {
-                    setTipoCambio(parseFloat(rate.rate))
+                if (isMounted) {
+                    setProductos(prods || [])
+                    setProductosLoaded(true)
+                    
+                    if (rate && rate.is_active) {
+                        setTipoCambio(parseFloat(rate.rate))
+                    }
                 }
             } catch (error) {
                 console.error('Error cargando datos iniciales:', error)
+                if (isMounted) {
+                    setProductosLoaded(true) // Marcar como cargado aunque haya error
+                }
             }
         }
         cargarDatos()
+        
+        return () => {
+            isMounted = false;
+        };
     }, [])
 
     // SINCRONIZACIÓN EN TIEMPO REAL (MULTICAJA)
@@ -125,10 +143,15 @@ export const Sales = () => {
 
     // BÚSQUEDA POR NOMBRE - Filtrar sugerencias cuando cambia el texto
     useEffect(() => {
+        // Solo buscar si los productos ya están cargados
+        if (!productosLoaded) {
+            return;
+        }
+        
         if (codigoEscaneado.length >= 2 && !/^\d+$/.test(codigoEscaneado)) {
             // Si tiene 2+ caracteres y NO es solo números, buscar por nombre
             const resultados = productos.filter(p =>
-                p.name.toLowerCase().includes(codigoEscaneado.toLowerCase())
+                p.name && p.name.toLowerCase().includes(codigoEscaneado.toLowerCase())
             ).slice(0, 5) // Máximo 5 sugerencias
             setSugerencias(resultados)
             setMostrarSugerencias(resultados.length > 0)
@@ -136,7 +159,7 @@ export const Sales = () => {
             setSugerencias([])
             setMostrarSugerencias(false)
         }
-    }, [codigoEscaneado, productos])
+    }, [codigoEscaneado, productos, productosLoaded])
     
     // SINCRONIZACIÓN CON PANTALLA DEL CLIENTE
     useEffect(() => {
@@ -395,7 +418,7 @@ export const Sales = () => {
             
             // Actualizar activeCartService
             try {
-                 await activeCartService.updateCart({ items: [], total: 0, lastUpdate: Date.now() });
+                 await activeCartService.clearCart('completed');
             } catch(e) { console.error(e) }
 
             setVentaCompletada({
@@ -793,17 +816,18 @@ export const Sales = () => {
                         <div className="search-input-wrapper">
                             <div className="search-input-container">
                                 <div className="search-icon-wrapper">
-                                    <span className="material-symbols-outlined">search</span>
+                                    <span className="material-symbols-outlined">{productosLoaded ? 'search' : 'sync'}</span>
                                 </div>
                                 <input
                                     ref={campoCodigoRef}
                                     type="text"
-                                    placeholder="Buscar por nombre o código de..."
+                                    placeholder={productosLoaded ? "Buscar por nombre o código de barras..." : "Cargando productos..."}
                                     value={codigoEscaneado}
                                     onChange={manejarCambioCodigo}
                                     onKeyDown={manejarEnter}
                                     onBlur={() => setTimeout(() => setMostrarSugerencias(false), 200)}
                                     className="barcode-input-modern"
+                                    disabled={!productosLoaded}
                                 />
                             </div>
                             <button
@@ -980,7 +1004,7 @@ export const Sales = () => {
                                         <span className="material-symbols-outlined">receipt_long</span>
                                         Resumen
                                     </h3>
-                                    <span className="payment-transaction-id">#{Math.floor(Math.random() * 90000) + 10000}</span>
+                                    <span className="payment-transaction-id">#{transactionId}</span>
                                 </div>
                                 
                                 <div className="payment-items-list">

@@ -160,7 +160,7 @@ export const Historial = () => {
     }, [dateFilter.fechaDesde, dateFilter.fechaHasta, ventas, filtrarPorFecha])
 
     return (
-        <div className="flex-1 flex flex-col min-w-0 bg-background-light dark:bg-background-dark min-h-screen">
+        <div className="flex-1 flex flex-col min-w-0 bg-slate-50 dark:bg-slate-900 min-h-screen">
             {/* Header */}
             <header className="p-8 pb-4">
                 <div className="max-w-5xl mx-auto w-full flex justify-between items-start">
@@ -240,8 +240,7 @@ export const Historial = () => {
                     {/* Table Header */}
                     <div className="flex justify-between items-center px-6 py-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">
                         <div className="flex-1">Fecha y Hora</div>
-                        <div className="flex-1 text-center">Resumen de Venta</div>
-                        <div className="w-32"></div>
+                        <div className="text-right p-2 mr-32">Resumen de Venta</div>
                     </div>
 
                     {/* Sales List */}
@@ -255,24 +254,22 @@ export const Historial = () => {
                             <p className="text-slate-400 font-medium">No se encontraron ventas en este periodo</p>
                         </div>
                     ) : (
-                        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-50 dark:divide-slate-800 shadow-sm overflow-hidden">
+                        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-50 dark:divide-slate-800 shadow-sm overflow-hidden historial-scroll-container">
                             {calcularVentasPaginadas().map((venta) => (
-                                <div key={venta.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors px-6 py-5 flex items-center group">
+                                <div key={venta.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors px-6 py-5 flex justify-between items-center group">
                                     <div className="flex-1">
                                         <p className="text-[15px] font-bold text-primary dark:text-white">
                                             {formatearFechaHora(venta.createdAt)}
                                         </p>
                                     </div>
-                                    <div className="flex-1 text-center">
+                                    <div className="flex items-center gap-6">
                                         <p className="text-[15px] font-medium text-slate-600 dark:text-slate-300">
                                             {contarProductos(venta.items)} {contarProductos(venta.items) === 1 ? 'producto' : 'productos'} 
                                             <span className="mx-3 text-slate-300 dark:text-slate-700">|</span> 
                                             <span className="text-primary dark:text-white font-black">{formatearDinero(venta.total)}</span>
                                         </p>
-                                    </div>
-                                    <div className="w-32 flex justify-end">
                                         <button 
-                                            className="bg-primary dark:bg-white text-white dark:text-primary px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full hover:opacity-80 transition-all transform active:scale-95"
+                                            className="bg-slate-900 dark:bg-white text-white dark:text-primary px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full hover:opacity-80 transition-all transform active:scale-95"
                                             onClick={() => verDetalles(venta)}
                                         >
                                             Ver Detalles

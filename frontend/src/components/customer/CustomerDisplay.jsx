@@ -58,7 +58,8 @@ const CustomerDisplay = () => {
         );
     }
 
-    const isEmpty = !cart || (cart.cart_data.length === 0 && (status === 'active' || status === 'completed'));
+    const cartData = (cart?.cart_data && Array.isArray(cart.cart_data)) ? cart.cart_data : [];
+    const isEmpty = !cart || (cartData.length === 0 && (status === 'active' || status === 'completed'));
 
     if (isEmpty && status !== 'completed') {
         return (
@@ -90,7 +91,7 @@ const CustomerDisplay = () => {
                         </div>
                     </div>
                     <div className="items-list">
-                        {cart?.cart_data.map((item, index) => (
+                        {cartData.map((item, index) => (
                             <div key={`${item.id}-${index}`} className="item-row item-animate">
                                 <div className="item-info">
                                     <span className="item-name">{item.name}</span>

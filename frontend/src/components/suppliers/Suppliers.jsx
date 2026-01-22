@@ -8,7 +8,7 @@ const Suppliers = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState("Todos");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
   const totalSuppliers = 124;
 
   // Modal state
@@ -31,8 +31,8 @@ const Suppliers = () => {
   const [newConditionInput, setNewConditionInput] = useState("");
   const [showNewConditionInput, setShowNewConditionInput] = useState(false);
 
-  // Datos de ejemplo de proveedores
-  const suppliers = [
+  // Datos de ejemplo de proveedores (Generados dinámicamente para pruebas)
+  const initialSuppliers = [
     {
       id: "PROV-2401",
       name: "Distribuidora Central",
@@ -104,6 +104,29 @@ const Suppliers = () => {
       ultimaCompra: "05/01/2026",
     },
   ];
+
+  const generateMoreSuppliers = () => {
+    const more = [];
+    for (let i = 6; i <= 50; i++) {
+        more.push({
+            id: `PROV-${2400 + i}`,
+            name: `Proveedor ${i}`,
+            initials: `P${i}`,
+            email: `proveedor${i}@ejemplo.com`,
+            phone: `+52 555 000 ${i.toString().padStart(4, '0')}`,
+            conditions: i % 3 === 0 ? "Net 30" : "Contado",
+            conditionsType: i % 3 === 0 ? "blue" : "green",
+            balance: i % 2 === 0 ? `$${(i * 100).toFixed(2)}` : "$0.00",
+            status: i % 2 === 0 ? "Vence pronto" : "Al corriente",
+            statusType: i % 2 === 0 ? "warning" : "success",
+            productos: `${10 + i} artículos`,
+            ultimaCompra: "01/02/2026"
+        });
+    }
+    return [...initialSuppliers, ...more];
+  };
+
+  const [suppliers] = useState(generateMoreSuppliers());
 
   // Filtrar proveedores según búsqueda y filtros
   const filteredSuppliers = suppliers.filter((supplier) => {
@@ -316,7 +339,7 @@ const Suppliers = () => {
                 document.documentElement.classList.toggle('dark');
                 localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
               }}
-              className="hidden md:flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm hover:shadow-md transition-all text-slate-600 dark:text-slate-300 font-bold text-xs"
+              className="suppliers-btn-mode"
             >
               <span className="material-icons-outlined text-[18px]">dark_mode</span>
               <span>Modo Oscuro</span>
@@ -549,31 +572,15 @@ const Suppliers = () => {
               >
                 <span className="material-symbols-outlined">chevron_left</span>
               </button>
-              <button
-                className={`suppliers-pagination-btn ${currentPage === 1 ? "active" : ""}`}
-                onClick={() => setCurrentPage(1)}
-              >
-                1
-              </button>
-              <button
-                className={`suppliers-pagination-btn ${currentPage === 2 ? "active" : ""}`}
-                onClick={() => setCurrentPage(2)}
-              >
-                2
-              </button>
-              <button
-                className={`suppliers-pagination-btn ${currentPage === 3 ? "active" : ""}`}
-                onClick={() => setCurrentPage(3)}
-              >
-                3
-              </button>
-              <span className="suppliers-pagination-dots">...</span>
-              <button
-                className={`suppliers-pagination-btn ${currentPage === 12 ? "active" : ""}`}
-                onClick={() => setCurrentPage(12)}
-              >
-                12
-              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  className={`suppliers-pagination-btn ${currentPage === page ? "active" : ""}`}
+                  onClick={() => setCurrentPage(page)}
+                >
+                  {page}
+                </button>
+              ))}
               <button
                 className="suppliers-pagination-btn"
                 onClick={() =>
@@ -593,194 +600,193 @@ const Suppliers = () => {
         isOpen={isNewSupplierModalOpen}
         onClose={handleCloseModal}
         raw={true}
-        className="w-full max-w-2xl px-4"
       >
-        <div className="bg-white dark:bg-[#111] border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/5">
-            <h1 className="text-lg font-bold text-gray-900 dark:text-white">
-              Nuevo Proveedor
-            </h1>
-            <button
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-              onClick={handleCloseModal}
-            >
-              <span className="material-symbols-outlined">close</span>
-            </button>
-          </div>
-
-          <div className="p-6 space-y-6 text-left">
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold tracking-widest text-gray-500 dark:text-gray-400 uppercase">
-                Proveedor
-              </label>
-              <input
-                className="w-full px-3 py-2 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none text-sm dark:text-white transition-all font-display"
-                placeholder="Nombre del proveedor"
-                type="text"
-                value={newSupplierForm.name}
-                onChange={(e) => handleFormChange("name", e.target.value)}
-              />
+        <div className="supplier-modal-container">
+          <div className="supplier-modal-content">
+            <div className="supplier-modal-header">
+              <h1 className="supplier-modal-title">
+                Nuevo Proveedor
+              </h1>
+              <button
+                className="supplier-modal-close"
+                onClick={handleCloseModal}
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold tracking-widest text-gray-500 dark:text-gray-400 uppercase">
-                Contacto
-              </label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input
-                  className="w-full px-3 py-2 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none text-sm dark:text-white transition-all font-display"
-                  placeholder="Email del contacto"
-                  type="email"
-                  value={newSupplierForm.email}
-                  onChange={(e) => handleFormChange("email", e.target.value)}
-                />
-                <input
-                  className="w-full px-3 py-2 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none text-sm dark:text-white transition-all font-display"
-                  placeholder="Teléfono"
-                  type="tel"
-                  value={newSupplierForm.phone}
-                  onChange={(e) => handleFormChange("phone", e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold tracking-widest text-gray-500 dark:text-gray-400 uppercase">
-                  Condiciones
+            <div className="supplier-modal-body">
+              <div className="supplier-input-group">
+                <label className="supplier-label">
+                  Proveedor
                 </label>
-                <div className="relative">
-                  <select
-                    className="w-full px-3 py-2 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md appearance-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none text-sm dark:text-white transition-all font-display"
-                    value={newSupplierForm.conditions}
-                    onChange={(e) =>
-                      handleFormChange("conditions", e.target.value)
-                    }
-                  >
-                    {availableConditions.map((condition) => (
-                      <option key={condition} value={condition}>
-                        {condition}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                    <span className="material-symbols-outlined text-gray-400">
-                      expand_more
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-4 bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-lg space-y-4">
-                <div className="flex flex-wrap gap-2">
-                  {availableConditions.map((condition) => (
-                    <div
-                      key={condition}
-                      className="inline-flex items-center px-2 py-1 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md group"
-                    >
-                      <span className="text-xs text-gray-600 dark:text-gray-300 font-display">
-                        {condition}
-                      </span>
-                      <button
-                        className="ml-2 text-gray-400 hover:text-red-500 transition-colors"
-                        onClick={() => handleDeleteCondition(condition)}
-                      >
-                        <span
-                          className="material-symbols-outlined"
-                          style={{ fontSize: "14px" }}
-                        >
-                          close
-                        </span>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                {!showNewConditionInput ? (
-                  <button
-                    className="w-full flex items-center justify-center py-3 border-2 border-dashed border-gray-200 dark:border-white/10 rounded-lg text-gray-400 hover:border-gray-400 dark:hover:border-white/30 hover:text-gray-600 dark:hover:text-gray-200 transition-all group"
-                    onClick={() => setShowNewConditionInput(true)}
-                  >
-                    <span className="material-symbols-outlined mr-2">add</span>
-                    <span className="text-sm font-display">
-                      Agregar condición
-                    </span>
-                  </button>
-                ) : (
-                  <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                    <input
-                      className="w-full px-4 py-3 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-lg focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none text-sm dark:text-white transition-all font-display"
-                      placeholder="Ej: Net 45, 50% anticipo"
-                      type="text"
-                      value={newConditionInput}
-                      onChange={(e) => setNewConditionInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          handleAddNewCondition();
-                        } else if (e.key === "Escape") {
-                          setShowNewConditionInput(false);
-                          setNewConditionInput("");
-                        }
-                      }}
-                      autoFocus
-                    />
-                    <div className="flex justify-end gap-2">
-                      <button
-                        className="px-4 py-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors font-display"
-                        onClick={() => {
-                          setShowNewConditionInput(false);
-                          setNewConditionInput("");
-                        }}
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        className="px-4 py-1.5 text-xs font-bold text-white bg-black dark:bg-white dark:text-black rounded-md transition-transform active:scale-95 disabled:opacity-50 font-display"
-                        onClick={handleAddNewCondition}
-                        disabled={!newConditionInput.trim()}
-                      >
-                        Confirmar
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold tracking-widest text-gray-500 dark:text-gray-400 uppercase">
-                Saldo Pendiente
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 inset-y-0 flex items-center text-gray-400 text-sm">
-                  $
-                </span>
                 <input
-                  className="w-full pl-7 pr-3 py-2 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none text-sm dark:text-white transition-all font-display"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={newSupplierForm.balance}
-                  onChange={(e) => handleFormChange("balance", e.target.value)}
+                  className="supplier-input"
+                  placeholder="Nombre del proveedor"
+                  type="text"
+                  value={newSupplierForm.name}
+                  onChange={(e) => handleFormChange("name", e.target.value)}
                 />
               </div>
-            </div>
-          </div>
 
-          <div className="flex items-center justify-end px-6 py-4 bg-gray-50/50 dark:bg-white/5 border-t border-gray-100 dark:border-white/5 gap-3">
-            <button
-              className="px-6 py-2.5 text-sm font-bold text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-white/10 rounded-lg bg-white dark:bg-black transition-all active:scale-95 font-display"
-              onClick={handleCloseModal}
-            >
-              Cancelar
-            </button>
-            <button
-              className="px-6 py-2.5 text-sm font-bold text-white bg-black hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 rounded-lg transition-all shadow-lg active:scale-95 font-display"
-              onClick={handleSubmitSupplier}
-            >
-              Agregar Proveedor
-            </button>
+              <div className="supplier-input-group">
+                <label className="supplier-label">
+                  Contacto
+                </label>
+                <div className="supplier-form-row">
+                  <input
+                    className="supplier-input"
+                    placeholder="Email del contacto"
+                    type="email"
+                    value={newSupplierForm.email}
+                    onChange={(e) => handleFormChange("email", e.target.value)}
+                  />
+                  <input
+                    className="supplier-input"
+                    placeholder="Teléfono"
+                    type="tel"
+                    value={newSupplierForm.phone}
+                    onChange={(e) => handleFormChange("phone", e.target.value)}
+                  />
+                </div>
+              </div>
+
+                <div className="supplier-input-group">
+                  <label className="supplier-label">
+                    Condiciones
+                  </label>
+                  <div className="supplier-select-wrapper">
+                    <select
+                      className="supplier-select"
+                      value={newSupplierForm.conditions}
+                      onChange={(e) =>
+                        handleFormChange("conditions", e.target.value)
+                      }
+                    >
+                      {availableConditions.map((condition) => (
+                        <option key={condition} value={condition}>
+                          {condition}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="supplier-select-icon">
+                      <span className="material-symbols-outlined">
+                        expand_more
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="conditions-area">
+                  <div className="conditions-tags">
+                    {availableConditions.map((condition) => (
+                      <div
+                        key={condition}
+                        className="condition-chip"
+                      >
+                        <span className="font-display">
+                          {condition}
+                        </span>
+                        <button
+                          className="condition-chip-remove"
+                          onClick={() => handleDeleteCondition(condition)}
+                        >
+                          <span
+                            className="material-symbols-outlined"
+                            style={{ fontSize: "14px" }}
+                          >
+                            close
+                          </span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {!showNewConditionInput ? (
+                    <button
+                      className="btn-add-new-condition"
+                      onClick={() => setShowNewConditionInput(true)}
+                    >
+                      <span className="material-symbols-outlined mr-2">add</span>
+                      <span className="font-display">
+                        Agregar condición
+                      </span>
+                    </button>
+                  ) : (
+                    <div className="supplier-input-group animate-in fade-in slide-in-from-top-1 duration-200">
+                      <input
+                        className="supplier-input"
+                        placeholder="Ej: Net 45, 50% anticipo"
+                        type="text"
+                        value={newConditionInput}
+                        onChange={(e) => setNewConditionInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddNewCondition();
+                          } else if (e.key === "Escape") {
+                            setShowNewConditionInput(false);
+                            setNewConditionInput("");
+                          }
+                        }}
+                        autoFocus
+                      />
+                      <div className="flex justify-end gap-2">
+                        <button
+                          className="px-4 py-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors font-display"
+                          onClick={() => {
+                            setShowNewConditionInput(false);
+                            setNewConditionInput("");
+                          }}
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          className="px-4 py-1.5 text-xs font-bold text-white bg-black dark:bg-white dark:text-black rounded-md transition-transform active:scale-95 disabled:opacity-50 font-display"
+                          onClick={handleAddNewCondition}
+                          disabled={!newConditionInput.trim()}
+                        >
+                          Confirmar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+              <div className="supplier-input-group">
+                <label className="supplier-label">
+                  Saldo Pendiente
+                </label>
+                <div className="supplier-input-prefix">
+                  <span className="supplier-currency-symbol">
+                    $
+                  </span>
+                  <input
+                    className="supplier-input supplier-input-with-prefix"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={newSupplierForm.balance}
+                    onChange={(e) => handleFormChange("balance", e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="supplier-modal-footer">
+              <button
+                className="supplier-btn-cancel"
+                onClick={handleCloseModal}
+              >
+                Cancelar
+              </button>
+              <button
+                className="supplier-btn-submit"
+                onClick={handleSubmitSupplier}
+              >
+                Agregar Proveedor
+              </button>
+            </div>
           </div>
         </div>
       </Modal>

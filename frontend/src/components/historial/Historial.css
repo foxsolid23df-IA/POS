@@ -45,3 +45,24 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     transform: translateY(0);
   }
 }
+
+/* Scroll Container for Auditoría Historial */
+.historial-scroll-container {
+  max-height: 480px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+/* Scrollbar styling for Historial */
+.historial-scroll-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.historial-scroll-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.dark .historial-scroll-container::-webkit-scrollbar-thumb {
+  background: #334155;
+}

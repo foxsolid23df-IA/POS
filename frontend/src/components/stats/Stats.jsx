@@ -442,106 +442,110 @@ export const Stats = () => {
                     </div>
                 </div>
 
-                {/* FILTRO POR FECHAS */}
-                <div className="date-filter">
-                    <h2 className="date-filter-title">Análisis por Período</h2>
-                    <div className="date-filter-content">
-                        <div className="date-inputs-center">
-                            <DateFilter
-                                fechaDesde={dateFilter.fechaDesde}
-                                fechaHasta={dateFilter.fechaHasta}
-                                onFechaDesdeChange={dateFilter.setFechaDesde}
-                                onFechaHastaChange={dateFilter.setFechaHasta}
-                                onBuscar={analizarPeriodo}
-                                onLimpiar={limpiarFiltros}
-                                showButtons={false}
-                                className="stats-date-filter"
-                            />
-                        </div>
-                        <div className="date-buttons">
-                            {canAccessReports && (
+                {/* BOTTOM SECTIONS GRID */}
+                <div className="bottom-columns">
+                    {/* FILTRO POR FECHAS */}
+                    <div className="date-filter section-card">
+                        <h2 className="date-filter-title">Análisis por Período</h2>
+                        <div className="date-filter-content">
+                            <div className="date-inputs-center">
+                                <DateFilter
+                                    fechaDesde={dateFilter.fechaDesde}
+                                    fechaHasta={dateFilter.fechaHasta}
+                                    onFechaDesdeChange={dateFilter.setFechaDesde}
+                                    onFechaHastaChange={dateFilter.setFechaHasta}
+                                    onBuscar={analizarPeriodo}
+                                    onLimpiar={limpiarFiltros}
+                                    showButtons={false}
+                                    className="stats-date-filter"
+                                />
+                            </div>
+                            <div className="date-buttons">
+                                {canAccessReports && (
+                                    <button
+                                        onClick={exportarEstadisticasExcel}
+                                        className="btn-exportar"
+                                        disabled={!estadisticas}
+                                        title="Exportar estadísticas a Excel"
+                                    >
+                                        <span className="material-icons-outlined">file_download</span>
+                                        <span>Exportar</span>
+                                    </button>
+                                )}
                                 <button
-                                    onClick={exportarEstadisticasExcel}
-                                    className="btn-exportar"
-                                    disabled={!estadisticas}
-                                    title="Exportar estadísticas a Excel"
+                                    onClick={analizarPeriodo}
+                                    className="search-btn"
+                                    disabled={cargandoAnalisis}
                                 >
-                                    📊 Exportar Excel
+                                    {cargandoAnalisis ? '...' : 'Buscar'}
                                 </button>
-                            )}
-                            <button
-                                onClick={analizarPeriodo}
-                                className="search-btn"
-                                disabled={cargandoAnalisis}
-                            >
-                                {cargandoAnalisis ? 'Analizando...' : 'Buscar'}
-                            </button>
-                            <button
-                                onClick={limpiarFiltros}
-                                className="clear-btn"
-                                disabled={cargandoAnalisis}
-                            >
-                                Limpiar Filtros
-                            </button>
+                                <button
+                                    onClick={limpiarFiltros}
+                                    className="clear-btn"
+                                    disabled={cargandoAnalisis}
+                                >
+                                    Limpiar
+                                </button>
+                            </div>
                         </div>
-                    </div>
 
-                    {estadisticasRango && (
-                        <div className="range-results">
-                            <div className="range-card">
-                                <h4>
-                                    Resultados{dateFilter.textoRango ? ` ${dateFilter.textoRango}` : ' del período seleccionado'}
-                                </h4>
-                                <div className="range-stats">
-                                    <div className="range-stat">
-                                        <span className="label">Total ventas:</span>
-                                        <span className="value">{estadisticasRango.ventasEnRango}</span>
-                                    </div>
-                                    <div className="range-stat">
-                                        <span className="label">Ingresos:</span>
-                                        <span className="value">{formatearDinero(estadisticasRango.ingresosEnRango)}</span>
+                        {estadisticasRango && (
+                            <div className="range-results">
+                                <div className="range-card">
+                                    <h4>
+                                        Resultados{dateFilter.textoRango ? ` ${dateFilter.textoRango}` : ' del período seleccionado'}
+                                    </h4>
+                                    <div className="range-stats">
+                                        <div className="range-stat">
+                                            <span className="label">Total ventas:</span>
+                                            <span className="value">{estadisticasRango.ventasEnRango}</span>
+                                        </div>
+                                        <div className="range-stat">
+                                            <span className="label">Ingresos:</span>
+                                            <span className="value">{formatearDinero(estadisticasRango.ingresosEnRango)}</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* PRODUCTOS CON POCO STOCK */}
-                <div className="section-card">
-                    <div className="section-header">
-                        <h2>Productos con Poco Stock</h2>
-                        <span className="material-icons-outlined section-icon">warning</span>
+                        )}
                     </div>
-                    <div className="low-stock-list">
-                        {productosPocoStock?.length > 0 ? (
-                            productosPocoStock.map(producto => {
-                                let colorClass = '';
-                                if (producto.stock === 0 || producto.stock === 1) colorClass = 'no-stock';
-                                else if (producto.stock === 2 || producto.stock === 3) colorClass = 'orange-stock';
-                                else if (producto.stock === 4 || producto.stock === 5) colorClass = 'yellow-stock';
-                                else colorClass = 'low';
-                                return (
-                                    <div key={producto.id} className={`stock-item ${colorClass}`}>
-                                        <div className="stock-info">
-                                            <h4>{producto.name}</h4>
-                                            <div className="stock-level">
-                                                <span className="stock-label">
-                                                    {producto.stock === 0 ? 'Sin stock disponible' :
-                                                        producto.stock === 1 ? '1 unidad disponible' :
-                                                            `${producto.stock} unidades disponibles`}
-                                                </span>
+
+                    {/* PRODUCTOS CON POCO STOCK */}
+                    <div className="section-card low-stock-card">
+                        <div className="section-header">
+                            <h2>Poco Stock</h2>
+                            <span className="material-icons-outlined section-icon">warning</span>
+                        </div>
+                        <div className="low-stock-list">
+                            {productosPocoStock?.length > 0 ? (
+                                productosPocoStock.map(producto => {
+                                    let colorClass = '';
+                                    if (producto.stock === 0 || producto.stock === 1) colorClass = 'no-stock';
+                                    else if (producto.stock === 2 || producto.stock === 3) colorClass = 'orange-stock';
+                                    else if (producto.stock === 4 || producto.stock === 5) colorClass = 'yellow-stock';
+                                    else colorClass = 'low';
+                                    return (
+                                        <div key={producto.id} className={`stock-item ${colorClass}`}>
+                                            <div className="stock-info">
+                                                <h4>{producto.name}</h4>
+                                                <div className="stock-level">
+                                                    <span className="stock-label">
+                                                        {producto.stock === 0 ? 'Sin stock' :
+                                                            producto.stock === 1 ? '1 unidad' :
+                                                                `${producto.stock} unids.`}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="stock-price">
+                                                {formatearDinero(producto.price)}
                                             </div>
                                         </div>
-                                        <div className="stock-price">
-                                            {formatearDinero(producto.price)}
-                                        </div>
-                                    </div>
-                                );
-                            })
-                        ) : (
-                            <div className="no-data">Todos los productos tienen stock suficiente</div>
-                        )}
+                                    );
+                                })
+                            ) : (
+                                <div className="no-data">Inventario saludable</div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
