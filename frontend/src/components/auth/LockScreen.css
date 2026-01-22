@@ -1,0 +1,233 @@
+/* ===== LOCK SCREEN STYLES ===== */
+.lock-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, var(--bg-primary) 0%, #1a1a2e 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 900;
+    /* Reducido para permitir que SweetAlert2 (z-index:1060) aparezca encima */
+}
+
+.lock-container {
+    background: var(--bg-secondary);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    padding: 3rem;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    max-width: 400px;
+    width: 90%;
+}
+
+.lock-header {
+    margin-bottom: 2rem;
+}
+
+.store-name {
+    font-size: 0.9rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.lock-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.lock-header h1 {
+    font-size: 1.6rem;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+}
+
+.lock-header p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+/* PIN DISPLAY */
+.pin-display {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 2rem;
+}
+
+.pin-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--glass-border);
+    background: transparent;
+    transition: all 0.2s ease;
+}
+
+.pin-dot.filled {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+}
+
+/* KEYPAD */
+.pin-keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 1.5rem;
+}
+
+.key-btn {
+    background: var(--bg-primary);
+    border: 1px solid var(--glass-border);
+    color: var(--text-main);
+    font-size: 1.5rem;
+    font-weight: 600;
+    padding: 1.2rem;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.key-btn:hover {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: var(--accent);
+    transform: scale(1.05);
+}
+
+.key-btn:active {
+    transform: scale(0.95);
+}
+
+.key-btn.clear {
+    color: var(--danger);
+}
+
+.key-btn.backspace {
+    font-size: 1.2rem;
+}
+
+/* UNLOCK BUTTON */
+.unlock-btn {
+    width: 100%;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 1rem;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 1.5rem;
+}
+
+.unlock-btn:hover:not(:disabled) {
+    background: var(--accent-hover);
+    transform: translateY(-2px);
+}
+
+.unlock-btn:disabled {
+    background: var(--bg-primary);
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+/* LOCK ACTIONS */
+.lock-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--glass-border);
+}
+
+.owner-btn {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.owner-btn:hover {
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.logout-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    padding: 0.5rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.logout-btn:hover {
+    color: var(--danger);
+}
+
+/* HINT */
+.lock-hint {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+}
+
+.lock-hint small {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+/* RESPONSIVE */
+@media (max-width: 480px) {
+    .lock-container {
+        padding: 2rem 1.5rem;
+        border-radius: 20px;
+    }
+
+    .lock-icon {
+        font-size: 3rem;
+    }
+
+    .lock-header h1 {
+        font-size: 1.3rem;
+    }
+
+    .pin-display {
+        gap: 8px;
+    }
+
+    .pin-dot {
+        width: 14px;
+        height: 14px;
+    }
+
+    .key-btn {
+        padding: 1rem;
+        font-size: 1.3rem;
+    }
+
+    .pin-keypad {
+        gap: 8px;
+    }
+
+    .unlock-btn {
+        padding: 0.9rem;
+        font-size: 1rem;
+    }
+
+    .lock-actions {
+        gap: 0.75rem;
+    }
+}

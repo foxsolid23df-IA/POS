@@ -1,0 +1,527 @@
+.maintenance-container {
+    padding: 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    color: #333;
+}
+
+/* Pantalla de Bloqueo Maestros */
+.maintenance-lock-screen {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.lock-card {
+    background: white;
+    padding: 3rem;
+    border-radius: 20px;
+    text-align: center;
+    width: 100%;
+    max-width: 450px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    color: #1e293b; /* Color de texto base forzado */
+}
+
+/* Soporte para Modo Oscuro en la tarjeta de bloqueo */
+html.dark .lock-card {
+    background: #1e293b;
+    color: #f8fafc;
+}
+
+.lock-icon {
+    font-size: 4rem;
+    color: #3b82f6;
+    margin-bottom: 1.5rem;
+}
+
+.lock-card h2 {
+    color: inherit; /* Seguir el color del padre */
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+
+.lock-card p {
+    color: #64748b;
+    margin-bottom: 2rem;
+}
+
+html.dark .lock-card p {
+    color: #94a3b8;
+}
+
+.lock-card input {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 1.5rem;
+    text-align: center;
+    letter-spacing: 0.5rem;
+    margin-bottom: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+    background: #f8fafc;
+    color: #1e293b; /* Texto oscuro para el input */
+}
+
+html.dark .lock-card input {
+    background: #0f172a;
+    border-color: #334155;
+    color: #f8fafc; /* Texto claro para el input en modo oscuro */
+}
+
+.lock-card input:focus {
+    border-color: #3b82f6;
+}
+
+.btn-auth {
+    width: 100%;
+    padding: 1rem;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-auth:hover {
+    background: #2563eb;
+}
+
+.error-text {
+    color: #ef4444;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+.maintenance-header {
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.5rem;
+}
+
+.maintenance-header h1 {
+    font-size: 1.75rem;
+    color: #2c3e50;
+    margin-bottom: 0.25rem;
+}
+
+html.dark .maintenance-header h1 {
+    color: #f8fafc;
+}
+
+.maintenance-header p {
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+.maintenance-card.warning {
+    display: flex;
+    align-items: center;
+    background-color: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.warning-icon {
+    font-size: 1.5rem;
+    margin-right: 1rem;
+}
+
+.warning-content h2 {
+    font-size: 1rem;
+    color: #856404;
+    margin-bottom: 0;
+    font-weight: bold;
+}
+
+.warning-content p {
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+.maintenance-content {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    align-items: stretch;
+}
+
+/* La lista de terminales y el reset nuclear ocupan todo el ancho */
+.maintenance-content > .maintenance-section,
+.maintenance-container > .nuclear {
+    grid-column: 1 / -1;
+}
+
+.reset-section {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+}
+
+.options-grid {
+    margin: 1rem 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+}
+
+.option-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #f8fafc;
+}
+
+html.dark .option-item {
+    background: #0f172a;
+    border-color: #334155;
+}
+
+.option-item:hover {
+    border-color: #3b82f6;
+    background: #f1f5f9;
+}
+
+html.dark .option-item:hover {
+    background: #1e293b;
+}
+
+.option-item input {
+    width: 20px;
+    height: 20px;
+    accent-color: #3b82f6;
+}
+
+.option-item span strong {
+    display: block;
+    margin-bottom: 0.1rem;
+    font-size: 0.9rem;
+    color: #1e293b;
+}
+
+html.dark .option-item span strong {
+    color: #f8fafc;
+}
+
+.option-item span small {
+    color: #64748b;
+    font-size: 0.8rem;
+    line-height: 1.2;
+    display: block;
+}
+
+.confirmation-box {
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+html.dark .confirmation-box {
+    border-color: #334155;
+}
+
+.confirmation-box p {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    color: #475569;
+}
+
+html.dark .confirmation-box p {
+    color: #94a3b8;
+}
+
+.confirmation-box input {
+    width: 100%;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1rem;
+    text-align: center;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+html.dark .confirmation-box input {
+    background: #0f172a;
+    border-color: #334155;
+    color: #f8fafc;
+}
+
+.btn-reset {
+    width: 100%;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 8px;
+    background: #e2e8f0;
+    color: #94a3b8;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: not-allowed;
+    transition: all 0.3s;
+}
+
+.btn-reset.active {
+    background: #ef4444;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);
+}
+
+.btn-reset.active:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+}
+
+.status-message {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.status-message.success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-message.error {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.reset-section.nuclear {
+    grid-column: 1 / -1;
+    border: 2px solid #ef4444;
+    background: #fff5f5;
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    border-radius: 12px;
+}
+
+.reset-section.nuclear h3 {
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+html.dark .reset-section.nuclear {
+    background: #450a0a;
+    border-color: #f87171;
+}
+
+.nuclear-warning {
+    color: #991b1b;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+}
+
+html.dark .nuclear-warning {
+    color: #fecaca;
+}
+
+.btn-nuclear {
+    width: 100%;
+    padding: 0.65rem;
+    background: #991b1b;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    cursor: not-allowed;
+    opacity: 0.5;
+    transition: all 0.3s;
+    letter-spacing: 1px;
+}
+
+.btn-nuclear.active {
+    background: #ef4444;
+    opacity: 1;
+    cursor: pointer;
+    box-shadow: 0 4px 14px 0 rgba(239, 68, 68, 0.39);
+}
+
+.btn-nuclear.active:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+}
+
+.nuclear-input {
+    border: 2px solid #fca5a5 !important;
+    background: white !important;
+    color: #991b1b !important;
+}
+
+html.dark .nuclear-input {
+    background: #0f172a !important;
+    color: #f87171 !important;
+}
+
+@media (max-width: 900px) {
+    .maintenance-content {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Nuevos estilos para Gestión de Terminales */
+.maintenance-section {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    margin-top: 1rem;
+    grid-column: 1 / -1; /* Forzar ancho completo */
+}
+
+html.dark .maintenance-section {
+    background: #1e293b;
+    border: 1px solid #334155;
+}
+
+.section-description {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-bottom: 1.25rem;
+}
+
+.maintenance-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.maintenance-table th {
+    text-align: left;
+    padding: 0.75rem;
+    background: #f8fafc;
+    color: #64748b;
+    font-weight: 600;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+html.dark .maintenance-table th {
+    background: #0f172a;
+    border-bottom-color: #334155;
+}
+
+.maintenance-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: middle;
+}
+
+html.dark .maintenance-table td {
+    border-bottom-color: #334155;
+}
+
+.terminal-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.terminal-name-cell .material-icons-outlined {
+    color: #94a3b8;
+    font-size: 1.25rem;
+}
+
+.status-badge {
+    padding: 0.25rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.status-badge.main {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.secondary {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+html.dark .status-badge.secondary {
+    background: #334155;
+    color: #cbd5e1;
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon.delete {
+    color: #94a3b8;
+}
+
+.btn-icon.delete:hover {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.empty-msg {
+    text-align: center;
+    padding: 2rem;
+    color: #94a3b8;
+    font-style: italic;
+}
+
+.utility-box {
+    background: #f8fafc;
+    padding: 1rem;
+    border-radius: 10px;
+}
+
+html.dark .utility-box {
+    background: #0f172a;
+}
+
+.btn-warning {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #f59e0b;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-warning:hover {
+    background: #d97706;
+}

@@ -1,0 +1,911 @@
+:root {
+    --sidebar-width: 250px;
+    --header-height: 56px;
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --accent: #10b981;
+    --accent-hover: #059669;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --surface: rgba(255, 255, 255, 0.05);
+    --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --info: #3b82f6;
+
+    /* Safe area for iOS notch and home indicator */
+    --safe-area-top: env(safe-area-inset-top, 0px);
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-left: env(safe-area-inset-left, 0px);
+    --safe-area-right: env(safe-area-inset-right, 0px);
+
+    /* Spacing responsive */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+
+    /* Font sizes responsive */
+    --font-xs: 0.75rem;
+    --font-sm: 0.875rem;
+    --font-base: 1rem;
+    --font-lg: 1.125rem;
+    --font-xl: 1.25rem;
+    --font-2xl: 1.5rem;
+    --font-3xl: 2rem;
+
+    /* Touch targets - mínimo 44px para accesibilidad */
+    --touch-target-min: 44px;
+}
+
+/* Reset global optimizado para móviles */
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+}
+
+/* Prevenir zoom en inputs en iOS */
+@supports (-webkit-touch-callout: none) {
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    input[type="tel"],
+    input[type="date"],
+    textarea,
+    select {
+        font-size: 16px !important;
+    }
+}
+
+html {
+    height: 100%;
+    height: -webkit-fill-available;
+    /* Safari iOS fix */
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+body {
+    min-height: 100%;
+    min-height: -webkit-fill-available;
+    font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-main);
+    line-height: 1.25;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow: hidden;
+    /* Prevenir pull-to-refresh en Android/iOS */
+    overscroll-behavior-y: contain;
+}
+
+#root {
+    height: 100%;
+    height: -webkit-fill-available;
+}
+
+.layout {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    /* Safe areas para dispositivos con notch */
+    padding-left: var(--safe-area-left);
+    padding-right: var(--safe-area-right);
+}
+
+.app-layout {
+    display: flex;
+    height: 100%;
+    width: 100%;
+}
+
+.main-content {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: auto;
+    /* Cambiado de hidden a auto para evitar recortes en laptops pequeñas */
+    /* Scroll suave en iOS */
+    -webkit-overflow-scrolling: touch;
+    /* Scroll momentum */
+    scroll-behavior: smooth;
+    /* Prevenir layout shift */
+    overscroll-behavior: contain;
+}
+
+/* Scrollbar personalizada - también para Safari */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--surface);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--glass-border);
+}
+
+/* Ocultar scrollbar en móviles pero mantener funcionalidad */
+@media (max-width: 768px) {
+    ::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+        display: none;
+    }
+
+    * {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+}
+
+/* Loading screen */
+.loading-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    font-size: var(--font-lg);
+    color: var(--text-muted);
+    padding: var(--safe-area-top) var(--spacing-md) var(--safe-area-bottom);
+}
+
+/* ========= MEDIA QUERIES (MOBILE-FIRST) ========= */
+
+/* 1. Base: < 768px (móvil/estrecho) */
+:root {
+    --header-height: 56px;
+    --spacing-xl: 1.25rem;
+    --font-3xl: 1.5rem;
+    --font-2xl: 1.25rem;
+}
+
+.app-layout {
+    flex-direction: column;
+}
+
+.main-content {
+    padding-top: var(--header-height);
+    padding-bottom: calc(var(--safe-area-bottom) + 8px);
+}
+
+/* 2. Tablet / Laptop Pequeña: 768px+ */
+@media (min-width: 768px) {
+    :root {
+        --header-height: 56px;
+        --sidebar-width: 240px;
+        --spacing-xl: 1.5rem;
+        --font-3xl: 2rem;
+        --font-2xl: 1.5rem;
+    }
+
+    .app-layout {
+        flex-direction: row;
+    }
+
+    .main-content {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+}
+
+/* 3. Laptop Grande: 1200px+ */
+@media (min-width: 1200px) {
+    :root {
+        --sidebar-width: 260px;
+        --spacing-xl: 2rem;
+    }
+}
+
+/* ========= SAFARI/iOS SPECIFIC FIXES ========= */
+
+/* Fix para 100vh en Safari iOS */
+@supports (-webkit-touch-callout: none) {
+    body {
+        height: -webkit-fill-available;
+    }
+
+    .layout,
+    .app-layout {
+        height: -webkit-fill-available;
+    }
+
+    .main-content {
+        height: -webkit-fill-available;
+    }
+}
+
+/* Backdrop filter fallback para navegadores sin soporte */
+@supports not ((-webkit-backdrop-filter: blur(8px)) or (backdrop-filter: blur(8px))) {
+    .modal-overlay {
+        background: rgba(15, 23, 42, 0.95);
+    }
+}
+
+/* Orientación landscape en móviles */
+@media (max-width: 896px) and (orientation: landscape) {
+    :root {
+        --header-height: 48px;
+    }
+
+    .main-content {
+        padding-top: var(--header-height);
+    }
+}
+
+/* Touch device detection - aumentar tamaños touch */
+@media (hover: none) and (pointer: coarse) {
+
+    button,
+    .btn,
+    [role="button"],
+    input[type="submit"],
+    input[type="button"],
+    a {
+        min-height: var(--touch-target-min);
+        min-width: var(--touch-target-min);
+    }
+}
+
+/* Reducir animaciones si el usuario lo prefiere */
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Alto contraste */
+@media (prefers-contrast: high) {
+    :root {
+        --glass-border: rgba(255, 255, 255, 0.3);
+        --surface: rgba(255, 255, 255, 0.1);
+    }
+}
+
+/* Modo oscuro forzado (ya es oscuro por defecto) */
+@media (prefers-color-scheme: dark) {
+    :root {
+        color-scheme: dark;
+    }
+}
+
+/* ========= DARK MODE GLOBAL STYLES ========= */
+
+/* Light Mode Variables (default) */
+:root {
+    --dm-bg-primary: #ffffff;
+    --dm-bg-secondary: #f9fafb;
+    --dm-bg-tertiary: #f3f4f6;
+    --dm-text-primary: #111827;
+    --dm-text-secondary: #374151;
+    --dm-text-muted: #6b7280;
+    --dm-border: #e5e7eb;
+    --dm-border-light: #f3f4f6;
+    --dm-card-bg: #ffffff;
+    --dm-input-bg: #ffffff;
+    --dm-hover-bg: #f9fafb;
+}
+
+/* Dark Mode Variables */
+html.dark {
+    --dm-bg-primary: #0f172a;
+    --dm-bg-secondary: #1e293b;
+    --dm-bg-tertiary: #334155;
+    --dm-text-primary: #f8fafc;
+    --dm-text-secondary: #cbd5e1;
+    --dm-text-muted: #94a3b8;
+    --dm-border: #334155;
+    --dm-border-light: #1e293b;
+    --dm-card-bg: #1e293b;
+    --dm-input-bg: #0f172a;
+    --dm-hover-bg: #334155;
+}
+
+/* Global Dark Mode Base Styles */
+html.dark body {
+    background-color: var(--dm-bg-primary);
+    color: var(--dm-text-primary);
+}
+
+/* Sales View Dark Mode */
+html.dark .sales-view {
+    background-color: var(--dm-bg-primary);
+}
+
+html.dark .sales-title {
+    color: var(--dm-text-primary);
+}
+
+html.dark .sales-subtitle {
+    color: var(--dm-text-muted);
+}
+
+html.dark .search-input-wrapper {
+    background: var(--dm-card-bg);
+    border-color: var(--dm-border);
+}
+
+html.dark .barcode-input-modern {
+    background: var(--dm-input-bg);
+    border-color: var(--dm-border);
+    color: var(--dm-text-primary);
+}
+
+html.dark .btn-camera-modern {
+    background: var(--dm-card-bg);
+    border-color: var(--dm-border);
+    color: var(--dm-text-secondary);
+}
+
+html.dark .btn-camera-modern:hover {
+    background: var(--dm-hover-bg);
+}
+
+html.dark .empty-scan-area {
+    background: var(--dm-bg-secondary);
+    border-color: var(--dm-border);
+}
+
+html.dark .empty-scan-icon {
+    background: var(--dm-bg-tertiary);
+    border-color: var(--dm-border);
+}
+
+html.dark .empty-scan-title {
+    color: var(--dm-text-primary);
+}
+
+html.dark .cart-sidebar {
+    background: var(--dm-bg-secondary);
+    border-color: var(--dm-border);
+}
+
+html.dark .cart-sidebar-header {
+    background: var(--dm-card-bg);
+    border-color: var(--dm-border);
+}
+
+html.dark .cart-sidebar-title {
+    color: var(--dm-text-primary);
+}
+
+html.dark .cart-item-modern {
+    background: var(--dm-card-bg);
+    border-color: var(--dm-border);
+}
+
+html.dark .item-name-modern {
+    color: var(--dm-text-primary);
+}
+
+html.dark .quantity-controls-modern {
+    background: var(--dm-bg-tertiary);
+}
+
+html.dark .qty-btn-modern {
+    color: var(--dm-text-primary);
+}
+
+html.dark .item-total-modern {
+    color: var(--dm-text-primary);
+}
+
+html.dark .quantity-modern {
+    color: var(--dm-text-primary);
+}
+
+html.dark .cart-footer-modern {
+    background: var(--dm-card-bg);
+    border-color: var(--dm-border);
+}
+
+html.dark .summary-row {
+    color: var(--dm-text-muted);
+}
+
+html.dark .summary-row.summary-total {
+    color: var(--dm-text-primary);
+    border-color: var(--dm-border);
+}
+
+html.dark .empty-cart-modern {
+    background: var(--dm-bg-secondary);
+}
+
+html.dark .empty-cart-icon {
+    background: var(--dm-bg-tertiary);
+    border-color: var(--dm-border);
+}
+
+/* Inventory Page Dark Mode */
+html.dark .inventory-page {
+    background-color: var(--dm-bg-primary);
+}
+
+html.dark .inventory-header {
+    background-color: var(--dm-card-bg);
+    border-color: var(--dm-border);
+}
+
+html.dark .inventory-title {
+    color: var(--dm-text-primary);
+}
+
+html.dark .inventory-subtitle {
+    color: var(--dm-text-muted);
+}
+
+html.dark .inventory-content {
+    background-color: var(--dm-bg-primary);
+}
+
+html.dark .search-input {
+    background-color: var(--dm-input-bg);
+    border-color: var(--dm-border);
+    color: var(--dm-text-primary);
+}
+
+html.dark .control-btn {
+    background-color: var(--dm-card-bg);
+    border-color: var(--dm-border);
+    color: var(--dm-text-secondary);
+}
+
+html.dark .control-btn:hover {
+    background-color: var(--dm-hover-bg);
+}
+
+html.dark .control-btn.primary {
+    background-color: #10b981;
+    color: #000;
+    border-color: #10b981;
+}
+
+html.dark .table-container {
+    background-color: var(--dm-card-bg);
+    border-color: var(--dm-border);
+}
+
+html.dark .products-table {
+    background-color: var(--dm-card-bg);
+}
+
+html.dark .products-table thead {
+    background-color: var(--dm-bg-secondary);
+}
+
+html.dark .products-table th {
+    background-color: var(--dm-bg-secondary);
+    color: var(--dm-text-secondary);
+    border-color: var(--dm-border);
+}
+
+html.dark .products-table tbody {
+    background-color: var(--dm-card-bg);
+}
+
+html.dark .products-table tbody tr {
+    background-color: var(--dm-card-bg);
+    border-color: var(--dm-border-light);
+}
+
+html.dark .products-table tbody tr:hover {
+    background-color: var(--dm-hover-bg);
+}
+
+html.dark .products-table td {
+    color: var(--dm-text-primary);
+    background-color: var(--dm-card-bg);
+}
+
+html.dark .product-name {
+    color: var(--dm-text-primary);
+}
+
+html.dark .product-description {
+    color: var(--dm-text-muted);
+}
+
+html.dark .sku-cell {
+    color: var(--dm-text-secondary);
+}
+
+html.dark .price-cell {
+    color: var(--dm-text-primary);
+}
+
+html.dark .stock-cell span {
+    color: var(--dm-text-primary);
+}
+
+html.dark .actions-dropdown {
+    background-color: var(--dm-card-bg);
+    border-color: var(--dm-border);
+}
+
+html.dark .dropdown-item {
+    color: var(--dm-text-primary);
+}
+
+html.dark .dropdown-item:hover {
+    background-color: var(--dm-hover-bg);
+}
+
+html.dark .pagination-info {
+    color: var(--dm-text-muted);
+}
+
+html.dark .pagination-info .font-medium {
+    color: var(--dm-text-primary);
+}
+
+html.dark .pagination-btn {
+    background-color: var(--dm-card-bg);
+    border-color: var(--dm-border);
+    color: var(--dm-text-secondary);
+}
+
+html.dark .pagination-btn:hover:not(:disabled) {
+    background-color: var(--dm-hover-bg);
+}
+
+/* Inventory Modal Dark Mode */
+html.dark .new-product-modal-overlay::before {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+html.dark .new-product-modal {
+    background: var(--dm-card-bg);
+    border-color: var(--dm-border);
+}
+
+html.dark .new-product-title {
+    color: var(--dm-text-primary);
+}
+
+html.dark .new-product-image-upload {
+    background: var(--dm-bg-secondary);
+    border-color: var(--dm-border);
+}
+
+html.dark .new-product-upload-icon-wrapper {
+    background: var(--dm-bg-tertiary);
+    border-color: var(--dm-border);
+}
+
+html.dark .new-product-upload-text-main {
+    color: var(--dm-text-primary);
+}
+
+html.dark .new-product-upload-text-sub {
+    color: var(--dm-text-muted);
+}
+
+html.dark .new-product-label {
+    color: var(--dm-text-muted);
+}
+
+html.dark .new-product-input {
+    background: var(--dm-input-bg);
+    border-color: var(--dm-border);
+    color: var(--dm-text-primary);
+}
+
+/* Stats Page Dark Mode */
+html.dark .stats-view {
+    background-color: var(--dm-bg-primary);
+}
+
+html.dark .stats-header {
+    background-color: var(--dm-card-bg);
+    border-color: var(--dm-border);
+}
+
+html.dark .stats-header h2 {
+    color: var(--dm-text-primary);
+}
+
+html.dark .stats-header p {
+    color: var(--dm-text-muted);
+}
+
+html.dark .stat-card {
+    background-color: var(--dm-card-bg);
+    border-color: var(--dm-border);
+}
+
+html.dark .stat-card h3 {
+    color: var(--dm-text-muted);
+}
+
+html.dark .stat-value {
+    color: var(--dm-text-primary);
+}
+
+html.dark .stat-detail {
+    color: var(--dm-text-muted);
+}
+
+html.dark .date-filter {
+    background-color: var(--dm-card-bg);
+    border-color: var(--dm-border);
+}
+
+html.dark .date-filter-title {
+    color: var(--dm-text-primary);
+}
+
+html.dark .section-card {
+    background-color: var(--dm-card-bg);
+    border-color: var(--dm-border);
+}
+
+html.dark .section-card h2 {
+    color: var(--dm-text-primary);
+}
+
+html.dark .product-item {
+    background-color: var(--dm-bg-secondary);
+    border-color: var(--dm-border);
+}
+
+html.dark .product-item h4 {
+    color: var(--dm-text-primary);
+}
+
+html.dark .stock-item {
+    background-color: var(--dm-bg-secondary);
+    border-color: var(--dm-border);
+}
+
+html.dark .stock-item h4 {
+    color: var(--dm-text-primary);
+}
+
+/* User Manager Dark Mode */
+html.dark .user-manager-container {
+    background-color: var(--dm-bg-primary);
+}
+
+html.dark .manager-header {
+    background-color: var(--dm-card-bg);
+}
+
+html.dark .manager-header h2 {
+    color: var(--dm-text-primary);
+}
+
+html.dark .user-list-card {
+    background-color: var(--dm-card-bg);
+    border-color: var(--dm-border);
+}
+
+html.dark .user-table {
+    background-color: var(--dm-card-bg);
+}
+
+html.dark .user-table th {
+    background-color: var(--dm-bg-secondary);
+    color: var(--dm-text-secondary);
+    border-color: var(--dm-border);
+}
+
+html.dark .user-table td {
+    color: var(--dm-text-primary);
+    border-color: var(--dm-border);
+}
+
+html.dark .user-table tr:hover {
+    background-color: var(--dm-hover-bg);
+}
+
+/* Suppliers Page Dark Mode */
+html.dark .suppliers-container {
+    background-color: var(--dm-bg-primary);
+}
+
+html.dark .suppliers-main {
+    background-color: var(--dm-bg-primary);
+}
+
+html.dark .suppliers-title {
+    color: var(--dm-text-primary);
+}
+
+html.dark .suppliers-kpi-card {
+    background-color: var(--dm-card-bg);
+    border-color: var(--dm-border);
+}
+
+html.dark .suppliers-kpi-label {
+    color: var(--dm-text-muted);
+}
+
+html.dark .suppliers-kpi-value {
+    color: var(--dm-text-primary);
+}
+
+html.dark .suppliers-table-container {
+    background-color: var(--dm-card-bg);
+    border-color: var(--dm-border);
+}
+
+html.dark .suppliers-table th {
+    background-color: var(--dm-bg-secondary);
+    color: var(--dm-text-secondary);
+    border-color: var(--dm-border);
+}
+
+html.dark .suppliers-table td {
+    color: var(--dm-text-primary);
+    border-color: var(--dm-border);
+}
+
+html.dark .suppliers-table tr:hover {
+    background-color: var(--dm-hover-bg);
+}
+
+html.dark .suppliers-search-input {
+    background-color: var(--dm-input-bg);
+    border-color: var(--dm-border);
+    color: var(--dm-text-primary);
+}
+
+html.dark .suppliers-filter-btn {
+    background-color: var(--dm-card-bg);
+    border-color: var(--dm-border);
+    color: var(--dm-text-secondary);
+}
+
+html.dark .suppliers-filter-btn.active {
+    background-color: var(--dm-text-primary);
+    color: var(--dm-bg-primary);
+}
+
+/* Payment Modal Dark Mode */
+html.dark .payment-modal-container {
+    background-color: var(--dm-card-bg);
+    border-color: var(--dm-border);
+}
+
+html.dark .payment-summary-section {
+    background-color: var(--dm-bg-secondary);
+}
+
+html.dark .payment-summary-title {
+    color: var(--dm-text-primary);
+}
+
+html.dark .payment-item-name {
+    color: var(--dm-text-primary);
+}
+
+html.dark .payment-item-category {
+    color: var(--dm-text-muted);
+}
+
+html.dark .payment-keypad-btn {
+    background-color: var(--dm-bg-secondary);
+    border-color: var(--dm-border);
+    color: var(--dm-text-primary);
+}
+
+html.dark .payment-keypad-btn:hover {
+    background-color: var(--dm-hover-bg);
+}
+
+/* Lock Screen Dark Mode */
+html.dark .lock-screen {
+    background: linear-gradient(135deg, var(--dm-bg-primary) 0%, var(--dm-bg-secondary) 100%);
+}
+
+html.dark .lock-container {
+    background-color: var(--dm-card-bg);
+    border-color: var(--dm-border);
+}
+
+html.dark .lock-header h1 {
+    color: var(--dm-text-primary);
+}
+
+html.dark .lock-header p {
+    color: var(--dm-text-muted);
+}
+
+html.dark .key-btn {
+    background-color: var(--dm-bg-secondary);
+    color: var(--dm-text-primary);
+    border-color: var(--dm-border);
+}
+
+html.dark .key-btn:hover {
+    background-color: var(--dm-hover-bg);
+}
+
+/* Generic Modal Dark Mode */
+html.dark .modal-overlay {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+html.dark .modal-content {
+    background-color: var(--dm-card-bg);
+    border-color: var(--dm-border);
+}
+
+html.dark .modal-content h3 {
+    color: var(--dm-text-primary);
+}
+
+html.dark .form-group label {
+    color: var(--dm-text-secondary);
+}
+
+html.dark .form-group input,
+html.dark .form-group select,
+html.dark .form-group textarea {
+    background-color: var(--dm-input-bg);
+    border-color: var(--dm-border);
+    color: var(--dm-text-primary);
+}
+
+/* Filters Modal Dark Mode */
+html.dark .filters-modal {
+    background-color: var(--dm-card-bg);
+    border-color: var(--dm-border);
+}
+
+html.dark .filters-modal h3 {
+    color: var(--dm-text-primary);
+}
+
+html.dark .filters-modal label {
+    color: var(--dm-text-secondary);
+}
+
+html.dark .filters-modal select,
+html.dark .filters-modal input {
+    background-color: var(--dm-input-bg);
+    border-color: var(--dm-border);
+    color: var(--dm-text-primary);
+}
+
+/* Transition for smooth theme switching */
+body,
+.sales-view,
+.inventory-page,
+.stats-view,
+.user-manager-container,
+.suppliers-container,
+.lock-screen,
+.cart-sidebar,
+.table-container,
+.modal-content,
+.new-product-modal {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}

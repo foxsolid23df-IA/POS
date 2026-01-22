@@ -1,0 +1,316 @@
+.cash-fund-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+}
+
+.cash-fund-modal {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 24px;
+    padding: 32px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
+    animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Dark mode */
+.dark .cash-fund-modal {
+    background: rgba(30, 41, 59, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cash-fund-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.cash-fund-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.cash-fund-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 8px 0;
+}
+
+.dark .cash-fund-header h1 {
+    color: #f1f5f9;
+}
+
+.cash-fund-header p {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin: 0 0 12px 0;
+}
+
+.dark .cash-fund-header p {
+    color: #94a3b8;
+}
+
+.cash-fund-staff {
+    display: inline-block;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.cash-fund-display {
+    background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+    border: 2px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 20px;
+}
+
+.dark .cash-fund-display {
+    background: linear-gradient(135deg, #1e293b, #334155);
+    border-color: #475569;
+}
+
+.currency-symbol {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #10b981;
+}
+
+.amount-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    font-family: 'Inter', system-ui, sans-serif;
+    min-width: 80px;
+    text-align: center;
+}
+
+.dark .amount-value {
+    color: #f1f5f9;
+}
+
+.currency-code {
+    font-size: 0.9rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.dark .currency-code {
+    color: #94a3b8;
+}
+
+/* Montos rápidos */
+.quick-amounts {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.quick-btn {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.quick-btn:hover {
+    background: #10b981;
+    border-color: #10b981;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.dark .quick-btn {
+    background: #334155;
+    border-color: #475569;
+    color: #e2e8f0;
+}
+
+.dark .quick-btn:hover {
+    background: #10b981;
+    border-color: #10b981;
+    color: white;
+}
+
+/* Teclado numérico */
+.cash-fund-keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 24px;
+}
+
+.keypad-btn {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.keypad-btn:hover {
+    background: #e2e8f0;
+    transform: scale(1.02);
+}
+
+.keypad-btn:active {
+    transform: scale(0.98);
+    background: #cbd5e1;
+}
+
+.keypad-btn.clear-btn {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #dc2626;
+}
+
+.keypad-btn.clear-btn:hover {
+    background: #fee2e2;
+}
+
+.keypad-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.dark .keypad-btn {
+    background: #334155;
+    border-color: #475569;
+    color: #f1f5f9;
+}
+
+.dark .keypad-btn:hover {
+    background: #475569;
+}
+
+.dark .keypad-btn.clear-btn {
+    background: #450a0a;
+    border-color: #7f1d1d;
+    color: #fca5a5;
+}
+
+/* Botón submit */
+.cash-fund-submit {
+    width: 100%;
+    background: linear-gradient(135deg, #10b981, #059669);
+    border: none;
+    border-radius: 14px;
+    padding: 16px 24px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+}
+
+.cash-fund-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(16, 185, 129, 0.5);
+}
+
+.cash-fund-submit:active {
+    transform: translateY(0);
+}
+
+.cash-fund-submit:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.cash-fund-submit .spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.cash-fund-note {
+    text-align: center;
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-top: 16px;
+    margin-bottom: 0;
+}
+
+.dark .cash-fund-note {
+    color: #94a3b8;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .cash-fund-modal {
+        padding: 24px 20px;
+        border-radius: 20px;
+    }
+
+    .amount-value {
+        font-size: 2rem;
+    }
+
+    .keypad-btn {
+        padding: 14px;
+        font-size: 1.1rem;
+    }
+
+    .quick-btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+}

@@ -1,0 +1,96 @@
+/* ===== BUSINESS PRO - USER MANAGER ===== */
+.user-manager-container {
+    padding: 2rem;
+    min-height: 100vh;
+}
+
+.manager-header {
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.manager-header h2 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin: 0;
+}
+
+/* LIST CARD */
+.user-list-card {
+    background: var(--bg-secondary);
+    border-radius: 20px;
+    border: 1px solid var(--glass-border);
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+}
+
+.user-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.user-table th {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 1.25rem;
+    text-align: left;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.user-table td {
+    padding: 1.25rem;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.status-badge.active {
+    color: var(--accent);
+    background: rgba(16, 185, 129, 0.1);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 700;
+}
+
+/* FORMS & BUTTONS */
+.btn-primary {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-delete {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.btn-delete:hover {
+    background: var(--danger);
+    color: white;
+}
+
+/* MODAL GLASS */
+.modal-overlay {
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(8px);
+}
+
+.modal-content {
+    background: var(--bg-secondary);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+}
