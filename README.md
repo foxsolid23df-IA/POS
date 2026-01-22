@@ -2,7 +2,7 @@
 
 Sistema de Punto de Venta (POS) profesional desarrollado con React y Supabase, diseñado para pequeños y medianos negocios.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Version](https://img.shields.io/badge/version-1.1.0-blue)
 ![License](https://img.shields.io/badge/license-Private-red)
 ![React](https://img.shields.io/badge/React-19.1-61DAFB?logo=react)
 ![Supabase](https://img.shields.io/badge/Supabase-Backend-3ECF8E?logo=supabase)
@@ -31,34 +31,31 @@ Sistema de Punto de Venta (POS) profesional desarrollado con React y Supabase, d
 
 ## ✨ Características
 
-### Punto de Venta
-- ✅ Escaneo de códigos de barras (automático y manual)
-- ✅ Búsqueda de productos por nombre en tiempo real
-- ✅ Carrito de compras dinámico
-- ✅ Impresión de tickets de venta
-- ✅ Actualización automática de inventario
+### Punto de Venta (POS)
 
-### Inventario
-- ✅ CRUD completo de productos
-- ✅ Gestión de stock
-- ✅ Imágenes de productos (Base64)
-- ✅ Subida de imágenes por drag & drop
-- ✅ Validación de campos
+- ✅ **Soporte Multi-Caja**: Sistema diseñado para múltiples terminales simultáneas.
+- ✅ **Pantalla del Cliente**: Interfaz secundaria para que el cliente vea su compra en tiempo real.
+- ✅ **Persistencia de Carrito**: El carrito se mantiene incluso al navegar o refrescar la página.
+- ✅ **Escaneo de códigos de barras**: Soporte para lectores automáticos y manuales.
+- ✅ **Búsqueda Inteligente**: Localización de productos por nombre en milisegundos.
+- ✅ **Tickets Profesionales**: Impresión de tickets detallados para cada venta.
 
-### Gestión de Usuarios
-- ✅ Sistema multi-rol (Propietario, Admin, Gerente, Cajero)
-- ✅ Autenticación por PIN para empleados
-- ✅ Bloqueo de pantalla por seguridad
-- ✅ Permisos diferenciados por rol
+### Inventario y Proveedores
 
-### Corte de Caja
-- ✅ Cierre de turno por empleado
-- ✅ Cierre diario del negocio
-- ✅ Arqueo de caja (esperado vs contado)
-- ✅ Ticket de corte imprimible con detalle de productos
-- ✅ Registro de diferencias y observaciones
+- ✅ **Importación Masiva**: Carga de inventario completo mediante plantillas de Excel.
+- ✅ **Gestión de Proveedores**: Módulo dedicado para administrar contactos y suministros.
+- ✅ **Control de Stock**: Alertas de stock mínimo y actualización automática.
+- ✅ **Imágenes Integradas**: Soporte para fotografías de productos (Base64/URL).
+
+### Gestión y Auditoría
+
+- ✅ **Sistema Multi-rol**: Propietario, Admin, Gerente y Cajero con permisos granulares.
+- ✅ **Cortes de Caja**: Cierres de turno por terminal y cierre diario global del negocio.
+- ✅ **Módulo de Auditoría**: Historial detallado de transacciones para supervisión.
+- ✅ **Arqueo Ciego**: Comparación de efectivo esperado vs contado para evitar discrepancias.
 
 ### Seguridad
+
 - ✅ Autenticación con Supabase Auth
 - ✅ Row Level Security (RLS) en todas las tablas
 - ✅ Aislamiento de datos por tienda (multi-tenant)
@@ -103,25 +100,28 @@ Sistema de Punto de Venta (POS) profesional desarrollado con React y Supabase, d
 ## 🛠 Tecnologías
 
 ### Frontend
-| Tecnología | Versión | Uso |
-|------------|---------|-----|
-| React | 19.1.1 | Framework UI |
-| Vite | 7.1.1 | Build tool |
-| React Router | 7.8.0 | Navegación |
-| SweetAlert2 | 11.26 | Alertas |
-| React Icons | 5.5.0 | Iconografía |
+
+| Tecnología   | Versión | Uso          |
+| ------------ | ------- | ------------ |
+| React        | 19.1.1  | Framework UI |
+| Vite         | 7.1.1   | Build tool   |
+| React Router | 7.8.0   | Navegación   |
+| SweetAlert2  | 11.26   | Alertas      |
+| React Icons  | 5.5.0   | Iconografía  |
 
 ### Backend (Supabase)
-| Servicio | Uso |
-|----------|-----|
-| Supabase Auth | Autenticación |
-| Supabase Database | PostgreSQL |
+
+| Servicio           | Uso                    |
+| ------------------ | ---------------------- |
+| Supabase Auth      | Autenticación          |
+| Supabase Database  | PostgreSQL             |
 | Row Level Security | Seguridad multi-tenant |
 
 ### Despliegue
-| Plataforma | Uso |
-|------------|-----|
-| Vercel | Hosting frontend |
+
+| Plataforma     | Uso                  |
+| -------------- | -------------------- |
+| Vercel         | Hosting frontend     |
 | Supabase Cloud | Backend as a Service |
 
 ---
@@ -129,6 +129,7 @@ Sistema de Punto de Venta (POS) profesional desarrollado con React y Supabase, d
 ## 📦 Instalación
 
 ### Prerrequisitos
+
 - Node.js 18+
 - npm o yarn
 - Cuenta de Supabase
@@ -136,29 +137,34 @@ Sistema de Punto de Venta (POS) profesional desarrollado con React y Supabase, d
 ### Pasos
 
 1. **Clonar el repositorio**
+
 ```bash
 git clone https://github.com/foxsolid23df-IA/sistema-ventas.git
 cd sistema-ventas
 ```
 
 2. **Instalar dependencias del frontend**
+
 ```bash
 cd frontend
 npm install
 ```
 
 3. **Configurar variables de entorno**
+
 ```bash
 cp .env.example .env
 ```
 
 Editar `.env`:
+
 ```env
 VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
 VITE_SUPABASE_ANON_KEY=tu-clave-anonima
 ```
 
 4. **Iniciar en desarrollo**
+
 ```bash
 npm run dev
 ```
@@ -168,14 +174,17 @@ npm run dev
 ## 🔧 Configuración de Supabase
 
 ### 1. Crear proyecto en Supabase
+
 1. Ve a [supabase.com](https://supabase.com)
 2. Crea un nuevo proyecto
 3. Copia la URL y Anon Key
 
 ### 2. Ejecutar el esquema SQL
+
 Ve a **SQL Editor** en Supabase y ejecuta el contenido de `supabase_schema.sql`
 
 ### 3. Configurar autenticación
+
 1. Ve a **Authentication > Settings**
 2. Desactiva "Email Confirmations" para desarrollo
 3. Configura redirect URLs si es necesario
@@ -239,6 +248,7 @@ Sistema ventas/
 ## 📱 Módulos del Sistema
 
 ### 1. Punto de Venta (`/`)
+
 - Escaneo de códigos de barras
 - Búsqueda de productos por nombre
 - Carrito de compras
@@ -246,22 +256,26 @@ Sistema ventas/
 - Impresión de ticket
 
 ### 2. Inventario (`/inventario`)
+
 - Lista de productos
 - Agregar/Editar/Eliminar productos
 - Gestión de stock
 - Subida de imágenes
 
 ### 3. Historial (`/historial`)
+
 - Registro de ventas
 - Filtros por fecha
 - Detalle de cada venta
 
 ### 4. Estadísticas (`/estadisticas`)
+
 - Dashboard de ventas
 - Gráficos de rendimiento
 - Métricas del negocio
 
 ### 5. Usuarios (`/usuarios`)
+
 - Gestión de empleados
 - Asignación de roles
 - PINs de acceso
@@ -294,51 +308,55 @@ Sistema ventas/
 
 ### Roles y Permisos
 
-| Acción | Cajero | Gerente | Admin | Propietario |
-|--------|--------|---------|-------|-------------|
-| Punto de Venta | ✅ | ✅ | ✅ | ✅ |
-| Ver Inventario | ✅ | ✅ | ✅ | ✅ |
-| Editar Inventario | ❌ | ✅ | ✅ | ✅ |
-| Ver Historial | ✅ | ✅ | ✅ | ✅ |
-| Estadísticas | ❌ | ✅ | ✅ | ✅ |
-| Gestión Usuarios | ❌ | ❌ | ✅ | ✅ |
-| Cerrar Sesión | ❌ | ❌ | ✅ | ✅ |
+| Acción            | Cajero | Gerente | Admin | Propietario |
+| ----------------- | ------ | ------- | ----- | ----------- |
+| Punto de Venta    | ✅     | ✅      | ✅    | ✅          |
+| Ver Inventario    | ✅     | ✅      | ✅    | ✅          |
+| Editar Inventario | ❌     | ✅      | ✅    | ✅          |
+| Ver Historial     | ✅     | ✅      | ✅    | ✅          |
+| Estadísticas      | ❌     | ✅      | ✅    | ✅          |
+| Gestión Usuarios  | ❌     | ❌      | ✅    | ✅          |
+| Cerrar Sesión     | ❌     | ❌      | ✅    | ✅          |
 
 ---
 
 ## 🔌 API de Servicios
 
 ### productService.js
+
 ```javascript
-getProducts()        // Obtener todos los productos
-createProduct(data)  // Crear producto
-updateProduct(id, data) // Actualizar producto
-deleteProduct(id)    // Eliminar producto
+getProducts(); // Obtener todos los productos
+createProduct(data); // Crear producto
+updateProduct(id, data); // Actualizar producto
+deleteProduct(id); // Eliminar producto
 ```
 
 ### salesService.js
+
 ```javascript
-createSale(data)     // Crear venta
-getSales(limit)      // Obtener ventas
-getSalesSince(date)  // Ventas desde fecha
-getTodaySales()      // Ventas de hoy
+createSale(data); // Crear venta
+getSales(limit); // Obtener ventas
+getSalesSince(date); // Ventas desde fecha
+getTodaySales(); // Ventas de hoy
 ```
 
 ### staffService.js
+
 ```javascript
-getStaff()           // Obtener empleados
-createStaff(data)    // Crear empleado
-updateStaff(id, data) // Actualizar empleado
-deleteStaff(id)      // Eliminar empleado
-validatePin(pin)     // Validar PIN
+getStaff(); // Obtener empleados
+createStaff(data); // Crear empleado
+updateStaff(id, data); // Actualizar empleado
+deleteStaff(id); // Eliminar empleado
+validatePin(pin); // Validar PIN
 ```
 
 ### cashCutService.js
+
 ```javascript
-getCurrentShiftSummary() // Resumen del turno
-createCashCut(data)      // Crear corte
-getCashCuts(limit)       // Historial de cortes
-getLastCut()             // Último corte
+getCurrentShiftSummary(); // Resumen del turno
+createCashCut(data); // Crear corte
+getCashCuts(limit); // Historial de cortes
+getLastCut(); // Último corte
 ```
 
 ---
@@ -348,18 +366,22 @@ getLastCut()             // Último corte
 ### Vercel (Recomendado)
 
 1. **Instalar Vercel CLI**
+
 ```bash
 npm install -g vercel
 ```
 
 2. **Desplegar**
+
 ```bash
 cd frontend
 vercel --prod
 ```
 
 ### Variables de Entorno en Vercel
+
 Configura en el dashboard de Vercel:
+
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
 
@@ -370,6 +392,7 @@ Configura en el dashboard de Vercel:
 ### Tablas
 
 #### profiles
+
 ```sql
 - id (uuid, PK, references auth.users)
 - store_name (text)
@@ -379,6 +402,7 @@ Configura en el dashboard de Vercel:
 ```
 
 #### products
+
 ```sql
 - id (bigint, PK)
 - user_id (uuid, FK)
@@ -391,6 +415,7 @@ Configura en el dashboard de Vercel:
 ```
 
 #### sales
+
 ```sql
 - id (bigint, PK)
 - user_id (uuid, FK)
@@ -399,6 +424,7 @@ Configura en el dashboard de Vercel:
 ```
 
 #### sale_items
+
 ```sql
 - id (bigint, PK)
 - sale_id (bigint, FK)
@@ -410,6 +436,7 @@ Configura en el dashboard de Vercel:
 ```
 
 #### staff
+
 ```sql
 - id (bigint, PK)
 - user_id (uuid, FK)
@@ -421,6 +448,7 @@ Configura en el dashboard de Vercel:
 ```
 
 #### cash_cuts
+
 ```sql
 - id (bigint, PK)
 - user_id (uuid, FK)
@@ -458,4 +486,4 @@ Para soporte técnico o consultas, contactar al propietario del repositorio.
 
 ---
 
-*Última actualización: Enero 2026*
+_Última actualización: Enero 2026_
