@@ -7,7 +7,6 @@ const CustomerDisplay = () => {
     const [searchParams] = useSearchParams();
     const userId = searchParams.get('u');
     const [cart, setCart] = useState(null);
-    const [status, setStatus] = useState('active'); // active, processing, completed
     const [currentTime, setCurrentTime] = useState(new Date());
 
     useEffect(() => {
@@ -24,7 +23,6 @@ const CustomerDisplay = () => {
                 const data = await activeCartService.getActiveCart(userId);
                 if (data) {
                     setCart(data);
-                    setStatus(data.status);
                 }
             } catch (error) {
                 console.error('Error fetching initial cart:', error);
@@ -37,7 +35,6 @@ const CustomerDisplay = () => {
         const subscription = activeCartService.subscribeToCart(userId, (newCart) => {
             if (newCart) {
                 setCart(newCart);
-                setStatus(newCart.status);
             }
         });
 
@@ -59,9 +56,11 @@ const CustomerDisplay = () => {
     }
 
     const cartData = (cart?.cart_data && Array.isArray(cart.cart_data)) ? cart.cart_data : [];
-    const isEmpty = !cart || (cartData.length === 0 && (status === 'active' || status === 'completed'));
+    const currentStatus = cart?.status || 'active';
+    const isEmpty = !cart || (cartData.length === 0 && (currentStatus === 'active' || currentStatus === 'completed'));
 
-    if (isEmpty && status !== 'completed') {
+    // Si está vacío y no es una venta recién completada (que queremos mostrar a 0), mostrar bienvenida
+    if (isEmpty && currentStatus !== 'completed') {
         return (
             <div className="customer-display-welcome">
                 <div className="logo-placeholder">
@@ -80,7 +79,7 @@ const CustomerDisplay = () => {
     }
 
     return (
-        <div className={`customer-display-container status-${status}`}>
+        <div className={`customer-display-container status-${currentStatus}`}>
             <div className="display-main">
                 <div className="items-column">
                     <div className="items-header">
@@ -112,7 +111,7 @@ const CustomerDisplay = () => {
                         <span className="total-value">${parseFloat(cart?.total || 0).toFixed(2)}</span>
                     </div>
 
-                    {status === 'processing' && (
+                    {currentStatus === 'processing' && (
                         <div className="payment-info pop-animate">
                             <div className="info-row">
                                 <span className="info-label">Método de Pago</span>

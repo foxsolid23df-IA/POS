@@ -161,9 +161,9 @@ export const Sales = () => {
         }
     }, [codigoEscaneado, productos, productosLoaded])
     
-    // SINCRONIZACIÓN CON PANTALLA DEL CLIENTE
+    // SINCRONIZACIÓN CON PANTALLA DEL CLIENTE (Debounced)
     useEffect(() => {
-        const syncCart = async () => {
+        const timeoutId = setTimeout(async () => {
             if (user && !mostrarModalPago) {
                 try {
                     await activeCartService.updateCart(carrito, total, cashSession?.id);
@@ -171,13 +171,14 @@ export const Sales = () => {
                     console.error('Error sincronizando carrito:', err);
                 }
             }
-        };
-        syncCart();
+        }, 500); // Esperar 500ms de inactividad para sincronizar
+
+        return () => clearTimeout(timeoutId);
     }, [carrito, total, user, cashSession, mostrarModalPago]);
 
-    // Sincronizar info de pago cuando cambia
+    // Sincronizar info de pago cuando cambia (Debounced)
     useEffect(() => {
-        const syncPayment = async () => {
+        const timeoutId = setTimeout(async () => {
             if (user && mostrarModalPago) {
                 try {
                     await activeCartService.updatePaymentInfo({
@@ -190,8 +191,9 @@ export const Sales = () => {
                     console.error('Error sincronizando pago:', err);
                 }
             }
-        };
-        syncPayment();
+        }, 300); // Un poco más rápido para el pago
+
+        return () => clearTimeout(timeoutId);
     }, [metodoPago, montoRecibido, mostrarModalPago, user, total]);
 
     // Seleccionar producto de las sugerencias

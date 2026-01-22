@@ -114,7 +114,7 @@ export const activeCartService = {
                     filter: `user_id=eq.${userId}`
                 },
                 (payload) => {
-                    console.log('Cambio detectado en tiempo real:', payload);
+                    console.log('Cambio detectado en tiempo real:', payload.event, payload.new?.status);
                     callback(payload.new);
                 }
             )
