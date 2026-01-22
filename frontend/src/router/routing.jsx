@@ -18,6 +18,7 @@ import { terminalService } from "../services/terminalService";
 import Maintenance from "../components/admin/Maintenance";
 import { ScrollToTop } from "../components/common/ScrollToTop";
 import { ScrollTopButton } from "../components/common/ScrollTopButton";
+import { ProductProvider } from "../contexts/ProductContext";
 
 const PrivateLayout = ({ children }) => {
     const {
@@ -119,53 +120,62 @@ const AdminRoute = ({ children }) => {
 
 export const Routing = () => {
     return (
-        <AuthProvider>
-            <HashRouter>
-                <ScrollToTop />
-                <Routes>
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register/:invitationCode?" element={<Login />} />
+        <HashRouter>
+            <ScrollToTop />
+            <Routes>
+                {/* Pantalla Cliente: Independiente de AuthProvider y ProductProvider */}
+                <Route path="/customer-display" element={<CustomerDisplay />} />
 
-                    <Route path="/" element={<PrivateLayout><Sales /></PrivateLayout>} />
-                    <Route path="/ventas" element={<PrivateLayout><Sales /></PrivateLayout>} />
-                    <Route path="/inventario" element={<PrivateLayout><Inventory /></PrivateLayout>} />
-                    <Route path="/proveedores" element={<PrivateLayout><Suppliers /></PrivateLayout>} />
-                    <Route path="/historial" element={<PrivateLayout><Historial /></PrivateLayout>} />
-                    <Route path="/estadisticas" element={<PrivateLayout><Stats /></PrivateLayout>} />
-                    <Route path="/customer-display" element={<CustomerDisplay />} />
+                {/* Rutas de la Aplicación Principal */}
+                <Route path="/*" element={
+                    <AuthProvider>
+                        <ProductProvider>
+                            <Routes>
+                                <Route path="/login" element={<Login />} />
+                                <Route path="/register/:invitationCode?" element={<Login />} />
 
-                    {/* Gestión de Usuarios solo para Admin */}
-                    <Route path="/usuarios" element={
-                        <PrivateLayout>
-                            <AdminRoute>
-                                <UserManager />
-                            </AdminRoute>
-                        </PrivateLayout>
-                    } />
+                                <Route path="/" element={<PrivateLayout><Sales /></PrivateLayout>} />
+                                <Route path="/ventas" element={<PrivateLayout><Sales /></PrivateLayout>} />
+                                <Route path="/inventario" element={<PrivateLayout><Inventory /></PrivateLayout>} />
+                                <Route path="/proveedores" element={<PrivateLayout><Suppliers /></PrivateLayout>} />
+                                <Route path="/historial" element={<PrivateLayout><Historial /></PrivateLayout>} />
+                                <Route path="/estadisticas" element={<PrivateLayout><Stats /></PrivateLayout>} />
+                                
+                                {/* Gestión de Usuarios solo para Admin */}
+                                <Route path="/usuarios" element={
+                                    <PrivateLayout>
+                                        <AdminRoute>
+                                            <UserManager />
+                                        </AdminRoute>
+                                    </PrivateLayout>
+                                } />
 
-                    <Route path="/configuracion-dolares" element={
-                        <PrivateLayout>
-                            <ExchangeRateSettings />
-                        </PrivateLayout>
-                    } />
+                                <Route path="/configuracion-dolares" element={
+                                    <PrivateLayout>
+                                        <ExchangeRateSettings />
+                                    </PrivateLayout>
+                                } />
 
-                    <Route path="/soporte-tecnico-especializado-foxsolid" element={
-                        <PrivateLayout>
-                            <AdminRoute>
-                                <Maintenance />
-                            </AdminRoute>
-                        </PrivateLayout>
-                    } />
+                                <Route path="/soporte-tecnico-especializado-foxsolid" element={
+                                    <PrivateLayout>
+                                        <AdminRoute>
+                                            <Maintenance />
+                                        </AdminRoute>
+                                    </PrivateLayout>
+                                } />
 
-                    <Route path="*" element={
-                        <div style={{ padding: '2rem', textAlign: 'center' }}>
-                            <h1>Error 404</h1>
-                            <p>Página no encontrada</p>
-                            <Link to="/">Volver al Inicio</Link>
-                        </div>
-                    } />
-                </Routes>
-            </HashRouter>
-        </AuthProvider>
+                                <Route path="*" element={
+                                    <div style={{ padding: '2rem', textAlign: 'center' }}>
+                                        <h1>Error 404</h1>
+                                        <p>Página no encontrada</p>
+                                        <Link to="/">Volver al Inicio</Link>
+                                    </div>
+                                } />
+                            </Routes>
+                        </ProductProvider>
+                    </AuthProvider>
+                } />
+            </Routes>
+        </HashRouter>
     )
 }

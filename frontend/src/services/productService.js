@@ -21,9 +21,12 @@ export const productService = {
 
         // Si hay caché válido y no se fuerza refresco, devolver caché
         if (!forceRefresh && productsCache && (now - lastFetchTime < CACHE_DURATION)) {
+            console.log('[ProductService] Retornando productos desde caché', { count: productsCache.length });
             // Devolvemos una copia para evitar mutaciones accidentales fuera del servicio
             return [...productsCache];
         }
+
+        console.log('[ProductService] Obteniendo productos desde Supabase...', { forceRefresh });
 
         try {
             const { data, error } = await supabase
@@ -32,29 +35,36 @@ export const productService = {
                 .order('created_at', { ascending: false });
 
             if (error) {
-                console.error('Error fetching products:', error);
+                console.error('[ProductService] Error fetching products:', error);
                 // Si hay error pero tenemos caché (aunque sea viejo), devolverlo
                 if (productsCache && productsCache.length > 0) {
-                    console.warn('Using stale cache due to fetch error');
+                    console.warn('[ProductService] Using stale cache due to fetch error', { count: productsCache.length });
                     return [...productsCache];
                 }
-                throw error;
+                // Si no hay caché, retornar array vacío en lugar de lanzar error
+                console.error('[ProductService] No cache available, returning empty array');
+                return [];
             }
 
+            // Validar que data sea un array
+            const validData = Array.isArray(data) ? data : [];
+            
             // Actualizar caché solo si la petición fue exitosa
-            productsCache = data || [];
+            productsCache = validData;
             lastFetchTime = now;
 
-            return data || [];
+            console.log('[ProductService] Productos obtenidos exitosamente', { count: validData.length });
+            return validData;
         } catch (error) {
-            console.error('Error in getProducts:', error);
+            console.error('[ProductService] Exception in getProducts:', error);
             // Si hay caché disponible (aunque sea viejo), devolverlo como fallback
             if (productsCache && productsCache.length > 0) {
-                console.warn('Returning stale cache as fallback');
+                console.warn('[ProductService] Returning stale cache as fallback', { count: productsCache.length });
                 return [...productsCache];
             }
-            // Si no hay caché, lanzar el error
-            throw error;
+            // Si no hay caché, retornar array vacío en lugar de lanzar error
+            console.error('[ProductService] No cache available after exception, returning empty array');
+            return [];
         }
     },
 

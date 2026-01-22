@@ -349,6 +349,7 @@
     overflow-x: auto;
     /* Scroll horizontal obligatorio para tablas anchas */
     overflow-y: auto;
+    max-height: 65vh;
     /* Scroll vertical interno */
     flex: 1;
     -webkit-overflow-scrolling: touch;

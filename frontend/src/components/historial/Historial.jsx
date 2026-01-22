@@ -311,7 +311,7 @@ export const Historial = () => {
                             <p className="text-slate-400 font-medium">No se encontraron ventas en este periodo</p>
                         </div>
                     ) : (
-                        <div className="flex-1 overflow-y-auto min-h-0 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-50 dark:divide-slate-800 shadow-sm">
+                        <div className="flex-1 overflow-y-auto min-h-0 max-h-[65vh] bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-50 dark:divide-slate-800 shadow-sm">
                             {calcularVentasPaginadas().map((venta) => (
                                 <div key={venta.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors px-6 py-5 flex items-center group">
                                     <div className="flex-1">

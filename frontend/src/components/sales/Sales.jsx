@@ -14,6 +14,7 @@ import { useGlobalScanner } from "../../hooks/scanner";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import { exchangeRateService } from "../../services/exchangeRateService";
 import { supabase } from "../../supabase";
+import { useProducts } from "../../contexts/ProductContext";
 import "./Sales.css";
 
 export const Sales = () => {
@@ -21,6 +22,16 @@ export const Sales = () => {
   const { user, cashSession } = useAuth();
   const { cargando, ejecutarPeticion } = useApi();
   const { isMobile, isTouchDevice } = useIsMobile();
+  
+  // USAR CONTEXTO GLOBAL DE PRODUCTOS
+  const { 
+    productos, 
+    loading: loadingProducts, 
+    error: errorProducts,
+    loadProducts: cargarDatos,
+    updateProduct
+  } = useProducts();
+
   const mostrarError = (mensaje, esAdvertencia = false) => {
     if (mensaje.includes("sin stock") || mensaje.includes("No hay más stock")) {
       mostrarModalPersonalizado("Sin stock disponible", mensaje, "warning");
@@ -38,50 +49,6 @@ export const Sales = () => {
     vaciarCarrito,
     total,
   } = useCart(mostrarError);
-
-  // SUPRIMIR ERRORES DE ABORTO EN CONSOLA
-  useEffect(() => {
-    const originalError = console.error;
-    console.error = (...args) => {
-      // Filtrar errores de AbortError y "signal is aborted"
-      const errorString = args.join(' ');
-      if (
-        errorString.includes('AbortError') ||
-        errorString.includes('signal is aborted') ||
-        errorString.includes('aborted without reason') ||
-        errorString.includes('updating active cart')
-      ) {
-        // Silenciar estos errores
-        return;
-      }
-      originalError.apply(console, args);
-    };
-
-    return () => {
-      console.error = originalError;
-    };
-  }, []);
-
-  // ESTADOS LOCALES
-  const [codigoEscaneado, setCodigoEscaneado] = useState("");
-  const [vendiendo, setVendiendo] = useState(false);
-  const [mostrarModal, setMostrarModal] = useState(false);
-  const [ventaCompletada, setVentaCompletada] = useState(null);
-  const [mostrarCameraScanner, setMostrarCameraScanner] = useState(false);
-
-  // ESTADOS PARA MODAL DE PAGO
-  const [mostrarModalPago, setMostrarModalPago] = useState(false);
-  const [metodoPago, setMetodoPago] = useState("efectivo"); // 'efectivo', 'tarjeta', 'transferencia', 'dolares'
-  const [montoRecibido, setMontoRecibido] = useState("");
-  const [tipoCambio, setTipoCambio] = useState(null);
-
-  // ESTADOS PARA BÚSQUEDA POR NOMBRE
-  const [productos, setProductos] = useState([]);
-  const [sugerencias, setSugerencias] = useState([]);
-  const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
-
-  const [loadingProducts, setLoadingProducts] = useState(true);
-  const [errorProducts, setErrorProducts] = useState(null);
 
   const [modal, setModal] = useState({
     isOpen: false,
@@ -112,98 +79,33 @@ export const Sales = () => {
     });
   };
 
-  // Ref para verificar si el componente está montado
-  const isMountedRef = useRef(true);
+  // ESTADOS LOCALES ADICIONALES
+  const [codigoEscaneado, setCodigoEscaneado] = useState("");
+  const [vendiendo, setVendiendo] = useState(false);
+  const [mostrarModal, setMostrarModal] = useState(false);
+  const [ventaCompletada, setVentaCompletada] = useState(null);
+  const [mostrarCameraScanner, setMostrarCameraScanner] = useState(false);
+  const [mostrarModalPago, setMostrarModalPago] = useState(false);
+  const [metodoPago, setMetodoPago] = useState("efectivo");
+  const [montoRecibido, setMontoRecibido] = useState("");
+  const [tipoCambio, setTipoCambio] = useState(null);
+  const [sugerencias, setSugerencias] = useState([]);
+  const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
 
+  // Cargar tipo de cambio al montar
   useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
-
-  // CARGAR PRODUCTOS Y TIPO DE CAMBIO
-  const cargarDatos = React.useCallback(async (force = false) => {
-    // Solo actualizar el estado si el componente está montado
-    if (!isMountedRef.current) return;
-
-    try {
-      setLoadingProducts(true);
-      setErrorProducts(null);
-
-      const [prods, rate] = await Promise.all([
-        productService.getProducts({ forceRefresh: force }),
-        exchangeRateService.getActiveRate(),
-      ]);
-
-      // Verificar si el componente sigue montado usando la ref
-      if (!isMountedRef.current) return;
-
-      // Asegurar que prods es un array
-      const safeProds = Array.isArray(prods) ? prods : [];
-      setProductos(safeProds);
-
-      if (rate && rate.is_active) {
-        setTipoCambio(parseFloat(rate.rate));
-      }
-
-      // Limpiar error si la carga fue exitosa
-      setErrorProducts(null);
-    } catch (error) {
-      if (!isMountedRef.current) return;
-
-      console.error("Error cargando datos iniciales:", error);
-      setErrorProducts(
-        "No se pudieron cargar los productos. Por favor verifica tu conexión.",
-      );
-      setProductos([]);
-    } finally {
-      if (isMountedRef.current) {
-        setLoadingProducts(false);
-      }
-    }
-  }, []);
-
-  // Cargar datos cuando el componente se monta
-  useEffect(() => {
-    // Resetear estados al montar
-    setLoadingProducts(true);
-    setErrorProducts(null);
-
-    // Cargar datos
-    cargarDatos();
-
-    // Cleanup al desmontar
-    return () => {
-      // Cancelar cualquier operación pendiente
-      isMountedRef.current = false;
-    };
-  }, []); // Solo ejecutar al montar/desmontar
-
-  // Recargar productos cuando el componente se vuelve visible (regresa de otro módulo)
-  useEffect(() => {
-    let lastLoadTime = Date.now();
-
-    const handleVisibilityChange = () => {
-      // Si el componente está visible y han pasado más de 30 segundos desde la última carga
-      if (!document.hidden && isMountedRef.current) {
-        const timeSinceLastLoad = Date.now() - lastLoadTime;
-        // Si han pasado más de 30 segundos, recargar
-        if (timeSinceLastLoad > 30000) {
-          console.log('[Sales] Recargando productos después de volver al módulo');
-          cargarDatos();
-          lastLoadTime = Date.now();
+    const loadExchangeRate = async () => {
+      try {
+        const rate = await exchangeRateService.getActiveRate();
+        if (rate && rate.is_active) {
+          setTipoCambio(parseFloat(rate.rate));
         }
+      } catch (error) {
+        console.error('[Sales] Error cargando tipo de cambio:', error);
       }
     };
-
-    // Escuchar cambios de visibilidad
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [cargarDatos]);
+    loadExchangeRate();
+  }, []);
 
   // SINCRONIZACIÓN EN TIEMPO REAL (MULTICAJA)
   useEffect(() => {
@@ -213,18 +115,14 @@ export const Sales = () => {
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "products" },
         (payload) => {
-          // Actualizar el producto en el estado local
+          // Actualizar el producto en el contexto global
           const updatedProduct = payload.new;
 
           // Actualizar también la caché del servicio
           productService.updateCache(updatedProduct);
 
-          setProductos((prevProductos) => {
-            if (!Array.isArray(prevProductos)) return [];
-            return prevProductos.map((p) =>
-              p.id === updatedProduct.id ? { ...p, ...updatedProduct } : p,
-            );
-          });
+          // Actualizar en el contexto global
+          updateProduct(updatedProduct);
         },
       )
       .subscribe();
@@ -232,7 +130,7 @@ export const Sales = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [updateProduct]);
 
   // BÚSQUEDA POR NOMBRE - Filtrar sugerencias cuando cambia el texto
   useEffect(() => {
@@ -551,9 +449,8 @@ export const Sales = () => {
         exchange_rate: ventaData.exchange_rate,
       });
 
-      // Recargar productos para actualizar stock
-      const productosActualizados = await productService.getProducts({ forceRefresh: true });
-      setProductos(productosActualizados);
+      // Recargar productos para actualizar stock globalmente
+      await cargarDatos(true);
 
       vaciarCarrito();
       setMostrarModal(true);
@@ -937,6 +834,20 @@ export const Sales = () => {
                     monitor
                   </span>
                   <span>Pantalla Cliente</span>
+                </button>
+                <button
+                  onClick={() => {
+                    console.log('[Sales] Recarga manual solicitada');
+                    cargarDatos(true);
+                  }}
+                  disabled={loadingProducts}
+                  className="hidden md:flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl shadow-sm hover:bg-blue-600 transition-all font-bold text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Recargar productos"
+                >
+                  <span className={`material-symbols-outlined text-[18px] ${loadingProducts ? 'animate-spin' : ''}`}>
+                    refresh
+                  </span>
+                  <span>{loadingProducts ? 'Cargando...' : 'Recargar'}</span>
                 </button>
                 <button
                   onClick={() => {

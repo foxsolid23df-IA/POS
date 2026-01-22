@@ -181,6 +181,57 @@
   background: #f3f4f6;
 }
 
+/* RESPONSIVE LAYOUT FOR SALES VIEW */
+@media (max-width: 1024px) {
+  .sales-content-wrapper {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+
+  .sales-main-area {
+    width: 100%;
+    height: auto;
+    min-height: 50vh;
+    overflow: visible;
+  }
+
+  .cart-sidebar {
+    width: 100%;
+    height: auto;
+    max-height: 50vh;
+    border-left: none;
+    border-top: 1px solid #e5e7eb;
+    margin-top: 1rem;
+    box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.05);
+  }
+
+  .cart-items-modern {
+    max-height: 300px;
+  }
+}
+
+@media (max-width: 640px) {
+  .sales-title {
+    font-size: 1.5rem;
+  }
+
+  .search-input-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .barcode-input-modern {
+    width: 100%;
+  }
+
+  .btn-camera-modern {
+    justify-content: center;
+    width: 100%;
+  }
+}
+
 /* EMPTY SCAN AREA */
 .empty-scan-area {
   margin-top: 3rem;
