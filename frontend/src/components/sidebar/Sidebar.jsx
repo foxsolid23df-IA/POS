@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { terminalService } from "../../services/terminalService";
 import { CashCut } from "../cashcut/CashCut";
 import "./Sidebar.css";
 
@@ -272,18 +273,37 @@ export const Sidebar = () => {
             </button>
 
             {isAdmin && (
-              <button
-                onClick={() => {
-                  logout();
-                  setIsOpen(false);
-                }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-rose-600 dark:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"
-              >
-                <span className="material-icons-outlined text-[20px]">
-                  logout
-                </span>
-                <span className="text-sm font-bold">Cerrar Sesión</span>
-              </button>
+              <div className="space-y-1">
+                <button
+                  onClick={() => {
+                    if (window.confirm("¿Estás seguro de desvincular esta PC? Deberás configurar la caja de nuevo al iniciar sesión.")) {
+                      terminalService.resetLocalTerminal();
+                      logout();
+                      setIsOpen(false);
+                    }
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+                  title="Reiniciar configuración de terminal"
+                >
+                  <span className="material-icons-outlined text-[20px]">
+                    restart_alt
+                  </span>
+                  <span className="text-sm font-bold">Reiniciar Caja</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    logout();
+                    setIsOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-rose-600 dark:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"
+                >
+                  <span className="material-icons-outlined text-[20px]">
+                    logout
+                  </span>
+                  <span className="text-sm font-bold">Cerrar Sesión</span>
+                </button>
+              </div>
             )}
           </div>
         </nav>

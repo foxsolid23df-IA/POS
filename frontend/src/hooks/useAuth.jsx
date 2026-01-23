@@ -137,9 +137,11 @@ export const AuthProvider = ({ children }) => {
         return authData;
     };
 
-    // Cerrar sesión COMPLETA (desvincula el dispositivo de la tienda)
+    // Cerrar sesión LOCAL (afecta solo a este dispositivo)
     const logout = async () => {
-        await supabase.auth.signOut();
+        // Usamos { scope: 'local' } para que no cierre las sesiones en otros equipos
+        // del mismo usuario (propietario).
+        await supabase.auth.signOut({ scope: 'local' });
         setProfile(null);
         setUser(null);
         setSession(null);

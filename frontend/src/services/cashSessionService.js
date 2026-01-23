@@ -40,32 +40,9 @@ export const cashSessionService = {
         const terminalId = terminalService.getTerminalId();
         if (!terminalId) throw new Error("Terminal no configurada");
 
-        // 1. Seguridad: Cerrar cualquier sesión que haya quedado abierta por error EN ESTA TERMINAL
-        try {
-            const { data: userData, error: authError } = await supabase.auth.getUser();
-            
-            // Ignorar errores de señales abortadas
-            if (authError && !authError.message?.includes('aborted') && authError.name !== 'AbortError') {
-                console.warn('[cashSessionService] Error getting user:', authError);
-            }
-            
-            if (userData?.user) {
-                await supabase
-                    .from('cash_sessions')
-                    .update({ 
-                        status: 'closed', 
-                        closed_at: new Date().toISOString() 
-                    })
-                    .eq('user_id', userData.user.id)
-                    .eq('terminal_id', terminalId)
-                    .eq('status', 'open');
-            }
-        } catch (e) {
-            // Ignorar errores de señales abortadas
-            if (!e?.message?.includes('aborted') && e?.name !== 'AbortError') {
-                console.warn('[cashSessionService] No se pudieron cerrar sesiones previas:', e.message || e);
-            }
-        }
+        // NOTA: Se ha eliminado el cierre forzoso de sesiones previas al abrir una nueva.
+        // En multicaja, si dos dispositivos comparten el mismo ID de terminal (mismo nombre),
+        // abrir uno cerraría el otro. Es responsabilidad del sistema manejar sesiones colgadas de otra forma.
 
         // 2. Abrir la nueva sesión
         const { data, error } = await supabase
@@ -106,33 +83,10 @@ export const cashSessionService = {
             .select()
             .single();
 
-        // Como medida de seguridad adicional, nos aseguramos de que NO queden otras sesiones abiertas
-        // para este usuario EN ESTA TERMINAL (para evitar el problema de "vuelve a abrir con el monto anterior")
-        try {
-            const { data: userData, error: authError } = await supabase.auth.getUser();
-            
-            // Ignorar errores de señales abortadas
-            if (authError && !authError.message?.includes('aborted') && authError.name !== 'AbortError') {
-                console.warn('[cashSessionService] Error getting user in closeSession:', authError);
-            }
-            
-            if (userData?.user && terminalId) {
-                await supabase
-                    .from('cash_sessions')
-                    .update({ 
-                        status: 'closed', 
-                        closed_at: new Date().toISOString() 
-                    })
-                    .eq('user_id', userData.user.id)
-                    .eq('terminal_id', terminalId)
-                    .eq('status', 'open');
-            }
-        } catch (e) {
-            // Ignorar errores de señales abortadas
-            if (!e?.message?.includes('aborted') && e?.name !== 'AbortError') {
-                console.error('[cashSessionService] Error en limpieza de sesiones:', e.message || e);
-            }
-        }
+        // NOTA: Hemos eliminado la limpieza agresiva que cerraba TODAS las sesiones del usuario en la terminal.
+        // En un entorno multicaja, esto causaba que al cerrar una caja se cerraran todas las demás 
+        // si compartían el mismo usuario o nombre de terminal.
+        // La sesión específica ya se cerró arriba mediante su ID único.
 
         if (error) {
             console.error('Error cerrando sesión de caja:', error);

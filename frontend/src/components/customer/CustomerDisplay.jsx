@@ -19,24 +19,24 @@ const CustomerDisplay = () => {
     useEffect(() => {
         if (!userId && !sessionId) return;
 
-        // Función de carga segura con estrategia de respaldo
+        // Función de carga segura estrictamente por sesión
         const fetchCartSafe = async () => {
-            try {
-                // 1. Intento principal: ID específico
-                let data = await activeCartService.getActiveCart(userId, sessionId);
-                
-                // 2. Intento de respaldo: Cualquier carrito del usuario (si no encontramos específico)
-                if (!data) {
-                    console.log("No se encontró carrito exacto, buscando genérico...");
-                    data = await activeCartService.getAnyActiveCartForUser(userId);
-                }
+            if (!sessionId) {
+                console.log("Esperando identificación de sesión...");
+                return;
+            }
 
+            try {
+                // ÚNICO INTENTO: ID específico de sesión
+                // Eliminamos cualquier fallback genérico por userId para evitar mezclar información de otras cajas
+                const data = await activeCartService.getActiveCart(userId, sessionId);
+                
                 if (data) {
-                    console.log("Datos cargados:", data);
+                    console.log("Datos cargados para sesión:", sessionId);
                     setCart(data);
                     setStatus(data.status);
                 } else {
-                    console.log("Nada encontrado ni en respaldo.");
+                    console.log("No se encontró información para la sesión activa:", sessionId);
                 }
             } catch (err) {
                 // Silencioso
@@ -47,23 +47,20 @@ const CustomerDisplay = () => {
         fetchCartSafe();
 
         // 2. Suscripción en tiempo real (Canal Específico)
+        // Eliminamos la suscripción general (subGeneral) para evitar que se mezclen carritos de otras cajas
         const subSpecific = activeCartService.subscribeToCart(userId, sessionId, (newCart) => {
-            if (newCart) { setCart(newCart); setStatus(newCart.status); }
+            if (newCart) { 
+                console.log("Cambio detectado para esta sesión:", newCart);
+                setCart(newCart); 
+                setStatus(newCart.status); 
+            }
         });
 
-        // 3. Suscripción en tiempo real (Canal General de Respaldo - solo usuario)
-        // Esto captura eventos si el backend guardó sin session_id o con uno distinto
-        const subGeneral = activeCartService.subscribeToCart(userId, null, (newCart) => {
-             // Solo aplicar si es más reciente (opcional, por ahora sobrescribimos)
-             if (newCart) { setCart(newCart); setStatus(newCart.status); }
-        });
-
-        // 4. Polling de respaldo
-        const pollingInterval = setInterval(fetchCartSafe, 2000);
+        // 3. Polling de respaldo (solo si no hay tiempo real o para reconexión)
+        const pollingInterval = setInterval(fetchCartSafe, 3000);
 
         return () => {
             if (subSpecific) subSpecific.unsubscribe();
-            if (subGeneral) subGeneral.unsubscribe();
             clearInterval(pollingInterval);
         };
     }, [userId, sessionId]);

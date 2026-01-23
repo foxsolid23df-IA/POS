@@ -9,7 +9,6 @@ export const terminalService = {
 
     async registerTerminal(name, location = '', isMain = false) {
         // Enforcing Single Main Register Rule:
-        // Si esta terminal será la principal, primero quitamos el privilegio a cualquier otra.
         if (isMain) {
             await supabase
                 .from('terminals')
@@ -17,36 +16,18 @@ export const terminalService = {
                 .eq('is_main', true);
         }
 
-        // Verificar si ya existe una terminal con ese nombre
-        const { data: existing, error: searchError } = await supabase
-            .from('terminals')
-            .select('*')
-            .eq('name', name)
-            .single();
-
-        if (existing) {
-             // Si existe, la reactivamos (si estaba inactiva) y actualizamos is_main
-             const updates = { is_active: true };
-             if (isMain !== undefined && existing.is_main !== isMain) {
-                 updates.is_main = isMain;
-             }
-
-             await supabase.from('terminals').update(updates).eq('id', existing.id);
-
-             localStorage.setItem(TERMINAL_ID_KEY, existing.id);
-             localStorage.setItem(TERMINAL_NAME_KEY, existing.name);
-             return { ...existing, ...updates };
-        }
-
-        // Si no existe y no hubo error de conexión (PGRST116 es "no found", que está bien aquí)
-        if (searchError && searchError.code !== 'PGRST116') {
-            throw searchError;
-        }
-
-        // Crear nueva terminal
+        // NO buscamos por nombre para reutilizar. 
+        // Cada registro en cada PC debe ser una terminal ÚNICA en la DB.
+        // Si el usuario usa el mismo nombre, se crea un nuevo registro con ID único.
+        // Esto evita que dos PCs compartan el mismo ID de terminal y por tanto la misma sesión de caja.
+        
         const { data, error } = await supabase
             .from('terminals')
-            .insert([{ name, location, is_main: isMain }])
+            .insert([{ 
+                name: name.trim(), 
+                location: location.trim(), 
+                is_main: isMain 
+            }])
             .select()
             .single();
         

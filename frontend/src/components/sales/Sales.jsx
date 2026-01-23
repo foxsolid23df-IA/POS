@@ -486,7 +486,7 @@ export const Sales = () => {
 
       // Actualizar activeCartService para marcar como completado
       try {
-        await activeCartService.clearCart('completed');
+        await activeCartService.clearCart('completed', cashSession?.id);
       } catch (e) {
         console.error(e);
       }

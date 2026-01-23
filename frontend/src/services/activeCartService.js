@@ -80,21 +80,14 @@ export const activeCartService = {
     },
 
     // Limpiar el carrito (al completar o cancelar)
-    clearCart: async (status = 'completed') => {
+    clearCart: async (status = 'completed', sessionId = null) => {
         return safeSupabaseOperation(async () => {
             const authResult = await supabase.auth.getUser();
             const user = handleAuthError(authResult, '[activeCartService]');
             
             if (!user) return null;
             
-            // Ídem anterior: borrar por user_id borra el de TODAS las cajas de ese usuario.
-            // Para multicaja real, necesitamos session_id aquí.
-            // PERO ActiveCartService se usa en Sales.jsx que SI tiene session.
-            // Vamos a dejarlo "global" por usuario por ahora para asegurar limpieza,
-            // pero sabiendo que en Multicaja con mismo user cerraría el display del otro.
-            // FIX PARCIAL: Solo limpiar el que esté activo/procesando? 
-            
-            const { error } = await supabase
+            let query = supabase
                 .from('active_carts')
                 .update({
                     cart_data: [],
@@ -106,6 +99,15 @@ export const activeCartService = {
                     updated_at: new Date().toISOString()
                 })
                 .eq('user_id', user.id);
+
+            // IMPORTANTE: En multicaja, solo limpiar el carrito de la sesión actual
+            if (sessionId) {
+                query = query.eq('session_id', sessionId);
+            } else {
+                logger.warn('clearCart called without sessionId. This might clear ALL carts for this user.');
+            }
+                
+            const { error } = await query;
 
             if (error) throw error;
             return true;
@@ -170,10 +172,9 @@ export const activeCartService = {
     subscribeToCart: (userId, sessionId, callback) => {
         console.log('Suscrito a cambios del carrito para:', { userId, sessionId });
         
-        let filter = `user_id=eq.${userId}`;
-        if (sessionId) {
-            filter += `&session_id=eq.${sessionId}`;
-        }
+        // Supabase Realtime solo soporta UN filtro por columna en la suscripción directa.
+        // Dado que session_id es único, filtramos por él si existe.
+        const filter = sessionId ? `session_id=eq.${sessionId}` : `user_id=eq.${userId}`;
 
         return supabase
             .channel(`active_cart_changes_${userId}_${sessionId || 'global'}`)
