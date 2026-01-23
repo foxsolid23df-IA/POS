@@ -5,11 +5,11 @@
 
 .stats-view {
     padding: 0;
-    min-height: 100vh;
-    min-height: -webkit-fill-available;
+    height: 100vh; /* Fixed height to enable scrolling within the container */
     font-family: 'Lexend', sans-serif;
     background: var(--bg-primary, #f8fafc);
     overflow-y: auto;
+    overflow-x: hidden;
 }
 
 /* ===== HEADER ===== */
@@ -415,6 +415,9 @@
     display: flex;
     flex-direction: column;
     gap: 0.875rem;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 0.25rem;
 }
 
 .product-item {
@@ -645,6 +648,9 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 0.25rem; /* Space for scrollbar */
 }
 
 .stock-item {

@@ -1,4 +1,5 @@
 import { supabase } from '../supabase';
+import { isAbortError } from '../utils/supabaseErrorHandler';
 
 // Variables de caché en memoria
 let productsCache = null;
@@ -25,7 +26,6 @@ export const productService = {
             // Devolvemos una copia para evitar mutaciones accidentales fuera del servicio
             return [...productsCache];
         }
-
         console.log('[ProductService] Obteniendo productos desde Supabase...', { forceRefresh });
 
         try {
@@ -35,42 +35,55 @@ export const productService = {
                 .order('created_at', { ascending: false });
 
             if (error) {
-                console.error('[ProductService] Error fetching products:', error);
+                if (!isAbortError(error)) {
+                    console.error('[ProductService] Error fetching products:', error);
+                }
+                
                 // Si hay error pero tenemos caché (aunque sea viejo), devolverlo
                 if (productsCache && productsCache.length > 0) {
                     console.warn('[ProductService] Using stale cache due to fetch error', { count: productsCache.length });
                     return [...productsCache];
                 }
+                
+                if (isAbortError(error)) throw error; // Relanzar para que catch lo maneje (o ignore)
+
                 // Si no hay caché, retornar array vacío en lugar de lanzar error
                 console.error('[ProductService] No cache available, returning empty array');
                 return [];
             }
 
-            // Validar que data sea un array
+            // ... (procesamiento exitoso)
             const validData = Array.isArray(data) ? data : [];
-            
-            // Actualizar caché solo si la petición fue exitosa
             productsCache = validData;
             lastFetchTime = now;
-
             console.log('[ProductService] Productos obtenidos exitosamente', { count: validData.length });
             return validData;
+
         } catch (error) {
-            console.error('[ProductService] Exception in getProducts:', error);
-            // Si hay caché disponible (aunque sea viejo), devolverlo como fallback
-            if (productsCache && productsCache.length > 0) {
-                console.warn('[ProductService] Returning stale cache as fallback', { count: productsCache.length });
-                return [...productsCache];
+            // Si es un error de abort/cancelación, lo relanzamos para que quien llamó lo maneje (o lo ignore)
+            if (isAbortError(error)) {
+                throw error;
             }
-            // Si no hay caché, retornar array vacío en lugar de lanzar error
-            console.error('[ProductService] No cache available after exception, returning empty array');
+
+            console.error('[ProductService] Exception in getProducts:', error);
+            // ... (resto del catch)
+            if (productsCache && productsCache.length > 0) {
+                 return [...productsCache]; 
+            }
             return [];
         }
     },
 
     // Crear un nuevo producto
     createProduct: async (product) => {
-        const { data: userData } = await supabase.auth.getUser();
+        const { data: userData, error: authError } = await supabase.auth.getUser();
+        
+        if (authError) {
+            if (authError.message?.includes('aborted') || authError.name === 'AbortError') {
+                throw new Error('Operación cancelada');
+            }
+            throw authError;
+        }
         const insertData = {
             name: product.name,
             price: parseFloat(product.price),
@@ -181,7 +194,14 @@ export const productService = {
 
     // Crear múltiples productos (Carga Masiva)
     bulkCreateProducts: async (products) => {
-        const { data: userData } = await supabase.auth.getUser();
+        const { data: userData, error: authError } = await supabase.auth.getUser();
+        
+        if (authError) {
+            if (authError.message?.includes('aborted') || authError.name === 'AbortError') {
+                throw new Error('Operación cancelada');
+            }
+            throw authError;
+        }
 
         const productsToInsert = products.map(product => ({
             name: product.name,

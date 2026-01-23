@@ -1,5 +1,6 @@
 import { supabase } from '../supabase';
 import { terminalService } from './terminalService';
+import { isAbortError } from '../utils/supabaseErrorHandler';
 
 export const cashSessionService = {
     /**
@@ -19,8 +20,14 @@ export const cashSessionService = {
             .single();
 
         if (error && error.code !== 'PGRST116') {
-            console.error('Error obteniendo sesión activa:', error);
-            throw error;
+             if (!isAbortError(error)) {
+                console.error('Error obteniendo sesión activa:', error);
+             }
+             // Si es abort, podríamos retornar null o re-lanzar, pero para getActiveSession
+             // suele ser mejor devolver null si se canceló la carga.
+             if (isAbortError(error)) return null;
+             
+             throw error;
         }
 
         return data;
@@ -35,7 +42,13 @@ export const cashSessionService = {
 
         // 1. Seguridad: Cerrar cualquier sesión que haya quedado abierta por error EN ESTA TERMINAL
         try {
-            const { data: userData } = await supabase.auth.getUser();
+            const { data: userData, error: authError } = await supabase.auth.getUser();
+            
+            // Ignorar errores de señales abortadas
+            if (authError && !authError.message?.includes('aborted') && authError.name !== 'AbortError') {
+                console.warn('[cashSessionService] Error getting user:', authError);
+            }
+            
             if (userData?.user) {
                 await supabase
                     .from('cash_sessions')
@@ -48,7 +61,10 @@ export const cashSessionService = {
                     .eq('status', 'open');
             }
         } catch (e) {
-            console.warn('No se pudieron cerrar sesiones previas:', e);
+            // Ignorar errores de señales abortadas
+            if (!e?.message?.includes('aborted') && e?.name !== 'AbortError') {
+                console.warn('[cashSessionService] No se pudieron cerrar sesiones previas:', e.message || e);
+            }
         }
 
         // 2. Abrir la nueva sesión
@@ -93,7 +109,13 @@ export const cashSessionService = {
         // Como medida de seguridad adicional, nos aseguramos de que NO queden otras sesiones abiertas
         // para este usuario EN ESTA TERMINAL (para evitar el problema de "vuelve a abrir con el monto anterior")
         try {
-            const { data: userData } = await supabase.auth.getUser();
+            const { data: userData, error: authError } = await supabase.auth.getUser();
+            
+            // Ignorar errores de señales abortadas
+            if (authError && !authError.message?.includes('aborted') && authError.name !== 'AbortError') {
+                console.warn('[cashSessionService] Error getting user in closeSession:', authError);
+            }
+            
             if (userData?.user && terminalId) {
                 await supabase
                     .from('cash_sessions')
@@ -106,7 +128,10 @@ export const cashSessionService = {
                     .eq('status', 'open');
             }
         } catch (e) {
-            console.error('Error en limpieza de sesiones:', e);
+            // Ignorar errores de señales abortadas
+            if (!e?.message?.includes('aborted') && e?.name !== 'AbortError') {
+                console.error('[cashSessionService] Error en limpieza de sesiones:', e.message || e);
+            }
         }
 
         if (error) {

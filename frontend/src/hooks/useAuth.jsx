@@ -191,7 +191,9 @@ export const AuthProvider = ({ children }) => {
             }
             return session;
         } catch (error) {
-            console.error('Error verificando sesión de caja:', error);
+            if (!isAbortError(error)) {
+                console.error('Error verificando sesión de caja:', error);
+            }
             setNeedsCashFund(true);
             return null;
         }

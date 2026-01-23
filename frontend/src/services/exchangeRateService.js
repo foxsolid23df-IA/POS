@@ -3,23 +3,42 @@ import { supabase } from '../supabase';
 export const exchangeRateService = {
     // Obtener tipo de cambio activo
     getActiveRate: async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return null;
+        try {
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+            
+            // Ignorar errores de señales abortadas
+            if (authError) {
+                if (authError.message?.includes('aborted') || authError.name === 'AbortError') {
+                    return null;
+                }
+                console.error('[exchangeRateService] Auth error:', authError);
+                return null;
+            }
+            
+            if (!user) return null;
 
-        const { data, error } = await supabase
-            .from('exchange_rates')
-            .select('*')
-            .eq('user_id', user.id)
-            .eq('is_active', true)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
+            const { data, error } = await supabase
+                .from('exchange_rates')
+                .select('*')
+                .eq('user_id', user.id)
+                .eq('is_active', true)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single();
 
-        if (error && error.code !== 'PGRST116') { // PGRST116 is "The result contains 0 rows"
-            console.error('Error fetching exchange rate:', error);
+            if (error && error.code !== 'PGRST116') { // PGRST116 is "The result contains 0 rows"
+                console.error('[exchangeRateService] Error fetching exchange rate:', error);
+                return null;
+            }
+            return data;
+        } catch (error) {
+            // Ignorar errores de señales abortadas
+            if (error?.message?.includes('aborted') || error?.name === 'AbortError') {
+                return null;
+            }
+            console.error('[exchangeRateService] Error in getActiveRate:', error.message || error);
             return null;
         }
-        return data;
     },
 
     // Actualizar o crear nuevo tipo de cambio

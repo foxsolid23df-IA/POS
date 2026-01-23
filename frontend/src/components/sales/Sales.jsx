@@ -91,21 +91,71 @@ export const Sales = () => {
   const [tipoCambio, setTipoCambio] = useState(null);
   const [sugerencias, setSugerencias] = useState([]);
   const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
+  // ID temporal de transacción estable para el modal de pago
+  const [transactionId, setTransactionId] = useState("");
 
   // Cargar tipo de cambio al montar
   useEffect(() => {
+    let isMounted = true;
+    
     const loadExchangeRate = async () => {
       try {
         const rate = await exchangeRateService.getActiveRate();
-        if (rate && rate.is_active) {
+        if (isMounted && rate && rate.is_active) {
           setTipoCambio(parseFloat(rate.rate));
         }
       } catch (error) {
-        console.error('[Sales] Error cargando tipo de cambio:', error);
+        // Ignorar errores de señales abortadas
+        if (error?.message?.includes('aborted') || error?.name === 'AbortError') {
+          return;
+        }
+        if (isMounted) {
+          console.error('[Sales] Error cargando tipo de cambio:', error);
+        }
       }
     };
+    
     loadExchangeRate();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
+
+  // DEBUG: Verificar si llegan productos
+  useEffect(() => {
+    // Solo loguear si hay cambio significativo para no saturar consola
+    if (productos.length > 0) {
+       console.log('[Sales Component] Productos disponibles:', productos.length);
+    }
+  }, [productos.length]);
+
+  // SINCRONIZACIÓN CON PANTALLA CLIENTE
+  // Cada vez que cambia el carrito, total o sesión, actualizamos la tabla active_carts
+  useEffect(() => {
+    // Validación estricta: No intentar nada si no hay sesión válida o usuario
+    if (!cashSession?.id || cashSession.status !== 'open' || !user?.id) {
+        return;
+    }
+
+    // Debounce: Esperar 500ms antes de enviar a la DB para evitar saturación y AbortErrors
+    const syncTimer = setTimeout(() => {
+        activeCartService.updateCart(carrito, total, cashSession.id)
+            .then(() => {
+                // Log discreto solo para debug
+                // console.log('[Sync] Carrito sincronizado');
+            })
+            .catch(err => {
+                // Ignorar errores de abort (ya se manejan en el servicio, pero doble check)
+                if (!err?.message?.includes('aborted') && err?.name !== 'AbortError') {
+                    console.error('Error sincronizando carrito:', err);
+                }
+            });
+    }, 500);
+
+    // Limpiar timer si el carrito cambia antes de los 500ms
+    return () => clearTimeout(syncTimer);
+  }, [carrito, total, cashSession, user]);
 
   // SINCRONIZACIÓN EN TIEMPO REAL (MULTICAJA)
   useEffect(() => {
@@ -185,6 +235,7 @@ export const Sales = () => {
             received: parseFloat(montoRecibido) || 0,
             change: calcularCambio(),
             status: "processing",
+            sessionId: cashSession?.id
           });
         } catch (err) {
           // Silenciar errores si el componente se desmontó
@@ -313,6 +364,8 @@ export const Sales = () => {
       );
       return;
     }
+    // Generar ID estable para esta sesión de pago
+    setTransactionId((Math.floor(Math.random() * 90000) + 10000).toString());
     setMontoRecibido("");
     setMetodoPago("efectivo");
     setMostrarModalPago(true);
@@ -825,7 +878,7 @@ export const Sales = () => {
               <div className="flex gap-2">
                 <button
                   onClick={() => {
-                    const url = `${window.location.origin}${window.location.pathname}#/customer-display?u=${user?.id}`;
+                    const url = `${window.location.origin}${window.location.pathname}#/customer-display?u=${user?.id}&s=${cashSession?.id}`;
                     window.open(url, "_blank", "width=1024,height=768");
                   }}
                   className="hidden md:flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-xl shadow-sm hover:bg-emerald-600 transition-all font-bold text-xs"
@@ -1129,7 +1182,7 @@ export const Sales = () => {
                     Resumen
                   </h3>
                   <span className="payment-transaction-id">
-                    #{Math.floor(Math.random() * 90000) + 10000}
+                    #{transactionId}
                   </span>
                 </div>
 

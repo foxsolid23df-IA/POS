@@ -15,46 +15,67 @@ export const ProductProvider = ({ children }) => {
     const [productos, setProductos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const isMountedRef = useRef(true);
-    const loadingRef = useRef(false);
+    
+    // Referencia para saber si el componente sigue montado (para evitar errores de React)
+    const isMounted = useRef(true);
 
-    // Función para cargar productos
-    const loadProducts = useCallback(async (forceRefresh = false) => {
-        // Evitar cargas duplicadas
-        if (loadingRef.current && !forceRefresh) {
-            console.log('[ProductContext] Carga ya en progreso, omitiendo...');
-            return;
+    // Función para cargar productos - CON REINTENTO AUTOMÁTICO
+    const loadProducts = useCallback(async (forceRefresh = false, retryCount = 0) => {
+        if (!isMounted.current) return;
+        
+        // Solo mostramos loading visual si es la primera carga o forzada, no en reintentos internos silenciosos
+        if ((forceRefresh || productos.length === 0) && retryCount === 0) {
+            setLoading(true);
         }
-
-        if (!isMountedRef.current) return;
-
-        loadingRef.current = true;
-        setLoading(true);
         setError(null);
 
         try {
-            console.log('[ProductContext] Cargando productos...', { forceRefresh });
-            const prods = await productService.getProducts({ forceRefresh });
+            console.log(`[ProductContext] Iniciando carga (Intento ${retryCount + 1})...`, { forceRefresh });
+            const data = await productService.getProducts({ forceRefresh });
             
-            if (!isMountedRef.current) return;
-
-            const safeProds = Array.isArray(prods) ? prods : [];
-            console.log('[ProductContext] Productos cargados exitosamente', { count: safeProds.length });
-            
-            setProductos(safeProds);
-            setError(null);
-        } catch (err) {
-            if (!isMountedRef.current) return;
-            
-            console.error('[ProductContext] Error cargando productos:', err);
-            setError('No se pudieron cargar los productos');
-            setProductos([]);
-        } finally {
-            if (isMountedRef.current) {
+            if (isMounted.current) {
+                const safeProds = Array.isArray(data) ? data : [];
+                console.log('[ProductContext] Productos cargados exitosamente:', safeProds.length);
+                setProductos(safeProds);
                 setLoading(false);
-                loadingRef.current = false;
+            }
+        } catch (err) {
+            console.error(`[ProductContext] Error cargando productos (Intento ${retryCount + 1}):`, err);
+            
+            const isAbort = err?.message?.includes('aborted') || err?.name === 'AbortError';
+            
+            // Si falló (incluso por abort), y es el primer intento, reintentamos automáticamente
+            if (isMounted.current && retryCount < 2) {
+                console.log(`[ProductContext] Reintentando carga en 1s...`);
+                setTimeout(() => {
+                    if (isMounted.current) {
+                        loadProducts(forceRefresh, retryCount + 1);
+                    }
+                }, 1000); // Esperar 1 segundo antes de reintentar
+                return; // Salimos para no setear error todavía
+            }
+
+            if (isMounted.current && !isAbort) {
+                setError('No se pudieron cargar los productos. Intenta recargar.');
+                setLoading(false); 
             }
         }
+    }, [productos.length]);
+
+    // Cargar productos al montar con PEQUEÑO RETRASO para evitar conflictos de inicialización
+    useEffect(() => {
+        isMounted.current = true;
+        
+        const timer = setTimeout(() => {
+            if (isMounted.current) {
+                loadProducts();
+            }
+        }, 500); // 500ms de gracia al inicio
+
+        return () => {
+            isMounted.current = false;
+            clearTimeout(timer);
+        };
     }, []);
 
     // Función para actualizar un producto específico (útil para realtime)
@@ -81,17 +102,15 @@ export const ProductProvider = ({ children }) => {
         });
     }, []);
 
-    // Cargar productos al montar el provider
+    // Cargar productos al montar
     useEffect(() => {
-        isMountedRef.current = true;
-        console.log('[ProductContext] Provider montado - Iniciando carga inicial');
+        isMounted.current = true;
         loadProducts();
 
         return () => {
-            isMountedRef.current = false;
-            console.log('[ProductContext] Provider desmontado');
+            isMounted.current = false;
         };
-    }, [loadProducts]);
+    }, []); // Array vacío para ejecutar solo una vez al montar
 
     const value = {
         productos,

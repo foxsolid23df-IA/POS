@@ -6,6 +6,7 @@ import './CustomerDisplay.css';
 const CustomerDisplay = () => {
     const [searchParams] = useSearchParams();
     const userId = searchParams.get('u');
+    const sessionId = searchParams.get('s'); // Obtener ID de sesión
     const [cart, setCart] = useState(null);
     const [status, setStatus] = useState('active'); // active, processing, completed
     const [currentTime, setCurrentTime] = useState(new Date());
@@ -16,35 +17,58 @@ const CustomerDisplay = () => {
     }, []);
 
     useEffect(() => {
-        if (!userId) return;
+        if (!userId && !sessionId) return;
 
-        // Carga inicial
-        const fetchInitialCart = async () => {
+        // Función de carga segura con estrategia de respaldo
+        const fetchCartSafe = async () => {
             try {
-                const data = await activeCartService.getActiveCart(userId);
+                // 1. Intento principal: ID específico
+                let data = await activeCartService.getActiveCart(userId, sessionId);
+                
+                // 2. Intento de respaldo: Cualquier carrito del usuario (si no encontramos específico)
+                if (!data) {
+                    console.log("No se encontró carrito exacto, buscando genérico...");
+                    data = await activeCartService.getAnyActiveCartForUser(userId);
+                }
+
                 if (data) {
+                    console.log("Datos cargados:", data);
                     setCart(data);
                     setStatus(data.status);
+                } else {
+                    console.log("Nada encontrado ni en respaldo.");
                 }
-            } catch (error) {
-                console.error('Error fetching initial cart:', error);
+            } catch (err) {
+                // Silencioso
             }
         };
 
-        fetchInitialCart();
+        // 1. Carga inicial inmediata
+        fetchCartSafe();
 
-        // Suscripción en tiempo real
-        const subscription = activeCartService.subscribeToCart(userId, (newCart) => {
-            if (newCart) {
-                setCart(newCart);
-                setStatus(newCart.status);
-            }
+        // 2. Suscripción en tiempo real (Canal Específico)
+        const subSpecific = activeCartService.subscribeToCart(userId, sessionId, (newCart) => {
+            if (newCart) { setCart(newCart); setStatus(newCart.status); }
         });
 
+        // 3. Suscripción en tiempo real (Canal General de Respaldo - solo usuario)
+        // Esto captura eventos si el backend guardó sin session_id o con uno distinto
+        const subGeneral = activeCartService.subscribeToCart(userId, null, (newCart) => {
+             // Solo aplicar si es más reciente (opcional, por ahora sobrescribimos)
+             if (newCart) { setCart(newCart); setStatus(newCart.status); }
+        });
+
+        // 4. Polling de respaldo
+        const pollingInterval = setInterval(fetchCartSafe, 2000);
+
         return () => {
-            if (subscription) subscription.unsubscribe();
+            if (subSpecific) subSpecific.unsubscribe();
+            if (subGeneral) subGeneral.unsubscribe();
+            clearInterval(pollingInterval);
         };
-    }, [userId]);
+    }, [userId, sessionId]);
+
+
 
     // Temporizador para regresar a pantalla de bienvenida después de completar venta
     useEffect(() => {
