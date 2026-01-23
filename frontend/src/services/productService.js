@@ -1,19 +1,47 @@
 import { supabase } from '../supabase';
 import { isAbortError } from '../utils/supabaseErrorHandler';
 
-// Variables de caché en memoria
+// Variables de caché en memoria (Desactivadas temporalmente para asegurar sincronización multicaja)
 let productsCache = null;
 let lastFetchTime = 0;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos de validez
+const CACHE_DURATION = 0; // 0 para forzar siempre carga desde DB en multicaja
 
 export const productService = {
     // Helper para actualizar el caché localmente (útil para realtime)
-    updateCache: (updatedProduct) => {
-        if (productsCache) {
+    updateCache: (updatedProduct, type = 'UPDATE') => {
+        if (!productsCache) return;
+
+        if (type === 'INSERT') {
+            // Verificar si ya existe para evitar duplicados
+            if (!productsCache.some(p => p.id === updatedProduct.id)) {
+                productsCache = [updatedProduct, ...productsCache];
+            }
+        } else if (type === 'DELETE') {
+            productsCache = productsCache.filter(p => p.id !== updatedProduct.id);
+        } else {
+            // UPDATE
             productsCache = productsCache.map(p =>
                 p.id === updatedProduct.id ? { ...p, ...updatedProduct } : p
             );
         }
+    },
+
+    // Suscribirse a cambios en productos en tiempo real
+    subscribeToProducts: (callback) => {
+        return supabase
+            .channel('public:products')
+            .on('postgres_changes', { 
+                event: '*', 
+                schema: 'public', 
+                table: 'products' 
+            }, (payload) => {
+                console.log('[ProductService] Cambio detectado:', payload.eventType);
+                // Actualizar caché local según el tipo de evento
+                productService.updateCache(payload.new || payload.old, payload.eventType);
+                // Notificar al componente/contexto
+                callback(payload);
+            })
+            .subscribe();
     },
 
     // Obtener todos los productos (con caché)
@@ -109,8 +137,8 @@ export const productService = {
 
         if (error) throw error;
 
-        // Invalidar caché para forzar recarga
-        productsCache = null;
+        // Actualizar caché local
+        productService.updateCache(data, 'INSERT');
 
         return data;
     },
@@ -143,8 +171,8 @@ export const productService = {
 
         if (error) throw error;
 
-        // Invalidar caché
-        productsCache = null;
+        // Actualizar caché local
+        productService.updateCache(data, 'UPDATE');
 
         return data;
     },
@@ -158,8 +186,8 @@ export const productService = {
 
         if (error) throw error;
 
-        // Invalidar caché
-        productsCache = null;
+        // Actualizar caché local
+        productService.updateCache({ id }, 'DELETE');
     },
 
     // Buscar producto por código de barras

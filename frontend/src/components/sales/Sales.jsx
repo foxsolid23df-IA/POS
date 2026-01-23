@@ -157,38 +157,17 @@ export const Sales = () => {
     return () => clearTimeout(syncTimer);
   }, [carrito, total, cashSession, user]);
 
-  // SINCRONIZACIÓN EN TIEMPO REAL (MULTICAJA)
+
+
+  // BÚSQUEDA POR NOMBRE Y SKU - Filtrar sugerencias cuando cambia el texto
   useEffect(() => {
-    const channel = supabase
-      .channel("sales-products-sync")
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "products" },
-        (payload) => {
-          // Actualizar el producto en el contexto global
-          const updatedProduct = payload.new;
-
-          // Actualizar también la caché del servicio
-          productService.updateCache(updatedProduct);
-
-          // Actualizar en el contexto global
-          updateProduct(updatedProduct);
-        },
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [updateProduct]);
-
-  // BÚSQUEDA POR NOMBRE - Filtrar sugerencias cuando cambia el texto
-  useEffect(() => {
-    if (codigoEscaneado.length >= 2 && !/^\d+$/.test(codigoEscaneado)) {
-      // Si tiene 2+ caracteres y NO es solo números, buscar por nombre
+    const query = codigoEscaneado.toLowerCase().trim();
+    if (query.length >= 2) {
+      // Buscar por nombre o por código de barras (SKU)
       const resultados = productos
         .filter((p) =>
-          p.name.toLowerCase().includes(codigoEscaneado.toLowerCase()),
+          p.name.toLowerCase().includes(query) || 
+          (p.barcode && p.barcode.toLowerCase().includes(query))
         )
         .slice(0, 5); // Máximo 5 sugerencias
       setSugerencias(resultados);
@@ -1090,9 +1069,9 @@ export const Sales = () => {
                   </div>
                   <div className="item-info-modern">
                     <h3 className="item-name-modern">{item.name}</h3>
-                    <p className="item-price-modern">
+                    <div className="item-price-modern">
                       {formatearDinero(item.price)}
-                    </p>
+                    </div>
                   </div>
                   <div className="quantity-controls-modern">
                     <button
@@ -1104,7 +1083,26 @@ export const Sales = () => {
                     >
                       -
                     </button>
-                    <span className="quantity-modern">{item.quantity}</span>
+                    <input
+                      type="number"
+                      className="quantity-input-modern"
+                      value={item.quantity}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        if (!isNaN(val)) {
+                          cambiarCantidad(item.id, val);
+                        } else if (e.target.value === "") {
+                          // Allow empty value temporarily while typing
+                          cambiarCantidad(item.id, 0);
+                        }
+                      }}
+                      onBlur={(e) => {
+                        if (e.target.value === "" || parseInt(e.target.value) < 1) {
+                          cambiarCantidad(item.id, 1);
+                        }
+                      }}
+                      min="1"
+                    />
                     <button
                       className="qty-btn-modern"
                       onClick={() =>
@@ -1115,7 +1113,7 @@ export const Sales = () => {
                     </button>
                   </div>
                   <div className="item-total-modern">
-                    {formatearDinero(item.price * item.quantity)}
+                    Total: {formatearDinero(item.price * item.quantity)}
                   </div>
                   <button
                     className="remove-btn-modern"

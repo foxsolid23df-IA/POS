@@ -11,14 +11,14 @@ export const formatearDinero = (cantidad) => {
 
 // 2. VALIDAR CÓDIGOS DE BARRAS
 export const validarCodigoBarras = (codigo) => {
-    // Verificar que no esté vacío y que solo tenga números
+    // Verificar que no esté vacío y que sea un string
     if (!codigo || typeof codigo !== 'string') {
         return false
     }
     
-    // Limpiar espacios y verificar que tenga entre 8 y 13 dígitos
+    // Limpiar espacios y verificar que tenga al menos 1 caracter
     const codigoLimpio = codigo.trim()
-    return /^\d{8,13}$/.test(codigoLimpio)
+    return codigoLimpio.length > 0
 }
 
 // 3. FORMATEAR FECHA Y HORA 

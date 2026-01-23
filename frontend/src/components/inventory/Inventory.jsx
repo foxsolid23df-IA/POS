@@ -6,6 +6,7 @@ import { validarCodigoBarras } from '../../utils';
 import Swal from 'sweetalert2';
 import * as XLSX from 'xlsx';
 import BulkImportModal from './BulkImportModal';
+import { useProducts } from '../../contexts/ProductContext';
 
 // Icons
 import {
@@ -23,8 +24,12 @@ import {
 } from 'react-icons/fi';
 
 const Inventory = () => {
-    const [products, setProducts] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const { 
+        productos: products, 
+        loading, 
+        loadProducts: fetchProducts 
+    } = useProducts();
+    
     const [searchTerm, setSearchTerm] = useState('');
 
     // Pagination State
@@ -86,22 +91,7 @@ const Inventory = () => {
         }
     }, []);
 
-    useEffect(() => {
-        fetchProducts();
-    }, []);
 
-    const fetchProducts = async () => {
-        try {
-            setLoading(true);
-            const data = await productService.getProducts();
-            setProducts(data);
-        } catch (error) {
-            console.error('Error fetching products:', error);
-            Swal.fire('Error', 'No se pudieron cargar los productos', 'error');
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;

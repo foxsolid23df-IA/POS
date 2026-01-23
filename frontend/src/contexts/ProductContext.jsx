@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { productService } from '../services/productService';
+import { supabase } from '../supabase';
 
 const ProductContext = createContext();
 
@@ -19,14 +20,15 @@ export const ProductProvider = ({ children }) => {
     // Referencia para saber si el componente sigue montado (para evitar errores de React)
     const isMounted = useRef(true);
 
+    // Flag para evitar múltiples cargas iniciales simultáneas
+    const isFetching = useRef(false);
+
     // Función para cargar productos - CON REINTENTO AUTOMÁTICO
     const loadProducts = useCallback(async (forceRefresh = false, retryCount = 0) => {
-        if (!isMounted.current) return;
+        if (!isMounted.current || isFetching.current) return;
         
-        // Solo mostramos loading visual si es la primera carga o forzada, no en reintentos internos silenciosos
-        if ((forceRefresh || productos.length === 0) && retryCount === 0) {
-            setLoading(true);
-        }
+        isFetching.current = true;
+        setLoading(true);
         setError(null);
 
         try {
@@ -49,6 +51,7 @@ export const ProductProvider = ({ children }) => {
                 console.log(`[ProductContext] Reintentando carga en 1s...`);
                 setTimeout(() => {
                     if (isMounted.current) {
+                        isFetching.current = false;
                         loadProducts(forceRefresh, retryCount + 1);
                     }
                 }, 1000); // Esperar 1 segundo antes de reintentar
@@ -59,29 +62,21 @@ export const ProductProvider = ({ children }) => {
                 setError('No se pudieron cargar los productos. Intenta recargar.');
                 setLoading(false); 
             }
+        } finally {
+            isFetching.current = false;
         }
-    }, [productos.length]);
-
-    // Cargar productos al montar con PEQUEÑO RETRASO para evitar conflictos de inicialización
-    useEffect(() => {
-        isMounted.current = true;
-        
-        const timer = setTimeout(() => {
-            if (isMounted.current) {
-                loadProducts();
-            }
-        }, 500); // 500ms de gracia al inicio
-
-        return () => {
-            isMounted.current = false;
-            clearTimeout(timer);
-        };
-    }, []);
-
+    }, []); // Ya no depende de productos.length
+    
     // Función para actualizar un producto específico (útil para realtime)
     const updateProduct = useCallback((updatedProduct) => {
         setProductos(prev => {
             if (!Array.isArray(prev)) return [updatedProduct];
+            // Encontrar si el producto existe antes de mapear para ser más eficiente
+            const exists = prev.some(p => p.id === updatedProduct.id);
+            if (!exists) {
+                // Si no existe (tal vez se cargó mientras se agregaba), lo agregamos
+                return [updatedProduct, ...prev];
+            }
             return prev.map(p => p.id === updatedProduct.id ? { ...p, ...updatedProduct } : p);
         });
     }, []);
@@ -90,6 +85,7 @@ export const ProductProvider = ({ children }) => {
     const addProduct = useCallback((newProduct) => {
         setProductos(prev => {
             if (!Array.isArray(prev)) return [newProduct];
+            if (prev.some(p => p.id === newProduct.id)) return prev;
             return [newProduct, ...prev];
         });
     }, []);
@@ -102,15 +98,48 @@ export const ProductProvider = ({ children }) => {
         });
     }, []);
 
-    // Cargar productos al montar
+    // Consolidar carga inicial y suscripción a cambios en tiempo real
     useEffect(() => {
         isMounted.current = true;
+        
+        // Carga inicial
         loadProducts();
 
+        // Suscripción a cambios en tiempo real (Multi-caja)
+        console.log('[ProductContext] Estableciendo suscripción Realtime...');
+        const subscription = productService.subscribeToProducts((payload) => {
+            if (!isMounted.current) return;
+
+            const { eventType, new: newRecord, old: oldRecord } = payload;
+            console.log(`[ProductContext] Realtime Event: ${eventType}`, payload);
+
+            try {
+                switch (eventType) {
+                    case 'INSERT':
+                        addProduct(newRecord);
+                        break;
+                    case 'UPDATE':
+                        updateProduct(newRecord);
+                        break;
+                    case 'DELETE':
+                        removeProduct(oldRecord.id);
+                        break;
+                    default:
+                        console.warn('[ProductContext] Evento no manejado:', eventType);
+                }
+            } catch (err) {
+                console.error('[ProductContext] Error procesando evento realtime:', err);
+            }
+        });
+
         return () => {
+            console.log('[ProductContext] Limpiando suscripción y marcando como desmontado');
             isMounted.current = false;
+            if (subscription) {
+                supabase.removeChannel(subscription);
+            }
         };
-    }, []); // Array vacío para ejecutar solo una vez al montar
+    }, []); // Dependencias vacías para asegurar que solo se ejecute UNA VEZ al montar
 
     const value = {
         productos,
