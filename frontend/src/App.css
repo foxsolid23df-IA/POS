@@ -176,7 +176,7 @@ body {
 
 /* ========= MEDIA QUERIES (MOBILE-FIRST) ========= */
 
-/* 1. Base: < 768px (móvil/estrecho) */
+/* 1. Base: < 1024px (móvil/tablet) */
 :root {
   --header-height: 56px;
   --spacing-xl: 1.25rem;
@@ -193,8 +193,8 @@ body {
   padding-bottom: calc(var(--safe-area-bottom) + 8px);
 }
 
-/* 2. Tablet / Laptop Pequeña: 768px+ */
-@media (min-width: 768px) {
+/* 2. Tablet Pro / Desktop: 1024px+ */
+@media (min-width: 1024px) {
   :root {
     --header-height: 56px;
     --sidebar-width: 240px;

@@ -183,6 +183,12 @@
 }
 
 /* RESPONSIVE LAYOUT FOR SALES VIEW */
+@media (max-width: 1200px) {
+  .cart-sidebar {
+    width: 320px; /* Reduce sidebar width on mid-size screens */
+  }
+}
+
 @media (max-width: 1024px) {
   .sales-content-wrapper {
     flex-direction: column;
@@ -193,7 +199,7 @@
   .sales-main-area {
     width: 100%;
     height: auto;
-    min-height: 50vh;
+    min-height: 40vh;
     overflow: visible;
   }
 
@@ -1793,6 +1799,39 @@
   flex: 1;
   display: flex;
   overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+@media (max-width: 900px) {
+  .payment-modal-container {
+    height: 95vh;
+    max-width: 95vw;
+  }
+
+  .payment-modal-content {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .payment-summary-section {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #f3f4f6;
+    max-height: 30vh;
+  }
+
+  .payment-method-section {
+    width: 100%;
+  }
+
+  .payment-amount-section {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .payment-change-section {
+    width: 100%;
+  }
 }
 
 .payment-summary-section {
@@ -2173,6 +2212,26 @@
 
 .payment-cancel-btn:hover {
   color: #4b5563;
+}
+
+/* Payment Modal Grid Adjustments */
+@media (max-width: 640px) {
+  .payment-method-buttons {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .payment-amount-value {
+    font-size: 1.5rem;
+  }
+  
+  .payment-keypad {
+    gap: 0.25rem;
+  }
+  
+  .payment-key {
+    height: 3.5rem; /* Larger touch targets for mobile */
+    font-size: 1.1rem;
+  }
 }
 
 /* ===== RESPONSIVE - NUEVO DISEÑO MINIMALISTA ===== */

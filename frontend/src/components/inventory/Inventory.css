@@ -10,14 +10,17 @@
 
 /* Header */
 .inventory-header {
-    height: 64px;
-    padding: 0 24px;
+    min-height: 64px;
+    padding: 1rem 1.5rem;
     border-bottom: 1px solid #e5e7eb;
     background-color: #ffffff;
     display: flex;
+    justify-content: space-between;
     align-items: center;
     flex-shrink: 0;
     z-index: 10;
+    flex-wrap: wrap;
+    gap: 1rem;
 }
 
 .inventory-title {
@@ -140,6 +143,47 @@
 .control-btn:hover {
     background-color: #f9fafb;
     border-color: #9ca3af;
+}
+
+@media (max-width: 768px) {
+    .inventory-header {
+        padding: 0.75rem 1rem;
+    }
+    
+    .inventory-title {
+        font-size: 20px;
+    }
+    
+    .inventory-content {
+        padding: 12px;
+    }
+    
+    .search-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .search-container {
+        max-width: none;
+    }
+    
+    .control-buttons {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        width: 100%;
+    }
+    
+    .control-btn {
+        justify-content: center;
+        padding: 8px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .control-buttons {
+        grid-template-columns: 1fr;
+    }
 }
 
 .control-btn.primary {

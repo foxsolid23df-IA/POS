@@ -561,10 +561,10 @@ const Inventory = () => {
                         document.documentElement.classList.toggle('dark');
                         localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
                     }}
-                    className="hidden md:flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm hover:shadow-md transition-all text-slate-600 dark:text-slate-300 font-bold text-xs"
+                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm hover:shadow-md transition-all text-slate-600 dark:text-slate-300 font-bold text-xs"
                 >
                     <span className="material-symbols-outlined text-[18px]">dark_mode</span>
-                    <span>Modo Oscuro</span>
+                    <span className="hidden sm:inline">Modo Oscuro</span>
                 </button>
             </header>
 

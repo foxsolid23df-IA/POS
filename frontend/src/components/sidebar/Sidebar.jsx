@@ -37,7 +37,7 @@ export const Sidebar = () => {
   return (
     <>
       {/* Mobile Header */}
-      <header className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 z-[1001]">
+      <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 z-[1001]">
         <button className="p-2 text-slate-500" onClick={toggleSidebar}>
           <span className="material-icons-outlined text-[24px]">
             {isOpen ? "close" : "menu"}
@@ -74,7 +74,7 @@ export const Sidebar = () => {
       {/* Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-[1000] md:hidden backdrop-blur-sm transition-opacity"
+          className="fixed inset-0 bg-black/50 z-[1000] lg:hidden backdrop-blur-sm transition-opacity"
           onClick={toggleSidebar}
         ></div>
       )}
@@ -82,9 +82,9 @@ export const Sidebar = () => {
       {/* Sidebar */}
       <aside
         className={`
-                fixed md:sticky md:top-0 md:h-screen inset-y-0 left-0 z-[1002] w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 
+                fixed lg:sticky lg:top-0 lg:h-screen inset-y-0 left-0 z-[1002] w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 
                 flex flex-col transition-transform duration-300 ease-in-out
-                ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+                ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
             `}
       >
         {/* Logo Section */}

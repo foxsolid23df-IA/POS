@@ -923,25 +923,25 @@ export const Sales = () => {
       <div className="sales-content-wrapper">
         <div className="sales-main-area">
           <div className="sales-area-header">
-            <div className="flex justify-between items-center w-full">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center w-full gap-4">
               <div>
                 <h1 className="sales-title">AREA DE COBRO</h1>
                 <p className="sales-subtitle">
                   Gestiona y procesa tus ventas con precisión
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => {
                     const url = `${window.location.origin}${window.location.pathname}#/customer-display?u=${user?.id}&s=${cashSession?.id}`;
                     window.open(url, "_blank", "width=1024,height=768");
                   }}
-                  className="hidden md:flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-xl shadow-sm hover:bg-emerald-600 transition-all font-bold text-xs"
+                  className="flex items-center gap-2 px-3 py-2 bg-emerald-500 text-white rounded-xl shadow-sm hover:bg-emerald-600 transition-all font-bold text-xs"
                 >
                   <span className="material-symbols-outlined text-[18px]">
                     monitor
                   </span>
-                  <span>Pantalla Cliente</span>
+                  <span className="hidden sm:inline">Pantalla Cliente</span>
                 </button>
                 <button
                   onClick={() => {
@@ -949,13 +949,13 @@ export const Sales = () => {
                     cargarDatos(true);
                   }}
                   disabled={loadingProducts}
-                  className="hidden md:flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl shadow-sm hover:bg-blue-600 transition-all font-bold text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-xl shadow-sm hover:bg-blue-600 transition-all font-bold text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Recargar productos"
                 >
                   <span className={`material-symbols-outlined text-[18px] ${loadingProducts ? 'animate-spin' : ''}`}>
                     refresh
                   </span>
-                  <span>{loadingProducts ? 'Cargando...' : 'Recargar'}</span>
+                  <span className="hidden sm:inline">{loadingProducts ? 'Cargando...' : 'Recargar'}</span>
                 </button>
                 <button
                   onClick={() => {
@@ -967,12 +967,12 @@ export const Sales = () => {
                         : "light",
                     );
                   }}
-                  className="hidden md:flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm hover:shadow-md transition-all text-slate-600 dark:text-slate-300 font-bold text-xs"
+                  className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm hover:shadow-md transition-all text-slate-600 dark:text-slate-300 font-bold text-xs"
                 >
                   <span className="material-symbols-outlined text-[18px]">
                     dark_mode
                   </span>
-                  <span>Modo Oscuro</span>
+                  <span className="hidden sm:inline">Modo Oscuro</span>
                 </button>
               </div>
             </div>
