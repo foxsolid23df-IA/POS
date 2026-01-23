@@ -8,6 +8,14 @@ export const LockScreen = () => {
     const [pin, setPin] = useState('');
     const [isValidating, setIsValidating] = useState(false);
     const { loginWithPin, unlockAsOwner, storeName, logout, user } = useAuth();
+    const containerRef = React.useRef(null);
+
+    // Auto-enfocar el contenedor al montar para habilitar teclado de inmediato
+    React.useEffect(() => {
+        if (containerRef.current) {
+            containerRef.current.focus();
+        }
+    }, []);
 
     const handlePinInput = (digit) => {
         if (pin.length < 6 && !isValidating) {
@@ -52,7 +60,22 @@ export const LockScreen = () => {
     };
 
     const handleKeyDown = (e) => {
-        if (e.key === 'Enter') {
+        if (isValidating) return;
+
+        // Números (Teclado principal y numérico)
+        if (/^[0-9]$/.test(e.key)) {
+            handlePinInput(e.key);
+        } 
+        // Borrar uno atrás
+        else if (e.key === 'Backspace') {
+            handleBackspace();
+        }
+        // Borrar todo
+        else if (e.key === 'Delete' || e.key === 'Escape' || e.key === 'c' || e.key === 'C') {
+            handleClear();
+        }
+        // Validar/Desbloquear
+        else if (e.key === 'Enter') {
             handleSubmit();
         }
     };
@@ -138,7 +161,13 @@ export const LockScreen = () => {
     };
 
     return (
-        <div className="lock-screen" onKeyDown={handleKeyDown} tabIndex={0}>
+        <div 
+            className="lock-screen" 
+            onKeyDown={handleKeyDown} 
+            tabIndex={0}
+            ref={containerRef}
+            style={{ outline: 'none' }}
+        >
             <div className="lock-container">
                 <div className="lock-header">
                     <button 
