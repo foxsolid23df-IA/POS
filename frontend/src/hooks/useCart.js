@@ -42,11 +42,8 @@ export const useCart = (mostrarError) => {
 
     // 4. FUNCIÓN PARA CAMBIAR LA CANTIDAD DE UN PRODUCTO
     const cambiarCantidad = (idProducto, nuevaCantidad) => {
-        // Si la cantidad es 0 o menor, eliminar el producto
-        if (nuevaCantidad <= 0) {
-            quitarProducto(idProducto)
-            return
-        }
+        // No permitir cantidades negativas
+        if (nuevaCantidad < 0) return;
 
         setCarrito(carritoAnterior =>
             carritoAnterior.map(item => {

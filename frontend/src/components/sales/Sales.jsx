@@ -33,8 +33,8 @@ export const Sales = () => {
   } = useProducts();
 
   const mostrarError = (mensaje, esAdvertencia = false) => {
-    if (mensaje.includes("sin stock") || mensaje.includes("No hay más stock")) {
-      mostrarModalPersonalizado("Sin stock disponible", mensaje, "warning");
+    if (mensaje.includes("sin stock") || mensaje.includes("No hay más stock") || mensaje.includes("Máximo disponible")) {
+      mostrarModalPersonalizado("Stock insuficiente", mensaje, "warning");
     } else if (esAdvertencia) {
       mostrarModalPersonalizado("Advertencia", mensaje, "warning");
     } else {
@@ -93,6 +93,8 @@ export const Sales = () => {
   const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
   // ID temporal de transacción estable para el modal de pago
   const [transactionId, setTransactionId] = useState("");
+  // Estado para evitar que el primer ENTER abra y el segundo cierre instantáneamente
+  const [modalReady, setModalReady] = useState(false);
 
   // Cargar tipo de cambio al montar
   useEffect(() => {
@@ -292,7 +294,7 @@ export const Sales = () => {
   const { isScanning } = useGlobalScanner(manejarCodigoEscaneado, {
     minLength: 8,
     timeout: 100,
-    enabled: true,
+    enabled: !mostrarModalPago && !modal.isOpen && !mostrarModal,
     preventOnModal: true,
   });
 
@@ -347,11 +349,17 @@ export const Sales = () => {
     setTransactionId((Math.floor(Math.random() * 90000) + 10000).toString());
     setMontoRecibido("");
     setMetodoPago("efectivo");
+    setModalReady(false);
     setMostrarModalPago(true);
+    // Aumentar el tiempo de seguridad a 500ms para evitar capturas accidentales del primer ENTER
+    setTimeout(() => {
+      setModalReady(true);
+    }, 500);
   };
 
   const cerrarModalPago = () => {
     setMostrarModalPago(false);
+    setModalReady(false);
     setMontoRecibido("");
     setMetodoPago("efectivo");
   };
@@ -361,6 +369,7 @@ export const Sales = () => {
       if (valor === "backspace") {
         return prev.slice(0, -1);
       } else if (valor === ".") {
+        // Permitir punto si no existe ya uno
         if (!prev.includes(".")) {
           return prev + ".";
         }
@@ -372,8 +381,9 @@ export const Sales = () => {
   };
 
   const calcularCambio = () => {
-    if (!montoRecibido) return 0;
-    const monto = parseFloat(montoRecibido) || 0;
+    const valMonto = montoRecibidoRef?.current || montoRecibido;
+    if (!valMonto) return 0;
+    const monto = parseFloat(valMonto) || 0;
 
     if (metodoPago === "dolares" && tipoCambio) {
       // Convertir dólares recibidos a pesos
@@ -389,15 +399,15 @@ export const Sales = () => {
 
   const formatearMontoRecibido = () => {
     if (metodoPago === "efectivo" || metodoPago === "dolares") {
-      if (!montoRecibido) return "0.00";
-      const monto = parseFloat(montoRecibido) || 0;
-      return monto.toFixed(2);
+      return montoRecibido || "0.00";
     } else {
       return total.toFixed(2);
     }
   };
 
   const finalizarVenta = async () => {
+    // Seguridad: Evitar que ENTER dispare finalizar si el modal acaba de abrirse
+    if (!mostrarModalPago) return;
     if (carrito.length === 0) {
       mostrarModalPersonalizado(
         "Carrito vacío",
@@ -407,13 +417,15 @@ export const Sales = () => {
       return;
     }
 
+    const montoActualStr = montoRecibidoRef.current || montoRecibido;
+    const montoActualNum = parseFloat(montoActualStr) || 0;
+
     // Validar monto recibido si es efectivo
     if (metodoPago === "efectivo") {
-      const monto = parseFloat(montoRecibido) || 0;
-      if (monto < total) {
+      if (montoActualNum < total - 0.01) {
         mostrarModalPersonalizado(
           "Monto insuficiente",
-          `El monto recibido (${formatearDinero(monto)}) es menor al total (${formatearDinero(total)}).`,
+          `El monto recibido (${formatearDinero(montoActualNum)}) es menor al total (${formatearDinero(total)}).`,
           "warning",
         );
         return;
@@ -422,13 +434,12 @@ export const Sales = () => {
 
     // Validar monto si es dólares
     if (metodoPago === "dolares") {
-      const monto = parseFloat(montoRecibido) || 0;
-      const totalEnPesos = monto * tipoCambio;
-      if (!monto || totalEnPesos < total - 0.1) {
-        // Pequeña tolerancia
+      const totalEnPesos = montoActualNum * tipoCambio;
+      // TOLERANCIA DE REDONDEO: permitimos hasta 0.50 centavos de diferencia por redondeo de USD a MXN
+      if (!montoActualNum || totalEnPesos < total - 0.5) {
         mostrarModalPersonalizado(
           "Monto insuficiente",
-          `El pago en dólares (${monto} USD = $${totalEnPesos.toFixed(2)} MXN) no cubre el total de ${formatearDinero(total)}.`,
+          `El pago en dólares (${montoActualNum} USD = $${totalEnPesos.toFixed(2)} MXN) no cubre el total de ${formatearDinero(total)}.`,
           "error",
         );
         return;
@@ -441,21 +452,23 @@ export const Sales = () => {
     try {
       // Preparar datos para Supabase
       const ventaData = {
-        items: carrito.map((item) => ({
-          id: item.id,
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-          stock: item.stock || 0,
-        })),
+        items: carrito
+          .filter((item) => item.quantity > 0)
+          .map((item) => ({
+            id: item.id,
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            stock: item.stock || 0,
+          })),
         total: total,
         metodoPago: metodoPago,
         currency: metodoPago === "dolares" ? "USD" : "MXN",
         exchange_rate: metodoPago === "dolares" ? tipoCambio : null,
-        amount_usd: metodoPago === "dolares" ? parseFloat(montoRecibido) : null,
+        amount_usd: metodoPago === "dolares" ? montoActualNum : null,
         montoRecibido:
           metodoPago === "efectivo" || metodoPago === "dolares"
-            ? parseFloat(montoRecibido) || 0
+            ? montoActualNum
             : total,
         cambio: calcularCambio(),
       };
@@ -512,14 +525,24 @@ export const Sales = () => {
     if (e.key === "Enter") {
       // Si hay sugerencias visibles, seleccionar la primera
       if (mostrarSugerencias && sugerencias.length > 0) {
+        e.preventDefault();
         seleccionarProducto(sugerencias[0]);
         return;
       }
 
       // Si no, búsqueda manual estándar
       if (codigoEscaneado.trim()) {
+        e.preventDefault();
         buscarProductoManual(codigoEscaneado.trim());
         setCodigoEscaneado("");
+      } else if (carrito.length > 0 && !mostrarModalPago && !modal.isOpen && !mostrarModal) {
+        // SI EL INPUT ESTÁ VACÍO Y HAY PRODUCTOS, ABRIR PAGO
+        e.preventDefault();
+        e.target.blur();
+        // Usar un timeout ligeramente mayor para asegurar que el foco se limpie y el estado se estabilice
+        setTimeout(() => {
+          abrirModalPago();
+        }, 150);
       }
     }
   };
@@ -540,26 +563,13 @@ export const Sales = () => {
     if (!mostrarModalPago) return;
 
     const handleKeyDown = (e) => {
-      // Enter: Finalizar venta
-      if (e.key === "Enter") {
+      // Enter o "+" del teclado numérico: Finalizar venta
+      if (e.key === "Enter" || e.key === "+") {
         e.preventDefault();
-        // Usamos la ref para obtener el valor más reciente sin depender del ciclo de render
-        const montoActual = parseFloat(montoRecibidoRef.current) || 0;
-
-        // Validación rápida antes de intentar finalizar
-        if (metodoPago === "efectivo" && montoActual < total) {
-          mostrarModalPersonalizado(
-            "Monto insuficiente",
-            `El monto recibido ($${montoActual.toFixed(2)}) es menor al total.`,
-            "warning",
-          );
-          return;
-        }
-
-        // Dispara la finalización (finalizarVenta usará el estado actual del render,
-        // pero como estamos en un evento, deberíamos asegurarnos de llamarlo correctamente)
-        // Nota: finalizarVenta usa el state `montoRecibido`, que debería estar sincronizado
-        // por el re-render de React, pero por seguridad forzamos el chequeo.
+        // Si el modal no está listo (acaba de abrirse), ignoramos el ENTER
+        if (!modalReady) return;
+        
+        // Dispara la finalización
         finalizarVenta();
         return;
       }
@@ -571,22 +581,88 @@ export const Sales = () => {
         return;
       }
 
-      // Números para pago en efectivo
-      if (metodoPago === "efectivo") {
+      // Atajos para cambiar método de pago
+      if (e.key === "F1") {
+        e.preventDefault();
+        setMetodoPago("efectivo");
+        setMontoRecibido("");
+        return;
+      }
+      if (e.key === "F2") {
+        e.preventDefault();
+        setMetodoPago("tarjeta");
+        setMontoRecibido(total.toFixed(2));
+        return;
+      }
+      if (e.key === "F3") {
+        e.preventDefault();
+        setMetodoPago("transferencia");
+        setMontoRecibido(total.toFixed(2));
+        return;
+      }
+      if (e.key === "F4" && tipoCambio) {
+        e.preventDefault();
+        setMetodoPago("dolares");
+        setMontoRecibido("");
+        return;
+      }
+
+      // Números para pago en efectivo o dólares
+      if (metodoPago === "efectivo" || metodoPago === "dolares") {
+        // Aceptar números normales y del teclado numérico
         if (/^[0-9]$/.test(e.key)) {
           manejarTecladoNumerico(e.key);
-        } else if (e.key === "." || e.key === ",") {
+        } else if (e.key === "." || e.key === "," || e.key === "Decimal" || e.key === "Separator") {
           manejarTecladoNumerico(".");
-        } else if (e.key === "Backspace") {
+        } else if (e.key === "Backspace" || e.key === "Delete") {
           manejarTecladoNumerico("backspace");
         }
       }
     };
 
+    // Usar capture: false para permitir que otros elementos reciban el evento si es necesario.
+    // El scanner usa capture: true, por eso lo desactivamos arriba con 'enabled'.
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-    // Quitamos 'montoRecibido' de las dependencias para que no se recree el listener al escribir
-  }, [mostrarModalPago, metodoPago, total]);
+  }, [mostrarModalPago, metodoPago, total, modalReady, tipoCambio, montoRecibido]);
+
+  // MANEJAR ENTER GLOBAL PARA MODALES Y PAGO
+  useEffect(() => {
+    const handleGlobalEnter = (e) => {
+      if (e.key === "Enter") {
+        // 1. Si hay modal de error/aviso abierto, cerrarlo
+        if (modal.isOpen) {
+          e.preventDefault();
+          cerrarModalPersonalizado();
+          return;
+        } 
+        
+        // 2. Si hay modal de venta completada (ticket), cerrarlo
+        if (mostrarModal) {
+          e.preventDefault();
+          cerrarModal();
+          return;
+        }
+
+        // 3. Si no hay modales abiertos y el carrito tiene productos, abrir pago
+        // Solo si no estamos ya en el modal de pago (finalizarVenta tiene su propio listener)
+        if (carrito.length > 0 && !mostrarModalPago && !modal.isOpen && !mostrarModal) {
+          const activeElement = document.activeElement;
+          const isInput = activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA';
+          
+          // Si el foco está en un input, dejar que el listener del input decida (manejarEnter)
+          // Pero si es el cuerpo de la página u otro elemento no-input, abrir pago directamente
+          if (!isInput) {
+            e.preventDefault();
+            abrirModalPago();
+          }
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalEnter);
+    return () => window.removeEventListener("keydown", handleGlobalEnter);
+  }, [modal.isOpen, mostrarModal, mostrarModalPago, carrito.length, abrirModalPago, cerrarModal, cerrarModalPersonalizado]);
 
   // MANEJAR ESCANEO POR CÁMARA
   const manejarEscaneoCamara = async (codigo) => {
@@ -1086,18 +1162,33 @@ export const Sales = () => {
                     <input
                       type="number"
                       className="quantity-input-modern"
-                      value={item.quantity}
+                      value={item.quantity === 0 ? "" : item.quantity}
                       onChange={(e) => {
-                        const val = parseInt(e.target.value);
-                        if (!isNaN(val)) {
-                          cambiarCantidad(item.id, val);
-                        } else if (e.target.value === "") {
-                          // Allow empty value temporarily while typing
+                        const inputVal = e.target.value;
+                        if (inputVal === "") {
                           cambiarCantidad(item.id, 0);
+                        } else {
+                          const val = parseInt(inputVal);
+                          if (!isNaN(val) && val >= 0) {
+                            cambiarCantidad(item.id, val);
+                          }
+                        }
+                      }}
+                      onFocus={(e) => e.target.select()}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          e.target.blur();
+                          if (item.quantity > 0) {
+                            setTimeout(() => {
+                              abrirModalPago();
+                            }, 150);
+                          }
                         }
                       }}
                       onBlur={(e) => {
-                        if (e.target.value === "" || parseInt(e.target.value) < 1) {
+                        if (item.quantity < 1) {
                           cambiarCantidad(item.id, 1);
                         }
                       }}
@@ -1156,7 +1247,7 @@ export const Sales = () => {
       {/* MODAL DE PAGO */}
       {mostrarModalPago && (
         <div
-          className="payment-modal-overlay"
+          className="payment-modal-overlay modal-overlay"
           onClick={(e) => {
             if (e.target === e.currentTarget) cerrarModalPago();
           }}
@@ -1359,8 +1450,8 @@ export const Sales = () => {
                     className="payment-finalize-btn"
                     onClick={finalizarVenta}
                     disabled={
-                      metodoPago === "efectivo" &&
-                      (!montoRecibido || parseFloat(montoRecibido) < total)
+                      !modalReady || (metodoPago === "efectivo" &&
+                      (!montoRecibido || parseFloat(montoRecibido) < total))
                     }
                   >
                     Finalizar Venta
