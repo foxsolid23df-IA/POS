@@ -59,7 +59,10 @@ export const CashCut = ({ onClose }) => {
             setSummary({
                 ...data,
                 totalUSD,
-                expectedMXN
+                expectedMXN,
+                cardTotal: data.cardTotal || 0,
+                transferTotal: data.transferTotal || 0,
+                cashTotal: data.cashTotal || 0
             });
             setSalesDetails(sales);
             
@@ -178,6 +181,8 @@ export const CashCut = ({ onClose }) => {
                 expectedUSD: summary.totalUSD,
                 actualUSD: parseFloat(actualUSD) || 0,
                 differenceUSD: diffUSD,
+                cardTotal: summary.cardTotal,
+                transferTotal: summary.transferTotal,
                 notes
             };
 
@@ -338,6 +343,18 @@ export const CashCut = ({ onClose }) => {
                                         <span className="font-bold text-blue-600 dark:text-blue-400 text-lg">{formatMoney(cutResult.expectedUSD, 'USD')}</span>
                                     </div>
                                 )}
+                                {cutResult.cardTotal > 0 && (
+                                    <div className="flex justify-between items-center bg-indigo-50 dark:bg-indigo-900/10 p-3 rounded-lg border border-indigo-100 dark:border-indigo-900/20">
+                                        <span className="text-xs uppercase font-bold text-indigo-600 dark:text-indigo-400">Ventas Tarjeta:</span>
+                                        <span className="font-bold text-indigo-600 dark:text-indigo-400 text-lg">{formatMoney(cutResult.cardTotal)}</span>
+                                    </div>
+                                )}
+                                {cutResult.transferTotal > 0 && (
+                                    <div className="flex justify-between items-center bg-purple-50 dark:bg-purple-900/10 p-3 rounded-lg border border-purple-100 dark:border-purple-900/20">
+                                        <span className="text-xs uppercase font-bold text-purple-600 dark:text-purple-400">Ventas Transferencia:</span>
+                                        <span className="font-bold text-purple-600 dark:text-purple-400 text-lg">{formatMoney(cutResult.transferTotal)}</span>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="pt-4 border-t-2 border-dashed border-slate-200 dark:border-slate-700 text-center space-y-2">
@@ -466,17 +483,51 @@ export const CashCut = ({ onClose }) => {
                                 <div className="text-[9px] uppercase font-bold text-slate-400 tracking-widest">Esperado MXN</div>
                             </div>
                         </div>
-                        {summary?.totalUSD > 0 && (
-                            <div className="mt-4 bg-emerald-50 dark:bg-emerald-900/10 p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/20 flex items-center justify-between">
-                                <span className="text-sm font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-widest">
-                                    <span className="material-symbols-rounded align-middle mr-2">currency_exchange</span>
-                                    Total Dólares Recibidos
-                                </span>
-                                <span className="text-xl font-black text-emerald-600 dark:text-emerald-400">
-                                    {formatMoney(summary.totalUSD, 'USD')}
-                                </span>
-                            </div>
-                        )}
+
+                        {/* Totales Secundarios (Tarjeta, Transferencia, USD) */}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                            {summary?.cardTotal > 0 && (
+                                <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border-2 border-indigo-100 dark:border-indigo-900/30 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-indigo-100 dark:bg-indigo-900/30 p-2 rounded-xl">
+                                            <span className="material-symbols-rounded text-indigo-600 dark:text-indigo-400 text-lg">credit_card</span>
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] uppercase font-bold text-slate-400 tracking-widest">Tarjeta</p>
+                                            <p className="text-lg font-black text-slate-900 dark:text-white leading-tight">{formatMoney(summary.cardTotal)}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {summary?.transferTotal > 0 && (
+                                <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border-2 border-purple-100 dark:border-purple-900/30 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-purple-100 dark:bg-purple-900/30 p-2 rounded-xl">
+                                            <span className="material-symbols-rounded text-purple-600 dark:text-purple-400 text-lg">account_balance</span>
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] uppercase font-bold text-slate-400 tracking-widest">Transferencia</p>
+                                            <p className="text-lg font-black text-slate-900 dark:text-white leading-tight">{formatMoney(summary.transferTotal)}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {summary?.totalUSD > 0 && (
+                                <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border-2 border-emerald-100 dark:border-emerald-900/30 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-emerald-100 dark:bg-emerald-900/30 p-2 rounded-xl">
+                                            <span className="material-symbols-rounded text-emerald-600 dark:text-emerald-400 text-lg">currency_exchange</span>
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] uppercase font-bold text-slate-400 tracking-widest">Dólares</p>
+                                            <p className="text-lg font-black text-slate-900 dark:text-white leading-tight">{formatMoney(summary.totalUSD, 'USD')}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </section>
 
                     {/* Efectivo en Caja Inputs */}

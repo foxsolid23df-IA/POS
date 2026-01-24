@@ -68,6 +68,8 @@ export const cashCutService = {
                 expected_usd: cutData.expectedUSD || 0,
                 actual_usd: cutData.actualUSD || 0,
                 difference_usd: cutData.differenceUSD || 0,
+                card_total: cutData.cardTotal || 0,
+                transfer_total: cutData.transferTotal || 0,
                 notes: cutData.notes || null,
                 user_id: userData.user.id,
                 terminal_id: terminalService.getTerminalId()
@@ -165,10 +167,26 @@ export const cashCutService = {
             const salesCount = sales.length;
             const salesTotal = sales.reduce((sum, sale) => sum + parseFloat(sale.total || 0), 0);
 
+            // Calcular totales por método de pago para el resumen
+            const cardTotal = sales
+                .filter(s => s.payment_method === 'tarjeta')
+                .reduce((sum, sale) => sum + parseFloat(sale.total || 0), 0);
+            
+            const transferTotal = sales
+                .filter(s => s.payment_method === 'transferencia')
+                .reduce((sum, sale) => sum + parseFloat(sale.total || 0), 0);
+
+            const cashTotal = sales
+                .filter(s => s.payment_method === 'efectivo')
+                .reduce((sum, sale) => sum + parseFloat(sale.total || 0), 0);
+
             return {
                 startTime,
                 salesCount,
                 salesTotal,
+                cardTotal,
+                transferTotal,
+                cashTotal,
                 sales
             };
         } catch (error) {

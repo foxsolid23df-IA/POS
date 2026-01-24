@@ -1,5 +1,6 @@
 {
   "name": "pos-frontend",
+  "version": "1.2.0",
   "homepage": "https://ginorobia.github.io/sistema-ventas",
   "scripts": {
     "dev": "vite",
