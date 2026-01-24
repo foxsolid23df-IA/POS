@@ -33,6 +33,10 @@ const Maintenance = () => {
     };
 
     const fetchHealth = async (pin) => {
+        // Mostrar estado de carga visualmente
+        setSystemHealth({ status: 'checking', database: 'checking' });
+        setCloudHealth({ status: 'checking', database: 'checking' });
+
         // Verificar API Local
         const local = await maintenanceService.getSystemHealth(pin);
         setSystemHealth(local);

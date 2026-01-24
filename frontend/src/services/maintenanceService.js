@@ -26,14 +26,22 @@ export const maintenanceService = {
   async getGlobalHealth(masterPin) {
     if (!CLOUD_API_URL) return { status: 'offline', database: 'error' };
     try {
+      // Necesitamos la llave de Supabase para poder llamar a la función si tiene JWT activado
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
       const response = await fetch(CLOUD_API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`
+        },
         body: JSON.stringify({ action: 'health', masterPin })
       });
       if (!response.ok) throw new Error('Offline');
       return await response.json();
     } catch (error) {
+      console.error('Cloud Health Error:', error);
       return { status: 'offline', database: 'error' };
     }
   },
