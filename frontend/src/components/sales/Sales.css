@@ -439,8 +439,10 @@
 }
 
 .suggestion-item:hover,
-.suggestion-item:active {
+.suggestion-item:active,
+.suggestion-item.active {
   background: rgba(16, 185, 129, 0.1);
+  border-left: 3px solid #10b981;
 }
 
 .suggestion-image {

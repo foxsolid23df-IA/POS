@@ -91,6 +91,7 @@ export const Sales = () => {
   const [tipoCambio, setTipoCambio] = useState(null);
   const [sugerencias, setSugerencias] = useState([]);
   const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
+  const [indexSugerencia, setIndexSugerencia] = useState(0);
   // ID temporal de transacción estable para el modal de pago
   const [transactionId, setTransactionId] = useState("");
   // Estado para evitar que el primer ENTER abra y el segundo cierre instantáneamente
@@ -174,9 +175,11 @@ export const Sales = () => {
         .slice(0, 5); // Máximo 5 sugerencias
       setSugerencias(resultados);
       setMostrarSugerencias(resultados.length > 0);
+      setIndexSugerencia(0); // Resetear índice al cambiar resultados
     } else {
       setSugerencias([]);
       setMostrarSugerencias(false);
+      setIndexSugerencia(0);
     }
   }, [codigoEscaneado, productos]);
 
@@ -523,10 +526,10 @@ export const Sales = () => {
 
   const manejarEnter = (e) => {
     if (e.key === "Enter") {
-      // Si hay sugerencias visibles, seleccionar la primera
+      // Si hay sugerencias visibles, seleccionar la que está marcada (indexSugerencia)
       if (mostrarSugerencias && sugerencias.length > 0) {
         e.preventDefault();
-        seleccionarProducto(sugerencias[0]);
+        seleccionarProducto(sugerencias[indexSugerencia]);
         return;
       }
 
@@ -543,6 +546,16 @@ export const Sales = () => {
         setTimeout(() => {
           abrirModalPago();
         }, 150);
+      }
+    } else if (e.key === "ArrowDown") {
+      if (mostrarSugerencias && sugerencias.length > 0) {
+        e.preventDefault();
+        setIndexSugerencia((prev) => (prev + 1) % sugerencias.length);
+      }
+    } else if (e.key === "ArrowUp") {
+      if (mostrarSugerencias && sugerencias.length > 0) {
+        e.preventDefault();
+        setIndexSugerencia((prev) => (prev - 1 + sugerencias.length) % sugerencias.length);
       }
     }
   };
@@ -1015,11 +1028,12 @@ export const Sales = () => {
             {/* LISTA DE SUGERENCIAS */}
             {mostrarSugerencias && (
               <div className="suggestions-dropdown">
-                {sugerencias.map((producto) => (
+                {sugerencias.map((producto, index) => (
                   <div
                     key={producto.id}
-                    className="suggestion-item"
+                    className={`suggestion-item ${index === indexSugerencia ? "active" : ""}`}
                     onClick={() => seleccionarProducto(producto)}
+                    onMouseEnter={() => setIndexSugerencia(index)}
                   >
                     <div className="suggestion-image">
                       {producto.image_url ? (

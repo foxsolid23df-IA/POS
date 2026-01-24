@@ -480,7 +480,7 @@ export const CashCut = ({ onClose }) => {
                                 <div className="text-2xl font-black text-white mb-1 leading-none">
                                     {formatMoney(expectedMXN)}
                                 </div>
-                                <div className="text-[9px] uppercase font-bold text-slate-400 tracking-widest">Esperado MXN</div>
+                                <div className="text-[9px] uppercase font-bold text-emerald-50 tracking-widest">Esperado MXN</div>
                             </div>
                         </div>
 
