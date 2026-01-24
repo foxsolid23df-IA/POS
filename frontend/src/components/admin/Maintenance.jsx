@@ -20,6 +20,7 @@ const Maintenance = () => {
 
     const [terminals, setTerminals] = useState([]);
     const [systemHealth, setSystemHealth] = useState({ status: 'checking', database: 'checking' });
+    const [cloudHealth, setCloudHealth] = useState({ status: 'checking', database: 'checking' });
     const [auditLogs, setAuditLogs] = useState([]);
 
     const fetchTerminals = async () => {
@@ -32,12 +33,13 @@ const Maintenance = () => {
     };
 
     const fetchHealth = async (pin) => {
-        try {
-            const health = await maintenanceService.getSystemHealth(pin);
-            setSystemHealth(health);
-        } catch (error) {
-            setSystemHealth({ status: 'offline', database: 'disconnected' });
-        }
+        // Verificar API Local
+        const local = await maintenanceService.getSystemHealth(pin);
+        setSystemHealth(local);
+
+        // Verificar API Global (Supabase)
+        const cloud = await maintenanceService.getGlobalHealth(pin);
+        setCloudHealth(cloud);
     };
 
     const fetchLogs = async (pin) => {
@@ -160,18 +162,29 @@ const Maintenance = () => {
             {/* MONITOR DE SALUD DEL SISTEMA */}
             <div className="health-monitor">
                 <div className="health-status-info">
+                   {/* Estado Local */}
                    <div className="status-item">
-                        <span className="material-icons-outlined">fact_check</span>
+                        <span className="material-icons-outlined">lan</span>
                         <strong>API Local:</strong>
                         <span className={`status-indicator ${systemHealth.status === 'Operational' ? 'online' : systemHealth.status === 'checking' ? 'checking' : 'offline'}`}>
-                            {systemHealth.status === 'Operational' ? 'En línea' : systemHealth.status === 'checking' ? 'Buscando...' : 'Desconectado'}
+                            {systemHealth.status === 'Operational' ? 'En línea' : systemHealth.status === 'checking' ? '...' : 'Offline'}
                         </span>
                    </div>
+
+                   {/* Estado Nube (Supabase) */}
+                   <div className="status-item">
+                        <span className="material-icons-outlined">public</span>
+                        <strong>API Global:</strong>
+                        <span className={`status-indicator ${cloudHealth.status === 'Operational' ? 'online' : cloudHealth.status === 'checking' ? 'checking' : 'offline'}`}>
+                            {cloudHealth.status === 'Operational' ? 'Conectada' : cloudHealth.status === 'checking' ? '...' : 'Inactiva'}
+                        </span>
+                   </div>
+
                    <div className="status-item">
                         <span className="material-icons-outlined">storage</span>
                         <strong>Base de Datos:</strong>
-                        <span className={`status-indicator ${systemHealth.database === 'Connected' ? 'online' : systemHealth.database === 'checking' ? 'checking' : 'offline'}`}>
-                            {systemHealth.database === 'Connected' ? 'Vinculada' : systemHealth.database === 'checking' ? 'Verificando...' : 'Error'}
+                        <span className={`status-indicator ${cloudHealth.database === 'Connected' ? 'online' : cloudHealth.database === 'checking' ? 'checking' : 'offline'}`}>
+                            {cloudHealth.database === 'Connected' ? 'Vinculada' : cloudHealth.database === 'checking' ? '...' : 'Error'}
                         </span>
                    </div>
                 </div>

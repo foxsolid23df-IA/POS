@@ -2,6 +2,10 @@ import { supabase } from '../supabase';
 
 const ADMIN_API_URL = 'http://localhost:3001/api/admin';
 
+// Obtener la URL de Supabase desde las variables de entorno de Vite
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const CLOUD_API_URL = SUPABASE_URL ? `${SUPABASE_URL}/functions/v1/admin-service` : null;
+
 export const maintenanceService = {
   /**
    * Obtiene el estado de salud del sistema desde la API Administrativa local
@@ -9,11 +13,28 @@ export const maintenanceService = {
   async getSystemHealth(masterPin) {
     try {
       const response = await fetch(`${ADMIN_API_URL}/health?masterPin=${masterPin}`);
-      if (!response.ok) throw new Error('Error al conectar con la API Administrativa');
+      if (!response.ok) throw new Error('Offline');
       return await response.json();
     } catch (error) {
-      console.error('Error in maintenanceService.getSystemHealth:', error);
-      throw error;
+      return { status: 'offline', database: 'error' };
+    }
+  },
+
+  /**
+   * Obtiene el estado de salud desde la Edge Function de Supabase (Global)
+   */
+  async getGlobalHealth(masterPin) {
+    if (!CLOUD_API_URL) return { status: 'offline', database: 'error' };
+    try {
+      const response = await fetch(CLOUD_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'health', masterPin })
+      });
+      if (!response.ok) throw new Error('Offline');
+      return await response.json();
+    } catch (error) {
+      return { status: 'offline', database: 'error' };
     }
   },
 
