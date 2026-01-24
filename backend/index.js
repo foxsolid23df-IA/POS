@@ -12,6 +12,8 @@ const sequelize = require('./db/conexion');
 require('./models/Product');
 require('./models/Sale');
 const User = require('./models/User');
+require('./models/SystemLog');
+require('./models/Terminal'); // <--- Registro de terminales
 
 // Crear la app de Express
 const app = express();
@@ -35,9 +37,12 @@ app.use(express.json({ limit: '50mb' }));
 const productRoutes = require('./routes/productRoutes');
 const saleRoutes = require('./routes/saleRoutes');
 const userRoutes = require('./routes/userRoutes');
+const adminRoutes = require('./routes/adminRoutes'); // <--- Nueva ruta
+
 app.use('/api/products', productRoutes);
 app.use('/api/sales', saleRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/admin', adminRoutes); // <--- Nueva ruta
 
 // Puerto y host configurables por variable de entorno
 const PORT = process.env.PORT || 3001;

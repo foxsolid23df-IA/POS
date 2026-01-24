@@ -19,6 +19,8 @@ const Maintenance = () => {
     });
 
     const [terminals, setTerminals] = useState([]);
+    const [systemHealth, setSystemHealth] = useState({ status: 'checking', database: 'checking' });
+    const [auditLogs, setAuditLogs] = useState([]);
 
     const fetchTerminals = async () => {
         try {
@@ -29,15 +31,38 @@ const Maintenance = () => {
         }
     };
 
+    const fetchHealth = async (pin) => {
+        try {
+            const health = await maintenanceService.getSystemHealth(pin);
+            setSystemHealth(health);
+        } catch (error) {
+            setSystemHealth({ status: 'offline', database: 'disconnected' });
+        }
+    };
+
+    const fetchLogs = async (pin) => {
+        try {
+            const data = await maintenanceService.getAdminLogs(pin);
+            setAuditLogs(data.logs || []);
+        } catch (error) {
+            console.error('Error fetching logs:', error);
+        }
+    };
+
     React.useEffect(() => {
         if (isAuthorized) {
             fetchTerminals();
+            fetchHealth(masterPin);
+            fetchLogs(masterPin);
+            
+            // Refrescar salud cada 30 segundos
+            const interval = setInterval(() => fetchHealth(masterPin), 30000);
+            return () => clearInterval(interval);
         }
     }, [isAuthorized]);
 
     const handlePinSubmit = (e) => {
         e.preventDefault();
-        // PIN Maestro Hardcoded para soporte (Puede moverse a .env después)
         if (masterPin === '2026SOP') {
             setIsAuthorized(true);
             setPinError('');
@@ -71,7 +96,6 @@ const Maintenance = () => {
     }
 
     const handleReset = async (nuclearParam = false) => {
-        // Asegurarnos de que sea un booleano (el evento de clic puede venir como primer argumento)
         const isNuclear = nuclearParam === true;
         const expectedPhrase = isNuclear ? 'BORRAR-TODO' : 'RESET';
         const userInput = confirmation.trim();
@@ -82,8 +106,8 @@ const Maintenance = () => {
         }
 
         const warningMsg = isNuclear 
-            ? '¡ADVERTENCIA NUCLEAR! Se borrará absolutamente TODO (incluyendo inventario y perfiles admin). ¿Estás 100% seguro?'
-            : '¿Estás SEGURO de que deseas realizar esta acción? Esta operación borrará permanentemente los datos seleccionados (excepto el inventario).';
+            ? '¡ADVERTENCIA NUCLEAR! Se borrará absolutamente TODO. ¿Estás 100% seguro?'
+            : '¿Estás SEGURO de que deseas realizar esta acción?';
 
         if (!window.confirm(warningMsg)) {
             return;
@@ -93,20 +117,20 @@ const Maintenance = () => {
         setMessage({ text: '', type: '' });
 
         try {
-            console.log('Iniciando Reset con:', { ...options, isNuclear });
             const result = await maintenanceService.resetProjectData({
                 ...options,
-                factoryReset: isNuclear
+                factoryReset: isNuclear,
+                masterPin // Enviamos el PIN a la API local
             });
-            console.log('Resultado del servidor:', result);
             
             if (result.success) {
                 setMessage({ 
-                    text: isNuclear ? 'SISTEMA DESTRUIDO CON ÉXITO. Redirigiendo...' : 'Reset completado con éxito.', 
+                    text: result.message || 'Operación completada con éxito.', 
                     type: 'success' 
                 });
                 
-                // Si es nuclear, limpiar todo y sacar al usuario
+                fetchLogs(masterPin); // Refrescar logs para ver la acción
+
                 if (isNuclear) {
                     maintenanceService.resetLocalTerminal();
                     await supabase.auth.signOut();
@@ -115,13 +139,10 @@ const Maintenance = () => {
                         window.location.reload();
                     }, 3000);
                 } else if (options.resetTerminals) {
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 2000);
+                    setTimeout(() => window.location.reload(), 2000);
                 }
             }
         } catch (error) {
-            console.error('Error en Reset:', error);
             setMessage({ text: 'Error: ' + error.message, type: 'error' });
         } finally {
             setLoading(false);
@@ -136,11 +157,34 @@ const Maintenance = () => {
                 <p>Gestiona la limpieza de datos y licencias del sistema.</p>
             </header>
 
+            {/* MONITOR DE SALUD DEL SISTEMA */}
+            <div className="health-monitor">
+                <div className="health-status-info">
+                   <div className="status-item">
+                        <span className="material-icons-outlined">fact_check</span>
+                        <strong>API Local:</strong>
+                        <span className={`status-indicator ${systemHealth.status === 'Operational' ? 'online' : systemHealth.status === 'checking' ? 'checking' : 'offline'}`}>
+                            {systemHealth.status === 'Operational' ? 'En línea' : systemHealth.status === 'checking' ? 'Buscando...' : 'Desconectado'}
+                        </span>
+                   </div>
+                   <div className="status-item">
+                        <span className="material-icons-outlined">storage</span>
+                        <strong>Base de Datos:</strong>
+                        <span className={`status-indicator ${systemHealth.database === 'Connected' ? 'online' : systemHealth.database === 'checking' ? 'checking' : 'offline'}`}>
+                            {systemHealth.database === 'Connected' ? 'Vinculada' : systemHealth.database === 'checking' ? 'Verificando...' : 'Error'}
+                        </span>
+                   </div>
+                </div>
+                <button className="btn-icon" onClick={() => fetchHealth(masterPin)} title="Refrescar Estado">
+                    <span className="material-icons-outlined">refresh</span>
+                </button>
+            </div>
+
             <div className="maintenance-card warning">
                 <div className="warning-icon">⚠️</div>
                 <div className="warning-content">
                     <h2>Zona de Peligro</h2>
-                    <p>Estas acciones son irreversibles. Se recomienda realizar un respaldo de la base de datos antes de proceder.</p>
+                    <p>Acciones integradas con Auditoría Forense 2026. Todas las acciones quedan registradas.</p>
                 </div>
             </div>
 
@@ -156,7 +200,7 @@ const Maintenance = () => {
                             />
                             <span>
                                 <strong>Resetear Dispositivos</strong>
-                                <small>Elimina todas las terminales registradas. Útil para liberar licencias.</small>
+                                <small>Libera licencias de terminales registradas.</small>
                             </span>
                         </label>
 
@@ -168,7 +212,7 @@ const Maintenance = () => {
                             />
                             <span>
                                 <strong>Limpiar Transacciones</strong>
-                                <small>Borra historial de ventas, sesiones y cortes. Mantiene el inventario.</small>
+                                <small>Ventas y Cortes. Mantiene productos.</small>
                             </span>
                         </label>
 
@@ -179,14 +223,14 @@ const Maintenance = () => {
                                 onChange={(e) => setOptions({...options, resetProfiles: e.target.checked})}
                             />
                             <span>
-                                <strong>Resetear Usuarios Secundarios</strong>
-                                <small>Elimina cuentas de cajeros y otros perfiles no administradores.</small>
+                                <strong>Preservar solo Administrador</strong>
+                                <small>Elimina cuentas de empleados secundarios.</small>
                             </span>
                         </label>
                     </div>
 
                     <div className="confirmation-box">
-                        <p>Escriba <strong>RESET</strong> para habilitar el botón:</p>
+                        <p>Escriba <strong>RESET</strong> para habilitar:</p>
                         <input 
                             type="text" 
                             placeholder="Escribe RESET aquí"
@@ -199,7 +243,7 @@ const Maintenance = () => {
                             onClick={() => handleReset(false)}
                             disabled={loading || confirmation.trim() !== 'RESET'}
                         >
-                            {loading ? 'Procesando...' : 'Ejecutar Limpieza'}
+                            {loading ? 'Procesando...' : 'Ejecutar Acción'}
                         </button>
                     </div>
 
@@ -211,19 +255,17 @@ const Maintenance = () => {
                 </section>
 
                 <section className="reset-section">
-                    <h3>Gestión de Sesiones de Caja</h3>
-                    <p className="section-description">
-                        Usa esta herramienta si no puedes realizar el Cierre de Día porque hay otras cajas abiertas que no tienes a la mano.
-                    </p>
+                    <h3>Sesiones de Caja</h3>
+                    <p className="section-description">Forzar el cierre de cajas abiertas en otros dispositivos.</p>
                     <div className="utility-box">
                         <button 
                             className="btn-warning"
                             onClick={async () => {
-                                if (window.confirm('¿Deseas forzar el cierre de TODAS las cajas abiertas en el sistema? Esto permitirá realizar el Cierre de Día. Los cajeros deberán abrir turno de nuevo.')) {
+                                if (window.confirm('¿Forzar cierre de todas las cajas?')) {
                                     setLoading(true);
                                     try {
                                         await maintenanceService.forceCloseAllSessions();
-                                        setMessage({ text: 'Todas las sesiones han sido cerradas con éxito.', type: 'success' });
+                                        setMessage({ text: 'Sesiones cerradas.', type: 'success' });
                                     } catch (e) {
                                         setMessage({ text: 'Error: ' + e.message, type: 'error' });
                                     } finally {
@@ -234,64 +276,70 @@ const Maintenance = () => {
                             disabled={loading}
                         >
                             <span className="material-icons-outlined">lock_reset</span>
-                            {loading ? 'Cerrando...' : 'Forzar Cierre de Todas las Cajas'}
+                            {loading ? 'Cerrando...' : 'Forzar Cierre Global'}
                         </button>
                     </div>
                 </section>
+
                 <section className="maintenance-section">
-                    <h3>Dispositivos Registrados</h3>
-                    <p className="section-description">
-                        Lista de equipos autorizados. Elimina los que ya no se utilicen para liberar espacio.
-                    </p>
-                    <div className="terminals-list">
-                        {terminals.length === 0 ? (
-                            <p className="empty-msg">No hay terminales registradas.</p>
+                    <h3>Auditoría Forense (Últimos Movimientos)</h3>
+                    <p className="section-description">Registro inmutable de acciones realizadas con el PIN Maestro.</p>
+                    <div className="logs-table-wrapper">
+                        {auditLogs.length === 0 ? (
+                            <p className="empty-msg">No hay registros de auditoría.</p>
                         ) : (
                             <table className="maintenance-table">
                                 <thead>
                                     <tr>
-                                        <th>Nombre</th>
-                                        <th>Ubicación</th>
+                                        <th>Acción</th>
+                                        <th>Detalles</th>
+                                        <th>Fecha</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {auditLogs.map(log => (
+                                        <tr key={log.id}>
+                                            <td><span className="log-action">{log.action}</span></td>
+                                            <td><small>{log.details}</small></td>
+                                            <td className="log-date">{new Date(log.createdAt).toLocaleString()}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+                </section>
+
+                <section className="maintenance-section">
+                    <h3>Dispositivos Registrados</h3>
+                    <div className="terminals-list">
+                        {terminals.length === 0 ? (
+                            <p className="empty-msg">No hay terminales.</p>
+                        ) : (
+                            <table className="maintenance-table">
+                                <thead>
+                                    <tr>
+                                        <th>Equipo</th>
                                         <th>Estado</th>
-                                        <th>Acciones</th>
+                                        <th>Acción</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {terminals.map(t => (
                                         <tr key={t.id}>
-                                            <td>
-                                                <div className="terminal-name-cell">
-                                                    <span className="material-icons-outlined">desktop_windows</span>
-                                                    <strong>{t.name}</strong>
-                                                </div>
-                                            </td>
-                                            <td>{t.location || 'Sin ubicación'}</td>
+                                            <td><strong>{t.name}</strong></td>
                                             <td>
                                                 <span className={`status-badge ${t.is_main ? 'main' : 'secondary'}`}>
-                                                    {t.is_main ? 'Caja Principal' : 'Caja Secundaria'}
+                                                    {t.is_main ? 'Principal' : 'Secundaria'}
                                                 </span>
                                             </td>
-                                            <td className="actions-cell">
-                                                <button 
-                                                    className="btn-icon delete"
-                                                    title="Eliminar Dispositivo"
-                                                    onClick={async () => {
-                                                        if (window.confirm(`¿Seguro que deseas eliminar la terminal "${t.name}"? El dispositivo perderá acceso inmediato.`)) {
-                                                            setLoading(true);
-                                                            try {
-                                                                await terminalService.deleteTerminal(t.id);
-                                                                await fetchTerminals();
-                                                                setMessage({ text: `Terminal "${t.name}" eliminada correctamente.`, type: 'success' });
-                                                            } catch (e) {
-                                                                setMessage({ text: 'Error: ' + e.message, type: 'error' });
-                                                            } finally {
-                                                                setLoading(false);
-                                                            }
-                                                        }
-                                                    }}
-                                                >
-                                                    <span className="material-icons-outlined">delete_forever</span>
-                                                </button>
+                                            <td>
+                                                <button className="btn-icon delete" onClick={async () => {
+                                                    if (window.confirm(`¿Eliminar "${t.name}"?`)) {
+                                                        await terminalService.deleteTerminal(t.id);
+                                                        fetchTerminals();
+                                                    }
+                                                }}><span className="material-icons-outlined">delete_forever</span></button>
                                             </td>
                                         </tr>
                                     ))}
@@ -303,17 +351,11 @@ const Maintenance = () => {
             </div>
 
             <section className="reset-section nuclear">
-                <h3 className="text-danger">☢️ Reset de Fábrica (Baja de Cliente)</h3>
-                <p className="nuclear-warning">
-                    Esta acción borrará <strong>TODO</strong> el sistema: productos, ventas, usuarios y perfiles. 
-                    Úselo solo para dar de baja un cliente o reiniciar el sistema por completo.
-                </p>
-                
+                <h3 className="text-danger">☢️ Reset de Fábrica</h3>
                 <div className="confirmation-box nuclear">
-                    <p>Escriba <strong>BORRAR-TODO</strong> para confirmar la destrucción:</p>
+                    <p>Confirmar con <strong>BORRAR-TODO</strong>:</p>
                     <input 
                         type="text" 
-                        placeholder="BORRAR-TODO"
                         value={confirmation}
                         onChange={(e) => setConfirmation(e.target.value)}
                         className="nuclear-input"
@@ -323,7 +365,7 @@ const Maintenance = () => {
                         disabled={loading || confirmation.trim() !== 'BORRAR-TODO'}
                         onClick={() => handleReset(true)}
                     >
-                        {loading ? 'Destruyendo datos...' : 'EJECUTAR RESET TOTAL'}
+                        {loading ? 'Destruyendo...' : 'RESETEO TOTAL'}
                     </button>
                 </div>
             </section>

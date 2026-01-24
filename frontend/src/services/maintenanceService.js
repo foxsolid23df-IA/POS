@@ -1,15 +1,72 @@
 import { supabase } from '../supabase';
 
+const ADMIN_API_URL = 'http://localhost:3001/api/admin';
+
 export const maintenanceService = {
+  /**
+   * Obtiene el estado de salud del sistema desde la API Administrativa local
+   */
+  async getSystemHealth(masterPin) {
+    try {
+      const response = await fetch(`${ADMIN_API_URL}/health?masterPin=${masterPin}`);
+      if (!response.ok) throw new Error('Error al conectar con la API Administrativa');
+      return await response.json();
+    } catch (error) {
+      console.error('Error in maintenanceService.getSystemHealth:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Obtiene los logs de auditoria
+   */
+  async getAdminLogs(masterPin) {
+    try {
+      const response = await fetch(`${ADMIN_API_URL}/logs?masterPin=${masterPin}`);
+      if (!response.ok) throw new Error('Error al obtener logs');
+      return await response.json();
+    } catch (error) {
+      console.error('Error in maintenanceService.getAdminLogs:', error);
+      throw error;
+    }
+  },
+
   /**
    * Resets project data in the database and cleans up local storage.
    * @param {Object} options - Reset options
-   * @param {boolean} options.resetTerminals - Whether to reset devices/terminals
-   * @param {boolean} options.resetTransactions - Whether to reset sales, sessions, and cuts
-   * @param {boolean} options.resetProfiles - Whether to delete non-admin profiles
    */
-  async resetProjectData({ resetTerminals = true, resetTransactions = true, resetProfiles = false, factoryReset = false }) {
+  async resetProjectData({ resetTerminals = true, resetTransactions = true, resetProfiles = false, factoryReset = false, masterPin }) {
     try {
+      let endpoint = '';
+      if (factoryReset) {
+        endpoint = '/reset/factory';
+      } else if (resetProfiles) {
+        endpoint = '/users/reset-secondary';
+      } else if (resetTransactions) {
+        endpoint = '/reset/sales';
+      } else if (resetTerminals) {
+        endpoint = '/reset/devices';
+      }
+
+      if (endpoint) {
+        // Intentar usar la nueva API Administrativa local primero
+        try {
+          const response = await fetch(`${ADMIN_API_URL}${endpoint}?masterPin=${masterPin}`, {
+            method: 'POST'
+          });
+          if (response.ok) {
+            const data = await response.json();
+            if (resetTerminals || factoryReset) {
+              this.resetLocalTerminal();
+            }
+            return data;
+          }
+        } catch (e) {
+          console.warn('API Local no disponible, cayendo a Supabase RPC:', e);
+        }
+      }
+
+      // Fallback a la función RPC de Supabase (comportamiento original)
       const { data, error } = await supabase.rpc('reset_project_data', {
         p_reset_terminals: resetTerminals,
         p_reset_transactions: resetTransactions,
@@ -20,7 +77,6 @@ export const maintenanceService = {
       if (error) throw error;
 
       if (data?.success) {
-        // If terminals were reset, we MUST clear local storage to force re-registration
         if (resetTerminals || factoryReset) {
           this.resetLocalTerminal();
         }

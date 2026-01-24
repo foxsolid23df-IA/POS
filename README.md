@@ -2,7 +2,7 @@
 
 Sistema de Punto de Venta (POS) profesional desarrollado con React y Supabase, diseñado para pequeños y medianos negocios.
 
-![Version](https://img.shields.io/badge/version-1.2.0-blue)
+![Version](https://img.shields.io/badge/version-1.3.0-blue)
 ![License](https://img.shields.io/badge/license-Private-red)
 ![React](https://img.shields.io/badge/React-19.1-61DAFB?logo=react)
 ![Supabase](https://img.shields.io/badge/Supabase-Backend-3ECF8E?logo=supabase)
@@ -48,6 +48,8 @@ Sistema de Punto de Venta (POS) profesional desarrollado con React y Supabase, d
 - ✅ **Imágenes Integradas**: Soporte para fotografías de productos (Base64/URL).
 
 ### Gestión y Auditoría
+
+- ✅ **Administrative API (v1.3)**: Nueva API dedicada para mantenimiento, salud del sistema y logs forenses.
 
 - ✅ **Sistema Multi-rol**: Propietario, Admin, Gerente y Cajero con permisos granulares.
 - ✅ **Cortes de Caja**: Cierres de turno por terminal y cierre diario global del negocio.
