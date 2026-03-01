@@ -1,0 +1,65 @@
+{
+  "name": "nexum-pos",
+  "version": "1.1.1",
+  "description": "NEXUM POS - Sistema profesional de punto de venta",
+  "main": "electron-main.js",
+  "scripts": {
+    "electron:dev": "cross-env NODE_ENV=development electron .",
+    "electron:build": "npm run build:all && electron-builder",
+    "build:all": "npm run build:frontend && npm run prepare:backend",
+    "build:frontend": "cd frontend && npm run build && cd ..",
+    "prepare:backend": "node scripts/prepare-backend.js",
+    "dist": "npm run build:all && electron-builder --win --x64",
+    "build": "npm run build:frontend"
+  },
+  "keywords": [
+    "pos",
+    "punto-de-venta",
+    "inventario",
+    "ventas"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "cross-env": "^10.1.0",
+    "electron": "^39.2.7",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.nexumpos.app",
+    "productName": "NEXUM POS",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron-main.js",
+      "icon.ico",
+      "dist/**/*",
+      "!backend/node_modules",
+      "!backend/.env",
+      "!backend/.env.*"
+    ],
+    "extraResources": [
+      {
+        "from": "backend",
+        "to": "app/backend"
+      },
+      {
+        "from": "backend/node_modules",
+        "to": "app/backend/node_modules"
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "NEXUM POS"
+    }
+  }
+}

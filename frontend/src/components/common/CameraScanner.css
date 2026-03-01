@@ -1,0 +1,414 @@
+/* ===== CAMERA SCANNER STYLES ===== */
+/* Optimizado para tablets, smartphones y Safari */
+
+.camera-scanner-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 1rem;
+    padding-top: calc(1rem + var(--safe-area-top, 0px));
+    padding-bottom: calc(1rem + var(--safe-area-bottom, 0px));
+}
+
+.camera-scanner-modal {
+    background: var(--bg-secondary);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 450px;
+    max-height: calc(100vh - 2rem - var(--safe-area-top, 0px) - var(--safe-area-bottom, 0px));
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+}
+
+.camera-scanner-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--glass-border);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.camera-scanner-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.close-scanner-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.close-scanner-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+}
+
+.camera-scanner-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Selector de cámara */
+.camera-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: var(--bg-primary);
+    border-radius: 10px;
+}
+
+.camera-selector label {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.camera-selector select {
+    flex: 1;
+    background: var(--bg-secondary);
+    border: 1px solid var(--glass-border);
+    color: var(--text-main);
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    font-size: 16px;
+    /* Evita zoom en iOS */
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+/* Contenedor del scanner */
+.scanner-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    max-height: 350px;
+    background: #000;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+#camera-scanner-region {
+    width: 100%;
+    height: 100%;
+}
+
+#camera-scanner-region video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 16px;
+}
+
+/* Overlay con guía de escaneo */
+.scan-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.scan-frame {
+    width: 250px;
+    height: 150px;
+    position: relative;
+    border: 2px solid rgba(16, 185, 129, 0.5);
+    border-radius: 12px;
+    background: transparent;
+}
+
+.scan-corner {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-color: var(--accent);
+    border-style: solid;
+    border-width: 0;
+}
+
+.scan-corner.top-left {
+    top: -2px;
+    left: -2px;
+    border-top-width: 4px;
+    border-left-width: 4px;
+    border-top-left-radius: 12px;
+}
+
+.scan-corner.top-right {
+    top: -2px;
+    right: -2px;
+    border-top-width: 4px;
+    border-right-width: 4px;
+    border-top-right-radius: 12px;
+}
+
+.scan-corner.bottom-left {
+    bottom: -2px;
+    left: -2px;
+    border-bottom-width: 4px;
+    border-left-width: 4px;
+    border-bottom-left-radius: 12px;
+}
+
+.scan-corner.bottom-right {
+    bottom: -2px;
+    right: -2px;
+    border-bottom-width: 4px;
+    border-right-width: 4px;
+    border-bottom-right-radius: 12px;
+}
+
+/* Línea de escaneo animada */
+.scan-line {
+    position: absolute;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    animation: scanLine 2s ease-in-out infinite;
+}
+
+@keyframes scanLine {
+
+    0%,
+    100% {
+        top: 10%;
+        opacity: 0.5;
+    }
+
+    50% {
+        top: 90%;
+        opacity: 1;
+    }
+}
+
+/* Mensajes de error y permisos */
+.scanner-error,
+.scanner-permission {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+    background: var(--bg-primary);
+    border-radius: 12px;
+    margin-bottom: 1rem;
+}
+
+.scanner-error span,
+.scanner-permission span {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.scanner-error p,
+.scanner-permission p {
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.scanner-error button,
+.scanner-permission button {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.scanner-error button:hover,
+.scanner-permission button:hover {
+    background: var(--accent-hover);
+}
+
+/* Instrucciones */
+.scanner-instructions {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin: 0;
+    padding: 0.5rem;
+}
+
+/* Footer */
+.camera-scanner-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--glass-border);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.supported-formats {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+.cancel-scan-btn {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--glass-border);
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-height: 44px;
+}
+
+.cancel-scan-btn:hover {
+    background: var(--surface);
+    color: var(--text-main);
+}
+
+/* ========= RESPONSIVE ========= */
+
+/* Tablets */
+@media (min-width: 481px) and (max-width: 768px) {
+    .camera-scanner-modal {
+        max-width: 90vw;
+    }
+
+    .scanner-container {
+        max-height: 300px;
+    }
+}
+
+/* Smartphones */
+@media (max-width: 480px) {
+    .camera-scanner-overlay {
+        padding: 0;
+        align-items: flex-end;
+    }
+
+    .camera-scanner-modal {
+        max-width: 100%;
+        max-height: calc(100vh - var(--safe-area-top, 0px));
+        border-radius: 20px 20px 0 0;
+        border-bottom: none;
+    }
+
+    .camera-scanner-header {
+        padding: 1rem 1.25rem;
+    }
+
+    .camera-scanner-header h3 {
+        font-size: 1.1rem;
+    }
+
+    .camera-scanner-body {
+        padding: 0.75rem;
+    }
+
+    .scanner-container {
+        max-height: 280px;
+        border-radius: 12px;
+    }
+
+    .scan-frame {
+        width: 200px;
+        height: 120px;
+    }
+
+    .camera-scanner-footer {
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 1rem;
+    }
+
+    .supported-formats {
+        text-align: center;
+    }
+
+    .cancel-scan-btn {
+        width: 100%;
+    }
+}
+
+/* Smartphones muy pequeños */
+@media (max-width: 375px) {
+    .scanner-container {
+        max-height: 240px;
+    }
+
+    .scan-frame {
+        width: 180px;
+        height: 100px;
+    }
+}
+
+/* Landscape en móviles */
+@media (max-width: 896px) and (orientation: landscape) {
+    .camera-scanner-overlay {
+        padding: 0.5rem;
+        align-items: center;
+    }
+
+    .camera-scanner-modal {
+        flex-direction: row;
+        max-width: 90vw;
+        max-height: 95vh;
+        border-radius: 16px;
+    }
+
+    .camera-scanner-header {
+        display: none;
+    }
+
+    .camera-scanner-body {
+        flex: 2;
+    }
+
+    .scanner-container {
+        max-height: 100%;
+        aspect-ratio: 4/3;
+    }
+
+    .camera-scanner-footer {
+        flex-direction: column;
+        flex: 1;
+        border-top: none;
+        border-left: 1px solid var(--glass-border);
+    }
+}
