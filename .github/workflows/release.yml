@@ -1,5 +1,8 @@
 name: Build and Release NEXUM POS
 
+permissions:
+  contents: write
+
 on:
   push:
     tags:

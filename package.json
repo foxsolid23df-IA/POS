@@ -34,7 +34,7 @@
     "files": [
       "electron-main.js",
       "icon.ico",
-      "dist/**/*",
+      "frontend/dist/**/*",
       "!backend/node_modules",
       "!backend/.env",
       "!backend/.env.*"
