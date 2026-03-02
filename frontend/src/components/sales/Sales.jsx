@@ -16,11 +16,13 @@ import { exchangeRateService } from "../../services/exchangeRateService";
 import { cashMovementService } from "../../services/cashMovementService";
 import { supabase } from "../../supabase";
 import { useProducts } from "../../contexts/ProductContext";
+import { useSettings } from "../../contexts/SettingsContext";
 import "./Sales.css";
 
 export const Sales = () => {
   // HOOKS PERSONALIZADOS
   const { user, cashSession } = useAuth();
+  const { ticketSettings } = useSettings();
   const { cargando, ejecutarPeticion } = useApi();
   const { isMobile, isTouchDevice } = useIsMobile();
 
@@ -969,6 +971,7 @@ export const Sales = () => {
   // Función mejorada para imprimir tickets térmicos POS
   const imprimirTicketTérmico = (ticketHTML, ventaData) => {
     const printWindow = window.open("", "_blank", "width=400,height=600");
+    const settings = ticketSettings || { paper_width: "58mm", font_size: 12 };
 
     const ticketContent = ventaData ? ticketHTML : generarHTMLTicketPago();
 
@@ -980,92 +983,43 @@ export const Sales = () => {
             <style>
                 @media print {
                     @page {
-                        size: 80mm auto;
+                        size: ${settings.paper_width === "58mm" ? "58mm" : "80mm"} auto;
                         margin: 0;
                     }
                     body {
                         margin: 0;
-                        padding: 8mm;
-                        width: 64mm;
-                        font-family: 'Courier New', Courier, monospace;
-                        font-size: 10pt;
-                        line-height: 1.2;
-                    }
-                    * {
-                        box-sizing: border-box;
+                        padding: 0;
+                        width: 100%;
                     }
                 }
-                @media screen {
-                    body {
-                        font-family: 'Courier New', Courier, monospace;
-                        padding: 20px;
-                        max-width: 300px;
-                        margin: 0 auto;
-                        font-size: 12px;
-                    }
+                body {
+                    font-family: ${settings.font_family === "Monospace" ? "monospace" : "system-ui, -apple-system, sans-serif"};
+                    font-size: ${settings.font_size}px;
+                    line-height: 1.4;
+                    color: black;
                 }
-                .ticket-container {
-                    width: 100%;
-                    text-align: center;
+                .ticket-venta {
+                    padding: 10px;
+                    max-width: 100%;
+                    box-sizing: border-box;
                 }
-                .ticket-header {
-                    text-align: center;
-                    margin-bottom: 8px;
-                    padding-bottom: 8px;
-                    border-bottom: 1px dashed #000;
-                }
-                .ticket-title {
-                    font-size: 14pt;
-                    font-weight: bold;
-                    margin-bottom: 4px;
-                }
-                .ticket-fecha {
-                    font-size: 9pt;
-                }
-                .ticket-linea {
-                    border-top: 1px dashed #000;
-                    margin: 8px 0;
-                }
-                .ticket-producto {
-                    margin-bottom: 6px;
-                    text-align: left;
-                }
-                .ticket-producto-nombre {
-                    font-weight: bold;
-                    margin-bottom: 2px;
-                }
-                .ticket-producto-detalle {
-                    display: flex;
-                    justify-content: space-between;
-                    font-size: 9pt;
-                }
-                .ticket-total {
-                    font-size: 12pt;
-                    font-weight: bold;
-                    text-align: right;
-                    margin-top: 10px;
-                    padding-top: 8px;
-                    border-top: 1px dashed #000;
-                }
-                .ticket-footer {
-                    text-align: center;
-                    font-size: 9pt;
-                    margin-top: 12px;
-                    padding-top: 8px;
-                    border-top: 1px dashed #000;
-                }
-                .ticket-method {
-                    font-size: 9pt;
-                    margin-top: 4px;
-                }
-                .ticket-change {
-                    font-size: 9pt;
-                    margin-top: 4px;
-                }
+                .ticket-header { text-align: center; margin-bottom: 10px; }
+                .ticket-logo { max-width: 150px; height: auto; margin-bottom: 5px; }
+                .ticket-title { font-weight: bold; font-size: 1.2em; text-transform: uppercase; }
+                .ticket-info { font-size: 0.9em; white-space: pre-wrap; margin-bottom: 2px; }
+                .ticket-linea { border-top: 1px dashed black; margin: 8px 0; }
+                .ticket-producto { margin-bottom: 6px; }
+                .ticket-producto-nombre { font-weight: bold; text-transform: uppercase; }
+                .ticket-producto-detalle { display: flex; justify-content: space-between; }
+                .ticket-total { font-size: 1.2em; font-weight: bold; text-align: right; margin-top: 10px; }
+                .ticket-footer { text-align: center; margin-top: 20px; font-style: italic; font-size: 0.9em; }
+                .ticket-pagos { margin: 8px 0; font-size: 0.9em; }
+                .ticket-pago-row { display: flex; justify-content: space-between; }
             </style>
         `);
     printWindow.document.write("</head><body>");
     printWindow.document.write(ticketContent);
+
     printWindow.document.write("</body></html>");
     printWindow.document.close();
 
@@ -1074,11 +1028,16 @@ export const Sales = () => {
       printWindow.focus();
       printWindow.print();
       // No cerrar automáticamente para permitir selección de impresora
-    }, 50);
+    }, 100);
   };
 
   // Generar HTML del ticket desde el modal de pago (antes de finalizar)
   const generarHTMLTicketPago = () => {
+    const settings = ticketSettings || {
+      business_name: "Ticket de Venta",
+      footer_message: "¡Gracias por su compra!",
+    };
+
     const fecha = new Date().toLocaleString("es-ES", {
       year: "numeric",
       month: "2-digit",
@@ -1087,9 +1046,18 @@ export const Sales = () => {
       minute: "2-digit",
     });
 
-    let html = '<div class="ticket-container">';
+    let html = '<div class="ticket-venta">';
     html += '<div class="ticket-header">';
-    html += '<div class="ticket-title">TICKET DE VENTA</div>';
+    if (settings.logo_url) {
+      html += `<img src="${settings.logo_url}" class="ticket-logo" alt="Logo">`;
+    }
+    html += `<div class="ticket-title">${settings.business_name}</div>`;
+    if (settings.address) {
+      html += `<div class="ticket-info">${settings.address}</div>`;
+    }
+    if (settings.phone) {
+      html += `<div class="ticket-info">${settings.phone}</div>`;
+    }
     html += `<div class="ticket-fecha">${fecha}</div>`;
     html += "</div>";
     html += '<div class="ticket-linea"></div>';
@@ -1099,40 +1067,36 @@ export const Sales = () => {
       html += '<div class="ticket-producto">';
       html += `<div class="ticket-producto-nombre">${item.name}</div>`;
       html += '<div class="ticket-producto-detalle">';
-      html += `<span>Cant: ${item.quantity} x ${formatearDinero(item.price)}</span>`;
+      html += `<span>${item.quantity} x ${formatearDinero(item.price)}</span>`;
       html += `<span>${formatearDinero(item.price * item.quantity)}</span>`;
       html += "</div></div>";
     });
 
     html += '<div class="ticket-linea"></div>';
+    html += `<div class="ticket-total">TOTAL: ${formatearDinero(total)}</div>`;
 
-    // Totales
-    html += '<div class="ticket-total">';
-    html += `<div>Subtotal: ${formatearDinero(total)}</div>`;
-    html += `<div>Total: ${formatearDinero(total)}</div>`;
+    if (pagosRealizados && pagosRealizados.length > 0) {
+      html += '<div class="ticket-pagos">';
+      pagosRealizados.forEach((p) => {
+        html += '<div class="ticket-pago-row">';
+        html += `<span style="text-transform: capitalize;">${p.method}:</span>`;
+        html += `<span>${formatearDinero(p.amount)}</span>`;
+        html += "</div>";
+      });
 
-    // Método de pago y cambio
-    if (metodoPago) {
-      const metodoTexto =
-        metodoPago === "efectivo"
-          ? "Efectivo"
-          : metodoPago === "tarjeta"
-            ? "Tarjeta"
-            : "Transferencia";
-      html += `<div class="ticket-method">Método: ${metodoTexto}</div>`;
-
-      if (metodoPago === "efectivo" && montoRecibido) {
-        const monto = parseFloat(montoRecibido) || 0;
-        const cambio = calcularCambio();
-        html += `<div class="ticket-method">Recibido: ${formatearDinero(monto)}</div>`;
-        if (cambio > 0) {
-          html += `<div class="ticket-change">Cambio: ${formatearDinero(cambio)}</div>`;
-        }
+      const cambioActivo = calcularCambio();
+      if (cambioActivo > 0) {
+        html +=
+          '<div class="ticket-pago-row" style="font-weight: bold; margin-top: 4px;">';
+        html += "<span>Cambio:</span>";
+        html += `<span>${formatearDinero(cambioActivo)}</span>`;
+        html += "</div>";
       }
+      html += "</div>";
     }
 
-    html += "</div>";
-    html += '<div class="ticket-footer">¡Gracias por su compra!</div>';
+    html += '<div class="ticket-linea"></div>';
+    html += `<div class="ticket-footer">${settings.footer_message}</div>`;
     html += "</div>";
 
     return html;

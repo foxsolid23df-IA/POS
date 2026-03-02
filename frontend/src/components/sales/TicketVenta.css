@@ -1,55 +1,109 @@
 .ticket-venta {
-    width: 280px;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 13px;
-    color: #222;
     background: #fff;
-    padding: 10px 0;
+    color: #000;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: inherit;
 }
 
-.ticket-venta .ticket-header {
+.ticket-58mm {
+    max-width: 219px; /* Aprox 58mm en 96dpi */
+    margin: 0 auto;
+}
+
+.ticket-80mm {
+    max-width: 302px; /* Aprox 80mm en 96dpi */
+    margin: 0 auto;
+}
+
+.ticket-header {
     text-align: center;
-    margin-bottom: 8px;
+    margin-bottom: 5px;
 }
 
-.ticket-venta .ticket-title {
-    font-size: 16px;
+.ticket-logo-container {
+    margin-bottom: 10px;
+}
+
+.ticket-logo {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+.ticket-title {
+    font-size: 1.2em;
     font-weight: bold;
+    text-transform: uppercase;
     margin-bottom: 2px;
 }
 
-.ticket-venta .ticket-fecha {
-    font-size: 11px;
-    margin-bottom: 6px;
+.ticket-info {
+    font-size: 0.9em;
+    white-space: pre-wrap;
+    line-height: 1.2;
+    margin-bottom: 2px;
 }
 
-.ticket-venta .ticket-linea {
-    border-top: 1px dashed #888;
+.ticket-fecha, .ticket-id {
+    font-size: 0.8em;
+    color: #333;
+}
+
+.ticket-id {
+    font-style: italic;
+    margin-top: 2px;
+}
+
+.ticket-linea {
+    border-top: 1px dashed #000;
     margin: 8px 0;
 }
 
-.ticket-venta .ticket-producto {
+.ticket-items {
+    margin: 10px 0;
+}
+
+.ticket-producto {
     margin-bottom: 6px;
 }
 
-.ticket-venta .ticket-producto-nombre {
+.ticket-producto-nombre {
     font-weight: bold;
+    text-transform: uppercase;
 }
 
-.ticket-venta .ticket-producto-detalle {
+.ticket-producto-detalle {
     display: flex;
     justify-content: space-between;
 }
 
-.ticket-venta .ticket-total {
-    font-size: 14px;
-    font-weight: bold;
-    text-align: right;
-    margin-top: 10px;
+.ticket-pagos {
+    margin: 8px 0;
+    font-size: 0.9em;
 }
 
-.ticket-venta .ticket-footer {
+.ticket-pago-row {
+    display: flex;
+    justify-content: space-between;
+}
+
+.ticket-total {
+    font-size: 1.2em;
+    font-weight: bold;
+    text-align: right;
+    margin-top: 8px;
+}
+
+.ticket-footer {
     text-align: center;
-    font-size: 11px;
-    margin-top: 10px;
+    font-size: 0.9em;
+    margin-top: 15px;
+    font-style: italic;
+}
+
+@media print {
+    body { background: none !important; }
+    .ticket-venta { width: 100% !important; margin: 0 !important; }
 }

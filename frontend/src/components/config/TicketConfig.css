@@ -1,0 +1,142 @@
+.ticket-config-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+}
+
+.ticket-config-card {
+    background: white;
+    padding: 3rem;
+    border-radius: 2rem;
+    box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.1);
+}
+
+.dark .ticket-config-card {
+    background: #0f172a;
+    box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ticket-config-form label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #64748b;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.dark .ticket-config-form label {
+    color: #94a3b8;
+}
+
+.ticket-config-form input,
+.ticket-config-form textarea,
+.ticket-config-form select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    font-size: 0.95rem;
+    outline: none;
+    transition: all 0.2s;
+    background: #f8fafc;
+}
+
+.dark .ticket-config-form input,
+.dark .ticket-config-form textarea,
+.dark .ticket-config-form select {
+    border-color: #334155;
+    background: #1e293b;
+    color: white;
+}
+
+.ticket-config-form input:focus,
+.ticket-config-form textarea:focus,
+.ticket-config-form select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.form-grid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.checkbox-container input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.checkmark {
+    height: 20px;
+    width: 20px;
+    background-color: #eee;
+    border-radius: 4px;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.dark .checkmark {
+    background-color: #334155;
+}
+
+.checkbox-container:hover input ~ .checkmark {
+    background-color: #ccc;
+}
+
+.checkbox-container input:checked ~ .checkmark {
+    background-color: #3b82f6;
+}
+
+.checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+    left: 7px;
+    top: 3px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.checkbox-container input:checked ~ .checkmark:after {
+    display: block;
+}
+
+.spinner-white {
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top: 3px solid white;
+    border-radius: 50%;
+    animation: config-spin 0.6s linear infinite;
+}
+
+@keyframes config-spin {
+    to { transform: rotate(360deg); }
+}
+
+.logo-preview-box {
+    min-height: 100px;
+    transition: all 0.2s;
+}
+
+@media (max-width: 640px) {
+    .ticket-config-card {
+        padding: 1.5rem;
+    }
+}
