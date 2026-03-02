@@ -1643,7 +1643,7 @@ export const Sales = () => {
                       className={`payment-method-btn ${metodoPago === "tarjeta" ? "active" : ""}`}
                       onClick={() => {
                         setMetodoPago("tarjeta");
-                        setMontoRecibido(total.toFixed(2));
+                        setMontoRecibido("");
                       }}
                     >
                       <span className="material-symbols-outlined">
@@ -1655,7 +1655,7 @@ export const Sales = () => {
                       className={`payment-method-btn ${metodoPago === "transferencia" ? "active" : ""}`}
                       onClick={() => {
                         setMetodoPago("transferencia");
-                        setMontoRecibido(total.toFixed(2));
+                        setMontoRecibido("");
                       }}
                     >
                       <span className="material-symbols-outlined">
@@ -1714,7 +1714,9 @@ export const Sales = () => {
                       )}
 
                       {(metodoPago === "efectivo" ||
-                        metodoPago === "dolares") && (
+                        metodoPago === "dolares" ||
+                        metodoPago === "tarjeta" ||
+                        metodoPago === "transferencia") && (
                         <div className="payment-keypad">
                           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0, ".", "backspace"].map(
                             (num) => (
