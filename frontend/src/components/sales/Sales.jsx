@@ -643,29 +643,27 @@ export const Sales = () => {
       // Crear venta en Supabase
       const ventaCreada = await salesService.createSale(ventaData);
 
-      // Actualizar activeCartService para marcar como completado
-      try {
-        await activeCartService.clearCart("completed", cashSession?.id);
-      } catch (e) {
-        console.error(e);
-      }
-
+      // Actualizar UI inmediatamente para mostrar el ticket
       setVentaCompletada({
         ...ventaCreada,
-        productos: carrito,
-        items: carrito,
-        payments: pagosRealizados,
+        productos: [...carrito],
+        items: [...carrito],
+        payments: [...pagosRealizados],
         metodoPago: ventaData.metodoPago,
         // Campos legacy para ticket
         montoRecibido: total,
         cambio: 0,
       });
 
-      // Recargar productos para actualizar stock globalmente
-      await cargarDatos(true);
-
+      // Vaciar carrito y mostrar modal de éxito YA
       vaciarCarrito();
       setMostrarModal(true);
+
+      // Tareas de fondo (Sync y recarga de inventario) - No bloquean el ticket
+      activeCartService
+        .clearCart("completed", cashSession?.id)
+        .catch(console.error);
+      cargarDatos(true).catch(console.error);
     } catch (error) {
       console.error("Error al crear venta:", error);
       mostrarModalPersonalizado(
@@ -1071,12 +1069,12 @@ export const Sales = () => {
     printWindow.document.write("</body></html>");
     printWindow.document.close();
 
-    // Esperar a que el contenido se cargue antes de imprimir
+    // Esperar a que el contenido se cargue brevemente antes de imprimir
     setTimeout(() => {
       printWindow.focus();
       printWindow.print();
       // No cerrar automáticamente para permitir selección de impresora
-    }, 250);
+    }, 50);
   };
 
   // Generar HTML del ticket desde el modal de pago (antes de finalizar)
