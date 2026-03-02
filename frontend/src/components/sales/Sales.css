@@ -1762,7 +1762,7 @@
   background: white;
   width: 100%;
   max-width: 80rem;
-  height: 85vh;
+  height: min(90vh, 850px);
   border-radius: 1.5rem;
   overflow: hidden;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
@@ -1977,9 +1977,9 @@
 
 .payment-method-buttons {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
 }
 
 .payment-method-btn {
@@ -2064,14 +2064,14 @@
 }
 
 .payment-key {
-  height: 2.75rem;
+  height: 3.5rem;
   background: white;
   border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  font-size: 1.25rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  font-size: 1.5rem;
   color: #111827;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08);
   cursor: pointer;
   transition: all 0.2s;
   display: flex;

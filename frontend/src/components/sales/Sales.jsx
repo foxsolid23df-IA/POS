@@ -1548,7 +1548,60 @@ export const Sales = () => {
                   ))}
                 </div>
 
+                {/* PAGOS REGISTRADOS - MOVILIZADO AL LADO IZQUIERDO */}
+                <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/20">
+                  <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">
+                    Pagos Registrados
+                  </h4>
+                  <div className="space-y-2 max-h-[140px] overflow-y-auto pr-2 custom-scrollbar">
+                    {pagosRealizados.length === 0 ? (
+                      <p className="text-xs text-slate-400 italic text-center py-2">
+                        No hay pagos agregados
+                      </p>
+                    ) : (
+                      pagosRealizados.map((p) => (
+                        <div
+                          key={p.id}
+                          className="flex justify-between items-center bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:border-indigo-200"
+                        >
+                          <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                            <span className="capitalize">{p.method}</span>
+                            {p.method === "dolares" && (
+                              <span className="text-[9px] bg-indigo-50 text-indigo-600 px-1 rounded">
+                                ({p.received} USD)
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="font-bold text-slate-800 dark:text-slate-100 text-xs">
+                              ${formatearDinero(p.amount)}
+                            </span>
+                            <button
+                              onClick={() => eliminarPago(p.id)}
+                              className="text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 p-1 rounded-md transition-all"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">
+                                close
+                              </span>
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
                 <div className="payment-summary-footer">
+                  {/* SALDO PENDIENTE - REUBICADO */}
+                  <div className="mb-4 flex justify-between items-center p-3 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-200 dark:shadow-none">
+                    <span className="text-xs font-bold uppercase tracking-wider">
+                      Saldo Pendiente:
+                    </span>
+                    <span className="text-xl font-black">
+                      {formatearDinero(Math.max(0, saldoPendiente))}
+                    </span>
+                  </div>
+
                   <div className="payment-summary-totals">
                     <div className="payment-summary-row">
                       <span>Subtotal</span>
@@ -1648,59 +1701,6 @@ export const Sales = () => {
                         >
                           Agregar Pago
                         </button>
-                      </div>
-
-                      <div className="mt-6 border-t border-slate-200 dark:border-slate-700 pt-4">
-                        <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
-                          Pagos Registrados
-                        </h4>
-                        <div className="space-y-2 min-h-[100px] max-h-[150px] overflow-y-auto pr-2">
-                          {pagosRealizados.length === 0 ? (
-                            <p className="text-sm text-slate-400 italic text-center py-4">
-                              No hay pagos agregados aún
-                            </p>
-                          ) : (
-                            pagosRealizados.map((p) => (
-                              <div
-                                key={p.id}
-                                className="flex justify-between items-center bg-slate-50 dark:bg-slate-800 p-2 rounded-lg border border-slate-100 dark:border-slate-700"
-                              >
-                                <div className="flex items-center gap-2 text-sm font-medium">
-                                  <span className="capitalize">{p.method}</span>
-                                  {p.method === "dolares" && (
-                                    <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1 rounded">
-                                      ({p.received} USD)
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-3">
-                                  <span className="font-bold text-slate-700 dark:text-slate-200">
-                                    ${formatearDinero(p.amount)}
-                                  </span>
-                                  <button
-                                    onClick={() => eliminarPago(p.id)}
-                                    className="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 p-1 rounded transition-colors"
-                                  >
-                                    <span className="material-symbols-outlined text-[18px]">
-                                      delete
-                                    </span>
-                                  </button>
-                                </div>
-                              </div>
-                            ))
-                          )}
-                        </div>
-
-                        <div className="mt-4 flex justify-between items-center p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-900/30">
-                          <span className="text-sm font-bold text-indigo-700 dark:text-indigo-400">
-                            Saldo Pendiente:
-                          </span>
-                          <span
-                            className={`text-lg font-black ${saldoPendiente <= 0.01 ? "text-emerald-600" : "text-indigo-600 dark:text-indigo-400"}`}
-                          >
-                            {formatearDinero(Math.max(0, saldoPendiente))}
-                          </span>
-                        </div>
                       </div>
 
                       {metodoPago === "dolares" && (
