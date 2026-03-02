@@ -593,21 +593,16 @@ export const Sales = () => {
     if (metodoPago === "dolares" && tipoCambio) {
       // Convertir dólares recibidos a pesos
       const totalEnPesos = monto * tipoCambio;
-      // Calcular cambio en pesos
-      return totalEnPesos - total;
+      // Calcular cambio en pesos basado en el saldo que falta por cubrir
+      return totalEnPesos - saldoPendiente;
     }
 
-    if (metodoPago !== "efectivo" && metodoPago !== "dolares") return 0;
-
-    return monto - total;
+    // Para los demás métodos (tarjeta, transferencia), el cambio se calcula sobre el saldo pendiente
+    return monto - saldoPendiente;
   };
 
   const formatearMontoRecibido = () => {
-    if (metodoPago === "efectivo" || metodoPago === "dolares") {
-      return montoRecibido || "0.00";
-    } else {
-      return total.toFixed(2);
-    }
+    return montoRecibido || "0.00";
   };
 
   const finalizarVenta = async () => {
@@ -750,16 +745,28 @@ export const Sales = () => {
   // MANEJAR TECLADO FÍSICO EN MODAL DE PAGO
   useEffect(() => {
     if (!mostrarModalPago) return;
-
     const handleKeyDown = (e) => {
-      // Enter o "+" del teclado numérico: Finalizar venta
       if (e.key === "Enter" || e.key === "+") {
         e.preventDefault();
-        // Si el modal no está listo (acaba de abrirse), ignoramos el ENTER
         if (!modalReady) return;
 
-        // Dispara la finalización
-        finalizarVenta();
+        // Si hay un monto ingresado pero no agregado, agregarlo primero
+        if (montoRecibido && parseFloat(montoRecibido) > 0) {
+          agregarPago();
+          return;
+        }
+
+        // Si ya no hay monto a agregar y el saldo está cubierto, finalizar
+        if (saldoPendiente <= 0.01) {
+          finalizarVenta();
+        } else {
+          // Si intenta finalizar sin cubrir el saldo o sin monto ingresado
+          mostrarModalPersonalizado(
+            "Saldo insuficiente",
+            `Aún falta por cubrir ${formatearDinero(saldoPendiente)} para completar el total.`,
+            "warning",
+          );
+        }
         return;
       }
 
@@ -780,13 +787,13 @@ export const Sales = () => {
       if (e.key === "F2") {
         e.preventDefault();
         setMetodoPago("tarjeta");
-        setMontoRecibido(total.toFixed(2));
+        setMontoRecibido("");
         return;
       }
       if (e.key === "F3") {
         e.preventDefault();
         setMetodoPago("transferencia");
-        setMontoRecibido(total.toFixed(2));
+        setMontoRecibido("");
         return;
       }
       if (e.key === "F4" && tipoCambio) {
@@ -796,8 +803,13 @@ export const Sales = () => {
         return;
       }
 
-      // Números para pago en efectivo o dólares
-      if (metodoPago === "efectivo" || metodoPago === "dolares") {
+      // Números para cualquier método de pago
+      if (
+        metodoPago === "efectivo" ||
+        metodoPago === "dolares" ||
+        metodoPago === "tarjeta" ||
+        metodoPago === "transferencia"
+      ) {
         // Aceptar números normales y del teclado numérico
         if (/^[0-9]$/.test(e.key)) {
           manejarTecladoNumerico(e.key);
@@ -1740,7 +1752,9 @@ export const Sales = () => {
                     </div>
 
                     {(metodoPago === "efectivo" ||
-                      metodoPago === "dolares") && (
+                      metodoPago === "dolares" ||
+                      metodoPago === "tarjeta" ||
+                      metodoPago === "transferencia") && (
                       <div className="payment-change-section">
                         <div className="payment-change-box">
                           <p className="payment-change-label">CAMBIO</p>
