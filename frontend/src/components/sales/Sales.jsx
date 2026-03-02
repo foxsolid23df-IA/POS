@@ -214,6 +214,10 @@ export const Sales = () => {
   // Estado para evitar que el primer ENTER abra y el segundo cierre instantáneamente
   const [modalReady, setModalReady] = useState(false);
 
+  // ESTADOS PARA PAGOS MIXTOS
+  const [pagosRealizados, setPagosRealizados] = useState([]);
+  const [saldoPendiente, setSaldoPendiente] = useState(0);
+
   // ESTADOS NUEVOS PARA FUNCIONES EXTRA
   const [mostrarModalComun, setMostrarModalComun] = useState(false);
   const [comunForm, setComunForm] = useState({
@@ -377,6 +381,12 @@ export const Sales = () => {
     };
   }, [metodoPago, montoRecibido, mostrarModalPago, user, total]);
 
+  // Efecto para calcular el saldo pendiente
+  useEffect(() => {
+    const pagado = pagosRealizados.reduce((sum, p) => sum + p.amount, 0);
+    setSaldoPendiente(total - pagado);
+  }, [pagosRealizados, total]);
+
   // Seleccionar producto de las sugerencias
   const seleccionarProducto = (producto) => {
     // Mapear image_url a image para compatibilidad con el carrito
@@ -492,6 +502,7 @@ export const Sales = () => {
     setTransactionId((Math.floor(Math.random() * 90000) + 10000).toString());
     setMontoRecibido("");
     setMetodoPago("efectivo");
+    setPagosRealizados([]);
     setModalReady(false);
     setMostrarModalPago(true);
     // Aumentar el tiempo de seguridad a 500ms para evitar capturas accidentales del primer ENTER
@@ -505,6 +516,57 @@ export const Sales = () => {
     setModalReady(false);
     setMontoRecibido("");
     setMetodoPago("efectivo");
+    setPagosRealizados([]);
+  };
+
+  const agregarPago = () => {
+    const montoStr = montoRecibidoRef.current || montoRecibido;
+    const montoNum = parseFloat(montoStr) || 0;
+
+    if (montoNum <= 0) return;
+
+    let montoAbonado = montoNum;
+    let cambio = 0;
+
+    if (metodoPago === "efectivo") {
+      // Si el efectivo es más que el saldo pendiente, hay cambio
+      if (montoNum > saldoPendiente) {
+        montoAbonado = saldoPendiente;
+        cambio = montoNum - saldoPendiente;
+      }
+    } else if (metodoPago === "dolares") {
+      const enPesos = montoNum * tipoCambio;
+      if (enPesos > saldoPendiente) {
+        montoAbonado = saldoPendiente;
+        cambio = enPesos - saldoPendiente;
+      } else {
+        montoAbonado = enPesos;
+      }
+    } else {
+      // Tarjeta o transferencia usualmente son por el monto exacto
+      if (montoNum > saldoPendiente) {
+        montoAbonado = saldoPendiente;
+        // No solemos dar cambio en tarjeta/transferencia, pero si pagan de más...
+        cambio = montoNum - saldoPendiente;
+      }
+    }
+
+    const nuevoPago = {
+      id: Date.now(),
+      method: metodoPago,
+      amount: montoAbonado,
+      received: montoNum,
+      change: cambio,
+      currency: metodoPago === "dolares" ? "USD" : "MXN",
+      exchange_rate: metodoPago === "dolares" ? tipoCambio : null,
+    };
+
+    setPagosRealizados((prev) => [...prev, nuevoPago]);
+    setMontoRecibido("");
+  };
+
+  const eliminarPago = (id) => {
+    setPagosRealizados((prev) => prev.filter((p) => p.id !== id));
   };
 
   const manejarTecladoNumerico = (valor) => {
@@ -549,44 +611,14 @@ export const Sales = () => {
   };
 
   const finalizarVenta = async () => {
-    // Seguridad: Evitar que ENTER dispare finalizar si el modal acaba de abrirse
-    if (!mostrarModalPago) return;
-    if (carrito.length === 0) {
+    // Validar que se ha cubierto el saldo
+    if (saldoPendiente > 0.01) {
       mostrarModalPersonalizado(
-        "Carrito vacío",
-        "No puedes finalizar una venta sin productos en el carrito.",
+        "Saldo insuficiente",
+        `Aún falta por cubrir ${formatearDinero(saldoPendiente)} para completar el total.`,
         "warning",
       );
       return;
-    }
-
-    const montoActualStr = montoRecibidoRef.current || montoRecibido;
-    const montoActualNum = parseFloat(montoActualStr) || 0;
-
-    // Validar monto recibido si es efectivo
-    if (metodoPago === "efectivo") {
-      if (montoActualNum < total - 0.01) {
-        mostrarModalPersonalizado(
-          "Monto insuficiente",
-          `El monto recibido (${formatearDinero(montoActualNum)}) es menor al total (${formatearDinero(total)}).`,
-          "warning",
-        );
-        return;
-      }
-    }
-
-    // Validar monto si es dólares
-    if (metodoPago === "dolares") {
-      const totalEnPesos = montoActualNum * tipoCambio;
-      // TOLERANCIA DE REDONDEO: permitimos hasta 0.50 centavos de diferencia por redondeo de USD a MXN
-      if (!montoActualNum || totalEnPesos < total - 0.5) {
-        mostrarModalPersonalizado(
-          "Monto insuficiente",
-          `El pago en dólares (${montoActualNum} USD = $${totalEnPesos.toFixed(2)} MXN) no cubre el total de ${formatearDinero(total)}.`,
-          "error",
-        );
-        return;
-      }
     }
 
     setVendiendo(true);
@@ -605,15 +637,12 @@ export const Sales = () => {
             stock: item.stock || 0,
           })),
         total: total,
-        metodoPago: metodoPago,
-        currency: metodoPago === "dolares" ? "USD" : "MXN",
-        exchange_rate: metodoPago === "dolares" ? tipoCambio : null,
-        amount_usd: metodoPago === "dolares" ? montoActualNum : null,
-        montoRecibido:
-          metodoPago === "efectivo" || metodoPago === "dolares"
-            ? montoActualNum
-            : total,
-        cambio: calcularCambio(),
+        payments: pagosRealizados,
+        // Mantener campos legacy por compatibilidad
+        metodoPago:
+          pagosRealizados.length === 1 ? pagosRealizados[0].method : "múltiple",
+        currency: "MXN",
+        exchange_rate: null,
       };
 
       // Crear venta en Supabase
@@ -629,12 +658,12 @@ export const Sales = () => {
       setVentaCompletada({
         ...ventaCreada,
         productos: carrito,
-        items: carrito, // Backup por si ticket usa items
-        metodoPago: metodoPago,
-        montoRecibido: ventaData.montoRecibido,
-        cambio: ventaData.cambio,
-        currency: ventaData.currency,
-        exchange_rate: ventaData.exchange_rate,
+        items: carrito,
+        payments: pagosRealizados,
+        metodoPago: ventaData.metodoPago,
+        // Campos legacy para ticket
+        montoRecibido: total,
+        cambio: 0,
       });
 
       // Recargar productos para actualizar stock globalmente
@@ -1610,6 +1639,68 @@ export const Sales = () => {
                           {metodoPago === "dolares" ? "$" : "$"}
                           {formatearMontoRecibido()}
                         </span>
+                        <button
+                          className="px-4 py-2 bg-indigo-600 text-white rounded-xl ml-4 font-bold hover:bg-indigo-700 transition-all shadow-md active:scale-95"
+                          onClick={agregarPago}
+                          disabled={
+                            !montoRecibido || parseFloat(montoRecibido) <= 0
+                          }
+                        >
+                          Agregar Pago
+                        </button>
+                      </div>
+
+                      <div className="mt-6 border-t border-slate-200 dark:border-slate-700 pt-4">
+                        <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
+                          Pagos Registrados
+                        </h4>
+                        <div className="space-y-2 min-h-[100px] max-h-[150px] overflow-y-auto pr-2">
+                          {pagosRealizados.length === 0 ? (
+                            <p className="text-sm text-slate-400 italic text-center py-4">
+                              No hay pagos agregados aún
+                            </p>
+                          ) : (
+                            pagosRealizados.map((p) => (
+                              <div
+                                key={p.id}
+                                className="flex justify-between items-center bg-slate-50 dark:bg-slate-800 p-2 rounded-lg border border-slate-100 dark:border-slate-700"
+                              >
+                                <div className="flex items-center gap-2 text-sm font-medium">
+                                  <span className="capitalize">{p.method}</span>
+                                  {p.method === "dolares" && (
+                                    <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1 rounded">
+                                      ({p.received} USD)
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <span className="font-bold text-slate-700 dark:text-slate-200">
+                                    ${formatearDinero(p.amount)}
+                                  </span>
+                                  <button
+                                    onClick={() => eliminarPago(p.id)}
+                                    className="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 p-1 rounded transition-colors"
+                                  >
+                                    <span className="material-symbols-outlined text-[18px]">
+                                      delete
+                                    </span>
+                                  </button>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+
+                        <div className="mt-4 flex justify-between items-center p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-900/30">
+                          <span className="text-sm font-bold text-indigo-700 dark:text-indigo-400">
+                            Saldo Pendiente:
+                          </span>
+                          <span
+                            className={`text-lg font-black ${saldoPendiente <= 0.01 ? "text-emerald-600" : "text-indigo-600 dark:text-indigo-400"}`}
+                          >
+                            {formatearDinero(Math.max(0, saldoPendiente))}
+                          </span>
+                        </div>
                       </div>
 
                       {metodoPago === "dolares" && (
@@ -1675,11 +1766,7 @@ export const Sales = () => {
                   <button
                     className="payment-finalize-btn"
                     onClick={finalizarVenta}
-                    disabled={
-                      !modalReady ||
-                      (metodoPago === "efectivo" &&
-                        (!montoRecibido || parseFloat(montoRecibido) < total))
-                    }
+                    disabled={!modalReady || saldoPendiente > 0.01}
                   >
                     Finalizar Venta
                   </button>

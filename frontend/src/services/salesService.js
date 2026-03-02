@@ -20,7 +20,7 @@ export const salesService = {
                 currency: saleData.currency || 'MXN',
                 exchange_rate: saleData.exchange_rate || null,
                 amount_usd: saleData.amount_usd || null,
-                payment_method: saleData.metodoPago || 'efectivo',
+                payment_method: saleData.payments && saleData.payments.length > 1 ? 'múltiple' : (saleData.metodoPago || 'efectivo'),
                 terminal_id: terminalId
             }])
             .select()
@@ -44,6 +44,28 @@ export const salesService = {
 
         if (itemsError) throw itemsError;
 
+        // 2.1. Crear los pagos de la venta (si existen pagos desglosados)
+        if (saleData.payments && saleData.payments.length > 0) {
+            const salePayments = saleData.payments.map(payment => ({
+                sale_id: sale.id,
+                user_id: userData.user.id,
+                payment_method: payment.method,
+                amount: payment.amount,
+                amount_received: payment.received || payment.amount,
+                change_amount: payment.change || 0,
+                currency: payment.currency || 'MXN',
+                exchange_rate: payment.exchange_rate || null
+            }));
+
+            const { error: paymentsError } = await supabase
+                .from('sale_payments')
+                .insert(salePayments);
+
+            if (paymentsError) {
+                console.error('Error insertando pagos desglosados:', paymentsError);
+            }
+        }
+
         // 3. Actualizar stock de productos (Atomic RPC w/ Concurrency Check)
         const itemsForStockUpdate = saleData.items.map(item => ({
             id: item.id,
@@ -55,9 +77,6 @@ export const salesService = {
 
         if (stockError) {
             console.error('Error actualizando stock (RPC):', stockError);
-            // Idealmente aquí deberíamos revertir la venta o notificar al admin
-            // Por ahora mantenemos el comportamiento de logging pero el error es más informativo
-            // throw stockError; // Descomentar si queremos fallar la transacción completa (pero la venta ya se creó)
         }
 
         return sale;
