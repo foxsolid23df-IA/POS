@@ -2,82 +2,48 @@ import { supabase } from '../supabase';
 import { terminalService } from './terminalService';
 
 export const salesService = {
-    // Crear una nueva venta
+    // Crear una nueva venta usando el RPC optimizado
     createSale: async (saleData) => {
-        const { data: userData } = await supabase.auth.getUser();
+        const { data: userData } = await supabase.auth.getSingleUser ? await supabase.auth.getUser() : await supabase.auth.getUser();
         const terminalId = terminalService.getTerminalId();
 
         if (!terminalId) {
             throw new Error("Terminal no configurada. No se puede realizar la venta.");
         }
 
-        // 1. Crear la venta principal
-        const { data: sale, error: saleError } = await supabase
-            .from('sales')
-            .insert([{
-                total: saleData.total,
-                user_id: userData.user.id,
-                currency: saleData.currency || 'MXN',
-                exchange_rate: saleData.exchange_rate || null,
-                amount_usd: saleData.amount_usd || null,
-                payment_method: saleData.payments && saleData.payments.length > 1 ? 'múltiple' : (saleData.metodoPago || 'efectivo'),
-                terminal_id: terminalId
-            }])
-            .select()
-            .single();
-
-        if (saleError) throw saleError;
-
-        // 2. Crear los items de la venta
-        const saleItems = saleData.items.map(item => ({
-            sale_id: sale.id,
+        // Formatear items para el RPC
+        const itemsJson = saleData.items.map(item => ({
+            product_id: item.id,
             product_name: item.name,
             quantity: item.quantity,
             price: item.price,
-            total: item.price * item.quantity,
-            user_id: userData.user.id
+            total: item.price * item.quantity
         }));
 
-        const { error: itemsError } = await supabase
-            .from('sale_items')
-            .insert(saleItems);
-
-        if (itemsError) throw itemsError;
-
-        // 2.1. Crear los pagos de la venta (si existen pagos desglosados)
-        if (saleData.payments && saleData.payments.length > 0) {
-            const salePayments = saleData.payments.map(payment => ({
-                sale_id: sale.id,
-                user_id: userData.user.id,
-                payment_method: payment.method,
-                amount: payment.amount,
-                amount_received: payment.received || payment.amount,
-                change_amount: payment.change || 0,
-                currency: payment.currency || 'MXN',
-                exchange_rate: payment.exchange_rate || null
-            }));
-
-            const { error: paymentsError } = await supabase
-                .from('sale_payments')
-                .insert(salePayments);
-
-            if (paymentsError) {
-                console.error('Error insertando pagos desglosados:', paymentsError);
-            }
-        }
-
-        // 3. Actualizar stock de productos (Atomic RPC w/ Concurrency Check)
-        const itemsForStockUpdate = saleData.items.map(item => ({
-            id: item.id,
-            quantity: item.quantity
+        // Formatear pagos para el RPC
+        const paymentsJson = (saleData.payments || []).map(p => ({
+            payment_method: p.method,
+            amount: p.amount,
+            amount_received: p.received || p.amount,
+            change_amount: p.change || 0,
+            currency: p.currency || 'MXN',
+            exchange_rate: p.exchange_rate || null
         }));
 
-        const { error: stockError } = await supabase
-            .rpc('decrement_stock', { items: itemsForStockUpdate });
+        // Llamada única al RPC optimizado (Transacción atómica en DB)
+        const { data: sale, error: rpcError } = await supabase.rpc('process_perfect_sale', {
+            p_total: saleData.total,
+            p_user_id: userData.user.id,
+            p_currency: saleData.currency || 'MXN',
+            p_exchange_rate: saleData.exchange_rate || null,
+            p_amount_usd: saleData.amount_usd || null,
+            p_payment_method: saleData.payments && saleData.payments.length > 1 ? 'múltiple' : (saleData.metodoPago || 'efectivo'),
+            p_terminal_id: terminalId,
+            p_items: itemsJson,
+            p_payments: paymentsJson
+        });
 
-        if (stockError) {
-            console.error('Error actualizando stock (RPC):', stockError);
-        }
+        if (rpcError) throw rpcError;
 
         return sale;
     },

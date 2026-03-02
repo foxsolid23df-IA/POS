@@ -663,7 +663,7 @@ export const Sales = () => {
       activeCartService
         .clearCart("completed", cashSession?.id)
         .catch(console.error);
-      cargarDatos(true).catch(console.error);
+      cargarDatos({ forceRefresh: true, silent: true }).catch(console.error);
     } catch (error) {
       console.error("Error al crear venta:", error);
       mostrarModalPersonalizado(
