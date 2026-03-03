@@ -37,10 +37,10 @@
     width: 256px;
     height: 44px; /* Un poco mas alto */
     background-color: #ffffff;
-    border: 2px solid #e5e7eb;
-    border-radius: 10px;
-    padding: 0 14px;
-    gap: 10px;
+    border: 3px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 0 16px;
+    gap: 12px;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
@@ -56,8 +56,8 @@
 }
 
 .suppliers-search-icon {
-    color: #9ca3af;
-    font-size: 20px;
+    color: #3b82f6;
+    font-size: 22px;
     pointer-events: none;
 }
 
@@ -65,14 +65,14 @@
     background: transparent;
     border: none;
     width: 100%;
-    font-size: 14px;
-    color: #1a1a1a;
-    font-weight: 600;
+    font-size: 15px;
+    color: #000000 !important;
+    font-weight: 700;
     outline: none;
 }
 
 .dark .suppliers-search-input {
-    color: #ffffff;
+    color: #ffffff !important;
 }
 
 .suppliers-search-input::placeholder {

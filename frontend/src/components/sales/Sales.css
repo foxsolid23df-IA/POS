@@ -81,23 +81,23 @@
 }
 
 .search-icon-wrapper .material-symbols-outlined {
-  font-size: 1.125rem;
-  color: #9ca3af;
+  font-size: 1.5rem;
+  color: #3b82f6;
 }
 
 .barcode-input-modern {
   width: 100%;
-  padding: 0.75rem 0.75rem 0.75rem 2.75rem; /* Aumentado padding izquierdo para el icono */
-  border: 2px solid #e5e7eb;
-  border-radius: 10px;
-  font-size: 1rem;
-  color: #1a1a1a;
+  padding: 1rem 1rem 1rem 4rem !important; /* Aproximadamente 64px de padding izquierdo */
+  border: 3px solid #e5e7eb;
+  border-radius: 14px;
+  font-size: 1.1rem;
+  color: #000000 !important;
   background: white;
-  min-height: 48px;
+  min-height: 56px;
   outline: none;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   box-sizing: border-box;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .barcode-input-modern:focus {
@@ -108,13 +108,14 @@
 
 .dark .barcode-input-modern {
   background: #1e293b;
-  border-color: #334155;
-  color: #ffffff;
+  border-color: #475569;
+  color: #ffffff !important;
 }
 
 .dark .barcode-input-modern:focus {
   border-color: #3b82f6;
   background: #0f172a;
+  color: #ffffff !important;
 }
 
 .barcode-input-modern::placeholder {

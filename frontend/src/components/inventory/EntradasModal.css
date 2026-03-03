@@ -104,28 +104,29 @@ html:not(.dark) .entradas-modal-header p {
 
 .entradas-search-icon {
     position: absolute;
-    left: 14px;
-    color: #64748b;
-    font-size: 1.25rem;
+    left: 18px;
+    color: #3b82f6;
+    font-size: 1.5rem;
+    z-index: 10;
 }
 
 .entradas-search-input {
     width: 100%;
-    padding: 16px 16px 16px 52px; /* Aumentado padding izquierdo para evitar traslape con lupa */
-    border-radius: 10px;
-    border: 2px solid #334155; /* Borde más grueso para mejor visibilidad */
+    padding: 16px 20px 16px 64px !important; /* Espacio masivo para evitar traslape con lupa */
+    border-radius: 12px;
+    border: 3px solid #334155; /* Borde más grueso para mejor visibilidad */
     background-color: #0f172a;
-    color: #ffffff;
-    font-size: 1.1rem; /* Texto ligeramente más grande */
+    color: #ffffff !important;
+    font-size: 1.15rem; /* Texto ligeramente más grande */
     outline: none;
-    transition: all 0.2s;
-    font-weight: 500;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 700;
 }
 
 html:not(.dark) .entradas-search-input {
-    background-color: #f8fafc;
-    border-color: #cbd5e1;
-    color: #1e293b;
+    background-color: #ffffff;
+    border-color: #94a3b8;
+    color: #000000 !important;
 }
 
 .entradas-search-input:focus {
@@ -344,21 +345,21 @@ html:not(.dark) .stat-badge strong {
 
 .input-with-hint input {
     width: 100%;
-    padding: 14px;
-    border-radius: 10px;
-    border: 2px solid #334155;
+    padding: 16px 20px;
+    border-radius: 14px;
+    border: 3px solid #334155;
     background-color: #0f172a;
-    color: #ffffff;
-    font-size: 1.1rem;
-    font-weight: 600;
+    color: #ffffff !important;
+    font-size: 1.25rem;
+    font-weight: 800;
     outline: none;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 html:not(.dark) .input-with-hint input {
-    background-color: #f8fafc;
-    border-color: #cbd5e1;
-    color: #1e293b;
+    background-color: #ffffff;
+    border-color: #94a3b8;
+    color: #000000 !important;
 }
 
 .input-with-hint input:focus {

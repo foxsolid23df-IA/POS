@@ -36,14 +36,14 @@
 
 /* Estilos de input[type="date"] para mejor visibilidad */
 .input-group input[type="date"] {
-    padding: 10px 14px;
-    border: 2px solid #e5e7eb;
-    border-radius: 10px;
-    font-size: 1rem;
-    font-weight: 600;
-    color: #1a1a1a;
+    padding: 12px 16px;
+    border: 3px solid #cbd5e1;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #000000 !important;
     background-color: #ffffff;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     outline: none;
 }
 
@@ -54,13 +54,14 @@
 
 .dark .input-group input[type="date"] {
     background-color: #1e293b;
-    border-color: #334155;
-    color: #ffffff;
+    border-color: #475569;
+    color: #ffffff !important;
 }
 
 .dark .input-group input[type="date"]:focus {
     border-color: #3b82f6;
     background-color: #0f172a;
+    color: #ffffff !important;
 }
 
 .search-btn,
