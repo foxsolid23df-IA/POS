@@ -575,6 +575,7 @@ const Inventory = () => {
           Producto: p.name,
           Categoría: productCategory,
           SKU: getSKU(p),
+          Costo: parseFloat(p.cost_price || 0),
           Precio: parseFloat(p.price),
           Existencia: p.stock,
           "Código de Barras": p.barcode || "",
@@ -592,6 +593,7 @@ const Inventory = () => {
         { wch: 30 }, // Producto
         { wch: 15 }, // Categoría
         { wch: 15 }, // SKU
+        { wch: 12 }, // Costo
         { wch: 12 }, // Precio
         { wch: 12 }, // Existencia
         { wch: 20 }, // Código de Barras
@@ -613,6 +615,69 @@ const Inventory = () => {
     } catch (error) {
       console.error("Error al exportar:", error);
       Swal.fire("Error", "No se pudo exportar el inventario", "error");
+    }
+  };
+
+  // Función para exportar reporte de mermas
+  const handleExportMermas = () => {
+    try {
+      const productosConMerma = products.filter((p) => parseInt(p.merma) > 0);
+
+      if (productosConMerma.length === 0) {
+        Swal.fire(
+          "Atención",
+          "No hay mermas registradas para exportar",
+          "info",
+        );
+        return;
+      }
+
+      const data = productosConMerma.map((p) => {
+        const rMerma = parseInt(p.merma);
+        const rCosto = parseFloat(p.cost_price || 0);
+        const rPrecio = parseFloat(p.price || 0);
+        const productCategory = p.category || getCategory(p.name).name;
+
+        return {
+          Producto: p.name,
+          Categoría: productCategory,
+          SKU: getSKU(p),
+          "Cant. Merma": rMerma,
+          "Costo Unit.": rCosto,
+          "Pérdida (Costo)": rMerma * rCosto,
+          "Pérdida (Venta)": rMerma * rPrecio,
+          "Código de Barras": p.barcode || "",
+        };
+      });
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(data);
+
+      const columnWidths = [
+        { wch: 30 }, // Producto
+        { wch: 15 }, // Categoría
+        { wch: 15 }, // SKU
+        { wch: 12 }, // Cant. Merma
+        { wch: 12 }, // Costo Unit.
+        { wch: 15 }, // Pérdida (Costo)
+        { wch: 15 }, // Pérdida (Venta)
+        { wch: 20 }, // Código de Barras
+      ];
+      ws["!cols"] = columnWidths;
+
+      XLSX.utils.book_append_sheet(wb, ws, "Reporte Mermas");
+
+      const fileName = `reporte_mermas_${new Date().toISOString().split("T")[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+
+      Swal.fire(
+        "Éxito",
+        "Reporte de mermas exportado correctamente",
+        "success",
+      );
+    } catch (error) {
+      console.error("Error al exportar mermas:", error);
+      Swal.fire("Error", "No se pudo exportar el reporte de mermas", "error");
     }
   };
 
@@ -713,7 +778,11 @@ const Inventory = () => {
             </button>
             <button className="control-btn" onClick={handleExport}>
               <FiDownload className="btn-icon" />
-              Exportar
+              Catálogo
+            </button>
+            <button className="control-btn" onClick={handleExportMermas}>
+              <FiAlertTriangle className="btn-icon text-red-500" />
+              Reporte Mermas
             </button>
             <button
               className="control-btn"
@@ -757,7 +826,8 @@ const Inventory = () => {
                   <th>Producto</th>
                   <th>Categoría</th>
                   <th>SKU</th>
-                  <th>Precio</th>
+                  <th>Costo</th>
+                  <th>Venta</th>
                   <th>Existencia</th>
                   <th className="merma-col" style={{ color: "#ef4444" }}>
                     Merma
@@ -820,8 +890,11 @@ const Inventory = () => {
                           </span>
                         </td>
                         <td className="sku-cell">{sku}</td>
-                        <td className="price-cell">
-                          ${parseFloat(product.price).toFixed(2)}
+                        <td className="price-cell text-slate-500">
+                          ${parseFloat(product.cost_price || 0).toFixed(2)}
+                        </td>
+                        <td className="price-cell font-medium">
+                          ${parseFloat(product.price || 0).toFixed(2)}
                         </td>
                         <td>
                           <div className="stock-cell">
