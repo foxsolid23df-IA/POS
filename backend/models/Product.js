@@ -6,6 +6,7 @@ const Product = sequelize.define('Product', {
     name: { type: DataTypes.STRING, allowNull: false },      // Nombre del producto
     price: { type: DataTypes.FLOAT, allowNull: false },      // Precio del producto
     stock: { type: DataTypes.INTEGER, allowNull: false },    // Stock disponible
+    merma: { type: DataTypes.INTEGER, defaultValue: 0 },     // Cantidad de merma
     barcode: { type: DataTypes.STRING, unique: true },       // Código de barras único
     image: { type: DataTypes.TEXT }                        // URL o Base64 de imagen (opcional)
 }, {

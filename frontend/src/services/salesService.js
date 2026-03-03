@@ -4,7 +4,16 @@ import { terminalService } from './terminalService';
 export const salesService = {
     // Crear una nueva venta usando el RPC optimizado
     createSale: async (saleData) => {
-        const { data: userData } = await supabase.auth.getSingleUser ? await supabase.auth.getUser() : await supabase.auth.getUser();
+        let userId = saleData.user_id;
+
+        // Si no tenemos userId, usar auth de forma síncrona/cacheada en vez de pegarle a la red,
+        // o si es la única opción llamar getUser
+        if (!userId) {
+            console.warn('[salesService] user_id no provisto en saleData, recuperando de Auth (esto causa lentitud)');
+            const { data: userData } = await supabase.auth.getUser();
+            userId = userData?.user?.id;
+        }
+
         const terminalId = terminalService.getTerminalId();
 
         if (!terminalId) {
@@ -33,7 +42,7 @@ export const salesService = {
         // Llamada única al RPC optimizado (Transacción atómica en DB)
         const { data: sale, error: rpcError } = await supabase.rpc('process_perfect_sale', {
             p_total: saleData.total,
-            p_user_id: userData.user.id,
+            p_user_id: userId,
             p_currency: saleData.currency || 'MXN',
             p_exchange_rate: saleData.exchange_rate || null,
             p_amount_usd: saleData.amount_usd || null,

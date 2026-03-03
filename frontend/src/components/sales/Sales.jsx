@@ -608,11 +608,37 @@ export const Sales = () => {
   };
 
   const finalizarVenta = async () => {
+    let pagosActualizados = [...pagosRealizados];
+    let saldoActual = saldoPendiente;
+
+    const montoNum = parseFloat(montoRecibidoRef.current || montoRecibido) || 0;
+    const valorEnPesos =
+      metodoPago === "dolares" && tipoCambio ? montoNum * tipoCambio : montoNum;
+
+    // Si el monto ingresado cubre el saldo pendiente y no se ha agregado el pago, lo autoagregamos
+    if (montoNum > 0 && saldoActual > 0.01 && valorEnPesos >= saldoActual) {
+      let montoAbonado = saldoActual;
+      let cambio = valorEnPesos - saldoActual;
+
+      const nuevoPago = {
+        id: Date.now(),
+        method: metodoPago,
+        amount: montoAbonado,
+        received: montoNum,
+        change: cambio,
+        currency: metodoPago === "dolares" ? "USD" : "MXN",
+        exchange_rate: metodoPago === "dolares" ? tipoCambio : null,
+      };
+
+      pagosActualizados.push(nuevoPago);
+      saldoActual = 0;
+    }
+
     // Validar que se ha cubierto el saldo
-    if (saldoPendiente > 0.01) {
+    if (saldoActual > 0.01) {
       mostrarModalPersonalizado(
         "Saldo insuficiente",
-        `Aún falta por cubrir ${formatearDinero(saldoPendiente)} para completar el total.`,
+        `Aún falta por cubrir ${formatearDinero(saldoActual)} para completar el total.`,
         "warning",
       );
       return;
@@ -624,6 +650,7 @@ export const Sales = () => {
     try {
       // Preparar datos para Supabase
       const ventaData = {
+        user_id: user?.id,
         items: carrito
           .filter((item) => item.quantity > 0)
           .map((item) => ({
@@ -634,10 +661,12 @@ export const Sales = () => {
             stock: item.stock || 0,
           })),
         total: total,
-        payments: pagosRealizados,
+        payments: pagosActualizados,
         // Mantener campos legacy por compatibilidad
         metodoPago:
-          pagosRealizados.length === 1 ? pagosRealizados[0].method : "múltiple",
+          pagosActualizados.length === 1
+            ? pagosActualizados[0].method
+            : "múltiple",
         currency: "MXN",
         exchange_rate: null,
       };
@@ -650,7 +679,7 @@ export const Sales = () => {
         ...ventaCreada,
         productos: [...carrito],
         items: [...carrito],
-        payments: [...pagosRealizados],
+        payments: [...pagosActualizados],
         metodoPago: ventaData.metodoPago,
         // Campos legacy para ticket
         montoRecibido: total,
@@ -750,8 +779,20 @@ export const Sales = () => {
         e.preventDefault();
         if (!modalReady) return;
 
-        // Si hay un monto ingresado pero no agregado, agregarlo primero
-        if (montoRecibido && parseFloat(montoRecibido) > 0) {
+        const montoNum = parseFloat(montoRecibido) || 0;
+        const valorEnPesos =
+          metodoPago === "dolares" && tipoCambio
+            ? montoNum * tipoCambio
+            : montoNum;
+
+        // Si el monto cubre el saldo, podemos finalizar directamente
+        if (montoNum > 0 && valorEnPesos >= saldoPendiente) {
+          finalizarVenta();
+          return;
+        }
+
+        // Si el monto ingresado es menor al saldo, lo agregamos como un pago parcial
+        if (montoNum > 0 && valorEnPesos < saldoPendiente) {
           agregarPago();
           return;
         }
@@ -986,35 +1027,42 @@ export const Sales = () => {
                         size: ${settings.paper_width === "58mm" ? "58mm" : "80mm"} auto;
                         margin: 0;
                     }
-                    body {
-                        margin: 0;
-                        padding: 0;
-                        width: 100%;
-                    }
+                    body { margin: 0; padding: 0; width: 100%; background: none !important; }
+                    .ticket-venta { width: 100% !important; margin: 0 !important; }
                 }
                 body {
-                    font-family: ${settings.font_family === "Monospace" ? "monospace" : "system-ui, -apple-system, sans-serif"};
-                    font-size: ${settings.font_size}px;
-                    line-height: 1.4;
+                    font-family: ${settings.font_family === "Sistema" ? "system-ui, -apple-system, sans-serif" : "monospace"};
+                    font-size: ${settings.font_size || 13}px;
+                    line-height: 1.2;
                     color: black;
                 }
-                .ticket-venta {
-                    padding: 10px;
-                    max-width: 100%;
-                    box-sizing: border-box;
-                }
-                .ticket-header { text-align: center; margin-bottom: 10px; }
-                .ticket-logo { max-width: 150px; height: auto; margin-bottom: 5px; }
-                .ticket-title { font-weight: bold; font-size: 1.2em; text-transform: uppercase; }
-                .ticket-info { font-size: 0.9em; white-space: pre-wrap; margin-bottom: 2px; }
-                .ticket-linea { border-top: 1px dashed black; margin: 8px 0; }
-                .ticket-producto { margin-bottom: 6px; }
-                .ticket-producto-nombre { font-weight: bold; text-transform: uppercase; }
-                .ticket-producto-detalle { display: flex; justify-content: space-between; }
-                .ticket-total { font-size: 1.2em; font-weight: bold; text-align: right; margin-top: 10px; }
-                .ticket-footer { text-align: center; margin-top: 20px; font-style: italic; font-size: 0.9em; }
-                .ticket-pagos { margin: 8px 0; font-size: 0.9em; }
-                .ticket-pago-row { display: flex; justify-content: space-between; }
+                .ticket-venta { padding: 0; box-sizing: border-box; }
+                .ticket-header { text-align: center; margin-bottom: 8px; text-transform: uppercase; }
+                .ticket-logo { max-width: 100%; height: auto; margin: 0 auto 5px auto; display: block; }
+                .ticket-title { font-size: 1.3em; font-weight: bold; margin-bottom: 4px; }
+                .ticket-info { font-size: 1em; white-space: pre-line; margin-bottom: 2px; }
+                .ticket-datetime { text-align: right; margin-bottom: 6px; font-size: 1em; }
+                .ticket-meta { margin-bottom: 8px; text-transform: uppercase; font-size: 1em; }
+                .ticket-meta-row { display: flex; justify-content: space-between; }
+                .ticket-meta-label { white-space: pre; }
+                .ticket-meta-value { text-align: right; }
+                .ticket-table-header { display: flex; font-size: 1em; text-transform: uppercase; margin-bottom: 2px; }
+                .ticket-col-cant { width: 14%; text-align: left; }
+                .ticket-col-desc { width: 62%; text-align: left; }
+                .ticket-col-imp { width: 24%; text-align: right; }
+                .ticket-divider-eq { margin: 0; line-height: 1; overflow: hidden; white-space: nowrap; margin-bottom: 4px; font-size: 1em; }
+                .ticket-items { margin-bottom: 10px; font-size: 1em; }
+                .ticket-item { display: flex; text-transform: uppercase; margin-bottom: 4px; align-items: flex-start; }
+                .ticket-item-cant { width: 14%; text-align: left; }
+                .ticket-item-desc { width: 62%; text-align: left; word-break: break-word; }
+                .ticket-item-imp { width: 24%; text-align: right; }
+                .ticket-summary { margin-top: 10px; text-align: right; text-transform: uppercase; font-size: 1em; display: flex; flex-direction: column; align-items: flex-end; }
+                .ticket-summary-articles { width: 100%; text-align: center; margin-bottom: 8px; }
+                .ticket-summary-row { display: flex; justify-content: flex-end; margin-bottom: 2px; width: 100%; }
+                .ticket-summary-label { margin-right: 12px; text-align: right; }
+                .ticket-summary-value { width: 35%; text-align: right; }
+                .ticket-summary-bold { font-weight: bold; font-size: 1.15em; }
+                .ticket-footer { text-align: center; font-size: 1em; margin-top: 15px; white-space: pre-line; text-transform: uppercase; }
             </style>
         `);
     printWindow.document.write("</head><body>");
@@ -1034,69 +1082,94 @@ export const Sales = () => {
   // Generar HTML del ticket desde el modal de pago (antes de finalizar)
   const generarHTMLTicketPago = () => {
     const settings = ticketSettings || {
-      business_name: "Ticket de Venta",
-      footer_message: "¡Gracias por su compra!",
+      business_name: "TICKET DE VENTA",
+      footer_message: "GRACIAS POR SU COMPRA",
     };
 
-    const fecha = new Date().toLocaleString("es-ES", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const dividerString =
+      settings.paper_width === "80mm"
+        ? "======================================================"
+        : "=================================";
+
+    const folio = transactionId ? transactionId.toString() : "N/A";
+    const userName = user?.name || "USUARIO CAJERO";
+    const totalArticulos = carrito.reduce(
+      (acc, p) => acc + (p.quantity || 1),
+      0,
+    );
+    const cambioActivo = Math.max(0, calcularCambio());
 
     let html = '<div class="ticket-venta">';
     html += '<div class="ticket-header">';
     if (settings.logo_url) {
-      html += `<img src="${settings.logo_url}" class="ticket-logo" alt="Logo">`;
+      html += `<div class="ticket-logo-container"><img src="${settings.logo_url}" class="ticket-logo" alt="Logo"></div>`;
     }
-    html += `<div class="ticket-title">${settings.business_name}</div>`;
+    html += `<div class="ticket-title">${settings.business_name || "TICKET DE VENTA"}</div>`;
     if (settings.address) {
       html += `<div class="ticket-info">${settings.address}</div>`;
     }
     if (settings.phone) {
       html += `<div class="ticket-info">${settings.phone}</div>`;
     }
-    html += `<div class="ticket-fecha">${fecha}</div>`;
     html += "</div>";
-    html += '<div class="ticket-linea"></div>';
 
-    // Productos
+    html += `<div class="ticket-datetime">${formatearFechaHora(new Date())}</div>`;
+
+    html += '<div class="ticket-meta">';
+    html +=
+      '<div class="ticket-meta-row"><span class="ticket-meta-label">CAJERO:</span>';
+    html += `<span class="ticket-meta-value">${userName}</span></div>`;
+    html +=
+      '<div class="ticket-meta-row"><span class="ticket-meta-label">FOLIO:</span>';
+    html += `<span class="ticket-meta-value">${folio}</span></div>`;
+    html += "</div>";
+
+    html += '<div class="ticket-table-header">';
+    html += '<div class="ticket-col-cant">CANT.</div>';
+    html += '<div class="ticket-col-desc">DESCRIPCION</div>';
+    html += '<div class="ticket-col-imp">IMPORTE</div>';
+    html += "</div>";
+    html += `<div class="ticket-divider-eq">${dividerString}</div>`;
+
+    html += '<div class="ticket-items">';
     carrito.forEach((item) => {
-      html += '<div class="ticket-producto">';
-      html += `<div class="ticket-producto-nombre">${item.name}</div>`;
-      html += '<div class="ticket-producto-detalle">';
-      html += `<span>${item.quantity} x ${formatearDinero(item.price)}</span>`;
-      html += `<span>${formatearDinero(item.price * item.quantity)}</span>`;
-      html += "</div></div>";
+      html += '<div class="ticket-item">';
+      html += `<div class="ticket-item-cant">${item.quantity}</div>`;
+      html += `<div class="ticket-item-desc">${item.name}</div>`;
+      html += `<div class="ticket-item-imp">${formatearDinero(item.price * item.quantity)}</div>`;
+      html += "</div>";
     });
+    html += "</div>";
 
-    html += '<div class="ticket-linea"></div>';
-    html += `<div class="ticket-total">TOTAL: ${formatearDinero(total)}</div>`;
+    html += '<div class="ticket-summary">';
+    html += `<div class="ticket-summary-articles">NO. DE ARTICULOS: ${totalArticulos}</div>`;
+
+    html +=
+      '<div class="ticket-summary-row ticket-summary-bold"><span class="ticket-summary-label">TOTAL:</span>';
+    html += `<span class="ticket-summary-value">${formatearDinero(total)}</span></div>`;
 
     if (pagosRealizados && pagosRealizados.length > 0) {
-      html += '<div class="ticket-pagos">';
       pagosRealizados.forEach((p) => {
-        html += '<div class="ticket-pago-row">';
-        html += `<span style="text-transform: capitalize;">${p.method}:</span>`;
-        html += `<span>${formatearDinero(p.amount)}</span>`;
-        html += "</div>";
+        html += '<div class="ticket-summary-row ticket-summary-bold">';
+        html += `<span class="ticket-summary-label">PAGO CON (${p.method.toUpperCase()}):</span>`;
+        html += `<span class="ticket-summary-value">${formatearDinero(p.received || p.amount)}</span></div>`;
       });
-
-      const cambioActivo = calcularCambio();
-      if (cambioActivo > 0) {
+    } else {
+      const valMonto =
+        parseFloat(montoRecibidoRef?.current || montoRecibido) || 0;
+      if (valMonto > 0) {
         html +=
-          '<div class="ticket-pago-row" style="font-weight: bold; margin-top: 4px;">';
-        html += "<span>Cambio:</span>";
-        html += `<span>${formatearDinero(cambioActivo)}</span>`;
-        html += "</div>";
+          '<div class="ticket-summary-row ticket-summary-bold"><span class="ticket-summary-label">PAGO CON:</span>';
+        html += `<span class="ticket-summary-value">${formatearDinero(valMonto)}</span></div>`;
       }
-      html += "</div>";
     }
 
-    html += '<div class="ticket-linea"></div>';
-    html += `<div class="ticket-footer">${settings.footer_message}</div>`;
+    html +=
+      '<div class="ticket-summary-row ticket-summary-bold"><span class="ticket-summary-label">SU CAMBIO:</span>';
+    html += `<span class="ticket-summary-value">${formatearDinero(cambioActivo)}</span></div>`;
+    html += "</div>";
+
+    html += `<div class="ticket-footer">${settings.footer_message || "GRACIAS POR SU COMPRA"}</div>`;
     html += "</div>";
 
     return html;
@@ -1667,10 +1740,15 @@ export const Sales = () => {
                           {formatearMontoRecibido()}
                         </span>
                         <button
-                          className="px-4 py-2 bg-indigo-600 text-white rounded-xl ml-4 font-bold hover:bg-indigo-700 transition-all shadow-md active:scale-95"
+                          className="px-4 py-2 bg-indigo-600 text-white rounded-xl ml-4 font-bold hover:bg-indigo-700 transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                           onClick={agregarPago}
                           disabled={
-                            !montoRecibido || parseFloat(montoRecibido) <= 0
+                            !montoRecibido ||
+                            parseFloat(montoRecibido) <= 0 ||
+                            (metodoPago === "dolares" && tipoCambio
+                              ? parseFloat(montoRecibido) * tipoCambio >=
+                                saldoPendiente
+                              : parseFloat(montoRecibido) >= saldoPendiente)
                           }
                         >
                           Agregar Pago
@@ -1744,7 +1822,14 @@ export const Sales = () => {
                   <button
                     className="payment-finalize-btn"
                     onClick={finalizarVenta}
-                    disabled={!modalReady || saldoPendiente > 0.01}
+                    disabled={
+                      !modalReady ||
+                      (saldoPendiente > 0.01 &&
+                        (metodoPago === "dolares" && tipoCambio
+                          ? (parseFloat(montoRecibido) || 0) * tipoCambio <
+                            saldoPendiente
+                          : (parseFloat(montoRecibido) || 0) < saldoPendiente))
+                    }
                   >
                     Finalizar Venta
                   </button>

@@ -102,6 +102,22 @@ const productController = {
             console.error('Error en getLowStockProducts:', error);
             res.status(500).json({ message: error.message });
         }
+    },
+
+    // Registrar entrada (aumento de stock y/o merma)
+    async registrarEntrada(req, res) {
+        try {
+            const { id } = req.params;
+            const { cantidadEntrante, cantidadMerma } = req.body;
+            console.log('📦 Registrando entrada producto ID:', id);
+            console.log('📦 Cantidad entrante:', cantidadEntrante, 'Merma:', cantidadMerma);
+
+            const updatedProduct = await productService.registrarEntrada(id, cantidadEntrante, cantidadMerma);
+            res.json(updatedProduct);
+        } catch (error) {
+            console.error('❌ Error en registrarEntrada:', error.message);
+            res.status(400).json({ message: error.message });
+        }
     }
 };
 

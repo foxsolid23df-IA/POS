@@ -102,6 +102,27 @@ async function actualizarStock(idProducto, nuevoStock) {
     return producto;
 }
 
+// 6.5 REGISTRAR ENTRADA (MÁS STOCK / MERMA)
+async function registrarEntrada(idProducto, cantidadEntrante = 0, cantidadMerma = 0) {
+    const producto = await Product.findByPk(idProducto);
+    if (!producto) throw new Error('Producto no encontrado');
+
+    const entrant = parseInt(cantidadEntrante) || 0;
+    const merma = parseInt(cantidadMerma) || 0;
+
+    if (entrant < 0 || merma < 0) {
+        throw new Error('Las cantidades no pueden ser negativas');
+    }
+
+    producto.stock += entrant;
+
+    // Si la merma es undefined en el modelo (en caso base de datos recién alterada) 
+    producto.merma = (producto.merma || 0) + merma;
+
+    await producto.save();
+    return producto;
+}
+
 // 7. OBTENER PRODUCTOS CON POCO STOCK
 async function obtenerProductosPocoStock(limite = 5) {
     return await Product.findAll({
@@ -126,6 +147,7 @@ module.exports = {
     crearProducto,
     actualizarProducto,
     actualizarStock,
+    registrarEntrada,
     obtenerProductosPocoStock,
     eliminarProducto
 };

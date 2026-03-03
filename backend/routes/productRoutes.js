@@ -11,5 +11,6 @@ router.get('/:id', productController.getProductById);            // GET /api/pro
 router.post('/', productController.createProduct);               // POST /api/products
 router.put('/:id', productController.updateProduct);             // PUT /api/products/:id
 router.delete('/:id', productController.deleteProduct);          // DELETE /api/products/:id
+router.post('/:id/entradas', productController.registrarEntrada); // POST /api/products/:id/entradas
 
 module.exports = router;

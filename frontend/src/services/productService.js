@@ -30,10 +30,10 @@ export const productService = {
     subscribeToProducts: (callback) => {
         return supabase
             .channel('public:products')
-            .on('postgres_changes', { 
-                event: '*', 
-                schema: 'public', 
-                table: 'products' 
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'products'
             }, (payload) => {
                 console.log('[ProductService] Cambio detectado:', payload.eventType);
                 // Actualizar caché local según el tipo de evento
@@ -66,13 +66,13 @@ export const productService = {
                 if (!isAbortError(error)) {
                     console.error('[ProductService] Error fetching products:', error);
                 }
-                
+
                 // Si hay error pero tenemos caché (aunque sea viejo), devolverlo
                 if (productsCache && productsCache.length > 0) {
                     console.warn('[ProductService] Using stale cache due to fetch error', { count: productsCache.length });
                     return [...productsCache];
                 }
-                
+
                 if (isAbortError(error)) throw error; // Relanzar para que catch lo maneje (o ignore)
 
                 // Si no hay caché, retornar array vacío en lugar de lanzar error
@@ -96,7 +96,7 @@ export const productService = {
             console.error('[ProductService] Exception in getProducts:', error);
             // ... (resto del catch)
             if (productsCache && productsCache.length > 0) {
-                 return [...productsCache]; 
+                return [...productsCache];
             }
             return [];
         }
@@ -105,7 +105,7 @@ export const productService = {
     // Crear un nuevo producto
     createProduct: async (product) => {
         const { data: userData, error: authError } = await supabase.auth.getUser();
-        
+
         if (authError) {
             if (authError.message?.includes('aborted') || authError.name === 'AbortError') {
                 throw new Error('Operación cancelada');
@@ -177,6 +177,42 @@ export const productService = {
         return data;
     },
 
+    // Registrar entrada (sumar a Existencia y Merma)
+    registrarEntrada: async (id, cantidadEntrante, cantidadMerma) => {
+        // Obtener el producto actual para saber su stock y merma
+        const { data: currentProduct, error: fetchError } = await supabase
+            .from('products')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (fetchError) throw fetchError;
+
+        const entrant = parseInt(cantidadEntrante) || 0;
+        const merma = parseInt(cantidadMerma) || 0;
+
+        if (entrant < 0 || merma < 0) {
+            throw new Error('Las cantidades no pueden ser negativas');
+        }
+
+        const newStock = (currentProduct.stock || 0) + entrant;
+        const newMerma = (currentProduct.merma || 0) + merma;
+
+        const { data, error } = await supabase
+            .from('products')
+            .update({ stock: newStock, merma: newMerma })
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        // Actualizar caché local
+        productService.updateCache(data, 'UPDATE');
+
+        return data;
+    },
+
     // Eliminar un producto
     deleteProduct: async (id) => {
         const { error } = await supabase
@@ -223,7 +259,7 @@ export const productService = {
     // Crear múltiples productos (Carga Masiva)
     bulkCreateProducts: async (products) => {
         const { data: userData, error: authError } = await supabase.auth.getUser();
-        
+
         if (authError) {
             if (authError.message?.includes('aborted') || authError.name === 'AbortError') {
                 throw new Error('Operación cancelada');
