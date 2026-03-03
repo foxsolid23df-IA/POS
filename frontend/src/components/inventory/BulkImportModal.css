@@ -25,18 +25,32 @@
 }
 
 .drop-zone {
-    border: 2px dashed #cbd5e1;
-    border-radius: 16px;
-    padding: 40px;
+    border: 3px dashed #cbd5e1;
+    border-radius: 20px;
+    padding: 50px;
     text-align: center;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     background-color: #f8fafc;
+    color: #475569;
+    font-weight: 600;
 }
 
 .drop-zone:hover, .drop-zone.active {
-    border-color: var(--primary-color);
-    background-color: rgba(59, 130, 246, 0.05);
+    border-color: #3b82f6;
+    background-color: #eff6ff;
+    transform: scale(1.01);
+}
+
+.dark .drop-zone {
+    background-color: #1e293b;
+    border-color: #475569;
+    color: #cbd5e1;
+}
+
+.dark .drop-zone:hover, .dark .drop-zone.active {
+    border-color: #3b82f6;
+    background-color: #0f172a;
 }
 
 .drop-content {

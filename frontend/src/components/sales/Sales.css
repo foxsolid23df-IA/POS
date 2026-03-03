@@ -87,21 +87,34 @@
 
 .barcode-input-modern {
   width: 100%;
-  padding: 0.625rem 0.75rem 0.625rem 2.5rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  color: #171717;
+  padding: 0.75rem 0.75rem 0.75rem 2.75rem; /* Aumentado padding izquierdo para el icono */
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 1rem;
+  color: #1a1a1a;
   background: white;
-  min-height: 40px;
+  min-height: 48px;
   outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   box-sizing: border-box;
+  font-weight: 600;
 }
 
 .barcode-input-modern:focus {
-  border-color: #000000;
-  box-shadow: 0 0 0 1px #000000;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+  background: #ffffff;
+}
+
+.dark .barcode-input-modern {
+  background: #1e293b;
+  border-color: #334155;
+  color: #ffffff;
+}
+
+.dark .barcode-input-modern:focus {
+  border-color: #3b82f6;
+  background: #0f172a;
 }
 
 .barcode-input-modern::placeholder {
@@ -314,20 +327,25 @@
 
 .barcode-input {
   flex: 1;
-  background: var(--bg-primary);
-  border: 1px solid var(--glass-border);
-  color: var(--text-main);
-  padding: 0.75rem 1rem;
-  font-size: 16px;
-  /* Importante: previene zoom en iOS */
-  border-radius: 8px;
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+  color: #1a1a1a;
+  padding: 0.875rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 12px;
   transition: all 0.3s ease;
   box-sizing: border-box;
-  /* Safari fixes */
   -webkit-appearance: none;
   appearance: none;
-  min-height: 40px;
+  min-height: 52px;
   line-height: 1.4;
+}
+
+.dark .barcode-input {
+  background: #1e293b;
+  border-color: #334155;
+  color: #ffffff;
 }
 
 /* Botón Cámara Scanner */
@@ -394,8 +412,14 @@
 
 .barcode-input:focus {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+  background: #ffffff;
+}
+
+.dark .barcode-input:focus {
+  border-color: #3b82f6;
+  background: #0f172a;
 }
 
 .barcode-input::placeholder {
@@ -716,16 +740,16 @@
 
 .quantity-modern,
 .quantity-input-modern {
-  width: 60px;
+  width: 65px;
   text-align: center;
   font-weight: 800;
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   color: #111827;
   background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.75rem;
   outline: none;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   -webkit-appearance: none;
   appearance: none;
   margin: 0;
@@ -739,7 +763,21 @@
 .quantity-input-modern:focus {
   background: white;
   border-color: #10b981;
-  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+  color: #065f46;
+}
+
+.dark .quantity-modern,
+.dark .quantity-input-modern {
+  background: #1e293b;
+  border-color: #334155;
+  color: #ffffff;
+}
+
+.dark .quantity-input-modern:focus {
+  background: #064e3b;
+  border-color: #10b981;
+  color: #ffffff;
 }
 
 .quantity-input-modern::-webkit-inner-spin-button,

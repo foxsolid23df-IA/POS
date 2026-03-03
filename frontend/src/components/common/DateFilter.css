@@ -34,6 +34,35 @@
     align-items: end;
 }
 
+/* Estilos de input[type="date"] para mejor visibilidad */
+.input-group input[type="date"] {
+    padding: 10px 14px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    background-color: #ffffff;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+}
+
+.input-group input[type="date"]:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+}
+
+.dark .input-group input[type="date"] {
+    background-color: #1e293b;
+    border-color: #334155;
+    color: #ffffff;
+}
+
+.dark .input-group input[type="date"]:focus {
+    border-color: #3b82f6;
+    background-color: #0f172a;
+}
+
 .search-btn,
 .clear-btn,
 .btn-exportar {
