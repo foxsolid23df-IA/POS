@@ -13,6 +13,7 @@ export const AuthProvider = ({ children }) => {
 
   // Empleado activo (quien está usando la caja)
   const [activeStaff, setActiveStaff] = useState(null);
+  const [isVerifyingAttendance, setIsVerifyingAttendance] = useState(false);
 
   // Sistema de sesión de caja (fondo de caja)
   const [cashSession, setCashSession] = useState(null);
@@ -32,7 +33,24 @@ export const AuthProvider = ({ children }) => {
         const savedStaff = localStorage.getItem("activeStaff");
         if (savedStaff) {
           try {
-            setActiveStaff(JSON.parse(savedStaff));
+            const staff = JSON.parse(savedStaff);
+            // Si tiene el permiso, verificar asistencia antes de restaurar
+            if (staff.permissions?.require_check_in) {
+              import("../services/attendanceService").then(
+                ({ attendanceService }) => {
+                  attendanceService.getLastLog(staff.id).then((lastLog) => {
+                    if (!lastLog || lastLog.action === "check_out") {
+                      localStorage.removeItem("activeStaff");
+                      setActiveStaff(null);
+                    } else {
+                      setActiveStaff(staff);
+                    }
+                  });
+                },
+              );
+            } else {
+              setActiveStaff(staff);
+            }
           } catch (e) {
             localStorage.removeItem("activeStaff");
           }

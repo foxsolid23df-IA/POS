@@ -60,11 +60,25 @@ export const LockScreen = () => {
     try {
       // 1. Validar el PIN sin iniciar sesión todavía
       const staff = await validateStaffPin(pin);
+      console.log(
+        "Validando staff:",
+        staff.name,
+        "Permisos:",
+        staff.permissions,
+      );
 
       // 2. Validar si requiere entrada obligatoria
       if (staff.permissions?.require_check_in) {
         const lastLog = await attendanceService.getLastLog(staff.id);
+        console.log(
+          "Último registro de asistencia:",
+          lastLog?.action,
+          "para",
+          staff.name,
+        );
+
         if (!lastLog || lastLog.action === "check_out") {
+          console.warn("Acceso denegado: Entrada requerida por asistencia.");
           Swal.fire({
             title: "Entrada Requerida",
             text: "Debes registrar tu entrada en el Reloj Checador o usar el Lector de Huella antes de iniciar sesión.",
