@@ -1,22 +1,36 @@
 import React, { useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../supabase";
+import { staffService } from "../../services/staffService";
+import { attendanceService } from "../../services/attendanceService";
 import Swal from "sweetalert2";
 import logo from "../../assets/logo.png";
+import { ClockInOutTerminal } from "../attendance/ClockInOutTerminal";
 import "./LockScreen.css";
 
 export const LockScreen = () => {
   const [pin, setPin] = useState("");
   const [isValidating, setIsValidating] = useState(false);
-  const { loginWithPin, unlockAsOwner, storeName, logout, user } = useAuth();
+  const [showClockTerminal, setShowClockTerminal] = useState(false);
+  const {
+    loginWithPin,
+    validateStaffPin,
+    loginAs,
+    unlockAsOwner,
+    storeName,
+    logout,
+    user,
+  } = useAuth();
   const containerRef = React.useRef(null);
+  const bufferRef = React.useRef("");
+  const timeoutRef = React.useRef(null);
 
   // Auto-enfocar el contenedor al montar para habilitar teclado de inmediato
   React.useEffect(() => {
-    if (containerRef.current) {
+    if (containerRef.current && !showClockTerminal) {
       containerRef.current.focus();
     }
-  }, []);
+  }, [showClockTerminal]);
 
   const handlePinInput = (digit) => {
     if (pin.length < 6 && !isValidating) {
@@ -44,7 +58,30 @@ export const LockScreen = () => {
     setIsValidating(true);
 
     try {
-      const staff = await loginWithPin(pin);
+      // 1. Validar el PIN sin iniciar sesión todavía
+      const staff = await validateStaffPin(pin);
+
+      // 2. Validar si requiere entrada obligatoria
+      if (staff.permissions?.require_check_in) {
+        const lastLog = await attendanceService.getLastLog(staff.id);
+        if (!lastLog || lastLog.action === "check_out") {
+          Swal.fire({
+            title: "Entrada Requerida",
+            text: "Debes registrar tu entrada en el Reloj Checador o usar el Lector de Huella antes de iniciar sesión.",
+            icon: "warning",
+            confirmButtonText: "Ir a Reloj Checador",
+            confirmButtonColor: "var(--primary-color)",
+          }).then((result) => {
+            setShowClockTerminal(true);
+            setPin("");
+          });
+          return;
+        }
+      }
+
+      // 3. Si pasó los checks, ahora sí iniciamos sesión oficial
+      await loginWithPin(pin);
+
       Swal.fire({
         title: `¡Bienvenido!`,
         text: `${staff.name} - ${staff.role.toUpperCase()}`,
@@ -84,9 +121,94 @@ export const LockScreen = () => {
     ) {
       handleClear();
     }
-    // Validar/Desbloquear
+    // Lector de Huella USB (ráfaga que termina en Enter)
     else if (e.key === "Enter") {
-      handleSubmit();
+      if (bufferRef.current.length > 5) {
+        e.preventDefault();
+        handleFingerprint(bufferRef.current);
+        bufferRef.current = "";
+      } else {
+        handleSubmit();
+      }
+    }
+
+    // Acumulador para lector de huellas USB
+    if (
+      (e.key.length === 1 && !/^[0-9]$/.test(e.key)) ||
+      /^[0-9a-zA-Z]$/.test(e.key)
+    ) {
+      bufferRef.current += e.key;
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => {
+        bufferRef.current = ""; // Limpiar si es muy lento (no es escáner)
+      }, 50); // 50ms es muy rápido, solo factible para escáners automáticos
+    }
+  };
+
+  const handleFingerprint = async (scannedCode) => {
+    setIsValidating(true);
+    try {
+      const staff = await staffService.loginWithFingerprint(scannedCode);
+      const lastLog = await attendanceService.getLastLog(staff.id);
+
+      if (!lastLog || lastLog.action === "check_out") {
+        // Registrar Entrada e Iniciar Sesión automáticamente
+        await attendanceService.logAttendance(
+          staff.id,
+          "check_in",
+          "fingerprint",
+        );
+        Swal.fire({
+          title: "¡Entrada Registrada!",
+          text: `Bienvenido, ${staff.name}`,
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+        }).then(() => {
+          loginAs(staff);
+        });
+      } else {
+        // Ya tiene entrada registrada, preguntar qué desea hacer
+        Swal.fire({
+          title: `Hola, ${staff.name}`,
+          text: `Tu último registro fue entrada. ¿Qué deseas hacer ahora?`,
+          icon: "question",
+          showCancelButton: true,
+          confirmButtonColor: "var(--primary-color)",
+          cancelButtonColor: "#f59e0b",
+          confirmButtonText: "🏠 Iniciar Sesión POS",
+          cancelButtonText: "👋 Registrar Salida",
+        }).then(async (result) => {
+          if (result.isConfirmed) {
+            loginAs(staff);
+          } else if (result.dismiss === Swal.DismissReason.cancel) {
+            setIsValidating(true);
+            await attendanceService.logAttendance(
+              staff.id,
+              "check_out",
+              "fingerprint",
+            );
+            setIsValidating(false);
+            Swal.fire({
+              title: "¡Salida Registrada!",
+              text: `Hasta pronto, ${staff.name}`,
+              icon: "success",
+              timer: 2000,
+              showConfirmButton: false,
+            });
+            setPin("");
+          }
+        });
+      }
+    } catch (error) {
+      Swal.fire(
+        "Error Biométrico",
+        error.message || "Huella no reconocida o empleado inactivo",
+        "error",
+      );
+    } finally {
+      if (!Swal.isVisible()) setIsValidating(false);
+      setPin("");
     }
   };
 
@@ -255,6 +377,13 @@ export const LockScreen = () => {
         </button>
 
         <div className="lock-actions">
+          <button
+            className="owner-btn"
+            onClick={() => setShowClockTerminal(true)}
+            style={{ backgroundColor: "var(--primary-color)", color: "white" }}
+          >
+            ⌚ Reloj Checador
+          </button>
           <button className="owner-btn" onClick={handleOwnerAccess}>
             👑 Soy el Propietario
           </button>
@@ -263,11 +392,34 @@ export const LockScreen = () => {
           </button>
         </div>
 
-        <div className="lock-hint">
+        <div
+          className="lock-hint"
+          style={{
+            marginTop: "1.5rem",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "0.5rem",
+          }}
+        >
+          <span
+            className="material-icons-outlined"
+            style={{ fontSize: "2.5rem", color: "var(--primary-color)" }}
+          >
+            fingerprint
+          </span>
           <small>
-            💡 Ingresa tu PIN de 4-6 dígitos y presiona "Desbloquear"
+            Ingresa tu PIN de 4-6 dígitos o <strong>coloca tu huella</strong> en
+            el lector para ingresar o registrar asistencia automáticamente.
           </small>
         </div>
+
+        {showClockTerminal && (
+          <ClockInOutTerminal
+            onClose={() => setShowClockTerminal(false)}
+            onAutoLogin={(staff) => loginAs(staff)}
+          />
+        )}
       </div>
     </div>
   );

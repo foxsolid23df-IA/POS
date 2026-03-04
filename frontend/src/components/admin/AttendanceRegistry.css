@@ -1,0 +1,230 @@
+.attendance-registry {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: 100vh;
+}
+
+.registry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+}
+
+.registry-header h2 {
+    color: #1e293b;
+    font-size: 1.75rem;
+    font-weight: 800;
+    margin: 0 0 0.5rem 0;
+}
+
+.dark .registry-header h2 {
+    color: #f8fafc;
+}
+
+.registry-header p {
+    color: #64748b;
+    font-weight: 500;
+}
+
+.dark .registry-header p {
+    color: #94a3b8 !important;
+}
+
+.registry-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.date-filters {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #ffffff;
+    padding: 0.5rem 1.25rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.dark .date-filters {
+    background: #1e293b;
+    border-color: #334155;
+    color: white;
+}
+
+.date-filters input[type="date"] {
+    border: none;
+    background: transparent;
+    color: #1e293b;
+    font-family: inherit;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+}
+
+.dark .date-filters input[type="date"] {
+    color: #f8fafc;
+}
+
+.date-filters span {
+    color: #94a3b8;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.btn-export-excel {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.25rem;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+}
+
+.btn-export-excel:hover:not(:disabled) {
+    background: #059669;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
+}
+
+.btn-export-excel:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.btn-export-excel:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* Table styles */
+.registry-content {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.dark .registry-content {
+    background: #1e293b;
+    border-color: #334155;
+    box-shadow: none;
+}
+
+.registry-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.registry-table th, 
+.registry-table td {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.dark .registry-table th, 
+.dark .registry-table td {
+    border-color: #334155;
+}
+
+.registry-table th {
+    background: #f8fafc;
+    color: #475569;
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.dark .registry-table th {
+    background: #0f172a;
+    color: #94a3b8;
+}
+
+.datetime {
+    display: flex;
+    flex-direction: column;
+}
+
+.datetime .date {
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.dark .datetime .date {
+    color: #f8fafc;
+}
+
+.datetime .time {
+    font-size: 0.875rem;
+    color: #64748b;
+}
+
+.dark .datetime .time {
+    color: #94a3b8;
+}
+
+.staff-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.staff-info .name {
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.dark .staff-info .name {
+    color: #f8fafc;
+}
+
+.badge-role {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    margin-top: 0.25rem;
+    letter-spacing: 0.025em;
+}
+
+.dark .badge-role {
+    color: #94a3b8;
+}
+
+.badge-action {
+    display: inline-block;
+    padding: 0.35rem 0.85rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.badge-action.check_in {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.badge-action.check_out {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.empty-state {
+    padding: 6rem 2rem;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 1.125rem;
+    font-weight: 500;
+}

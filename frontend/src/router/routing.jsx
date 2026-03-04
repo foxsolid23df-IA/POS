@@ -16,6 +16,7 @@ import { Login } from "../components/auth/Login";
 import { LockScreen } from "../components/auth/LockScreen";
 import { CashFundModal } from "../components/auth/CashFundModal";
 import { UserManager } from "../components/admin/UserManager";
+import { AttendanceRegistry } from "../components/admin/AttendanceRegistry";
 import Suppliers from "../components/suppliers/Suppliers";
 import { AuthProvider, useAuth } from "../hooks/useAuth";
 import CustomerDisplay from "../components/customer/CustomerDisplay";
@@ -212,13 +213,24 @@ export const Routing = () => {
                       }
                     />
 
-                    {/* Gestión de Usuarios solo para Admin */}
+                    {/* Gestión de Usuarios y Asistencia solo para Admin */}
                     <Route
                       path="/usuarios"
                       element={
                         <PrivateLayout>
                           <AdminRoute>
                             <UserManager />
+                          </AdminRoute>
+                        </PrivateLayout>
+                      }
+                    />
+
+                    <Route
+                      path="/asistencia"
+                      element={
+                        <PrivateLayout>
+                          <AdminRoute>
+                            <AttendanceRegistry />
                           </AdminRoute>
                         </PrivateLayout>
                       }

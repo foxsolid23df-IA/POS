@@ -7,7 +7,7 @@ export const staffService = {
             .from('staff')
             .select('id')
             .eq('pin', pin);
-        
+
         if (excludeId) {
             query = query.neq('id', excludeId);
         }
@@ -35,9 +35,13 @@ export const staffService = {
             .from('staff')
             .insert([{
                 name: staff.name,
+                last_name: staff.last_name || '',
                 role: staff.role || 'cajero',
                 pin: staff.pin,
-                active: true,
+                permissions: staff.permissions || { pos: true, inventory: false, reports: false, reset_cash: false, logout: false, cut: true, block: true },
+                auth_method: staff.auth_method || 'pin',
+                fingerprint_data: staff.fingerprint_data || null,
+                active: staff.active !== undefined ? staff.active : true,
                 user_id: userData.user.id
             }])
             .select()
@@ -53,8 +57,12 @@ export const staffService = {
             .from('staff')
             .update({
                 name: updates.name,
+                last_name: updates.last_name,
                 role: updates.role,
                 pin: updates.pin,
+                permissions: updates.permissions,
+                auth_method: updates.auth_method,
+                fingerprint_data: updates.fingerprint_data,
                 active: updates.active
             })
             .eq('id', id)
@@ -86,6 +94,21 @@ export const staffService = {
 
         if (error || !data) {
             throw new Error('PIN inválido o usuario inactivo');
+        }
+        return data;
+    },
+
+    // Validar huella de un empleado (para login automático)
+    loginWithFingerprint: async (fingerprintData) => {
+        const { data, error } = await supabase
+            .from('staff')
+            .select('*')
+            .eq('fingerprint_data', fingerprintData)
+            .eq('active', true)
+            .single();
+
+        if (error || !data) {
+            throw new Error('Huella no registrada o empleado inactivo');
         }
         return data;
     }

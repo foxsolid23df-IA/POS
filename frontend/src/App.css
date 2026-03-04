@@ -922,3 +922,27 @@ body,
     color 0.3s ease,
     border-color 0.3s ease;
 }
+
+/* Global contrast fixes for Light Mode */
+label {
+    color: var(--dm-text-primary);
+}
+
+.form-group label {
+    color: var(--dm-text-primary) !important;
+    opacity: 1 !important;
+}
+
+html.dark label,
+html.dark .form-group label {
+    color: var(--dm-text-secondary) !important;
+}
+
+.modal-content {
+    color: var(--dm-text-primary) !important;
+}
+
+.modal-content h3, 
+.modal-content h4 {
+    color: var(--dm-text-primary) !important;
+}

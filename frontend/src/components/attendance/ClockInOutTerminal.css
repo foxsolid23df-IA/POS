@@ -1,0 +1,341 @@
+.clock-terminal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.85); /* backdrop blur base */
+    backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.clock-terminal-container {
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 2.5rem;
+    width: 420px;
+    max-width: 90%;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    position: relative;
+    border: 1px solid #e2e8f0;
+}
+
+.dark .clock-terminal-container {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+.close-terminal-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.close-terminal-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-color);
+}
+
+.clock-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.clock-header h2 {
+    color: #1e293b;
+    margin: 0 0 1rem 0;
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+
+.dark .clock-header h2 {
+    color: #ffffff;
+}
+
+.digital-clock {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #f8fafc;
+    padding: 1.5rem;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+}
+
+.dark .digital-clock {
+    background: rgba(15, 23, 42, 0.5);
+    border-color: #334155;
+}
+
+.digital-clock .time {
+    font-size: 3rem;
+    font-weight: 800;
+    color: #1e293b;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -1px;
+}
+
+.dark .digital-clock .time {
+    color: #ffffff;
+}
+
+.digital-clock .date {
+    font-size: 0.875rem;
+    color: #64748b;
+    text-transform: capitalize;
+    margin-top: 0.5rem;
+    font-weight: 600;
+}
+
+.dark .digital-clock .date {
+    color: #94a3b8;
+}
+
+.auth-method-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    background: #f1f5f9;
+    padding: 0.35rem;
+    border-radius: 12px;
+}
+
+.dark .auth-method-tabs {
+    background: #0f172a;
+}
+
+.tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tab-btn.active {
+    background: #ffffff;
+    color: #2563eb;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.dark .tab-btn.active {
+    background: #1e293b;
+    color: #60a5fa;
+}
+
+/* FIN - PIN SECTION */
+.pin-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.pin-display {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+}
+
+.pin-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid #cbd5e1;
+    background: transparent;
+    transition: all 0.2s;
+}
+
+.dark .pin-dot {
+    border-color: #334155;
+}
+
+.pin-dot.filled {
+    background: #2563eb;
+    border-color: #2563eb;
+    transform: scale(1.2);
+}
+
+.dark .pin-dot.filled {
+    background: #60a5fa;
+    border-color: #60a5fa;
+}
+
+.terminal-keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.terminal-keypad button {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #1e293b;
+    font-size: 1.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dark .terminal-keypad button {
+    border-color: #334155;
+    background: rgba(255, 255, 255, 0.05);
+    color: #f8fafc;
+}
+
+.terminal-keypad button:hover:not(:disabled) {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+}
+
+.terminal-keypad button.action-key {
+    font-size: 1.25rem;
+    background: #f1f5f9;
+}
+
+.dark .terminal-keypad button.action-key {
+    background: #0f172a;
+}
+
+/* HUELLA SECTION */
+.fingerprint-section {
+    text-align: center;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.fingerprint-animation {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 1.5rem auto;
+    border-radius: 50%;
+    background: rgba(16, 185, 129, 0.1); /* primary color with opacity */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.scanner-icon {
+    font-size: 4rem;
+    color: #2563eb;
+    opacity: 0.9;
+}
+
+.dark .scanner-icon {
+    color: #60a5fa;
+    opacity: 0.8;
+}
+
+.scan-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--primary-color);
+    box-shadow: 0 0 10px var(--primary-color);
+    animation: scan 2s linear infinite;
+}
+
+@keyframes scan {
+    0% { top: 0; opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+}
+
+.hidden-scanner-input {
+    position: absolute;
+    opacity: 0;
+    height: 0;
+    width: 0;
+    pointer-events: none;
+}
+
+.scanner-instruction {
+    color: #475569;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-top: 1rem;
+}
+
+.dark .scanner-instruction {
+    color: #94a3b8;
+}
+
+.scanner-instruction.received {
+    color: #10b981;
+}
+
+/* BUTTONS */
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+.btn-check-in, .btn-check-out {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 1rem;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-check-in {
+    background: #10b981; /* green */
+}
+
+.btn-check-in:hover:not(:disabled) {
+    background: #059669;
+}
+
+.btn-check-out {
+    background: #ef4444; /* red */
+}
+
+.btn-check-out:hover:not(:disabled) {
+    background: #dc2626;
+}
+
+.btn-check-in:disabled, .btn-check-out:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
