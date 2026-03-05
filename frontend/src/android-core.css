@@ -71,7 +71,7 @@ body.is-android button,
 body.is-android .btn,
 body.is-android .suggestion-item,
 body.is-android select,
-body.is-android input {
+body.is-android input:not([type="checkbox"]):not([type="radio"]) {
   min-height: var(--min-touch-target);
 }
 
@@ -90,12 +90,11 @@ body.is-android .sidebar-nav .nav-item {
   .nav-item:active, .btn:active, button:active, .suggestion-item:active {
     background-color: rgba(59, 130, 246, 0.15) !important;
     transform: scale(0.97) !important;
-    transition: transform 0.1s ease, background-color 0s;
+    transition: transform 0.1s ease;
   }
 }
 
 /* ===== 3. FLUID GRID SYSTEM INTELIGENTE ===== */
-/* Adaptación autónoma de tarjetas y KPIs sin media queries fijos usando CSS Grid */
 .suppliers-kpi-grid,
 .inventory-stats-grid {
   display: grid;
@@ -110,7 +109,7 @@ body.is-android .sidebar-nav .nav-item {
   flex-direction: column;
   justify-content: center;
   padding: clamp(15px, 3%, 24px) !important;
-  min-width: 0; /* Previene overflow */
+  min-width: 0;
 }
 
 .stat-value,
@@ -124,7 +123,6 @@ body.is-android .sidebar-nav .nav-item {
 }
 
 /* ===== 4. TABLES: DE SCROLL HORIZONTAL A STACK VERTICAL FLUIDO ===== */
-/* Ajuste de tablas genérico para que no salgan de pantalla en móviles o tablets estrechas */
 @media (max-width: 900px) {
   body.is-android .suppliers-table,
   body.is-android .products-table,
@@ -149,10 +147,17 @@ body.is-android .sidebar-nav .nav-item {
     font-size: var(--fs-base) !important;
   }
   
-  /* Esconder columnas menos importantes de forma inteligente */
-  body.is-android .hide-on-mobile {
+  body.is-android .hide-on-mobile,
+  body.is-android .hide-compact {
     display: none !important;
   }
+}
+
+/* Force horizontal scroll on tables strictly */
+body.is-android .table-container, 
+body.is-android .table-wrapper {
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ===== 5. MODALES ESTILO BOTTOM-SHEET PARA ANDROID ===== */
@@ -160,51 +165,57 @@ body.is-android .sidebar-nav .nav-item {
   body.is-android .payment-modal-container,
   body.is-android .cash-fund-modal,
   body.is-android .lock-container,
-  body.is-android .modal-content {
-    /* Modal se pega al fondo de la pantalla como Bottom Sheet de Android */
-    max-width: 100% !important;
-    width: 100% !important;
-    border-radius: 20px 20px 0 0 !important;
+  body.is-android .modal-content,
+  body.is-android .new-product-modal,
+  body.is-android .filters-modal,
+  body.is-android .categories-modal,
+  body.is-android .entradas-modal-container,
+  body.is-android .bulk-import-modal,
+  body.is-android .common-modal,
+  body.is-android .entry-exit-modal {
+    position: fixed !important;
+    bottom: 0 !important;
+    top: auto !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    max-height: 92vh !important;
+    height: auto !important;
+    border-radius: 24px 24px 0 0 !important;
     margin-top: auto !important;
-    max-height: 90vh !important;
-    padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 20px) !important;
-    animation: slideUpAndroid 0.3s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+    padding-bottom: calc(var(--safe-bottom, 20px) + 20px) !important;
+    animation: slideUpAndroid 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards !important;
+    box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.3) !important;
+    z-index: 1000 !important;
   }
 
   body.is-android .payment-modal-overlay,
   body.is-android .cash-fund-overlay,
   body.is-android .lock-screen,
   body.is-android .modal-overlay {
-    align-items: flex-end !important; /* Alinea contenido al fondo */
+    align-items: flex-end !important; 
     padding: 0 !important;
   }
 
-  /* Handle del bottom sheet */
   body.is-android .payment-modal-container::before,
   body.is-android .cash-fund-modal::before,
-  body.is-android .lock-container::before {
+  body.is-android .lock-container::before,
+  body.is-android .new-product-modal::before {
     content: '';
     display: block;
     width: 40px;
     height: 4px;
     background: #cbd5e1;
     border-radius: 4px;
-    margin: -10px auto 15px auto;
+    margin: 8px auto 16px auto;
   }
 
-  /* Teclados numéricos fluidos */
   body.is-android .pin-keypad,
   body.is-android .cash-fund-keypad,
   body.is-android .payment-keypad {
     grid-template-columns: repeat(3, 1fr) !important;
     gap: clamp(6px, 2vw, 12px) !important;
-  }
-  
-  body.is-android .key-btn,
-  body.is-android .keypad-btn,
-  body.is-android .payment-key {
-    min-height: calc(var(--min-touch-target) + 10px) !important;
-    font-size: var(--fs-lg) !important;
   }
 }
 
@@ -214,37 +225,43 @@ body.is-android .sidebar-nav .nav-item {
 }
 
 /* ===== 6. TECLADO VIRTUAL & INPUTS EN PANTALLA ===== */
-/* Cuando el teclado virtual está abierto, evita que el layout se colapse rompiendo proporciones */
 body.is-android .main-content {
-  /* Evitar colapso severo */
-  min-height: 100dvh; 
+  min-height: 100dvh;  /* Dynamic viewport handles keyboard better */
 }
 
 body.is-android input:focus {
-  /* Resalta fuerte el input con teclado abierto */
   border-color: var(--accent, #3b82f6) !important;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
 }
 
-/* Ajustes de Layout fluido generales */
+/* Layout fluido para Sales */
 body.is-android .sales-content-wrapper {
-  /* Utiliza el porcentaje inteligente para reordenar carrito vs items */
   flex-direction: row;
-  flex-wrap: wrap;
+  height: calc(100dvh - 64px);
+  overflow: hidden;
 }
+
 @media (max-width: 1000px) {
   body.is-android .sales-content-wrapper {
     flex-direction: column;
   }
   body.is-android .sales-main-area {
-    flex: 1 1 60vh; /* Permite estirarse fluido */
+    flex: 1 1 50vh;
   }
   body.is-android .cart-sidebar {
     width: 100% !important;
     flex: 1 1 auto;
     border-left: none;
     border-top: 1px solid #e5e7eb;
+    max-height: none !important;
   }
+}
+
+/* Header safe area fix */
+body.is-android .inventory-header,
+body.is-android .suppliers-header,
+body.is-android .header-modern {
+  padding-top: calc(var(--safe-top) + 12px) !important;
 }
 
 /* Títulos adaptativos */
@@ -253,12 +270,11 @@ body.is-android h2 { font-size: var(--fs-xl) !important; }
 body.is-android p { font-size: var(--fs-md) !important; }
 
 /* ===== 7. GLOBAL NATIVE SCROLLING ===== */
-/* Permite que el viewport entero haga el scroll de forma natural y libre, en vez de contenedores atrapados */
 body.is-android, html:has(body.is-android) {
   height: auto !important;
   min-height: 100%;
   overflow-y: auto !important;
-  overscroll-behavior-y: none; /* Mejor comportamiento nativo */
+  overscroll-behavior-y: none;
 }
 
 body.is-android #root,
@@ -268,17 +284,15 @@ body.is-android .app-layout {
   min-height: 100% !important;
   overflow: visible !important;
   display: flex;
-  flex-direction: column; /* Mantener la estructura base de flex pero con altura dinámica */
+  flex-direction: column;
 }
 
-/* Deshabilitar el overflow en el contenedor de contenido principal y dejar que crezca libremente */
 body.is-android .main-content {
   height: auto !important;
   overflow-y: visible !important;
   min-height: 100dvh;
 }
 
-/* Evitar que los contenedores internos atrapen el scroll vertical */
 body.is-android .sales-content-wrapper,
 body.is-android .sales-main-area,
 body.is-android .cart-sidebar,
@@ -289,10 +303,22 @@ body.is-android .content-area {
   overflow-y: visible !important; 
 }
 
-/* Permitir el scroll en tablas sólamente horizontal, no vertical */
 body.is-android .table-container,
 body.is-android .suppliers-table-wrapper,
-body.is-android .suppliers-table-container {
+body.is-android .suppliers-table-container,
+body.is-android .preview-table-wrapper {
   overflow-y: visible !important;
   max-height: none !important;
+}
+
+/* Button Touch Targets */
+body.is-android .control-btn,
+body.is-android .save-btn,
+body.is-android .cancel-btn,
+body.is-android .btn-primary,
+body.is-android .dropdown-item,
+body.is-android .confirm-btn {
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
+  min-height: 48px !important;
 }

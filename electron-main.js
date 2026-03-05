@@ -1,7 +1,7 @@
 // ===== ELECTRON MAIN PROCESS =====
 // Este archivo inicia el backend y abre la ventana de Electron
 
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, Menu } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const http = require('http');
@@ -79,7 +79,7 @@ function crearVentana() {
             webSecurity: true
         },
         icon: path.join(__dirname, 'icon.ico'),
-        autoHideMenuBar: true, // Oculta el menú por defecto
+        autoHideMenuBar: !isDev, // Muestra el menú en desarrollo, lo oculta en producción (Alt para ver)
         title: 'Sistema de Ventas'
     });
 
@@ -90,8 +90,48 @@ function crearVentana() {
 
     mainWindow.loadURL(frontendUrl);
 
-    // Abrir DevTools en modo desarrollo
+    // Configurar Menú de la Aplicación para permitir Recarga y Consola
+    const template = [
+        {
+            label: 'Sistema',
+            submenu: [
+                { label: 'Recargar App', accelerator: 'F5', click: () => { mainWindow.reload(); } },
+                { label: 'Forzar Recarga', accelerator: 'CmdOrCtrl+Shift+R', click: () => { mainWindow.webContents.reloadIgnoringCache(); } },
+                { type: 'separator' },
+                {
+                    label: 'Ver Consola (Modo Soporte)',
+                    accelerator: 'F12',
+                    click: () => { mainWindow.webContents.toggleDevTools(); }
+                },
+                {
+                    label: 'Consola (Alternativo)',
+                    accelerator: 'CmdOrCtrl+Shift+I',
+                    click: () => { mainWindow.webContents.toggleDevTools(); }
+                },
+                { type: 'separator' },
+                { label: 'Salir', role: 'quit' }
+            ]
+        },
+        {
+            label: 'Editar',
+            submenu: [
+                { label: 'Deshacer', role: 'undo' },
+                { label: 'Rehacer', role: 'redo' },
+                { type: 'separator' },
+                { label: 'Cortar', role: 'cut' },
+                { label: 'Copiar', role: 'copy' },
+                { label: 'Pegar', role: 'paste' },
+                { label: 'Seleccionar todo', role: 'selectAll' }
+            ]
+        }
+    ];
+
+    const menu = Menu.buildFromTemplate(template);
+    Menu.setApplicationMenu(menu);
+
+    // Abrir DevTools automáticamente solo en modo desarrollo
     if (isDev) {
+        // En desarrollo siempre abierto por defecto
         mainWindow.webContents.openDevTools();
     }
 

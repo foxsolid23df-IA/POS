@@ -12,6 +12,7 @@ import { useCart } from "../../hooks/useCart";
 import { useAuth } from "../../hooks/useAuth";
 import { useGlobalScanner } from "../../hooks/scanner";
 import { useIsMobile } from "../../hooks/useIsMobile";
+import { useScannerMode } from "../../hooks/useScannerMode";
 import { exchangeRateService } from "../../services/exchangeRateService";
 import { cashMovementService } from "../../services/cashMovementService";
 import { supabase } from "../../supabase";
@@ -25,6 +26,8 @@ export const Sales = () => {
   const { ticketSettings } = useSettings();
   const { cargando, ejecutarPeticion } = useApi();
   const { isMobile, isTouchDevice } = useIsMobile();
+  const { isAndroid, scannerMode, scannerInputMode, toggleScannerMode } =
+    useScannerMode();
 
   // USAR CONTEXTO GLOBAL DE PRODUCTOS
   const {
@@ -659,7 +662,9 @@ export const Sales = () => {
     if (saldoActual > 0.01) {
       mostrarModalPersonalizado(
         "Saldo insuficiente",
-        `Aún falta por cubrir ${formatearDinero(saldoActual)} para completar el total.`,
+        `Aún falta por cubrir ${formatearDinero(
+          saldoActual,
+        )} para completar el total.`,
         "warning",
       );
       return;
@@ -825,7 +830,9 @@ export const Sales = () => {
           // Si intenta finalizar sin cubrir el saldo o sin monto ingresado
           mostrarModalPersonalizado(
             "Saldo insuficiente",
-            `Aún falta por cubrir ${formatearDinero(saldoPendiente)} para completar el total.`,
+            `Aún falta por cubrir ${formatearDinero(
+              saldoPendiente,
+            )} para completar el total.`,
             "warning",
           );
         }
@@ -1040,12 +1047,18 @@ export const Sales = () => {
         <html><head><title>Ticket de Venta</title><meta charset="UTF-8">
         <style>
           @media print {
-              @page { size: ${settings.paper_width === "58mm" ? "58mm" : "80mm"} auto; margin: 0; }
+              @page { size: ${
+                settings.paper_width === "58mm" ? "58mm" : "80mm"
+              } auto; margin: 0; }
               body { margin: 0; padding: 0; width: 100%; background: none !important; }
               .ticket-venta { width: 100% !important; margin: 0 !important; }
           }
           body {
-              font-family: ${settings.font_family === "Sistema" ? "system-ui, -apple-system, sans-serif" : "monospace"};
+              font-family: ${
+                settings.font_family === "Sistema"
+                  ? "system-ui, -apple-system, sans-serif"
+                  : "monospace"
+              };
               font-size: ${settings.font_size || 13}px;
               line-height: 1.2;
               color: black;
@@ -1109,7 +1122,9 @@ export const Sales = () => {
     if (settings.logo_url) {
       html += `<div class="ticket-logo-container"><img src="${settings.logo_url}" class="ticket-logo" alt="Logo"></div>`;
     }
-    html += `<div class="ticket-title">${settings.business_name || "TICKET DE VENTA"}</div>`;
+    html += `<div class="ticket-title">${
+      settings.business_name || "TICKET DE VENTA"
+    }</div>`;
     if (settings.address) {
       html += `<div class="ticket-info">${settings.address}</div>`;
     }
@@ -1118,7 +1133,9 @@ export const Sales = () => {
     }
     html += "</div>";
 
-    html += `<div class="ticket-datetime">${formatearFechaHora(new Date())}</div>`;
+    html += `<div class="ticket-datetime">${formatearFechaHora(
+      new Date(),
+    )}</div>`;
 
     html += '<div class="ticket-meta">';
     html +=
@@ -1141,7 +1158,9 @@ export const Sales = () => {
       html += '<div class="ticket-item">';
       html += `<div class="ticket-item-cant">${item.quantity}</div>`;
       html += `<div class="ticket-item-desc">${item.name}</div>`;
-      html += `<div class="ticket-item-imp">${formatearDinero(item.price * item.quantity)}</div>`;
+      html += `<div class="ticket-item-imp">${formatearDinero(
+        item.price * item.quantity,
+      )}</div>`;
       html += "</div>";
     });
     html += "</div>";
@@ -1151,13 +1170,17 @@ export const Sales = () => {
 
     html +=
       '<div class="ticket-summary-row ticket-summary-bold"><span class="ticket-summary-label">TOTAL:</span>';
-    html += `<span class="ticket-summary-value">${formatearDinero(total)}</span></div>`;
+    html += `<span class="ticket-summary-value">${formatearDinero(
+      total,
+    )}</span></div>`;
 
     if (pagosRealizados && pagosRealizados.length > 0) {
       pagosRealizados.forEach((p) => {
         html += '<div class="ticket-summary-row ticket-summary-bold">';
         html += `<span class="ticket-summary-label">PAGO CON (${p.method.toUpperCase()}):</span>`;
-        html += `<span class="ticket-summary-value">${formatearDinero(p.received || p.amount)}</span></div>`;
+        html += `<span class="ticket-summary-value">${formatearDinero(
+          p.received || p.amount,
+        )}</span></div>`;
       });
     } else {
       const valMonto =
@@ -1165,16 +1188,22 @@ export const Sales = () => {
       if (valMonto > 0) {
         html +=
           '<div class="ticket-summary-row ticket-summary-bold"><span class="ticket-summary-label">PAGO CON:</span>';
-        html += `<span class="ticket-summary-value">${formatearDinero(valMonto)}</span></div>`;
+        html += `<span class="ticket-summary-value">${formatearDinero(
+          valMonto,
+        )}</span></div>`;
       }
     }
 
     html +=
       '<div class="ticket-summary-row ticket-summary-bold"><span class="ticket-summary-label">SU CAMBIO:</span>';
-    html += `<span class="ticket-summary-value">${formatearDinero(cambioActivo)}</span></div>`;
+    html += `<span class="ticket-summary-value">${formatearDinero(
+      cambioActivo,
+    )}</span></div>`;
     html += "</div>";
 
-    html += `<div class="ticket-footer">${settings.footer_message || "GRACIAS POR SU COMPRA"}</div>`;
+    html += `<div class="ticket-footer">${
+      settings.footer_message || "GRACIAS POR SU COMPRA"
+    }</div>`;
     html += "</div>";
 
     return html;
@@ -1221,7 +1250,9 @@ export const Sales = () => {
                   title="Recargar productos"
                 >
                   <span
-                    className={`material-symbols-outlined text-[18px] ${loadingProducts ? "animate-spin" : ""}`}
+                    className={`material-symbols-outlined text-[18px] ${
+                      loadingProducts ? "animate-spin" : ""
+                    }`}
                   >
                     refresh
                   </span>
@@ -1299,12 +1330,18 @@ export const Sales = () => {
                   ref={campoCodigoRef}
                   type="text"
                   enterKeyHint="search"
-                  inputMode="search"
-                  placeholder="Buscar por nombre o código de..."
+                  inputMode={scannerInputMode}
+                  placeholder={
+                    scannerMode
+                      ? "Escáner BT activo - escanee un código..."
+                      : "Buscar por nombre o código de..."
+                  }
                   value={codigoEscaneado}
                   onChange={manejarCambioCodigo}
                   onKeyDown={manejarEnter}
-                  className="barcode-input-modern"
+                  className={`barcode-input-modern ${
+                    scannerMode ? "scanner-mode-active" : ""
+                  }`}
                 />
               </div>
               <button
@@ -1316,6 +1353,26 @@ export const Sales = () => {
                 <span className="material-symbols-outlined">photo_camera</span>
                 <span>Cámara</span>
               </button>
+              {/* Toggle Modo Escáner Bluetooth — solo visible en Android */}
+              {isAndroid && (
+                <button
+                  onClick={toggleScannerMode}
+                  className={`btn-camera-modern ${
+                    scannerMode ? "scanner-mode-btn-active" : ""
+                  }`}
+                  type="button"
+                  title={
+                    scannerMode
+                      ? "Desactivar modo escáner (mostrar teclado)"
+                      : "Activar modo escáner Bluetooth (ocultar teclado)"
+                  }
+                >
+                  <span className="material-symbols-outlined">
+                    {scannerMode ? "keyboard" : "barcode_reader"}
+                  </span>
+                  <span>{scannerMode ? "Teclado" : "Escáner BT"}</span>
+                </button>
+              )}
             </div>
 
             {/* LISTA DE SUGERENCIAS */}
@@ -1324,7 +1381,9 @@ export const Sales = () => {
                 {sugerencias.map((producto, index) => (
                   <div
                     key={producto.id}
-                    className={`suggestion-item ${index === indexSugerencia ? "active" : ""}`}
+                    className={`suggestion-item ${
+                      index === indexSugerencia ? "active" : ""
+                    }`}
                     onClick={() => seleccionarProducto(producto)}
                     onMouseEnter={() => setIndexSugerencia(index)}
                   >
@@ -1680,7 +1739,9 @@ export const Sales = () => {
 
                   <div className="payment-method-buttons">
                     <button
-                      className={`payment-method-btn ${metodoPago === "efectivo" ? "active" : ""}`}
+                      className={`payment-method-btn ${
+                        metodoPago === "efectivo" ? "active" : ""
+                      }`}
                       onClick={() => {
                         setMetodoPago("efectivo");
                         setMontoRecibido("");
@@ -1692,7 +1753,9 @@ export const Sales = () => {
                       <span>Efectivo</span>
                     </button>
                     <button
-                      className={`payment-method-btn ${metodoPago === "tarjeta" ? "active" : ""}`}
+                      className={`payment-method-btn ${
+                        metodoPago === "tarjeta" ? "active" : ""
+                      }`}
                       onClick={() => {
                         setMetodoPago("tarjeta");
                         setMontoRecibido("");
@@ -1704,7 +1767,9 @@ export const Sales = () => {
                       <span>Tarjeta</span>
                     </button>
                     <button
-                      className={`payment-method-btn ${metodoPago === "transferencia" ? "active" : ""}`}
+                      className={`payment-method-btn ${
+                        metodoPago === "transferencia" ? "active" : ""
+                      }`}
                       onClick={() => {
                         setMetodoPago("transferencia");
                         setMontoRecibido("");
@@ -1718,7 +1783,9 @@ export const Sales = () => {
 
                     {tipoCambio && (
                       <button
-                        className={`payment-method-btn ${metodoPago === "dolares" ? "active" : ""}`}
+                        className={`payment-method-btn ${
+                          metodoPago === "dolares" ? "active" : ""
+                        }`}
                         onClick={() => {
                           setMetodoPago("dolares");
                           setMontoRecibido("");
@@ -1779,7 +1846,9 @@ export const Sales = () => {
                             (num) => (
                               <button
                                 key={num}
-                                className={`payment-key ${num === "backspace" ? "backspace" : ""}`}
+                                className={`payment-key ${
+                                  num === "backspace" ? "backspace" : ""
+                                }`}
                                 onClick={() => manejarTecladoNumerico(num)}
                               >
                                 {num === "backspace" ? (

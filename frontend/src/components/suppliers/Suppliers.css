@@ -132,18 +132,12 @@
 }
 
 .suppliers-title {
-    font-size: 36px;
+    font-size: clamp(32px, 8vw, 48px);
     font-weight: 900;
     letter-spacing: -0.5px;
     color: #0d141b;
     line-height: 1;
     margin: 0;
-}
-
-@media (min-width: 768px) {
-    .suppliers-title {
-        font-size: 48px;
-    }
 }
 
 .suppliers-actions {

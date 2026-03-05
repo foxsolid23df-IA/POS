@@ -47,6 +47,8 @@ timeout /t 5 /nobreak >nul
 :: Iniciar Electron
 echo [3/3] Abriendo aplicacion Electron...
 echo.
+echo TIP: Usa F5 para Recargar, Ctrl+Shift+R para Forzar Recarga y F12 para Consola.
+echo.
 call npm run electron:dev
 
 echo.

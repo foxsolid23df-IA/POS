@@ -15,6 +15,7 @@
   display: flex;
   flex-direction: row;
   height: calc(100vh - 64px);
+  height: calc(100dvh - 64px);
   overflow: hidden;
 }
 
@@ -89,7 +90,7 @@
 
 .barcode-input-modern {
   width: 100%;
-  padding: 1rem 1rem 1rem 4rem !important; /* Aproximadamente 64px de padding izquierdo */
+  padding: 1rem 1rem 1rem 4rem !important;
   border: 3px solid #e5e7eb;
   border-radius: 14px;
   font-size: 1.1rem;
@@ -100,6 +101,7 @@
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   box-sizing: border-box;
   font-weight: 700;
+  max-width: 100%;
 }
 
 .barcode-input-modern:focus {
@@ -222,7 +224,7 @@
   .cart-sidebar {
     width: 100%;
     height: auto;
-    max-height: 50vh;
+    max-height: none;
     border-left: none;
     border-top: 1px solid #e5e7eb;
     margin-top: 1rem;
@@ -253,6 +255,54 @@
     justify-content: center;
     width: 100%;
   }
+}
+
+/* ===== SCANNER MODE (Bluetooth) ===== */
+/* Indicador visual cuando el modo escáner BT está activo */
+.barcode-input-modern.scanner-mode-active {
+  border-color: #10b981 !important;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(16, 185, 129, 0.02)) !important;
+  animation: scannerPulse 2s ease-in-out infinite;
+  caret-color: transparent; /* Ocultar cursor de texto */
+}
+
+.barcode-input-modern.scanner-mode-active::placeholder {
+  color: #10b981 !important;
+  font-weight: 600;
+}
+
+.dark .barcode-input-modern.scanner-mode-active {
+  border-color: #34d399 !important;
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.1), rgba(52, 211, 153, 0.03)) !important;
+}
+
+.dark .barcode-input-modern.scanner-mode-active::placeholder {
+  color: #34d399 !important;
+}
+
+@keyframes scannerPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.25), 0 0 20px rgba(16, 185, 129, 0.1);
+  }
+}
+
+/* Botón toggle escáner - estado activo */
+.btn-camera-modern.scanner-mode-btn-active {
+  background: #10b981 !important;
+  color: white !important;
+  border-color: #059669 !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.btn-camera-modern.scanner-mode-btn-active .material-symbols-outlined {
+  color: white !important;
+}
+
+.btn-camera-modern.scanner-mode-btn-active:hover {
+  background: #059669 !important;
 }
 
 /* EMPTY SCAN AREA */

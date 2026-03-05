@@ -17,23 +17,26 @@ export const useGlobalScanner = (onScan, options = {}) => {
     // Función para determinar si el scanner está activo
     const isScannerActive = useCallback(() => {
         if (!enabled) return false
-        
+
         // Si preventOnModal está activado, verificar que no haya modales abiertos
         if (preventOnModal) {
             const modals = document.querySelectorAll('.modal-overlay')
             if (modals.length > 0) return false
         }
-        
+
         // Verificar que no hay inputs o textareas enfocados (excepto inputs de solo lectura)
+        // EXCEPCIÓN: Si el input tiene la clase 'scanner-mode-active', permitir captura global
+        // Esto es para el modo Escáner Bluetooth donde el teclado virtual está oculto
         const activeElement = document.activeElement
-        if (activeElement && 
+        if (activeElement &&
             (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA') &&
             !activeElement.readOnly &&
+            !activeElement.classList.contains('scanner-mode-active') &&
             activeElement.type !== 'button' &&
             activeElement.type !== 'submit') {
             return false
         }
-        
+
         return true
     }, [enabled, preventOnModal])
 
@@ -46,7 +49,7 @@ export const useGlobalScanner = (onScan, options = {}) => {
 
         // Si es una tecla de control, ignorar
         if (event.ctrlKey || event.altKey || event.metaKey) return
-        
+
         // Si es una tecla especial que no queremos capturar
         if (['Tab', 'Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'NumLock', 'ScrollLock', 'Pause', 'Insert', 'Delete', 'Home', 'End', 'PageUp', 'PageDown', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'].includes(event.key)) {
             return
@@ -65,11 +68,11 @@ export const useGlobalScanner = (onScan, options = {}) => {
                 // Prevenir el comportamiento por defecto del Enter
                 event.preventDefault()
                 event.stopPropagation()
-                
+
                 const scannedCode = bufferRef.current
                 bufferRef.current = ''
                 setIsScanning(false)
-                
+
                 // Llamar la función callback con el código escaneado
                 onScan(scannedCode)
             }
@@ -90,7 +93,7 @@ export const useGlobalScanner = (onScan, options = {}) => {
                 event.preventDefault()
                 event.stopPropagation()
             }
-            
+
             bufferRef.current += event.key
             setIsScanning(true)
 

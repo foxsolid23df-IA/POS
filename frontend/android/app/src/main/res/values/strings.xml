@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">POS App</string>
-    <string name="title_activity_main">POS App</string>
+    <string name="app_name">Nexum POS</string>
+    <string name="title_activity_main">Nexum POS</string>
     <string name="package_name">com.pos.app</string>
     <string name="custom_url_scheme">com.pos.app</string>
 </resources>

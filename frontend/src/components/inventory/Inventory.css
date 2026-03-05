@@ -21,6 +21,8 @@
     z-index: 10;
     flex-wrap: wrap;
     gap: 1rem;
+    position: sticky;
+    top: 0;
 }
 
 .inventory-title {
@@ -46,7 +48,7 @@
 /* Content Area */
 .inventory-content {
     flex: 1;
-    padding: 16px 24px;
+    padding: clamp(12px, 2vh, 24px) clamp(16px, 3vw, 24px);
     overflow-y: auto;
     background-color: #f9fafb;
 }
@@ -241,14 +243,8 @@
 
 /* Table Container */
 .table-container {
-    background-color: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    overflow-y: auto;
-    overflow-x: auto; /* Allow horizontal scrolling */
-    max-height: 65vh; /* Adjustable based on viewport */
     box-shadow: 0 2px 10px -3px rgba(0, 0, 0, 0.05);
-    width: 100%; /* Ensure it adapts to parent width */
+    width: 100%;
 }
 
 .products-table {
@@ -263,7 +259,7 @@
 }
 
 .products-table th {
-    padding: 16px 24px;
+    padding: clamp(12px, 2vh, 20px) 16px;
     text-align: left;
     font-size: 12px;
     font-weight: 700;
@@ -304,7 +300,7 @@
 }
 
 .products-table td {
-    padding: 16px 24px;
+    padding: clamp(12px, 2vh, 20px) 16px;
     font-size: 14px;
     color: #000000;
     background-color: #ffffff;
