@@ -66,6 +66,7 @@ export const Sales = () => {
 
   // REFERENCIAS
   const campoCodigoRef = useRef(null);
+  const searchContainerRef = useRef(null);
 
   // FUNCIONES PARA EL MODAL DE ERRORES
   const mostrarModalPersonalizado = (title, message, type = "info") => {
@@ -315,10 +316,10 @@ export const Sales = () => {
       const resultados = productos
         .filter(
           (p) =>
-            p.name.toLowerCase().includes(query) ||
-            (p.barcode && p.barcode.toLowerCase().includes(query)),
+            p?.name?.toLowerCase().includes(query) ||
+            p?.barcode?.toLowerCase().includes(query),
         )
-        .slice(0, 5); // Máximo 5 sugerencias
+        .slice(0, 10); // Máximo 10 sugerencias
       setSugerencias(resultados);
       setMostrarSugerencias(resultados.length > 0);
       setIndexSugerencia(0); // Resetear índice al cambiar resultados
@@ -328,6 +329,26 @@ export const Sales = () => {
       setIndexSugerencia(0);
     }
   }, [codigoEscaneado, productos]);
+
+  // CERRAR SUGERENCIAS AL HACER CLIC FUERA
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target)
+      ) {
+        setMostrarSugerencias(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, []);
 
   // SINCRONIZACIÓN CON PANTALLA DEL CLIENTE
   useEffect(() => {
@@ -1009,74 +1030,58 @@ export const Sales = () => {
     imprimirTicketTérmico(ticketRef.current.innerHTML, ventaCompletada);
   };
 
-  // Función mejorada para imprimir tickets térmicos POS
+  // Función mejorada para imprimir tickets térmicos POS usando el servicio (Válido para Android/Web)
   const imprimirTicketTérmico = (ticketHTML, ventaData) => {
-    const printWindow = window.open("", "_blank", "width=400,height=600");
-    const settings = ticketSettings || { paper_width: "58mm", font_size: 12 };
+    import("../../services/printerService").then(({ printerService }) => {
+      const settings = ticketSettings || { paper_width: "58mm", font_size: 13 };
+      const ticketContent = ventaData ? ticketHTML : generarHTMLTicketPago();
 
-    const ticketContent = ventaData ? ticketHTML : generarHTMLTicketPago();
+      let htmlPrint = `<!DOCTYPE html>
+        <html><head><title>Ticket de Venta</title><meta charset="UTF-8">
+        <style>
+          @media print {
+              @page { size: ${settings.paper_width === "58mm" ? "58mm" : "80mm"} auto; margin: 0; }
+              body { margin: 0; padding: 0; width: 100%; background: none !important; }
+              .ticket-venta { width: 100% !important; margin: 0 !important; }
+          }
+          body {
+              font-family: ${settings.font_family === "Sistema" ? "system-ui, -apple-system, sans-serif" : "monospace"};
+              font-size: ${settings.font_size || 13}px;
+              line-height: 1.2;
+              color: black;
+          }
+          .ticket-venta { padding: 0; box-sizing: border-box; }
+          .ticket-header { text-align: center; margin-bottom: 8px; text-transform: uppercase; }
+          .ticket-logo { max-width: 100%; height: auto; margin: 0 auto 5px auto; display: block; }
+          .ticket-title { font-size: 1.3em; font-weight: bold; margin-bottom: 4px; }
+          .ticket-info { font-size: 1em; white-space: pre-line; margin-bottom: 2px; }
+          .ticket-datetime { text-align: right; margin-bottom: 6px; font-size: 1em; }
+          .ticket-meta { margin-bottom: 8px; text-transform: uppercase; font-size: 1em; }
+          .ticket-meta-row { display: flex; justify-content: space-between; }
+          .ticket-meta-label { white-space: pre; }
+          .ticket-meta-value { text-align: right; }
+          .ticket-table-header { display: flex; font-size: 1em; text-transform: uppercase; margin-bottom: 2px; }
+          .ticket-col-cant { width: 14%; text-align: left; }
+          .ticket-col-desc { width: 62%; text-align: left; }
+          .ticket-col-imp { width: 24%; text-align: right; }
+          .ticket-divider-eq { margin: 0; line-height: 1; overflow: hidden; white-space: nowrap; margin-bottom: 4px; font-size: 1em; }
+          .ticket-items { margin-bottom: 10px; font-size: 1em; }
+          .ticket-item { display: flex; text-transform: uppercase; margin-bottom: 4px; align-items: flex-start; }
+          .ticket-item-cant { width: 14%; text-align: left; }
+          .ticket-item-desc { width: 62%; text-align: left; word-break: break-word; }
+          .ticket-item-imp { width: 24%; text-align: right; }
+          .ticket-summary { margin-top: 10px; text-align: right; text-transform: uppercase; font-size: 1em; display: flex; flex-direction: column; align-items: flex-end; }
+          .ticket-summary-articles { width: 100%; text-align: center; margin-bottom: 8px; }
+          .ticket-summary-row { display: flex; justify-content: flex-end; margin-bottom: 2px; width: 100%; }
+          .ticket-summary-label { margin-right: 12px; text-align: right; }
+          .ticket-summary-value { width: 35%; text-align: right; }
+          .ticket-summary-bold { font-weight: bold; font-size: 1.15em; }
+          .ticket-footer { text-align: center; font-size: 1em; margin-top: 15px; white-space: pre-line; text-transform: uppercase; }
+        </style>
+        </head><body>${ticketContent}</body></html>`;
 
-    printWindow.document.write("<!DOCTYPE html>");
-    printWindow.document.write(
-      '<html><head><title>Ticket de Venta</title><meta charset="UTF-8">',
-    );
-    printWindow.document.write(`
-            <style>
-                @media print {
-                    @page {
-                        size: ${settings.paper_width === "58mm" ? "58mm" : "80mm"} auto;
-                        margin: 0;
-                    }
-                    body { margin: 0; padding: 0; width: 100%; background: none !important; }
-                    .ticket-venta { width: 100% !important; margin: 0 !important; }
-                }
-                body {
-                    font-family: ${settings.font_family === "Sistema" ? "system-ui, -apple-system, sans-serif" : "monospace"};
-                    font-size: ${settings.font_size || 13}px;
-                    line-height: 1.2;
-                    color: black;
-                }
-                .ticket-venta { padding: 0; box-sizing: border-box; }
-                .ticket-header { text-align: center; margin-bottom: 8px; text-transform: uppercase; }
-                .ticket-logo { max-width: 100%; height: auto; margin: 0 auto 5px auto; display: block; }
-                .ticket-title { font-size: 1.3em; font-weight: bold; margin-bottom: 4px; }
-                .ticket-info { font-size: 1em; white-space: pre-line; margin-bottom: 2px; }
-                .ticket-datetime { text-align: right; margin-bottom: 6px; font-size: 1em; }
-                .ticket-meta { margin-bottom: 8px; text-transform: uppercase; font-size: 1em; }
-                .ticket-meta-row { display: flex; justify-content: space-between; }
-                .ticket-meta-label { white-space: pre; }
-                .ticket-meta-value { text-align: right; }
-                .ticket-table-header { display: flex; font-size: 1em; text-transform: uppercase; margin-bottom: 2px; }
-                .ticket-col-cant { width: 14%; text-align: left; }
-                .ticket-col-desc { width: 62%; text-align: left; }
-                .ticket-col-imp { width: 24%; text-align: right; }
-                .ticket-divider-eq { margin: 0; line-height: 1; overflow: hidden; white-space: nowrap; margin-bottom: 4px; font-size: 1em; }
-                .ticket-items { margin-bottom: 10px; font-size: 1em; }
-                .ticket-item { display: flex; text-transform: uppercase; margin-bottom: 4px; align-items: flex-start; }
-                .ticket-item-cant { width: 14%; text-align: left; }
-                .ticket-item-desc { width: 62%; text-align: left; word-break: break-word; }
-                .ticket-item-imp { width: 24%; text-align: right; }
-                .ticket-summary { margin-top: 10px; text-align: right; text-transform: uppercase; font-size: 1em; display: flex; flex-direction: column; align-items: flex-end; }
-                .ticket-summary-articles { width: 100%; text-align: center; margin-bottom: 8px; }
-                .ticket-summary-row { display: flex; justify-content: flex-end; margin-bottom: 2px; width: 100%; }
-                .ticket-summary-label { margin-right: 12px; text-align: right; }
-                .ticket-summary-value { width: 35%; text-align: right; }
-                .ticket-summary-bold { font-weight: bold; font-size: 1.15em; }
-                .ticket-footer { text-align: center; font-size: 1em; margin-top: 15px; white-space: pre-line; text-transform: uppercase; }
-            </style>
-        `);
-    printWindow.document.write("</head><body>");
-    printWindow.document.write(ticketContent);
-
-    printWindow.document.write("</body></html>");
-    printWindow.document.close();
-
-    // Esperar a que el contenido se cargue brevemente antes de imprimir
-    setTimeout(() => {
-      printWindow.focus();
-      printWindow.print();
-      // No cerrar automáticamente para permitir selección de impresora
-    }, 100);
+      printerService.printHtmlTicket(htmlPrint);
+    });
   };
 
   // Generar HTML del ticket desde el modal de pago (antes de finalizar)
@@ -1281,8 +1286,9 @@ export const Sales = () => {
 
           {/* SCANNER Y BÚSQUEDA */}
           <div
+            ref={searchContainerRef}
             className="search-section-modern"
-            style={{ position: "relative" }}
+            style={{ position: "relative", zIndex: 50 }}
           >
             <div className="search-input-wrapper">
               <div className="search-input-container">
@@ -1292,13 +1298,12 @@ export const Sales = () => {
                 <input
                   ref={campoCodigoRef}
                   type="text"
+                  enterKeyHint="search"
+                  inputMode="search"
                   placeholder="Buscar por nombre o código de..."
                   value={codigoEscaneado}
                   onChange={manejarCambioCodigo}
                   onKeyDown={manejarEnter}
-                  onBlur={() =>
-                    setTimeout(() => setMostrarSugerencias(false), 200)
-                  }
                   className="barcode-input-modern"
                 />
               </div>

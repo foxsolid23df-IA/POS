@@ -428,6 +428,8 @@ export const UserManager = () => {
                   <label>PIN de acceso * (4-6 dígitos)</label>
                   <input
                     type="password"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     required
                     maxLength="6"
                     placeholder="Ej: 1234"

@@ -254,44 +254,45 @@ export const CashCut = ({ onClose }) => {
   const handlePrint = () => {
     if (!ticketRef.current) return;
 
-    const printWindow = window.open("", "", "width=400,height=600");
-    printWindow.document.write("<html><head><title>Corte de Caja</title>");
-    printWindow.document.write(`
-            <style>
-                body { 
-                    font-family: 'Courier New', monospace; 
-                    padding: 10px; 
-                    max-width: 300px;
-                    margin: 0 auto;
-                    font-size: 11px;
-                }
-                .ticket-header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; }
-                .store-name { font-size: 16px; font-weight: bold; }
-                .ticket-title { font-size: 13px; margin-top: 5px; }
-                .section { margin: 10px 0; padding: 10px 0; border-bottom: 1px dashed #000; }
-                .row { display: flex; justify-content: space-between; margin: 3px 0; }
-                .label { color: #666; }
-                .value { font-weight: bold; }
-                .total-row { font-size: 13px; font-weight: bold; margin-top: 10px; }
-                .sales-list { font-size: 10px; }
-                .sale-item { padding: 8px 0; border-bottom: 1px dotted #999; margin-bottom: 5px; }
-                .sale-header-row { background: #f0f0f0; padding: 3px 5px; margin-bottom: 3px; }
-                .product-row { display: flex; justify-content: space-between; padding: 2px 0; padding-left: 10px; font-size: 10px; }
-                .product-name { color: #333; }
-                .product-price { font-weight: 500; }
-                .sale-total-row { border-top: 1px solid #ccc; margin-top: 5px; padding-top: 5px; font-size: 11px; }
-                .footer { text-align: center; margin-top: 15px; font-size: 10px; color: #666; }
-                .difference-positive { color: green; }
-                .difference-negative { color: red; }
-            </style>
-        `);
-    printWindow.document.write("</head><body>");
-    printWindow.document.write(ticketRef.current.innerHTML);
-    printWindow.document.write("</body></html>");
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
-    printWindow.close();
+    import("../../services/printerService").then(({ printerService }) => {
+      let htmlPrint = `<!DOCTYPE html>
+        <html><head><title>Corte de Caja</title>
+        <style>
+          @media print {
+              @page { margin: 0; }
+              body { margin: 0; padding: 0; background: none !important; }
+          }
+          body { 
+              font-family: 'Courier New', monospace; 
+              padding: 10px; 
+              max-width: 300px;
+              margin: 0 auto;
+              font-size: 11px;
+              color: black;
+          }
+          .ticket-header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; }
+          .store-name { font-size: 16px; font-weight: bold; }
+          .ticket-title { font-size: 13px; margin-top: 5px; }
+          .section { margin: 10px 0; padding: 10px 0; border-bottom: 1px dashed #000; }
+          .row { display: flex; justify-content: space-between; margin: 3px 0; }
+          .label { color: #666; }
+          .value { font-weight: bold; }
+          .total-row { font-size: 13px; font-weight: bold; margin-top: 10px; }
+          .sales-list { font-size: 10px; }
+          .sale-item { padding: 8px 0; border-bottom: 1px dotted #999; margin-bottom: 5px; }
+          .sale-header-row { background: #f0f0f0; padding: 3px 5px; margin-bottom: 3px; }
+          .product-row { display: flex; justify-content: space-between; padding: 2px 0; padding-left: 10px; font-size: 10px; }
+          .product-name { color: #333; }
+          .product-price { font-weight: 500; }
+          .sale-total-row { border-top: 1px solid #ccc; margin-top: 5px; padding-top: 5px; font-size: 11px; }
+          .footer { text-align: center; margin-top: 15px; font-size: 10px; color: #666; }
+          .difference-positive { color: green; }
+          .difference-negative { color: red; }
+        </style>
+        </head><body>${ticketRef.current.innerHTML}</body></html>`;
+
+      printerService.printHtmlTicket(htmlPrint);
+    });
   };
 
   const handleFinish = async () => {

@@ -95,14 +95,16 @@ export const TicketConfig = () => {
   };
 
   const handleTestPrint = () => {
-    const printWindow = window.open("", "_blank", "width=300,height=600");
-    if (!printWindow) return;
-
-    const ticketHtml = `
+    import("../../services/printerService").then(({ printerService }) => {
+      const ticketHtml = `<!DOCTYPE html>
             <html>
                 <head>
                     <title>Prueba de Ticket</title>
                     <style>
+                        @media print {
+                            @page { margin: 0; }
+                            body { margin: 0; padding: 0; background: none !important; }
+                        }
                         body {
                             font-family: ${settings.font_family === "Sistema" ? "system-ui, sans-serif" : "monospace"};
                             font-size: ${settings.font_size}px;
@@ -110,12 +112,13 @@ export const TicketConfig = () => {
                             width: ${settings.paper_width === "58mm" ? "180px" : "280px"};
                             margin: ${settings.margin}px auto;
                             padding: 10px;
+                            color: black;
                         }
                         .header { text-align: center; margin-bottom: 10px; }
-                        .logo { max-width: 100%; height: auto; margin-bottom: 10px; }
-                        .name { font-weight: bold; font-size: 1.2em; }
+                        .logo { max-width: 100%; height: auto; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto; }
+                        .name { font-weight: bold; font-size: 1.2em; text-transform: uppercase; }
                         .content { margin: 10px 0; border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 5px 0; }
-                        .footer { text-align: center; margin-top: 10px; font-size: 0.9em; }
+                        .footer { text-align: center; margin-top: 10px; font-size: 0.9em; text-transform: uppercase; }
                     </style>
                 </head>
                 <body>
@@ -133,18 +136,12 @@ export const TicketConfig = () => {
                     <div class="footer">
                         ${settings.footer_message}
                     </div>
-                    <script>
-                        window.onload = () => { 
-                            window.print();
-                            // window.close();
-                        };
-                    </script>
                 </body>
             </html>
         `;
 
-    printWindow.document.write(ticketHtml);
-    printWindow.document.close();
+      printerService.printHtmlTicket(ticketHtml);
+    });
   };
 
   if (loading)

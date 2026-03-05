@@ -1,0 +1,298 @@
+/* ==========================================================================
+   ANDROID RESPONSIVE CORE (Professional UX/UI)
+   Adaptación autónoma a cualquier dispositivo basado en "Mobile & Touch First"
+   ========================================================================== */
+
+/* ===== 1. FUNDAMENTOS DE FLUID DESIGN & SAFE AREAS ===== */
+:root {
+  /* Fluid Typography - Escala sola dependiendo del viewport (min 14px, max 16px) */
+  --fs-base: clamp(14px, 1vw + 10px, 16px);
+  --fs-xs: clamp(0.7rem, 0.8vw + 0.5rem, 0.85rem);
+  --fs-sm: clamp(0.8rem, 0.9vw + 0.6rem, 0.95rem);
+  --fs-md: clamp(0.95rem, 1.1vw + 0.7rem, 1.1rem);
+  --fs-lg: clamp(1.1rem, 1.5vw + 0.8rem, 1.4rem);
+  --fs-xl: clamp(1.4rem, 2vw + 1rem, 1.8rem);
+  --fs-2xl: clamp(1.8rem, 2.5vw + 1.2rem, 2.5rem);
+
+  /* Touch Targets (Fitts's Law) - Minimun 48dp */
+  --min-touch-target: 48px;
+
+  /* Safe Area env variables para Notches e iOS/Android status bars */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* Solo afecta cuando estamos en la app real Android */
+body.is-android {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+  background-color: var(--bg-primary, #ffffff);
+  /* Prevenir selección de texto accidental al tocar la pantalla */
+  -webkit-user-select: none;
+  user-select: none;
+  font-size: var(--fs-base);
+}
+
+/* Permitir selección de texto en inputs (Crítico) */
+body.is-android input, 
+body.is-android textarea {
+  -webkit-user-select: auto;
+  user-select: auto;
+  font-size: 16px !important; /* Evita que Android haga auto-zoom */
+}
+
+/* Ocultar barra de scroll en Android, pero permitiendo el touch scrolling suave */
+body.is-android ::-webkit-scrollbar {
+  display: none;
+}
+body.is-android {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* Scroll con momento (inercia fluida al deslizar) */
+body.is-android .sales-main-area,
+body.is-android .sales-content-wrapper,
+body.is-android .inventory-content,
+body.is-android .suppliers-table-container,
+body.is-android .modal-content {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain; /* Evita el pull-to-refresh de Android Chrome */
+}
+
+/* ===== 2. FIXES PARA ELEMENTOS INTERACTIVOS (TOUCH TARGETS) ===== */
+body.is-android button,
+body.is-android .btn,
+body.is-android .suggestion-item,
+body.is-android select,
+body.is-android input {
+  min-height: var(--min-touch-target);
+}
+
+body.is-android .sidebar-nav .nav-item {
+  min-height: var(--min-touch-target);
+  display: flex;
+  align-items: center;
+}
+
+/* Reemplazar estados :hover con :active para feedback de toque material */
+@media (hover: none) {
+  .nav-item:hover, .btn:hover, button:hover {
+    transform: none !important;
+    background-color: transparent;
+  }
+  .nav-item:active, .btn:active, button:active, .suggestion-item:active {
+    background-color: rgba(16, 185, 129, 0.15) !important;
+    transform: scale(0.97) !important;
+    transition: transform 0.1s ease, background-color 0s;
+  }
+}
+
+/* ===== 3. FLUID GRID SYSTEM INTELIGENTE ===== */
+/* Adaptación autónoma de tarjetas y KPIs sin media queries fijos usando CSS Grid */
+.suppliers-kpi-grid,
+.inventory-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+  gap: clamp(10px, 2vw, 20px) !important;
+  width: 100%;
+}
+
+.stat-card,
+.suppliers-kpi-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(15px, 3%, 24px) !important;
+  min-width: 0; /* Previene overflow */
+}
+
+.stat-value,
+.suppliers-kpi-value {
+  font-size: var(--fs-xl) !important;
+}
+.stat-title,
+.suppliers-kpi-title {
+  font-size: var(--fs-sm) !important;
+  white-space: normal;
+}
+
+/* ===== 4. TABLES: DE SCROLL HORIZONTAL A STACK VERTICAL FLUIDO ===== */
+/* Ajuste de tablas genérico para que no salgan de pantalla en móviles o tablets estrechas */
+@media (max-width: 900px) {
+  body.is-android .suppliers-table,
+  body.is-android .products-table,
+  body.is-android .user-table,
+  body.is-android .orders-table,
+  body.is-android .reports-table {
+    width: 100% !important;
+    table-layout: auto !important;
+  }
+  
+  body.is-android .suppliers-table th,
+  body.is-android .products-table th,
+  body.is-android .user-table th,
+  body.is-android .orders-table th,
+  body.is-android .reports-table th,
+  body.is-android .suppliers-table td,
+  body.is-android .products-table td,
+  body.is-android .user-table td,
+  body.is-android .orders-table td,
+  body.is-android .reports-table td {
+    padding: clamp(8px, 1.5vw, 16px) clamp(6px, 1vw, 12px) !important;
+    font-size: var(--fs-base) !important;
+  }
+  
+  /* Esconder columnas menos importantes de forma inteligente */
+  body.is-android .hide-on-mobile {
+    display: none !important;
+  }
+}
+
+/* ===== 5. MODALES ESTILO BOTTOM-SHEET PARA ANDROID ===== */
+@media (max-width: 768px) {
+  body.is-android .payment-modal-container,
+  body.is-android .cash-fund-modal,
+  body.is-android .lock-container,
+  body.is-android .modal-content {
+    /* Modal se pega al fondo de la pantalla como Bottom Sheet de Android */
+    max-width: 100% !important;
+    width: 100% !important;
+    border-radius: 20px 20px 0 0 !important;
+    margin-top: auto !important;
+    max-height: 90vh !important;
+    padding-bottom: calc(env(safe-area-inset-bottom, 20px) + 20px) !important;
+    animation: slideUpAndroid 0.3s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+  }
+
+  body.is-android .payment-modal-overlay,
+  body.is-android .cash-fund-overlay,
+  body.is-android .lock-screen,
+  body.is-android .modal-overlay {
+    align-items: flex-end !important; /* Alinea contenido al fondo */
+    padding: 0 !important;
+  }
+
+  /* Handle del bottom sheet */
+  body.is-android .payment-modal-container::before,
+  body.is-android .cash-fund-modal::before,
+  body.is-android .lock-container::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 4px;
+    background: #cbd5e1;
+    border-radius: 4px;
+    margin: -10px auto 15px auto;
+  }
+
+  /* Teclados numéricos fluidos */
+  body.is-android .pin-keypad,
+  body.is-android .cash-fund-keypad,
+  body.is-android .payment-keypad {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: clamp(6px, 2vw, 12px) !important;
+  }
+  
+  body.is-android .key-btn,
+  body.is-android .keypad-btn,
+  body.is-android .payment-key {
+    min-height: calc(var(--min-touch-target) + 10px) !important;
+    font-size: var(--fs-lg) !important;
+  }
+}
+
+@keyframes slideUpAndroid {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* ===== 6. TECLADO VIRTUAL & INPUTS EN PANTALLA ===== */
+/* Cuando el teclado virtual está abierto, evita que el layout se colapse rompiendo proporciones */
+body.is-android .main-content {
+  /* Evitar colapso severo */
+  min-height: 100dvh; 
+}
+
+body.is-android input:focus {
+  /* Resalta fuerte el input con teclado abierto */
+  border-color: var(--accent, #10b981) !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Ajustes de Layout fluido generales */
+body.is-android .sales-content-wrapper {
+  /* Utiliza el porcentaje inteligente para reordenar carrito vs items */
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+@media (max-width: 1000px) {
+  body.is-android .sales-content-wrapper {
+    flex-direction: column;
+  }
+  body.is-android .sales-main-area {
+    flex: 1 1 60vh; /* Permite estirarse fluido */
+  }
+  body.is-android .cart-sidebar {
+    width: 100% !important;
+    flex: 1 1 auto;
+    border-left: none;
+    border-top: 1px solid #e5e7eb;
+  }
+}
+
+/* Títulos adaptativos */
+body.is-android h1 { font-size: var(--fs-2xl) !important; }
+body.is-android h2 { font-size: var(--fs-xl) !important; }
+body.is-android p { font-size: var(--fs-md) !important; }
+
+/* ===== 7. GLOBAL NATIVE SCROLLING ===== */
+/* Permite que el viewport entero haga el scroll de forma natural y libre, en vez de contenedores atrapados */
+body.is-android, html:has(body.is-android) {
+  height: auto !important;
+  min-height: 100%;
+  overflow-y: auto !important;
+  overscroll-behavior-y: none; /* Mejor comportamiento nativo */
+}
+
+body.is-android #root,
+body.is-android .layout, 
+body.is-android .app-layout {
+  height: auto !important;
+  min-height: 100% !important;
+  overflow: visible !important;
+  display: flex;
+  flex-direction: column; /* Mantener la estructura base de flex pero con altura dinámica */
+}
+
+/* Deshabilitar el overflow en el contenedor de contenido principal y dejar que crezca libremente */
+body.is-android .main-content {
+  height: auto !important;
+  overflow-y: visible !important;
+  min-height: 100dvh;
+}
+
+/* Evitar que los contenedores internos atrapen el scroll vertical */
+body.is-android .sales-content-wrapper,
+body.is-android .sales-main-area,
+body.is-android .cart-sidebar,
+body.is-android .inventory-content,
+body.is-android .content-area {
+  height: auto !important;
+  max-height: none !important;
+  overflow-y: visible !important; 
+}
+
+/* Permitir el scroll en tablas sólamente horizontal, no vertical */
+body.is-android .table-container,
+body.is-android .suppliers-table-wrapper,
+body.is-android .suppliers-table-container {
+  overflow-y: visible !important;
+  max-height: none !important;
+}

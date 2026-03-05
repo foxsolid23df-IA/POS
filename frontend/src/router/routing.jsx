@@ -29,6 +29,13 @@ import { ScrollToTop } from "../components/common/ScrollToTop";
 import { ScrollTopButton } from "../components/common/ScrollTopButton";
 import { ProductProvider } from "../contexts/ProductContext";
 import { SettingsProvider } from "../contexts/SettingsContext";
+import { useAndroidBackButton } from "../hooks/useAndroidBackButton";
+
+// Componente invisible que maneja el botón "Atrás" de Android
+const BackButtonHandler = () => {
+  useAndroidBackButton();
+  return null;
+};
 
 const PrivateLayout = ({ children }) => {
   const {
@@ -145,6 +152,7 @@ const AdminRoute = ({ children }) => {
 export const Routing = () => {
   return (
     <HashRouter>
+      <BackButtonHandler />
       <ScrollToTop />
       <Routes>
         {/* Pantalla Cliente: Independiente de AuthProvider y ProductProvider */}

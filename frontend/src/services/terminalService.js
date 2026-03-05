@@ -20,17 +20,17 @@ export const terminalService = {
         // Cada registro en cada PC debe ser una terminal ÚNICA en la DB.
         // Si el usuario usa el mismo nombre, se crea un nuevo registro con ID único.
         // Esto evita que dos PCs compartan el mismo ID de terminal y por tanto la misma sesión de caja.
-        
+
         const { data, error } = await supabase
             .from('terminals')
-            .insert([{ 
-                name: name.trim(), 
-                location: location.trim(), 
-                is_main: isMain 
+            .insert([{
+                name: name.trim(),
+                location: location.trim(),
+                is_main: isMain
             }])
             .select()
             .single();
-        
+
         if (error) throw error;
 
         localStorage.setItem(TERMINAL_ID_KEY, data.id);
@@ -39,13 +39,13 @@ export const terminalService = {
     },
 
     async getTerminals() {
-         const { data, error } = await supabase
+        const { data, error } = await supabase
             .from('terminals')
             .select('*')
             .eq('is_active', true) // Solo terminales activas
             .order('name');
-         if (error) throw error;
-         return data;
+        if (error) throw error;
+        return data;
     },
 
     async deleteTerminal(id) {
@@ -55,16 +55,16 @@ export const terminalService = {
             .from('terminals')
             .update({ is_active: false })
             .eq('id', id);
-        
+
         if (error) throw error;
-        
+
         // Si inactivamos la terminal actual, limpiar localStorage
         if (id === this.getTerminalId()) {
             this.resetLocalTerminal();
         }
         return true;
     },
-    
+
     // Función para resetear la terminal local (útil para pruebas o reconfiguración)
     resetLocalTerminal() {
         localStorage.removeItem(TERMINAL_ID_KEY);
@@ -89,15 +89,30 @@ export const terminalService = {
         return data?.is_main || false;
     },
 
+    async hasMainTerminal() {
+        const { data, error } = await supabase
+            .from('terminals')
+            .select('id')
+            .eq('is_main', true)
+            .limit(1);
+
+        if (error) {
+            console.error('Error verificando existencia de terminal principal:', error);
+            return false; // Default to not having one if there's an error, or true? False is safer to allow config if error happens.
+        }
+
+        return data && data.length > 0;
+    },
+
     /**
      * Valida si el ID de terminal en localStorage realmente existe en la DB
      */
     async validateTerminalExistence() {
         const terminalId = this.getTerminalId();
         const terminalName = this.getTerminalName();
-        
+
         console.log(`[TerminalService] Validando terminal: ${terminalName} (${terminalId})`);
-        
+
         if (!terminalId) {
             console.log('[TerminalService] No hay terminal configurada localmente.');
             return false;
@@ -116,7 +131,7 @@ export const terminalService = {
             if (error) {
                 console.error('[TerminalService] Error de DB validando terminal:', error);
                 // Si es un error de red o similar, no borrar configuración
-                return true; 
+                return true;
             }
 
             if (!data) {

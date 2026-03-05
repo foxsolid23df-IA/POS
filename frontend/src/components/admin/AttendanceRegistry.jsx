@@ -6,6 +6,7 @@ import "./AttendanceRegistry.css";
 export const AttendanceRegistry = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
   const [dateRange, setDateRange] = useState({
     startDate: new Date(new Date().setHours(0, 0, 0, 0))
       .toISOString()
@@ -45,7 +46,14 @@ export const AttendanceRegistry = () => {
   const handleExportExcel = () => {
     if (logs.length === 0) return;
 
-    const dataToExport = logs.map((log) => ({
+    const filteredLogs = logs.filter((log) => {
+      if (!searchTerm) return true;
+      const fullName =
+        `${log.staff?.name || ""} ${log.staff?.last_name || ""}`.toLowerCase();
+      return fullName.includes(searchTerm.toLowerCase());
+    });
+
+    const dataToExport = filteredLogs.map((log) => ({
       Fecha: new Date(log.timestamp).toLocaleDateString(),
       Hora: new Date(log.timestamp).toLocaleTimeString(),
       Empleado: `${log.staff?.name} ${log.staff?.last_name || ""}`.trim(),
@@ -74,6 +82,13 @@ export const AttendanceRegistry = () => {
     XLSX.writeFile(wb, fileName);
   };
 
+  const filteredLogs = logs.filter((log) => {
+    if (!searchTerm) return true;
+    const fullName =
+      `${log.staff?.name || ""} ${log.staff?.last_name || ""}`.toLowerCase();
+    return fullName.includes(searchTerm.toLowerCase());
+  });
+
   return (
     <div className="attendance-registry">
       <header className="registry-header">
@@ -85,6 +100,17 @@ export const AttendanceRegistry = () => {
         </div>
 
         <div className="registry-controls flex gap-3">
+          <div className="search-container">
+            <span className="material-icons-outlined search-icon">search</span>
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Buscar por empleado..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
           <div className="date-filters">
             <input
               type="date"
@@ -132,38 +158,49 @@ export const AttendanceRegistry = () => {
               </tr>
             </thead>
             <tbody>
-              {logs.map((log) => (
-                <tr key={log.id}>
-                  <td>
-                    <div className="datetime">
-                      <span className="date">
-                        {new Date(log.timestamp).toLocaleDateString()}
-                      </span>
-                      <span className="time">
-                        {new Date(log.timestamp).toLocaleTimeString()}
-                      </span>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="staff-info">
-                      <span className="name">
-                        {log.staff?.name} {log.staff?.last_name}
-                      </span>
-                      <span className="badge-role">{log.staff?.role}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span className={`badge-action ${log.action}`}>
-                      {log.action === "check_in" ? "Entrada" : "Salida"}
-                    </span>
-                  </td>
-                  <td>
-                    {log.auth_method_used === "fingerprint"
-                      ? "👆 Huella"
-                      : "🔢 PIN"}
+              {filteredLogs.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan="4"
+                    className="text-center py-4 text-gray-500 dark:text-gray-400"
+                  >
+                    No se encontraron coincidencias
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredLogs.map((log) => (
+                  <tr key={log.id}>
+                    <td>
+                      <div className="datetime">
+                        <span className="date">
+                          {new Date(log.timestamp).toLocaleDateString()}
+                        </span>
+                        <span className="time">
+                          {new Date(log.timestamp).toLocaleTimeString()}
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="staff-info">
+                        <span className="name">
+                          {log.staff?.name} {log.staff?.last_name}
+                        </span>
+                        <span className="badge-role">{log.staff?.role}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`badge-action ${log.action}`}>
+                        {log.action === "check_in" ? "Entrada" : "Salida"}
+                      </span>
+                    </td>
+                    <td>
+                      {log.auth_method_used === "fingerprint"
+                        ? "👆 Huella"
+                        : "🔢 PIN"}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         )}

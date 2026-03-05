@@ -47,6 +47,8 @@
 .search-section-modern {
   margin-bottom: 1rem;
   max-width: 800px;
+  position: relative;
+  z-index: 50; /* Necesario para que el dropdown de sugerencias flote sobre el contenido */
 }
 
 .search-input-wrapper {
@@ -203,7 +205,7 @@
   }
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1399px) {
   .sales-content-wrapper {
     flex-direction: column;
     height: auto;
@@ -1787,7 +1789,7 @@
 .payment-modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: 2000; /* Debe ser mayor que el header móvil (1001) y sidebar (1002) */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2278,7 +2280,7 @@
 /* ===== RESPONSIVE - NUEVO DISEÑO MINIMALISTA ===== */
 
 /* Tablets y pantallas medianas (hasta 1024px) */
-@media (max-width: 1024px) {
+@media (max-width: 1399px) {
   .sales-content-wrapper {
     flex-direction: column;
   }

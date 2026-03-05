@@ -152,20 +152,21 @@ body {
   gap: 1rem;
 }
 
-.form-group {
+.login-page .form-group {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   text-align: left;
 }
 
-.form-group label {
-  font-size: 0.75rem;
+.login-page .form-group label {
+  font-size: 0.8rem;
   font-weight: 600;
-  color: var(--text-muted);
+  color: #ffffff;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-left: 0.25rem;
+  opacity: 0.95;
 }
 
 .input-wrapper {

@@ -193,8 +193,8 @@ body {
   padding-bottom: calc(var(--safe-area-bottom) + 8px);
 }
 
-/* 2. Tablet Pro / Desktop: 1024px+ */
-@media (min-width: 1024px) {
+/* 2. Desktop: 1400px+ (sidebar fijo) */
+@media (min-width: 1400px) {
   :root {
     --header-height: 56px;
     --sidebar-width: 240px;

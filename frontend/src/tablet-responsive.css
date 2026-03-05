@@ -1,0 +1,778 @@
+/* ===================================================================
+   TABLET & MOBILE RESPONSIVE OVERRIDES
+   Samsung Galaxy Tab A11 (1920x1200 physical / ~1280x800 CSS viewport)
+   Forces hamburger menu on ALL screens below 1400px CSS width
+   =================================================================== */
+
+/* ========= TABLET RANGE (up to 1399px) ========= */
+@media (max-width: 1399px) {
+
+  /* --- Force sidebar to hamburger mode on ALL tablets --- */
+  .app-layout {
+    flex-direction: column !important;
+  }
+
+  .main-content {
+    padding-top: var(--header-height) !important;
+    width: 100% !important;
+  }
+
+  /* --- Global Typography Scale Down --- */
+  h1, .suppliers-title, .inventory-title {
+    font-size: 1.75rem !important;
+    letter-spacing: -0.02em;
+  }
+
+  h2 {
+    font-size: 1.375rem !important;
+  }
+
+  /* --- TABLES: Scrollable & Compact --- */
+  .table-container,
+  .suppliers-table-wrapper,
+  .suppliers-table-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100% !important;
+  }
+
+  /* Reduce table cell padding for density */
+  .products-table th,
+  .products-table td,
+  .suppliers-table-th,
+  .suppliers-table-td {
+    padding: 10px 12px !important;
+    font-size: 13px !important;
+    white-space: nowrap;
+  }
+
+  /* Make supplier name/contact wrap */
+  .suppliers-table-supplier-name,
+  .suppliers-table-contact-email {
+    white-space: normal !important;
+    word-break: break-word;
+  }
+
+  /* Shrink avatar */
+  .suppliers-table-avatar {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 10px !important;
+  }
+
+  .suppliers-table-supplier-name {
+    font-size: 13px !important;
+  }
+
+  .suppliers-table-supplier-id {
+    font-size: 10px !important;
+  }
+
+  .suppliers-table-contact-email {
+    font-size: 12px !important;
+  }
+
+  .suppliers-table-contact-phone {
+    font-size: 10px !important;
+  }
+
+  /* Product cell compact */
+  .product-cell {
+    gap: 10px !important;
+  }
+
+  .product-image-wrapper {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .product-name {
+    font-size: 13px !important;
+  }
+
+  .product-description {
+    font-size: 11px !important;
+  }
+
+  /* --- KPI Cards Grid --- */
+  .suppliers-kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  .suppliers-kpi-card {
+    padding: 14px !important;
+    min-width: unset !important;
+  }
+
+  .suppliers-kpi-value {
+    font-size: 20px !important;
+  }
+
+  /* --- PAGE HEADINGS --- */
+  .suppliers-page-heading {
+    gap: 12px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .suppliers-actions {
+    flex-wrap: wrap;
+  }
+
+  .suppliers-btn-export,
+  .suppliers-btn-new {
+    padding: 8px 14px !important;
+    font-size: 13px !important;
+  }
+
+  /* --- INVENTORY --- */
+  .inventory-header {
+    padding: 0.75rem 1rem !important;
+    gap: 0.75rem !important;
+  }
+
+  .inventory-content {
+    padding: 12px !important;
+  }
+
+  .search-controls {
+    gap: 10px !important;
+  }
+
+  .control-buttons {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 8px !important;
+  }
+
+  .control-btn {
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+  }
+
+  /* --- SALES VIEW: Single column stacking --- */
+  .sales-content-wrapper {
+    flex-direction: column !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .sales-main-area {
+    width: 100% !important;
+    padding: 0.75rem 1rem !important;
+    min-height: auto !important;
+    overflow: visible !important;
+  }
+
+  .sales-area-header {
+    margin-bottom: 1rem !important;
+  }
+
+  .sales-title {
+    font-size: 1.5rem !important;
+  }
+
+  .cart-sidebar {
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    border-left: none !important;
+    border-top: 1px solid #e5e7eb !important;
+  }
+
+  .cart-items-modern {
+    max-height: 35vh !important;
+  }
+
+  .cart-footer-modern {
+    padding: 1rem !important;
+  }
+
+  /* Cart item compacto */
+  .cart-item-modern {
+    grid-template-columns: 48px 1fr auto !important;
+    min-height: 68px !important;
+    padding: 0.5rem 2rem 0.5rem 0.5rem !important;
+  }
+
+  .item-image-modern {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  .item-name-modern {
+    font-size: 0.825rem !important;
+  }
+
+  /* --- PAYMENT MODAL: FULLSCREEN ON TABLET --- */
+  .payment-modal-overlay {
+    padding: 0 !important;
+    align-items: stretch !important;
+  }
+
+  .payment-modal-container {
+    max-width: 100% !important;
+    width: 100% !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    /* Padding-top para el status bar de Android / safe-area */
+    padding-top: env(safe-area-inset-top, 24px) !important;
+  }
+
+  /* Botón cerrar - ajustar posición considerando safe-area */
+  .payment-modal-close {
+    top: calc(env(safe-area-inset-top, 24px) + 0.5rem) !important;
+    right: 1rem !important;
+  }
+
+  .payment-modal-content {
+    flex: 1 !important;
+    flex-direction: column !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0 !important; /* Permitir shrink en flex */
+  }
+
+  .payment-summary-section {
+    width: 100% !important;
+    border-right: none !important;
+    border-bottom: 1px solid #f3f4f6 !important;
+    max-height: none !important;
+  }
+
+  .payment-summary-header {
+    padding: 0.75rem 1rem !important;
+  }
+
+  .payment-summary-title {
+    font-size: 1rem !important;
+  }
+
+  .payment-items-list {
+    max-height: 15vh !important;
+    padding: 0.5rem 1rem !important;
+  }
+
+  .payment-summary-footer {
+    padding: 0.75rem 1rem !important;
+  }
+
+  .payment-total-amount {
+    font-size: 1.5rem !important;
+  }
+
+  .payment-method-section {
+    width: 100% !important;
+  }
+
+  .payment-method-content {
+    padding: 0.75rem 1rem !important;
+  }
+
+  .payment-method-title {
+    font-size: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .payment-method-buttons {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 0.5rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .payment-method-btn {
+    padding: 0.5rem !important;
+  }
+
+  .payment-method-btn .material-symbols-outlined {
+    font-size: 1.5rem !important;
+  }
+
+  .payment-method-btn span:last-child {
+    font-size: 0.75rem !important;
+  }
+
+  .payment-amount-section {
+    flex-direction: row !important;
+    gap: 1rem !important;
+  }
+
+  .payment-amount-display {
+    padding: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .payment-amount-value {
+    font-size: 1.5rem !important;
+  }
+
+  .payment-keypad {
+    gap: 0.375rem !important;
+  }
+
+  .payment-key {
+    height: 3rem !important;
+    font-size: 1.25rem !important;
+  }
+
+  .payment-change-section {
+    width: auto !important;
+    min-width: 140px !important;
+  }
+
+  .payment-change-box {
+    padding: 0.75rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .payment-change-amount {
+    font-size: 1.5rem !important;
+  }
+
+  .payment-modal-actions {
+    padding: 0.75rem 1rem !important;
+  }
+
+  .payment-finalize-btn {
+    padding: 0.75rem !important;
+    font-size: 1rem !important;
+  }
+
+  /* --- MODALS GENERAL --- */
+  .modal-content {
+    max-width: 92vw !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    padding: 20px 24px !important;
+  }
+
+  /* --- SEARCH INPUTS --- */
+  .search-section-modern {
+    max-width: 100% !important;
+  }
+
+  .barcode-input-modern {
+    font-size: 1rem !important;
+    min-height: 48px !important;
+  }
+
+  .suppliers-search-container {
+    width: 200px !important;
+  }
+
+  /* --- Pagination compact --- */
+  .pagination-container,
+  .suppliers-pagination {
+    padding: 10px 12px !important;
+    gap: 8px !important;
+  }
+
+  .pagination-info,
+  .suppliers-pagination-info {
+    font-size: 11px !important;
+  }
+
+  .pagination-btn,
+  .suppliers-pagination-btn {
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+  }
+
+  /* --- Stats Cards --- */
+  .stat-card {
+    padding: 14px !important;
+  }
+
+  .stat-value {
+    font-size: 1.5rem !important;
+  }
+
+  /* --- CONFIG PAGES --- */
+  .ticket-config-container {
+    padding: 1rem !important;
+  }
+
+  .ticket-config-card {
+    padding: 1.25rem !important;
+  }
+
+  /* --- CashCut modal --- */
+  .cashcut-container {
+    max-width: 95vw !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
+
+  /* --- LOCK SCREEN: Adaptación tablet --- */
+  .lock-screen {
+    padding: 1rem !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .lock-container {
+    padding: 1.5rem !important;
+    max-width: 380px !important;
+    width: 95% !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
+
+  .lock-header {
+    margin-bottom: 1rem !important;
+  }
+
+  .lock-header h1 {
+    font-size: 1.3rem !important;
+  }
+
+  .lock-logo {
+    width: 70px !important;
+    height: 70px !important;
+  }
+
+  .pin-display {
+    margin-bottom: 1rem !important;
+    gap: 10px !important;
+  }
+
+  .pin-keypad {
+    gap: 8px !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .key-btn {
+    padding: 0.75rem !important;
+    font-size: 1.25rem !important;
+  }
+
+  .unlock-btn {
+    padding: 0.75rem !important;
+    font-size: 0.95rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .lock-actions {
+    gap: 0.5rem !important;
+    padding-top: 0.75rem !important;
+  }
+
+  .lock-hint {
+    margin-top: 0.75rem !important;
+  }
+
+  /* --- CASH FUND MODAL: Adaptación tablet --- */
+  .cash-fund-overlay {
+    padding: 1rem !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .cash-fund-modal {
+    padding: 1.5rem !important;
+    max-width: 400px !important;
+    width: 95% !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    border-radius: 20px !important;
+  }
+
+  .cash-fund-header {
+    margin-bottom: 1rem !important;
+  }
+
+  .cash-fund-icon {
+    font-size: 36px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .cash-fund-header h1 {
+    font-size: 1.25rem !important;
+  }
+
+  .cash-fund-display {
+    padding: 12px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .amount-value {
+    font-size: 2rem !important;
+  }
+
+  .quick-amounts {
+    margin-bottom: 12px !important;
+    gap: 6px !important;
+  }
+
+  .quick-btn {
+    padding: 6px 12px !important;
+    font-size: 0.8rem !important;
+  }
+
+  .cash-fund-keypad {
+    gap: 8px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .keypad-btn {
+    padding: 12px !important;
+    font-size: 1.1rem !important;
+  }
+
+  .cash-fund-submit {
+    padding: 12px 20px !important;
+    font-size: 1rem !important;
+  }
+
+  .cash-fund-note {
+    margin-top: 10px !important;
+    font-size: 0.75rem !important;
+  }
+}
+
+/* ========= NARROW TABLET / LARGE PHONE: portrait (up to 820px) ========= */
+@media (max-width: 820px) {
+
+  /* Stack page headings vertically */
+  .suppliers-page-heading {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .suppliers-actions {
+    width: 100% !important;
+  }
+
+  .suppliers-btn-export,
+  .suppliers-btn-new {
+    flex: 1 !important;
+    justify-content: center !important;
+  }
+
+  /* Tables: hide less important columns */
+  .suppliers-table-th:nth-child(n+5),
+  .suppliers-table-td:nth-child(n+5) {
+    display: none !important;
+  }
+
+  /* Inventory & Users: hide less important columns */
+  .products-table th:nth-child(4),
+  .products-table td:nth-child(4),
+  .products-table th:nth-child(6),
+  .products-table td:nth-child(6),
+  .user-table th:nth-child(3),
+  .user-table td:nth-child(3) {
+    display: none !important;
+  }
+
+  /* Search full width */
+  .suppliers-search-container {
+    width: 100% !important;
+  }
+
+  .suppliers-header-content {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  /* Inventory header stack */
+  .inventory-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  /* Payment modal: stack amount + change vertically */
+  .payment-amount-section {
+    flex-direction: column !important;
+  }
+
+  .payment-change-section {
+    width: 100% !important;
+  }
+}
+
+/* ========= WIDE TABLET LANDSCAPE (821px — 1399px) ========= */
+@media (min-width: 821px) and (max-width: 1399px) {
+
+  /* Sales: side-by-side but narrower cart */
+  .sales-content-wrapper {
+    flex-direction: row !important;
+    height: calc(100vh - 64px) !important;
+    overflow: hidden !important;
+  }
+
+  .sales-main-area {
+    flex: 1 !important;
+    overflow-y: scroll !important;
+    overflow-x: hidden !important;
+    min-height: unset !important;
+  }
+
+  .cart-sidebar {
+    width: 300px !important;
+    height: 100% !important;
+    max-height: none !important;
+    border-top: none !important;
+    border-left: 1px solid #e5e7eb !important;
+  }
+
+  .cart-items-modern {
+    max-height: unset !important;
+  }
+
+  /* 4-col KPIs */
+  .suppliers-kpi-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+
+  /* Payment modal: keep side-by-side on wider tablets */
+  .payment-modal-content {
+    flex-direction: row !important;
+    overflow: hidden !important;
+  }
+
+  .payment-summary-section {
+    width: 35% !important;
+    max-height: none !important;
+    border-right: 1px solid #f3f4f6 !important;
+    border-bottom: none !important;
+    overflow-y: auto !important;
+  }
+
+  .payment-items-list {
+    max-height: none !important;
+  }
+
+  .payment-method-section {
+    flex: 1 !important;
+    overflow-y: auto !important;
+  }
+}
+
+/* ========= TOUCH DEVICE IMPROVEMENTS ========= */
+@media (hover: none) and (pointer: coarse) {
+
+  /* Bigger touch targets */
+  .suppliers-filter-btn {
+    padding: 10px 16px !important;
+    font-size: 13px !important;
+  }
+
+  .suppliers-pagination-btn {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 14px !important;
+  }
+
+  .pagination-btn {
+    padding: 10px 18px !important;
+    font-size: 14px !important;
+  }
+
+  .control-btn {
+    min-height: 44px !important;
+  }
+
+  .qty-btn-modern {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 1.4rem !important;
+  }
+
+  /* Payment keys larger for finger */
+  .payment-key {
+    min-height: 48px !important;
+  }
+
+  .payment-method-btn {
+    min-height: 56px !important;
+  }
+
+  /* Remove hover effects that cause sticky states on touch */
+  .cart-item-modern:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  .suppliers-table-row:hover {
+    background-color: transparent !important;
+  }
+
+  /* Active states instead */
+  .cart-item-modern:active {
+    background: rgba(16, 185, 129, 0.05);
+  }
+
+  .suppliers-table-row:active {
+    background-color: #f9fafb !important;
+  }
+
+  .products-table tbody tr:active {
+    background-color: #f0f9ff !important;
+  }
+
+  .payment-key:active {
+    background: #e5e7eb !important;
+    transform: scale(0.96);
+  }
+
+  /* Scrollbar hidden but functional */
+  ::-webkit-scrollbar {
+    width: 3px !important;
+    height: 3px !important;
+  }
+
+  /* Prevent text selection on interactive elements */
+  button,
+  a,
+  .suppliers-table-row,
+  .cart-item-modern {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+/* ========= LANDSCAPE ORIENTATION FIXES ========= */
+@media (max-height: 600px) and (orientation: landscape) {
+  .cart-items-modern {
+    max-height: 25vh !important;
+  }
+
+  .modal-content {
+    max-height: 85vh !important;
+  }
+
+  .sales-area-header {
+    margin-bottom: 0.5rem !important;
+  }
+
+  .empty-scan-area {
+    padding: 1rem !important;
+    margin-top: 1rem !important;
+  }
+}
+
+/* ========= DARK MODE TABLET FIXES ========= */
+@media (max-width: 1399px) {
+  html.dark .cart-sidebar {
+    border-top-color: var(--dm-border) !important;
+  }
+
+  html.dark .suppliers-table-th,
+  html.dark .suppliers-table-td {
+    border-color: var(--dm-border) !important;
+  }
+
+  html.dark .payment-modal-container {
+    background: var(--dm-card-bg) !important;
+  }
+
+  html.dark .payment-summary-section {
+    border-bottom-color: var(--dm-border) !important;
+  }
+}
