@@ -4,7 +4,7 @@ import { supabase } from "../../supabase";
 import { staffService } from "../../services/staffService";
 import { attendanceService } from "../../services/attendanceService";
 import Swal from "sweetalert2";
-import logo from "../../assets/logo.png";
+import logo from "../../assets/icon.png";
 import { ClockInOutTerminal } from "../attendance/ClockInOutTerminal";
 import "./LockScreen.css";
 

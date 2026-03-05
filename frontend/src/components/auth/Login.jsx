@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Navigate, useParams } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { invitationService } from "../../services/invitationService";
-import logo from "../../assets/logo.png";
+import logo from "../../assets/icon.png";
 import "./Login.css";
 
 export const Login = () => {
@@ -247,8 +247,8 @@ export const Login = () => {
               {loading
                 ? "Procesando..."
                 : isRegistering
-                  ? "REGISTRARSE"
-                  : "INICIAR SESIÓN"}
+                ? "REGISTRARSE"
+                : "INICIAR SESIÓN"}
             </button>
           </form>
 
