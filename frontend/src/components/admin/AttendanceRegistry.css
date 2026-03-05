@@ -13,7 +13,7 @@
 }
 
 .registry-header h2 {
-    color: #1e293b;
+    color: #1f2937;
     font-size: 1.75rem;
     font-weight: 800;
     margin: 0 0 0.5rem 0;
@@ -64,7 +64,7 @@
     border-radius: 12px;
     font-size: 14px;
     background-color: #ffffff;
-    color: #1e293b !important;
+    color: #1f2937 !important;
     font-weight: 600;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -79,18 +79,18 @@
     border-color: #3b82f6;
     box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25);
     background-color: #ffffff;
-    color: #1e293b !important;
+    color: #1f2937 !important;
 }
 
 .dark .search-input {
-    background-color: #1e293b;
-    border-color: #334155;
+    background-color: #1f2937;
+    border-color: #374151;
     color: #f8fafc !important;
 }
 
 .dark .search-input:focus {
     border-color: #3b82f6;
-    background-color: #0f172a;
+    background-color: #111827;
     color: #f8fafc !important;
 }
 
@@ -110,15 +110,15 @@
 }
 
 .dark .date-filters {
-    background: #1e293b;
-    border-color: #334155;
+    background: #1f2937;
+    border-color: #374151;
     color: white;
 }
 
 .date-filters input[type="date"] {
     border: none;
     background: transparent;
-    color: #1e293b;
+    color: #1f2937;
     font-family: inherit;
     font-weight: 600;
     outline: none;
@@ -139,7 +139,7 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    background: #10b981;
+    background: #3b82f6;
     color: white;
     border: none;
     padding: 0.75rem 1.25rem;
@@ -147,13 +147,13 @@
     font-weight: 700;
     cursor: pointer;
     transition: all 0.2s;
-    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
 }
 
 .btn-export-excel:hover:not(:disabled) {
-    background: #059669;
+    background: #2563eb;
     transform: translateY(-1px);
-    box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
 }
 
 .btn-export-excel:active:not(:disabled) {
@@ -176,8 +176,8 @@
 }
 
 .dark .registry-content {
-    background: #1e293b;
-    border-color: #334155;
+    background: #1f2937;
+    border-color: #374151;
     box-shadow: none;
 }
 
@@ -195,7 +195,7 @@
 
 .dark .registry-table th, 
 .dark .registry-table td {
-    border-color: #334155;
+    border-color: #374151;
 }
 
 .registry-table th {
@@ -208,7 +208,7 @@
 }
 
 .dark .registry-table th {
-    background: #0f172a;
+    background: #111827;
     color: #94a3b8;
 }
 
@@ -219,7 +219,7 @@
 
 .datetime .date {
     font-weight: 700;
-    color: #1e293b;
+    color: #1f2937;
 }
 
 .dark .datetime .date {
@@ -242,7 +242,7 @@
 
 .staff-info .name {
     font-weight: 700;
-    color: #1e293b;
+    color: #1f2937;
 }
 
 .dark .staff-info .name {
@@ -272,8 +272,8 @@
 }
 
 .badge-action.check_in {
-    background: rgba(16, 185, 129, 0.1);
-    color: #10b981;
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
 }
 
 .badge-action.check_out {

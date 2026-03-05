@@ -62,7 +62,9 @@ export const TerminalSetup = ({ onTerminalConfigured }) => {
     <div className="terminal-setup-overlay">
       <div className="terminal-setup-modal">
         <div className="terminal-setup-header">
-          <div className="terminal-icon">🖥️</div>
+          <div className="terminal-icon">
+            <span className="material-symbols-outlined">point_of_sale</span>
+          </div>
           <h1>Configuración de Caja</h1>
           <p>Identifica este equipo para comenzar</p>
         </div>
@@ -93,7 +95,7 @@ export const TerminalSetup = ({ onTerminalConfigured }) => {
           </div>
 
           {!hasMainAlready && (
-            <div className="form-group checkbox-group">
+            <div className="checkbox-group">
               <label className="checkbox-label">
                 <input
                   type="checkbox"
@@ -101,11 +103,15 @@ export const TerminalSetup = ({ onTerminalConfigured }) => {
                   onChange={(e) => setIsMain(e.target.checked)}
                   disabled={isSubmitting}
                 />
-                <span>Esta es la Caja Principal</span>
+                <div className="checkbox-text-wrapper">
+                  <span className="checkbox-title">
+                    ESTA ES LA CAJA PRINCIPAL
+                  </span>
+                  <span className="checkbox-desc">
+                    Solo la caja principal puede realizar el Cierre de Día.
+                  </span>
+                </div>
               </label>
-              <p className="input-hint">
-                Solo la caja principal puede realizar el Cierre de Día.
-              </p>
             </div>
           )}
 
@@ -126,14 +132,18 @@ export const TerminalSetup = ({ onTerminalConfigured }) => {
               </>
             )}
           </button>
+        </form>
 
-          <div className="setup-info">
+        <div className="setup-info">
+          <span className="material-symbols-outlined info-icon">info</span>
+          <div className="setup-info-content">
+            <h4>Importante</h4>
             <p>
-              ℹ️ Esta configuración se guardará en este dispositivo y es
-              necesaria para operar en modo multicajas.
+              Esta configuración se guardará en este dispositivo y es necesaria
+              para operar en modo multicajas.
             </p>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

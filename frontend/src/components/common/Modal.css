@@ -22,7 +22,7 @@
 
 .modal-content {
     background: #ffffff;
-    color: #1e293b;
+    color: #1f2937;
     border: 1px solid #e2e8f0;
     border-radius: 16px;
     padding: 28px 32px;
@@ -34,7 +34,7 @@
 }
 
 .dark .modal-content {
-    background: #1e293b;
+    background: #1f2937;
     color: #f8fafc;
     border-color: rgba(255, 255, 255, 0.1);
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
@@ -67,7 +67,7 @@
 .modal-header h3 {
     font-size: 1.3rem;
     font-weight: 700;
-    color: #1e293b;
+    color: #1f2937;
     margin: 0;
     letter-spacing: -0.5px;
 }
@@ -113,7 +113,7 @@
 
 /* Botones de modal - Tema oscuro */
 .btn-modal-ok {
-    background: linear-gradient(135deg, var(--accent, #10b981) 0%, var(--accent-hover, #059669) 100%);
+    background: linear-gradient(135deg, var(--accent, #3b82f6) 0%, var(--accent-hover, #2563eb) 100%);
     color: #000;
     border: none;
     padding: 10px 22px;
@@ -122,12 +122,12 @@
     font-weight: 700;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .btn-modal-ok:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
 
 .btn-confirmar {
@@ -167,7 +167,7 @@
 }
 
 .btn-guardar {
-    background: linear-gradient(135deg, var(--accent, #10b981) 0%, var(--accent-hover, #059669) 100%);
+    background: linear-gradient(135deg, var(--accent, #3b82f6) 0%, var(--accent-hover, #2563eb) 100%);
     color: #000;
     border: none;
     padding: 10px 22px;
@@ -176,12 +176,12 @@
     font-weight: 700;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .btn-guardar:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
 
 /* Estado disabled para botones */
@@ -201,11 +201,11 @@ button:disabled,
 }
 
 .modal-success {
-    border-top: 4px solid var(--accent, #10b981);
+    border-top: 4px solid var(--accent, #3b82f6);
 }
 
 .modal-content.modal-success h3 {
-    color: var(--accent, #10b981);
+    color: var(--accent, #3b82f6);
 }
 
 .modal-error {
@@ -275,8 +275,8 @@ button:disabled,
 .dark .form-group input,
 .dark .form-group select,
 .dark .form-group textarea {
-    background: #0f172a;
-    border-color: #334155;
+    background: #111827;
+    border-color: #374151;
     color: #ffffff;
 }
 
@@ -293,7 +293,7 @@ button:disabled,
 .dark .form-group select:focus,
 .dark .form-group textarea:focus {
     border-color: #3b82f6;
-    background: #0f172a;
+    background: #111827;
 }
 
 .form-group input::placeholder,

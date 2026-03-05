@@ -43,14 +43,14 @@
 }
 
 .dark .drop-zone {
-    background-color: #1e293b;
+    background-color: #1f2937;
     border-color: #475569;
     color: #cbd5e1;
 }
 
 .dark .drop-zone:hover, .dark .drop-zone.active {
     border-color: #3b82f6;
-    background-color: #0f172a;
+    background-color: #111827;
 }
 
 .drop-content {
@@ -154,7 +154,7 @@
 .preview-table td {
     padding: 8px 10px;
     border-bottom: 1px solid #f1f5f9;
-    color: #334155;
+    color: #374151;
 }
 
 .preview-footer {
@@ -180,22 +180,22 @@
 
 /* Dark Mode Support */
 html.dark .bulk-import-modal .drop-zone {
-    background-color: #1e293b;
-    border-color: #334155;
+    background-color: #1f2937;
+    border-color: #374151;
 }
 
 html.dark .bulk-import-modal .preview-header,
 html.dark .bulk-import-modal .preview-table th,
 html.dark .bulk-import-modal .preview-footer {
-    background-color: #1e293b;
+    background-color: #1f2937;
     color: #cbd5e1;
 }
 
 html.dark .bulk-import-modal .preview-table td {
-    border-bottom-color: #334155;
+    border-bottom-color: #374151;
     color: #cbd5e1;
 }
 
 html.dark .bulk-import-modal .template-section {
-    border-top-color: #334155;
+    border-top-color: #374151;
 }

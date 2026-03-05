@@ -109,14 +109,14 @@
 }
 
 .dark .barcode-input-modern {
-  background: #1e293b;
+  background: #1f2937;
   border-color: #475569;
   color: #ffffff !important;
 }
 
 .dark .barcode-input-modern:focus {
   border-color: #3b82f6;
-  background: #0f172a;
+  background: #111827;
   color: #ffffff !important;
 }
 
@@ -346,8 +346,8 @@
 }
 
 .dark .barcode-input {
-  background: #1e293b;
-  border-color: #334155;
+  background: #1f2937;
+  border-color: #374151;
   color: #ffffff;
 }
 
@@ -372,7 +372,7 @@
   white-space: nowrap;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
   min-width: 85px;
   justify-content: center;
   flex-shrink: 0;
@@ -400,7 +400,7 @@
 
 .btn-camera-scanner:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
 
 .btn-camera-scanner:active {
@@ -422,7 +422,7 @@
 
 .dark .barcode-input:focus {
   border-color: #3b82f6;
-  background: #0f172a;
+  background: #111827;
 }
 
 .barcode-input::placeholder {
@@ -468,8 +468,8 @@
 .suggestion-item:hover,
 .suggestion-item:active,
 .suggestion-item.active {
-  background: rgba(16, 185, 129, 0.1);
-  border-left: 3px solid #10b981;
+  background: rgba(59, 130, 246, 0.1);
+  border-left: 3px solid #3b82f6;
 }
 
 .suggestion-image {
@@ -645,9 +645,9 @@
 
 .cart-item-modern:hover {
   transform: translateY(-2px);
-  border-color: #10b981;
-  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15);
-  background: rgba(16, 185, 129, 0.05);
+  border-color: #3b82f6;
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
+  background: rgba(59, 130, 246, 0.05);
 }
 
 .item-image-modern {
@@ -731,8 +731,8 @@
 }
 
 .qty-btn-modern:hover:not(:disabled) {
-  background: #10b981;
-  border-color: #10b981;
+  background: #3b82f6;
+  border-color: #3b82f6;
   color: white;
 }
 
@@ -760,26 +760,26 @@
 }
 
 .quantity-input-modern:hover {
-  border-color: #10b981;
+  border-color: #3b82f6;
 }
 
 .quantity-input-modern:focus {
   background: white;
-  border-color: #10b981;
-  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
   color: #065f46;
 }
 
 .dark .quantity-modern,
 .dark .quantity-input-modern {
-  background: #1e293b;
-  border-color: #334155;
+  background: #1f2937;
+  border-color: #374151;
   color: #ffffff;
 }
 
 .dark .quantity-input-modern:focus {
   background: #064e3b;
-  border-color: #10b981;
+  border-color: #3b82f6;
   color: #ffffff;
 }
 
@@ -794,7 +794,7 @@
   grid-column: 2 / 4;
   font-weight: 800;
   font-size: 0.9375rem;
-  color: #10b981;
+  color: #3b82f6;
   text-align: right;
   flex-shrink: 0;
   margin-left: auto;
@@ -883,14 +883,14 @@
 }
 
 .btn-process-payment:not(:disabled) {
-  background: #10b981;
+  background: #3b82f6;
   color: #000;
-  border-color: #10b981;
+  border-color: #3b82f6;
   cursor: pointer;
 }
 
 .btn-process-payment:not(:disabled):hover {
-  background: #059669;
+  background: #2563eb;
 }
 
 /* OLD CART & SUMMARY LAYOUT - Keep for compatibility */
@@ -1026,8 +1026,8 @@
 .cart-item:hover {
   transform: translateY(-2px);
   border-color: var(--accent);
-  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15);
-  background: rgba(16, 185, 129, 0.05);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
+  background: rgba(59, 130, 246, 0.05);
 }
 
 .cart-item:hover::before {
@@ -1141,8 +1141,8 @@
 .total-section {
   background: linear-gradient(
     135deg,
-    rgba(16, 185, 129, 0.1) 0%,
-    rgba(16, 185, 129, 0.05) 100%
+    rgba(59, 130, 246, 0.1) 0%,
+    rgba(59, 130, 246, 0.05) 100%
   );
   border: 2px solid var(--accent);
   border-radius: 20px;
@@ -1151,7 +1151,7 @@
   bottom: 1rem;
   left: 50%;
   transform: translateX(-50%);
-  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3);
   transition: all 0.3s ease;
   z-index: 100;
   max-width: 400px;
@@ -1159,7 +1159,7 @@
 }
 
 .total-section:hover {
-  box-shadow: 0 12px 40px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 12px 40px rgba(59, 130, 246, 0.3);
 }
 
 .total-display {
@@ -1194,7 +1194,7 @@
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s;
-  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
   min-height: 44px;
   /* Safari fix */
   -webkit-appearance: none;

@@ -88,7 +88,7 @@ body.is-android .sidebar-nav .nav-item {
     background-color: transparent;
   }
   .nav-item:active, .btn:active, button:active, .suggestion-item:active {
-    background-color: rgba(16, 185, 129, 0.15) !important;
+    background-color: rgba(59, 130, 246, 0.15) !important;
     transform: scale(0.97) !important;
     transition: transform 0.1s ease, background-color 0s;
   }
@@ -222,8 +222,8 @@ body.is-android .main-content {
 
 body.is-android input:focus {
   /* Resalta fuerte el input con teclado abierto */
-  border-color: var(--accent, #10b981) !important;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+  border-color: var(--accent, #3b82f6) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
 }
 
 /* Ajustes de Layout fluido generales */

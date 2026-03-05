@@ -4,45 +4,63 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(15, 23, 42, 0.95);
-    backdrop-filter: blur(8px);
+    background-color: #111827; /* Dark slate background */
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 9999;
     animation: fadeIn 0.3s ease;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: #f8fafc;
 }
 
 .terminal-setup-modal {
-    background: #1e293b;
-    border-radius: 20px;
-    padding: 2.5rem;
+    background: transparent;
+    padding: 2rem;
     width: 100%;
-    max-width: 480px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    max-width: 440px;
     animation: slideUp 0.3s ease;
+    display: flex;
+    flex-direction: column;
 }
 
 .terminal-setup-header {
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .terminal-icon {
-    font-size: 3.5rem;
-    margin-bottom: 1rem;
+    width: 80px;
+    height: 80px;
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.terminal-icon span {
+    font-size: 3rem;
+    color: #3b82f6; /* Modern blue */
 }
 
 .terminal-setup-header h1 {
     color: #f8fafc;
     font-size: 1.8rem;
-    margin-bottom: 0.5rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+    letter-spacing: -0.02em;
 }
 
 .terminal-setup-header p {
     color: #94a3b8;
     font-size: 0.95rem;
+    margin: 0;
 }
 
 .terminal-setup-form {
@@ -58,99 +76,164 @@
 }
 
 .form-group label {
-    color: #e2e8f0;
-    font-size: 0.9rem;
-    font-weight: 500;
+    color: #94a3b8;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding-left: 0.25rem;
 }
 
-.form-group input[type="text"],
-.form-group input[type="password"],
-.form-group input[type="email"] {
-    background: #0f172a;
-    border: 1px solid #334155;
-    border-radius: 10px;
-    padding: 1rem;
-    color: white;
-    font-size: 1.1rem;
+.form-group input[type="text"] {
+    background: #1f2937;
+    border: 1px solid #374151;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    color: #f8fafc;
+    font-size: 1rem;
     transition: all 0.2s;
+    outline: none;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-.form-group input[type="text"]:focus,
-.form-group input[type="password"]:focus,
-.form-group input[type="email"]:focus {
-    outline: none;
+.form-group input[type="text"]::placeholder {
+    color: #64748b;
+}
+
+.form-group input[type="text"]:focus {
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
 .checkbox-group {
-    flex-direction: column;
-    gap: 0.25rem;
+    background: rgba(31, 41, 55, 0.5);
+    padding: 1rem 1.25rem;
+    border-radius: 12px;
+    border: 1px solid rgba(55, 65, 81, 0.8);
     margin-top: 0.5rem;
 }
 
 .checkbox-label {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.75rem;
     cursor: pointer;
-    color: #e2e8f0;
-    font-weight: 500;
 }
 
 .checkbox-label input[type="checkbox"] {
-    width: 1.25rem;
-    height: 1.25rem;
+    margin-top: 0.2rem;
+    width: 1.2rem;
+    height: 1.2rem;
     cursor: pointer;
-    accent-color: #10b981;
+    accent-color: #3b82f6;
+    border-radius: 4px;
+    border: 1px solid #4b5563;
+    background: #1f2937;
+}
+
+.checkbox-text-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+.checkbox-title {
+    color: #e2e8f0;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.checkbox-desc {
+    color: #94a3b8;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    line-height: 1.4;
 }
 
 .input-hint {
     color: #64748b;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
+    padding-left: 0.25rem;
 }
 
 .setup-submit-btn {
-    margin-top: 1rem;
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    margin-top: 0.5rem;
+    background: #3b82f6;
     color: white;
     border: none;
-    padding: 1rem;
+    padding: 1.25rem;
     border-radius: 12px;
     font-size: 1.1rem;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
+    box-shadow: 0 8px 15px -3px rgba(59, 130, 246, 0.3);
 }
 
 .setup-submit-btn:hover:not(:disabled) {
+    background: #2563eb;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    box-shadow: 0 12px 20px -3px rgba(59, 130, 246, 0.4);
+}
+
+.setup-submit-btn:active:not(:disabled) {
+    transform: translateY(0);
 }
 
 .setup-submit-btn:disabled {
     opacity: 0.7;
-    cursor: allowed;
-    filter: grayscale(0.5);
+    cursor: not-allowed;
+    filter: grayscale(0.3);
+    box-shadow: none;
 }
 
 .setup-info {
-    text-align: center;
-    margin-top: 1.5rem;
-    padding: 1rem;
+    margin-top: 2.5rem;
+    padding: 1rem 1.25rem;
     background: rgba(59, 130, 246, 0.1);
-    border-radius: 8px;
+    border-radius: 12px;
     border: 1px solid rgba(59, 130, 246, 0.2);
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
 }
 
-.setup-info p {
-    color: #93c5fd;
+.setup-info .info-icon {
+    color: #60a5fa;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+}
+
+.setup-info-content h4 {
+    color: #e2e8f0;
     font-size: 0.85rem;
+    font-weight: 600;
+    margin: 0 0 0.25rem 0;
+}
+
+.setup-info-content p {
+    color: #cbd5e1;
+    font-size: 0.8rem;
     margin: 0;
+    line-height: 1.5;
+}
+
+/* Spinner for the button */
+.spinner {
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border-left-color: white;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 @keyframes fadeIn {
@@ -162,3 +245,10 @@
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+@media (max-width: 480px) {
+    .terminal-setup-modal {
+        padding: 1.5rem;
+    }
+}
+

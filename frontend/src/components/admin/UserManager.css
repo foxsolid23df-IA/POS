@@ -55,7 +55,7 @@
 
 .status-badge.active {
     color: var(--accent);
-    background: rgba(16, 185, 129, 0.1);
+    background: rgba(59, 130, 246, 0.1);
     padding: 4px 10px;
     border-radius: 6px;
     font-weight: 700;

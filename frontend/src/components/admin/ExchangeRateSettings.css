@@ -1,5 +1,5 @@
 .exchange-rate-settings-container {
-    background: #1e293b;
+    background: #1f2937;
     border-radius: 1rem;
     padding: 2rem;
     max-width: 600px;
@@ -65,7 +65,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #334155;
+    background-color: #374151;
     transition: .4s;
     border-radius: 34px;
 }
@@ -83,7 +83,7 @@
 }
 
 .switch-input:checked + .switch-slider {
-    background-color: #10b981;
+    background-color: #3b82f6;
 }
 
 .switch-input:checked + .switch-slider:before {
@@ -129,7 +129,7 @@
 .input-with-icon input {
     width: 100%;
     padding: 1.25rem 4.5rem 1.25rem 2.5rem !important;
-    background: #0f172a;
+    background: #111827;
     border: 2px solid rgba(255, 255, 255, 0.1);
     border-radius: 1rem;
     color: #ffffff;
@@ -195,7 +195,7 @@
 .btn-save-settings:disabled {
     opacity: 0.7;
     cursor: not-allowed;
-    background: #334155;
+    background: #374151;
 }
 
 .message-alert {
@@ -207,9 +207,9 @@
 }
 
 .message-alert.success {
-    background: rgba(16, 185, 129, 0.15);
-    color: #10b981;
-    border: 1px solid rgba(16, 185, 129, 0.2);
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+    border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
 .message-alert.error {

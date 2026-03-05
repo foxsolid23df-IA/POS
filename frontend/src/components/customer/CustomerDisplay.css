@@ -1,7 +1,7 @@
 .customer-display-container {
     height: 100vh;
     width: 100vw;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
     color: white;
     font-family: 'Outfit', sans-serif;
     display: flex;
@@ -26,7 +26,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+    background: radial-gradient(circle at center, #1f2937 0%, #111827 100%);
     text-align: center;
     padding: 2rem;
     position: relative;
@@ -55,7 +55,7 @@
     font-size: clamp(3rem, 10vw, 6rem);
     font-weight: 900;
     line-height: 1.1;
-    background: linear-gradient(to right, #10b981, #3b82f6, #8b5cf6);
+    background: linear-gradient(to right, #3b82f6, #3b82f6, #8b5cf6);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -150,7 +150,7 @@
 
 .item-qty {
     font-size: 1.75rem;
-    color: #10b981;
+    color: #3b82f6;
     font-weight: 800;
     min-width: 60px;
     text-align: center;
@@ -171,13 +171,13 @@
 }
 
 .total-card {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     padding: 4rem 2rem;
     border-radius: 2.5rem;
     display: flex;
     flex-direction: column;
     align-items: center;
-    box-shadow: 0 30px 60px -15px rgba(16, 185, 129, 0.4);
+    box-shadow: 0 30px 60px -15px rgba(59, 130, 246, 0.4);
     position: relative;
     overflow: hidden;
 }
@@ -255,8 +255,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: rgba(16, 185, 129, 0.1);
-    border: 3px solid rgba(16, 185, 129, 0.3);
+    background: rgba(59, 130, 246, 0.1);
+    border: 3px solid rgba(59, 130, 246, 0.3);
     border-radius: 2.5rem;
     text-align: center;
     padding: 2rem;
@@ -265,14 +265,14 @@
 .check-icon {
     width: 100px;
     height: 100px;
-    background: #10b981;
+    background: #3b82f6;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 4rem;
     margin-bottom: 2rem;
-    box-shadow: 0 15px 30px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 15px 30px rgba(59, 130, 246, 0.3);
 }
 
 .thanks-card h2 {
@@ -353,6 +353,6 @@
 .status-completed .total-card {
     opacity: 0.5;
     filter: grayscale(0.5);
-    background: #1e293b;
+    background: #1f2937;
     box-shadow: none;
 }

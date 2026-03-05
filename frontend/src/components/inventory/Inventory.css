@@ -104,14 +104,14 @@
 }
 
 .dark .search-input {
-    background-color: #1e293b;
+    background-color: #1f2937;
     border-color: #475569;
     color: #ffffff !important; /* Blanco absoluto */
 }
 
 .dark .search-input:focus {
     border-color: #3b82f6;
-    background-color: #0f172a;
+    background-color: #111827;
     color: #ffffff !important;
 }
 
@@ -434,7 +434,7 @@
 }
 
 .stock-emerald {
-    background-color: #10b981;
+    background-color: #3b82f6;
 }
 
 .stock-red {
@@ -831,7 +831,7 @@
     background: #ffffff;
     padding: 12px 14px;
     font-size: 14px;
-    color: #1e293b;
+    color: #1f2937;
     font-weight: 500;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     transition: all 0.2s;
@@ -848,14 +848,14 @@
 }
 
 .dark .new-product-input {
-    background: #1e293b;
-    border-color: #334155;
+    background: #1f2937;
+    border-color: #374151;
     color: #ffffff;
 }
 
 .dark .new-product-input:focus {
     border-color: #3b82f6;
-    background: #0f172a;
+    background: #111827;
 }
 
 /* Category Header with Manage Button */
@@ -905,7 +905,7 @@
     padding: 12px 14px;
     padding-right: 40px;
     font-size: 14px;
-    color: #1e293b;
+    color: #1f2937;
     font-weight: 600;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     transition: all 0.2s;
@@ -919,14 +919,14 @@
 }
 
 .dark .new-product-select {
-    background: #1e293b;
-    border-color: #334155;
+    background: #1f2937;
+    border-color: #374151;
     color: #ffffff;
 }
 
 .dark .new-product-select:focus {
     border-color: #3b82f6;
-    background: #0f172a;
+    background: #111827;
 }
 
 .new-product-select-arrow {
@@ -1189,8 +1189,8 @@
 }
 
 .form-group input:focus {
-    border-color: var(--accent, #10b981);
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+    border-color: var(--accent, #3b82f6);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
     outline: none;
 }
 
@@ -1212,8 +1212,8 @@
 }
 
 .form-select:focus {
-    border-color: var(--accent, #10b981);
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+    border-color: var(--accent, #3b82f6);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
     outline: none;
     background: rgba(255, 255, 255, 0.95);
 }
@@ -1255,15 +1255,15 @@
 }
 
 .save-btn {
-    background: linear-gradient(135deg, var(--accent, #10b981) 0%, var(--accent-hover, #059669) 100%);
+    background: linear-gradient(135deg, var(--accent, #3b82f6) 0%, var(--accent-hover, #2563eb) 100%);
     color: #000;
     border: none;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .save-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
 
 .image-upload-area {
@@ -1285,8 +1285,8 @@
 
 .image-upload-area:hover,
 .image-upload-area.drag-active {
-    border-color: var(--accent, #10b981);
-    background: rgba(16, 185, 129, 0.05);
+    border-color: var(--accent, #3b82f6);
+    background: rgba(59, 130, 246, 0.05);
 }
 
 .image-preview-wrapper {
@@ -1382,7 +1382,7 @@
     border-radius: 10px;
     font-size: 14px;
     background-color: #ffffff;
-    color: #1e293b;
+    color: #1f2937;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
@@ -1399,14 +1399,14 @@
 }
 
 .dark .filter-select {
-    background-color: #334155;
+    background-color: #374151;
     border-color: #475569;
     color: #ffffff;
 }
 
 .dark .filter-select:focus {
     border-color: #3b82f6;
-    background-color: #1e293b;
+    background-color: #1f2937;
 }
 
 .price-range {
@@ -1422,7 +1422,7 @@
     border-radius: 10px;
     font-size: 14px;
     background-color: #ffffff;
-    color: #1e293b;
+    color: #1f2937;
     font-weight: 600;
     transition: all 0.2s;
 }
@@ -1438,14 +1438,14 @@
 }
 
 .dark .filter-input {
-    background-color: #334155;
+    background-color: #374151;
     border-color: #475569;
     color: #ffffff;
 }
 
 .dark .filter-input:focus {
     border-color: #3b82f6;
-    background-color: #1e293b;
+    background-color: #1f2937;
 }
 
 .price-separator {
@@ -1794,8 +1794,8 @@
 }
 
 .dark .inventario-alerta-modal {
-    background: #1e293b;
-    border: 1px solid #334155;
+    background: #1f2937;
+    border: 1px solid #374151;
 }
 
 .inventario-alerta-header {
@@ -1807,7 +1807,7 @@
 }
 
 .dark .inventario-alerta-header {
-    border-bottom-color: #334155;
+    border-bottom-color: #374151;
 }
 
 .inventario-alerta-content {

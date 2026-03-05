@@ -11,7 +11,7 @@
   border-radius: 10px;
 }
 .dark ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #374151;
 }
 
 /* Date Picker Visibility Fix */
@@ -67,12 +67,12 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .dark .date-input-modern {
-  background-color: #1e293b;
-  border-color: #334155;
+  background-color: #1f2937;
+  border-color: #374151;
   color: #ffffff;
 }
 
 .dark .date-input-modern:focus {
   border-color: #3b82f6;
-  background-color: #0f172a;
+  background-color: #111827;
 }

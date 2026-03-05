@@ -12,7 +12,7 @@
 }
 
 .dark .ticket-config-card {
-    background: #0f172a;
+    background: #111827;
     box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.4);
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
@@ -49,8 +49,8 @@
 .dark .ticket-config-form input,
 .dark .ticket-config-form textarea,
 .dark .ticket-config-form select {
-    border-color: #334155;
-    background: #1e293b;
+    border-color: #374151;
+    background: #1f2937;
     color: white;
 }
 
@@ -66,7 +66,7 @@
 .dark .ticket-config-form textarea:focus,
 .dark .ticket-config-form select:focus {
     border-color: #3b82f6;
-    background: #0f172a;
+    background: #111827;
 }
 
 .form-grid {
@@ -99,7 +99,7 @@
 }
 
 .dark .checkmark {
-    background-color: #334155;
+    background-color: #374151;
 }
 
 .checkbox-container:hover input ~ .checkmark {

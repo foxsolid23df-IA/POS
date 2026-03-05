@@ -1,15 +1,15 @@
 :root {
   --sidebar-width: 250px;
   --header-height: 56px;
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --accent: #10b981;
-  --accent-hover: #059669;
+  --bg-primary: #111827; /* Dark slate */
+  --bg-secondary: #1f2937; /* Lighter slate / inputs */
+  --accent: #3b82f6; /* Modern Blue */
+  --accent-hover: #2563eb; 
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --surface: rgba(255, 255, 255, 0.05);
-  --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  --glass-border: rgba(55, 65, 81, 0.8);
+  --surface: rgba(31, 41, 55, 0.5);
+  --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
   --danger: #ef4444;
   --warning: #f59e0b;
   --info: #3b82f6;
@@ -320,17 +320,17 @@ body {
 
 /* Dark Mode Variables */
 html.dark {
-  --dm-bg-primary: #0f172a;
-  --dm-bg-secondary: #1e293b;
-  --dm-bg-tertiary: #334155;
+  --dm-bg-primary: #111827; /* Dark slate */
+  --dm-bg-secondary: #1f2937; /* Lighter slate / inputs */
+  --dm-bg-tertiary: #374151; /* Borders / hovers */
   --dm-text-primary: #f8fafc;
   --dm-text-secondary: #cbd5e1;
   --dm-text-muted: #94a3b8;
-  --dm-border: #334155;
-  --dm-border-light: #1e293b;
-  --dm-card-bg: #1e293b;
-  --dm-input-bg: #0f172a;
-  --dm-hover-bg: #334155;
+  --dm-border: #374151;
+  --dm-border-light: #1f2937;
+  --dm-card-bg: #1f2937;
+  --dm-input-bg: #111827;
+  --dm-hover-bg: #374151;
 }
 
 /* Global Dark Mode Base Styles */
@@ -488,9 +488,9 @@ html.dark .control-btn:hover {
 }
 
 html.dark .control-btn.primary {
-  background-color: #10b981;
+  background-color: #3b82f6;
   color: #000;
-  border-color: #10b981;
+  border-color: #3b82f6;
 }
 
 html.dark .table-container {

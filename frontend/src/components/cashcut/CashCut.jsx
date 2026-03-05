@@ -537,7 +537,7 @@ export const CashCut = ({ onClose }) => {
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-                .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; }
+                .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; }
             `}</style>
 
       <div className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl flex flex-col max-h-[95vh] lg:max-h-[90vh] overflow-hidden border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in duration-200">

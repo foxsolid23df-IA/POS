@@ -482,7 +482,7 @@ export const UserManager = () => {
                       {formData.fingerprint_data && !isCapturing && (
                         <span
                           style={{
-                            color: "#10b981",
+                            color: "#3b82f6",
                             fontSize: "1.2rem",
                             display: "flex",
                           }}

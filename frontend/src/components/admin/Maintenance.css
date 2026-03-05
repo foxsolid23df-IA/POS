@@ -9,7 +9,7 @@
 .maintenance-lock-screen {
     position: fixed;
     inset: 0;
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -24,12 +24,12 @@
     width: 100%;
     max-width: 450px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    color: #1e293b; /* Color de texto base forzado */
+    color: #1f2937; /* Color de texto base forzado */
 }
 
 /* Soporte para Modo Oscuro en la tarjeta de bloqueo */
 html.dark .lock-card {
-    background: #1e293b;
+    background: #1f2937;
     color: #f8fafc;
 }
 
@@ -66,12 +66,12 @@ html.dark .lock-card p {
     outline: none;
     transition: border-color 0.2s;
     background: #f8fafc;
-    color: #1e293b; /* Texto oscuro para el input */
+    color: #1f2937; /* Texto oscuro para el input */
 }
 
 html.dark .lock-card input {
-    background: #0f172a;
-    border-color: #334155;
+    background: #111827;
+    border-color: #374151;
     color: #f8fafc; /* Texto claro para el input en modo oscuro */
 }
 
@@ -193,8 +193,8 @@ html.dark .maintenance-header h1 {
 }
 
 html.dark .option-item {
-    background: #0f172a;
-    border-color: #334155;
+    background: #111827;
+    border-color: #374151;
 }
 
 .option-item:hover {
@@ -203,7 +203,7 @@ html.dark .option-item {
 }
 
 html.dark .option-item:hover {
-    background: #1e293b;
+    background: #1f2937;
 }
 
 .option-item input {
@@ -216,7 +216,7 @@ html.dark .option-item:hover {
     display: block;
     margin-bottom: 0.1rem;
     font-size: 0.9rem;
-    color: #1e293b;
+    color: #1f2937;
 }
 
 html.dark .option-item span strong {
@@ -237,7 +237,7 @@ html.dark .option-item span strong {
 }
 
 html.dark .confirmation-box {
-    border-color: #334155;
+    border-color: #374151;
 }
 
 .confirmation-box p {
@@ -263,8 +263,8 @@ html.dark .confirmation-box p {
 }
 
 html.dark .confirmation-box input {
-    background: #0f172a;
-    border-color: #334155;
+    background: #111827;
+    border-color: #374151;
     color: #f8fafc;
 }
 
@@ -376,7 +376,7 @@ html.dark .nuclear-warning {
 }
 
 html.dark .nuclear-input {
-    background: #0f172a !important;
+    background: #111827 !important;
     color: #f87171 !important;
 }
 
@@ -397,8 +397,8 @@ html.dark .nuclear-input {
 }
 
 html.dark .maintenance-section {
-    background: #1e293b;
-    border: 1px solid #334155;
+    background: #1f2937;
+    border: 1px solid #374151;
 }
 
 .section-description {
@@ -423,8 +423,8 @@ html.dark .maintenance-section {
 }
 
 html.dark .maintenance-table th {
-    background: #0f172a;
-    border-bottom-color: #334155;
+    background: #111827;
+    border-bottom-color: #374151;
 }
 
 .maintenance-table td {
@@ -434,7 +434,7 @@ html.dark .maintenance-table th {
 }
 
 html.dark .maintenance-table td {
-    border-bottom-color: #334155;
+    border-bottom-color: #374151;
 }
 
 .terminal-name-cell {
@@ -466,7 +466,7 @@ html.dark .maintenance-table td {
 }
 
 html.dark .status-badge.secondary {
-    background: #334155;
+    background: #374151;
     color: #cbd5e1;
 }
 
@@ -505,7 +505,7 @@ html.dark .status-badge.secondary {
 }
 
 html.dark .utility-box {
-    background: #0f172a;
+    background: #111827;
 }
 
 .btn-warning {
@@ -540,8 +540,8 @@ html.dark .utility-box {
 }
 
 html.dark .health-monitor {
-    background: #1e293b;
-    border-color: #334155;
+    background: #1f2937;
+    border-color: #374151;
     color: #f8fafc;
 }
 
@@ -584,8 +584,8 @@ html.dark .health-monitor {
 }
 
 html.dark .logs-table-wrapper {
-    background: #0f172a;
-    border-color: #334155;
+    background: #111827;
+    border-color: #374151;
 }
 
 .log-action {
@@ -597,7 +597,7 @@ html.dark .logs-table-wrapper {
 }
 
 html.dark .log-action {
-    background: #1e293b;
+    background: #1f2937;
 }
 
 .log-date {

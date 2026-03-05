@@ -24,8 +24,8 @@
 }
 
 .dark .clock-terminal-container {
-    background: #1e293b;
-    border-color: #334155;
+    background: #1f2937;
+    border-color: #374151;
 }
 
 .close-terminal-btn {
@@ -52,7 +52,7 @@
 }
 
 .clock-header h2 {
-    color: #1e293b;
+    color: #1f2937;
     margin: 0 0 1rem 0;
     font-size: 1.5rem;
     font-weight: 800;
@@ -74,13 +74,13 @@
 
 .dark .digital-clock {
     background: rgba(15, 23, 42, 0.5);
-    border-color: #334155;
+    border-color: #374151;
 }
 
 .digital-clock .time {
     font-size: 3rem;
     font-weight: 800;
-    color: #1e293b;
+    color: #1f2937;
     font-variant-numeric: tabular-nums;
     letter-spacing: -1px;
 }
@@ -111,7 +111,7 @@
 }
 
 .dark .auth-method-tabs {
-    background: #0f172a;
+    background: #111827;
 }
 
 .tab-btn {
@@ -138,7 +138,7 @@
 }
 
 .dark .tab-btn.active {
-    background: #1e293b;
+    background: #1f2937;
     color: #60a5fa;
 }
 
@@ -165,7 +165,7 @@
 }
 
 .dark .pin-dot {
-    border-color: #334155;
+    border-color: #374151;
 }
 
 .pin-dot.filled {
@@ -192,7 +192,7 @@
     border-radius: 50%;
     border: 1px solid #e2e8f0;
     background: #ffffff;
-    color: #1e293b;
+    color: #1f2937;
     font-size: 1.5rem;
     font-weight: 600;
     cursor: pointer;
@@ -203,7 +203,7 @@
 }
 
 .dark .terminal-keypad button {
-    border-color: #334155;
+    border-color: #374151;
     background: rgba(255, 255, 255, 0.05);
     color: #f8fafc;
 }
@@ -221,7 +221,7 @@
 }
 
 .dark .terminal-keypad button.action-key {
-    background: #0f172a;
+    background: #111827;
 }
 
 /* HUELLA SECTION */
@@ -236,7 +236,7 @@
     height: 100px;
     margin: 0 auto 1.5rem auto;
     border-radius: 50%;
-    background: rgba(16, 185, 129, 0.1); /* primary color with opacity */
+    background: rgba(59, 130, 246, 0.1); /* primary color with opacity */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -293,7 +293,7 @@
 }
 
 .scanner-instruction.received {
-    color: #10b981;
+    color: #3b82f6;
 }
 
 /* BUTTONS */
@@ -319,11 +319,11 @@
 }
 
 .btn-check-in {
-    background: #10b981; /* green */
+    background: #3b82f6; /* green */
 }
 
 .btn-check-in:hover:not(:disabled) {
-    background: #059669;
+    background: #2563eb;
 }
 
 .btn-check-out {

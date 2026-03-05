@@ -243,7 +243,7 @@ export const LockScreen = () => {
       showCancelButton: true,
       confirmButtonText: "Verificar",
       cancelButtonText: "Cancelar",
-      confirmButtonColor: "#10b981",
+      confirmButtonColor: "#3b82f6",
       inputValidator: (value) => {
         if (!value) {
           return "Debes ingresar tu contraseña";

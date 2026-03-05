@@ -78,7 +78,7 @@
 }
 
 .type-btn.active {
-    background: rgba(16, 185, 129, 0.1);
+    background: rgba(59, 130, 246, 0.1);
     border-color: var(--accent);
     color: var(--accent);
 }
@@ -123,7 +123,7 @@
 }
 
 .stat-card.highlight {
-    background: rgba(16, 185, 129, 0.1);
+    background: rgba(59, 130, 246, 0.1);
     border-color: var(--accent);
 }
 
@@ -194,7 +194,7 @@
 }
 
 .difference-display.even {
-    background: rgba(16, 185, 129, 0.1);
+    background: rgba(59, 130, 246, 0.1);
     border: 1px solid var(--accent);
 }
 
