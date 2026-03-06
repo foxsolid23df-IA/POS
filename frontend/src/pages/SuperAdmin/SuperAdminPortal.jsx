@@ -67,15 +67,18 @@ export const SuperAdminPortal = () => {
         .select(
           `
           id, code, expires_at, created_at, used_by,
-          profiles:used_by (store_name, full_name, email)
+          profiles (store_name, full_name)
         `,
         )
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching licenses:", error);
+        return;
+      }
       setLicenses(data || []);
     } catch (error) {
-      console.error("Error loading licenses:", error);
+      console.error("Error in loadLicenses:", error);
     }
   };
 
