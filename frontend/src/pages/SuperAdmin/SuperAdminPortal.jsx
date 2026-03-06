@@ -189,21 +189,24 @@ export const SuperAdminPortal = () => {
       if (newAdminPassword.length < 6)
         throw new Error("La contraseña debe tener al menos 6 caracteres");
 
-      // 1. SignUp the new admin
-      // Note: This will NOT sign the current user out if we handle it correctly
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newAdminEmail,
-        password: newAdminPassword,
-      });
-
-      if (authError) throw authError;
-
-      // 2. Add to super_admins table
+      // 1. Add to super_admins table FIRST (while current admin has permission)
       const { error: dbError } = await supabase
         .from("super_admins")
         .insert([{ email: newAdminEmail }]);
 
       if (dbError) throw dbError;
+
+      // 2. SignUp the new admin
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: newAdminEmail,
+        password: newAdminPassword,
+      });
+
+      if (authError) {
+        // Rollback DB entry if Auth fails
+        await supabase.from("super_admins").delete().eq("email", newAdminEmail);
+        throw authError;
+      }
 
       setShowAdminModal(false);
       setNewAdminEmail("");
