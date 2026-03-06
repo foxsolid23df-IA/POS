@@ -11,13 +11,31 @@ export const SuperAdminPortal = () => {
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
 
-  // Dashboard state
+  // Navigation state
+  const [activeTab, setActiveTab] = useState("licenses"); // licenses, admins, preferences
+
+  // Dashboard / Licenses state
   const [licenses, setLicenses] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newClientCode, setNewClientCode] = useState("");
   const [newClientDuration, setNewClientDuration] = useState("30");
   const [creating, setCreating] = useState(false);
   const [actionError, setActionError] = useState("");
+
+  // Administrators state
+  const [admins, setAdmins] = useState([]);
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [newAdminEmail, setNewAdminEmail] = useState("");
+  const [newAdminPassword, setNewAdminPassword] = useState("");
+  const [creatingAdmin, setCreatingAdmin] = useState(false);
+  const [adminActionError, setAdminActionError] = useState("");
+
+  // Preferences state
+  const [newMasterPassword, setNewMasterPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [updatingPassword, setUpdatingPassword] = useState(false);
+  const [pwsError, setPwsError] = useState("");
+  const [pwsSuccess, setPwsSuccess] = useState("");
 
   useEffect(() => {
     checkSession();
@@ -49,6 +67,7 @@ export const SuperAdminPortal = () => {
       if (data) {
         setIsSuperAdmin(true);
         loadLicenses();
+        loadAdmins();
       } else {
         setIsSuperAdmin(false);
       }
@@ -79,6 +98,20 @@ export const SuperAdminPortal = () => {
       setLicenses(data || []);
     } catch (error) {
       console.error("Error in loadLicenses:", error);
+    }
+  };
+
+  const loadAdmins = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("super_admins")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setAdmins(data || []);
+    } catch (error) {
+      console.error("Error loading admins:", error);
     }
   };
 
@@ -132,11 +165,8 @@ export const SuperAdminPortal = () => {
 
   const handleReactivate = async (id, currentExpiresAt) => {
     const isExpired = new Date(currentExpiresAt) < new Date();
-    // Default extend by 30 days
-    const newDate = new Date();
-    // If not expired yet, extend from current expiry, if expired, start from today
     const baseDate = isExpired ? new Date() : new Date(currentExpiresAt);
-    baseDate.setDate(baseDate.getDate() + 30); // add 30 days
+    baseDate.setDate(baseDate.getDate() + 30);
 
     try {
       const { error } = await supabase
@@ -148,6 +178,73 @@ export const SuperAdminPortal = () => {
       loadLicenses();
     } catch (err) {
       alert("Error al reactivar: " + err.message);
+    }
+  };
+
+  const handleCreateAdmin = async (e) => {
+    e.preventDefault();
+    setCreatingAdmin(true);
+    setAdminActionError("");
+    try {
+      if (newAdminPassword.length < 6)
+        throw new Error("La contraseña debe tener al menos 6 caracteres");
+
+      // 1. SignUp the new admin
+      // Note: This will NOT sign the current user out if we handle it correctly
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: newAdminEmail,
+        password: newAdminPassword,
+      });
+
+      if (authError) throw authError;
+
+      // 2. Add to super_admins table
+      const { error: dbError } = await supabase
+        .from("super_admins")
+        .insert([{ email: newAdminEmail }]);
+
+      if (dbError) throw dbError;
+
+      setShowAdminModal(false);
+      setNewAdminEmail("");
+      setNewAdminPassword("");
+      loadAdmins();
+      alert("Administrador creado exitosamente.");
+    } catch (err) {
+      setAdminActionError(err.message);
+    } finally {
+      setCreatingAdmin(false);
+    }
+  };
+
+  const handleUpdatePassword = async (e) => {
+    e.preventDefault();
+    setPwsError("");
+    setPwsSuccess("");
+
+    if (newMasterPassword !== confirmPassword) {
+      setPwsError("Las contraseñas no coinciden");
+      return;
+    }
+
+    if (newMasterPassword.length < 6) {
+      setPwsError("La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+
+    setUpdatingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newMasterPassword,
+      });
+      if (error) throw error;
+      setPwsSuccess("Contraseña actualizada correctamente.");
+      setNewMasterPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      setPwsError(err.message);
+    } finally {
+      setUpdatingPassword(false);
     }
   };
 
@@ -224,14 +321,6 @@ export const SuperAdminPortal = () => {
     );
   }
 
-  // --- DASHBOARD SCREEN ---
-  const activeLicenses = licenses.filter(
-    (l) => new Date(l.expires_at) > new Date(),
-  ).length;
-  const expiredLicenses = licenses.filter(
-    (l) => new Date(l.expires_at) <= new Date(),
-  ).length;
-
   return (
     <div className="superadmin-dashboard-container">
       {/* Sidebar Navigation */}
@@ -241,10 +330,28 @@ export const SuperAdminPortal = () => {
           <span>SuperAdmin</span>
         </div>
         <nav className="sidebar-nav">
-          <button className="nav-item active">
+          <button
+            className={`nav-item ${activeTab === "licenses" ? "active" : ""}`}
+            onClick={() => setActiveTab("licenses")}
+          >
             <i className="la la-server"></i> Gestión de Licencias
           </button>
-          <button className="nav-item" onClick={handleLogout}>
+          <button
+            className={`nav-item ${activeTab === "admins" ? "active" : ""}`}
+            onClick={() => setActiveTab("admins")}
+          >
+            <i className="la la-user-shield"></i> Administradores
+          </button>
+          <button
+            className={`nav-item ${
+              activeTab === "preferences" ? "active" : ""
+            }`}
+            onClick={() => setActiveTab("preferences")}
+          >
+            <i className="la la-cog"></i> Preferencias
+          </button>
+          <div className="sidebar-spacer"></div>
+          <button className="nav-item logout-nav" onClick={handleLogout}>
             <i className="la la-sign-out"></i> Cerrar Sesión
           </button>
         </nav>
@@ -252,132 +359,261 @@ export const SuperAdminPortal = () => {
 
       {/* Main Content */}
       <main className="superadmin-main">
-        <header className="superadmin-header">
-          <h2>Panel de Control General</h2>
-          <button
-            className="superadmin-btn default-blue"
-            onClick={() => setShowCreateModal(true)}
-          >
-            <i className="la la-plus"></i> Nuevo Cliente
-          </button>
-        </header>
+        {activeTab === "licenses" && (
+          <>
+            <header className="superadmin-header">
+              <h2>Gestión de Licencias</h2>
+              <button
+                className="superadmin-btn default-blue"
+                onClick={() => setShowCreateModal(true)}
+              >
+                <i className="la la-plus"></i> Nuevo Cliente
+              </button>
+            </header>
 
-        {/* Metrics */}
-        <div className="superadmin-metrics">
-          <div className="metric-card glass-panel">
-            <div className="metric-icon gold">
-              <i className="la la-users"></i>
+            {/* Metrics */}
+            <div className="superadmin-metrics">
+              <div className="metric-card glass-panel">
+                <div className="metric-icon gold">
+                  <i className="la la-users"></i>
+                </div>
+                <div className="metric-data">
+                  <h3>{licenses.length}</h3>
+                  <span>Total de Clientes</span>
+                </div>
+              </div>
+              <div className="metric-card glass-panel">
+                <div className="metric-icon blue">
+                  <i className="la la-check-circle"></i>
+                </div>
+                <div className="metric-data">
+                  <h3>
+                    {
+                      licenses.filter(
+                        (l) => new Date(l.expires_at) > new Date(),
+                      ).length
+                    }
+                  </h3>
+                  <span>Licencias Activas</span>
+                </div>
+              </div>
+              <div className="metric-card glass-panel error">
+                <div className="metric-icon red">
+                  <i className="la la-times-circle"></i>
+                </div>
+                <div className="metric-data">
+                  <h3 className="text-red">
+                    {
+                      licenses.filter(
+                        (l) => new Date(l.expires_at) <= new Date(),
+                      ).length
+                    }
+                  </h3>
+                  <span>Licencias Vencidas</span>
+                </div>
+              </div>
             </div>
-            <div className="metric-data">
-              <h3>{licenses.length}</h3>
-              <span>Total de Clientes</span>
-            </div>
-          </div>
-          <div className="metric-card glass-panel">
-            <div className="metric-icon blue">
-              <i className="la la-check-circle"></i>
-            </div>
-            <div className="metric-data">
-              <h3>{activeLicenses}</h3>
-              <span>Licencias Activas</span>
-            </div>
-          </div>
-          <div className="metric-card glass-panel error">
-            <div className="metric-icon red">
-              <i className="la la-times-circle"></i>
-            </div>
-            <div className="metric-data">
-              <h3 className="text-red">{expiredLicenses}</h3>
-              <span>Licencias Vencidas</span>
-            </div>
-          </div>
-        </div>
 
-        {/* Data Table */}
-        <div className="superadmin-table-container glass-panel">
-          <div className="table-header">
-            <h3>Directorio de Licencias</h3>
-          </div>
-          <div className="table-wrapper">
-            <table className="super-table">
-              <thead>
-                <tr>
-                  <th>Código de Cliente</th>
-                  <th>Tienda / Dueño</th>
-                  <th>Fecha de Expiración</th>
-                  <th>Estado</th>
-                  <th>Acción</th>
-                </tr>
-              </thead>
-              <tbody>
-                {licenses.map((lic) => {
-                  const isExpired = new Date(lic.expires_at) < new Date();
-                  return (
-                    <tr key={lic.id} className={isExpired ? "row-expired" : ""}>
-                      <td className="code-cell">{lic.code}</td>
-                      <td>
-                        {lic.profiles ? (
-                          <>
-                            <strong>{lic.profiles.store_name}</strong>
-                            <br />
-                            <span className="text-sm sub-text">
-                              {lic.profiles.full_name}
-                            </span>
-                          </>
-                        ) : (
-                          <span className="sub-text italic">
-                            Sin registrar aún
-                          </span>
-                        )}
-                      </td>
-                      <td>
-                        {new Date(lic.expires_at).toLocaleDateString()}
-                        {isExpired && (
-                          <span className="expired-badge ml-2">Vencida</span>
-                        )}
-                      </td>
-                      <td>
-                        <div
-                          className={`status-indicator ${
-                            isExpired ? "inactive" : "active"
-                          }`}
-                        ></div>
-                        {isExpired ? "Inactiva" : "Activa"}
-                      </td>
-                      <td>
-                        <button
-                          className={`reactivate-btn ${
-                            isExpired ? "gold-pulse" : "outline"
-                          }`}
-                          onClick={() =>
-                            handleReactivate(lic.id, lic.expires_at)
-                          }
-                        >
-                          <i className="la la-sync"></i>{" "}
-                          {isExpired ? "Reactivar (30d)" : "Extender (30d)"}
-                        </button>
-                      </td>
+            {/* Data Table */}
+            <div className="superadmin-table-container glass-panel">
+              <div className="table-header">
+                <h3>Directorio de Licencias</h3>
+              </div>
+              <div className="table-wrapper">
+                <table className="super-table">
+                  <thead>
+                    <tr>
+                      <th>Código de Cliente</th>
+                      <th>Tienda / Dueño</th>
+                      <th>Fecha de Expiración</th>
+                      <th>Estado</th>
+                      <th>Acción</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {licenses.map((lic) => {
+                      const isExpired = new Date(lic.expires_at) < new Date();
+                      return (
+                        <tr
+                          key={lic.id}
+                          className={isExpired ? "row-expired" : ""}
+                        >
+                          <td className="code-cell">{lic.code}</td>
+                          <td>
+                            {lic.profiles ? (
+                              <>
+                                <strong>{lic.profiles.store_name}</strong>
+                                <br />
+                                <span className="text-sm sub-text">
+                                  {lic.profiles.full_name}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="sub-text italic">
+                                Sin registrar aún
+                              </span>
+                            )}
+                          </td>
+                          <td>
+                            {new Date(lic.expires_at).toLocaleDateString()}
+                            {isExpired && (
+                              <span className="expired-badge ml-2">
+                                Vencida
+                              </span>
+                            )}
+                          </td>
+                          <td>
+                            <div
+                              className={`status-indicator ${
+                                isExpired ? "inactive" : "active"
+                              }`}
+                            ></div>
+                            {isExpired ? "Inactiva" : "Activa"}
+                          </td>
+                          <td>
+                            <button
+                              className={`reactivate-btn ${
+                                isExpired ? "gold-pulse" : "outline"
+                              }`}
+                              onClick={() =>
+                                handleReactivate(lic.id, lic.expires_at)
+                              }
+                            >
+                              <i className="la la-sync"></i>{" "}
+                              {isExpired ? "Reactivar (30d)" : "Extender (30d)"}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+
+        {activeTab === "admins" && (
+          <>
+            <header className="superadmin-header">
+              <h2>Administradores del Portal</h2>
+              <button
+                className="superadmin-btn default-blue"
+                onClick={() => setShowAdminModal(true)}
+              >
+                <i className="la la-user-plus"></i> Invitar Administrador
+              </button>
+            </header>
+
+            <div className="superadmin-table-container glass-panel">
+              <div className="table-wrapper">
+                <table className="super-table">
+                  <thead>
+                    <tr>
+                      <th>Email</th>
+                      <th>Fecha de Alta</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {admins.map((adm) => (
+                      <tr key={adm.id}>
+                        <td>{adm.email}</td>
+                        <td>{new Date(adm.created_at).toLocaleDateString()}</td>
+                        <td>
+                          <div className="status-indicator active"></div>
+                          Autorizado
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+
+        {activeTab === "preferences" && (
+          <div className="preferences-view">
+            <header className="superadmin-header">
+              <h2>Preferencias de Cuenta</h2>
+            </header>
+
+            <div className="preferences-grid">
+              <div className="preferences-card glass-panel">
+                <h3>Seguridad de la Cuenta</h3>
+                <p className="sub-text">
+                  Actualiza tu contraseña maestra para acceder al portal.
+                </p>
+
+                <form onSubmit={handleUpdatePassword} className="mt-6">
+                  <div className="input-group">
+                    <label>Nueva Contraseña</label>
+                    <input
+                      type="password"
+                      value={newMasterPassword}
+                      onChange={(e) => setNewMasterPassword(e.target.value)}
+                      placeholder="Mínimo 6 caracteres"
+                      required
+                    />
+                  </div>
+                  <div className="input-group">
+                    <label>Confirmar Contraseña</label>
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Repita la contraseña"
+                      required
+                    />
+                  </div>
+
+                  {pwsError && (
+                    <div className="superadmin-error">{pwsError}</div>
+                  )}
+                  {pwsSuccess && (
+                    <div className="superadmin-success">{pwsSuccess}</div>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="superadmin-btn primary-gold"
+                    disabled={updatingPassword}
+                  >
+                    {updatingPassword
+                      ? "Guardando..."
+                      : "Actualizar Contraseña"}
+                  </button>
+                </form>
+              </div>
+
+              <div className="preferences-card glass-panel info-card">
+                <h3>Información de Sesión</h3>
+                <div className="session-info-item">
+                  <label>Email Actual:</label>
+                  <span>{session?.user?.email}</span>
+                </div>
+                <div className="session-info-item">
+                  <label>Rol:</label>
+                  <span className="badge-gold">Super Administrador</span>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </main>
 
-      {/* Creation Modal */}
+      {/* License Modal */}
       {showCreateModal && (
         <div className="superadmin-modal-overlay">
           <div className="superadmin-modal glass-panel">
             <h3>Generar Nuevo Acceso</h3>
             <p className="sub-text">
-              Crea un código de licencia para un cliente nuevo.
+              Crea un código de invitación para un cliente nuevo.
             </p>
-
             <form onSubmit={handleCreateClient}>
               <div className="input-group mt-4">
-                <label>Código de Invitación (Ej. CLIENTEX-2026)</label>
+                <label>Código (Ej. CLIENTEX-2026)</label>
                 <input
                   type="text"
                   value={newClientCode}
@@ -387,26 +623,23 @@ export const SuperAdminPortal = () => {
                     )
                   }
                   required
-                  placeholder="NUEVO-CLIENTE"
                 />
               </div>
               <div className="input-group">
-                <label>Duración Inicial</label>
+                <label>Duración</label>
                 <select
                   value={newClientDuration}
                   onChange={(e) => setNewClientDuration(e.target.value)}
                 >
-                  <option value="30">1 Mes (30 días)</option>
-                  <option value="90">3 Meses (90 días)</option>
-                  <option value="180">6 Meses (180 días)</option>
-                  <option value="365">1 Año (365 días)</option>
+                  <option value="30">1 Mes</option>
+                  <option value="90">3 Meses</option>
+                  <option value="180">6 Meses</option>
+                  <option value="365">1 Año</option>
                 </select>
               </div>
-
               {actionError && (
                 <div className="superadmin-error">{actionError}</div>
               )}
-
               <div className="modal-actions">
                 <button
                   type="button"
@@ -420,7 +653,58 @@ export const SuperAdminPortal = () => {
                   className="superadmin-btn primary-gold"
                   disabled={creating}
                 >
-                  {creating ? "Generando..." : "Generar Licencia"}
+                  {creating ? "Generando..." : "Generar"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Modal */}
+      {showAdminModal && (
+        <div className="superadmin-modal-overlay">
+          <div className="superadmin-modal glass-panel">
+            <h3>Invitar Administrador</h3>
+            <p className="sub-text">
+              Crea una cuenta de acceso al portal sin registrar tienda.
+            </p>
+            <form onSubmit={handleCreateAdmin}>
+              <div className="input-group mt-4">
+                <label>Email del Nuevo Admin</label>
+                <input
+                  type="email"
+                  value={newAdminEmail}
+                  onChange={(e) => setNewAdminEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="input-group">
+                <label>Contraseña Temporal</label>
+                <input
+                  type="password"
+                  value={newAdminPassword}
+                  onChange={(e) => setNewAdminPassword(e.target.value)}
+                  required
+                />
+              </div>
+              {adminActionError && (
+                <div className="superadmin-error">{adminActionError}</div>
+              )}
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="superadmin-btn outline"
+                  onClick={() => setShowAdminModal(false)}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="superadmin-btn primary-gold"
+                  disabled={creatingAdmin}
+                >
+                  {creatingAdmin ? "Creando..." : "Crear Admin"}
                 </button>
               </div>
             </form>

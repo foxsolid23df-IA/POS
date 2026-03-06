@@ -40,6 +40,7 @@
   align-items: center;
   position: relative;
   overflow: hidden;
+  width: 100%;
 }
 
 .superadmin-bg-elements {
@@ -133,6 +134,16 @@
   border-radius: 6px;
 }
 
+.superadmin-success {
+  color: #10b981;
+  font-size: 0.9rem;
+  margin: 10px 0;
+  text-align: center;
+  background: rgba(16, 185, 129, 0.1);
+  padding: 8px;
+  border-radius: 6px;
+}
+
 /* Buttons */
 .superadmin-btn {
   width: 100%;
@@ -145,6 +156,10 @@
   border: none;
   position: relative;
   overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .superadmin-btn.primary-gold {
@@ -174,6 +189,10 @@
 /* ========================================= */
 /* DASHBOARD SCREEN                          */
 /* ========================================= */
+.superadmin-dashboard-container {
+  width: 100%;
+}
+
 .superadmin-sidebar {
   width: 280px;
   background: #0b0d12;
@@ -181,6 +200,9 @@
   padding: 24px 0;
   display: flex;
   flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
 }
 
 .sidebar-logo {
@@ -205,6 +227,7 @@
   flex-direction: column;
   gap: 8px;
   padding: 0 12px;
+  flex: 1;
 }
 
 .nav-item {
@@ -233,6 +256,20 @@
   background: rgba(244, 192, 37, 0.1);
   color: var(--admin-gold);
   border-left: 3px solid var(--admin-gold);
+}
+
+.sidebar-spacer {
+  flex: 1;
+}
+
+.logout-nav {
+  margin-top: auto;
+  color: var(--admin-red);
+}
+
+.logout-nav:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--admin-red);
 }
 
 .superadmin-main {
@@ -418,6 +455,45 @@
   background: rgba(255, 255, 255, 0.05);
 }
 
+/* Preferences View */
+.preferences-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 32px;
+}
+
+.preferences-card {
+  padding: 32px;
+}
+
+.preferences-card h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.4rem;
+}
+
+.session-info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.session-info-item label {
+  color: var(--admin-text-sub);
+  font-weight: 600;
+}
+
+.badge-gold {
+  background: rgba(244, 192, 37, 0.15);
+  color: var(--admin-gold);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
 /* Modals */
 .superadmin-modal-overlay {
   position: fixed;
@@ -452,6 +528,8 @@
   }
   .superadmin-sidebar {
     width: 100%;
+    height: auto;
+    position: relative;
     border-right: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   }
