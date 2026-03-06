@@ -14,6 +14,7 @@ import { Historial } from "../components/historial/Historial";
 import { Stats } from "../components/stats/Stats";
 import { Login } from "../components/auth/Login";
 import { LockScreen } from "../components/auth/LockScreen";
+import { ExpiredLicense } from "../components/auth/ExpiredLicense";
 import { CashFundModal } from "../components/auth/CashFundModal";
 import { UserManager } from "../components/admin/UserManager";
 import { AttendanceRegistry } from "../components/admin/AttendanceRegistry";
@@ -30,6 +31,7 @@ import { ScrollTopButton } from "../components/common/ScrollTopButton";
 import { ProductProvider } from "../contexts/ProductContext";
 import { SettingsProvider } from "../contexts/SettingsContext";
 import { useAndroidBackButton } from "../hooks/useAndroidBackButton";
+import { SuperAdminPortal } from "../pages/SuperAdmin/SuperAdminPortal";
 
 // Componente invisible que maneja el botón "Atrás" de Android
 const BackButtonHandler = () => {
@@ -47,6 +49,8 @@ const PrivateLayout = ({ children }) => {
     checkCashSession,
     openCashSession,
     storeName,
+    isLicenseExpired,
+    isLicenseValidating,
   } = useAuth();
 
   const location = useLocation();
@@ -102,9 +106,14 @@ const PrivateLayout = ({ children }) => {
     }
   }, [user, activeStaff, isLocked, isTerminalConfigured, isValidating]);
 
-  if (loading || isValidating)
+  if (loading || isValidating || isLicenseValidating)
     return <div className="loading-screen">Verificando configuración...</div>;
   if (!user) return <Navigate to="/login" />;
+
+  // 0. Verificación de Licencia Expirada
+  if (isLicenseExpired) {
+    return <ExpiredLicense />;
+  }
 
   // 1. Verificación de Terminal (Fundamental para operar)
   if (!isTerminalConfigured) {
@@ -157,6 +166,9 @@ export const Routing = () => {
       <Routes>
         {/* Pantalla Cliente: Independiente de AuthProvider y ProductProvider */}
         <Route path="/customer-display" element={<CustomerDisplay />} />
+
+        {/* Portal de SuperAdministrador: Totalmente Aislado */}
+        <Route path="/superadmin" element={<SuperAdminPortal />} />
 
         {/* Rutas de la Aplicación Principal */}
         <Route

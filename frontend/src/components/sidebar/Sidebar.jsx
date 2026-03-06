@@ -38,7 +38,13 @@ export const Sidebar = () => {
   return (
     <>
       {/* Mobile Header */}
-      <header className="min-[1400px]:hidden fixed top-[var(--safe-top,0px)] left-0 right-0 h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 z-[1001]">
+      <header
+        className="min-[1400px]:hidden fixed top-0 left-0 right-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 z-[1001]"
+        style={{
+          paddingTop: "var(--safe-top, 0px)",
+          height: "calc(4rem + var(--safe-top, 0px))",
+        }}
+      >
         <button className="p-2 text-slate-500" onClick={toggleSidebar}>
           <span className="material-icons-outlined text-[24px]">
             {isOpen ? "close" : "menu"}

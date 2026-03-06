@@ -13,7 +13,7 @@
   }
 
   .main-content {
-    padding-top: var(--header-height) !important;
+    padding-top: calc(4rem + var(--safe-top, 0px)) !important;
     width: 100% !important;
   }
 

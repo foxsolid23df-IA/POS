@@ -1,0 +1,458 @@
+/* SuperAdminPortal.css */
+
+:root {
+  --admin-bg-deep: #0f121a;
+  --admin-bg-panel: rgba(23, 27, 38, 0.7);
+  --admin-border-gold: rgba(244, 192, 37, 0.4);
+  --admin-text-main: #f0f2f5;
+  --admin-text-sub: #9ca3af;
+  --admin-gold: #f4c025;
+  --admin-blue: #135bec;
+  --admin-blue-glow: rgba(19, 91, 236, 0.3);
+  --admin-red: #ef4444;
+}
+
+/* Base Body Override for this view */
+.superadmin-dashboard-container,
+.superadmin-login-container {
+  min-height: 100vh;
+  background-color: var(--admin-bg-deep);
+  color: var(--admin-text-main);
+  font-family: 'Manrope', 'Inter', system-ui, sans-serif;
+  display: flex;
+}
+
+/* Glassmorphism Panel */
+.glass-panel {
+  background: var(--admin-bg-panel);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* ========================================= */
+/* LOGIN SCREEN                              */
+/* ========================================= */
+.superadmin-login-container {
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.superadmin-bg-elements {
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  background: 
+    radial-gradient(circle at top right, var(--admin-blue-glow), transparent 40%),
+    radial-gradient(circle at bottom left, rgba(244, 192, 37, 0.1), transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.superadmin-login-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 440px;
+  padding: 40px;
+  text-align: center;
+  border: 1px solid var(--admin-border-gold);
+}
+
+.superadmin-logo-wrapper {
+  margin-bottom: 24px;
+}
+
+.superadmin-logo {
+  height: 70px;
+  object-fit: contain;
+}
+
+.superadmin-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.5px;
+}
+
+.superadmin-subtitle {
+  color: var(--admin-text-sub);
+  font-size: 0.95rem;
+  margin-bottom: 32px;
+}
+
+/* Forms */
+.superadmin-form {
+  text-align: left;
+}
+
+.input-group {
+  margin-bottom: 20px;
+}
+
+.input-group label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--admin-text-sub);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.input-group input,
+.input-group select {
+  width: 100%;
+  padding: 14px 16px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--admin-text-main);
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.input-group input:focus,
+.input-group select:focus {
+  border-color: var(--admin-blue);
+  box-shadow: 0 0 0 3px var(--admin-blue-glow);
+}
+
+.superadmin-error {
+  color: var(--admin-red);
+  font-size: 0.9rem;
+  margin: 10px 0;
+  text-align: center;
+  background: rgba(239, 68, 68, 0.1);
+  padding: 8px;
+  border-radius: 6px;
+}
+
+/* Buttons */
+.superadmin-btn {
+  width: 100%;
+  padding: 14px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.superadmin-btn.primary-gold {
+  background: linear-gradient(135deg, var(--admin-gold), #cd9a13);
+  color: #000;
+  box-shadow: 0 4px 15px rgba(244, 192, 37, 0.3);
+}
+
+.superadmin-btn.primary-gold:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+}
+
+.superadmin-btn.default-blue {
+  background: var(--admin-blue);
+  color: white;
+  width: auto;
+}
+
+.superadmin-btn.outline {
+  background: transparent;
+  color: var(--admin-text-main);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  width: auto;
+}
+
+/* ========================================= */
+/* DASHBOARD SCREEN                          */
+/* ========================================= */
+.superadmin-sidebar {
+  width: 280px;
+  background: #0b0d12;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 24px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-logo {
+  padding: 0 24px 32px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sidebar-logo img {
+  height: 40px;
+}
+
+.sidebar-logo span {
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 12px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 20px;
+  background: transparent;
+  border: none;
+  color: var(--admin-text-sub);
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: white;
+}
+
+.nav-item.active {
+  background: rgba(244, 192, 37, 0.1);
+  color: var(--admin-gold);
+  border-left: 3px solid var(--admin-gold);
+}
+
+.superadmin-main {
+  flex: 1;
+  padding: 40px;
+  overflow-y: auto;
+}
+
+.superadmin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.superadmin-header h2 {
+  font-size: 2rem;
+  margin: 0;
+}
+
+.superadmin-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.metric-card {
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.metric-card.error {
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.metric-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 28px;
+}
+
+.metric-icon.gold {
+  background: rgba(244, 192, 37, 0.1);
+  color: var(--admin-gold);
+}
+
+.metric-icon.blue {
+  background: var(--admin-blue-glow);
+  color: #60a5fa;
+}
+
+.metric-icon.red {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--admin-red);
+}
+
+.metric-data h3 {
+  font-size: 2rem;
+  margin: 0 0 4px 0;
+}
+
+.metric-data span {
+  color: var(--admin-text-sub);
+  font-weight: 500;
+}
+
+.text-red {
+  color: var(--admin-red);
+}
+
+.superadmin-table-container {
+  padding: 24px;
+}
+
+.table-header h3 {
+  margin: 0 0 20px 0;
+  font-size: 1.25rem;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.super-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.super-table th {
+  text-align: left;
+  padding: 16px;
+  color: var(--admin-text-sub);
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.super-table td {
+  padding: 16px;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.super-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.code-cell {
+  font-family: monospace;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px 8px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+.sub-text {
+  color: var(--admin-text-sub);
+}
+
+.italic {
+  font-style: italic;
+}
+
+.expired-badge {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+.status-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.status-indicator.active {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.status-indicator.inactive {
+  background: var(--admin-red);
+  box-shadow: 0 0 8px var(--admin-red);
+}
+
+.reactivate-btn {
+  background: transparent;
+  border: 1px solid var(--admin-blue);
+  color: #60a5fa;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.reactivate-btn.gold-pulse {
+  border-color: var(--admin-gold);
+  color: var(--admin-gold);
+  animation: pulse-gold 2s infinite;
+}
+
+@keyframes pulse-gold {
+  0% { box-shadow: 0 0 0 0 rgba(244, 192, 37, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(244, 192, 37, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(244, 192, 37, 0); }
+}
+
+.reactivate-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Modals */
+.superadmin-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.superadmin-modal {
+  width: 100%;
+  max-width: 500px;
+  padding: 32px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+@media (max-width: 768px) {
+  .superadmin-dashboard-container {
+    flex-direction: column;
+  }
+  .superadmin-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+}

@@ -14,6 +14,8 @@ export const AuthProvider = ({ children }) => {
   // Empleado activo (quien está usando la caja)
   const [activeStaff, setActiveStaff] = useState(null);
   const [isVerifyingAttendance, setIsVerifyingAttendance] = useState(false);
+  const [isLicenseExpired, setIsLicenseExpired] = useState(false);
+  const [isLicenseValidating, setIsLicenseValidating] = useState(true);
 
   // Sistema de sesión de caja (fondo de caja)
   const [cashSession, setCashSession] = useState(null);
@@ -57,6 +59,7 @@ export const AuthProvider = ({ children }) => {
         }
       } else {
         setLoading(false);
+        setIsLicenseValidating(false);
       }
     });
 
@@ -73,6 +76,7 @@ export const AuthProvider = ({ children }) => {
         setActiveStaff(null);
         localStorage.removeItem("activeStaff"); // Limpiar si se cierra sesión de supabase
         setLoading(false);
+        setIsLicenseValidating(false);
       }
     });
 
@@ -92,12 +96,50 @@ export const AuthProvider = ({ children }) => {
       }
       setProfile(data);
 
+      // Check license status before assuming the app is ready
+      await checkLicenseStatus(userId);
+
       // Verificar sesión de caja inmediatamente después de obtener el perfil
       await checkCashSession();
     } catch (error) {
       console.error("Error in fetchProfile:", error);
+      setIsLicenseValidating(false);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkLicenseStatus = async (userId) => {
+    try {
+      setIsLicenseValidating(true);
+      const { data, error } = await supabase
+        .from("invitation_codes")
+        .select("expires_at")
+        .eq("used_by", userId)
+        .maybeSingle();
+
+      if (error) {
+        console.warn("Error fetching license status:", error);
+        setIsLicenseExpired(false); // Fail open if error
+        return;
+      }
+
+      if (data?.expires_at) {
+        const expiresAt = new Date(data.expires_at);
+        const now = new Date();
+        if (now > expiresAt) {
+          setIsLicenseExpired(true);
+        } else {
+          setIsLicenseExpired(false);
+        }
+      } else {
+        // Obsolete or old users without expiration
+        setIsLicenseExpired(false);
+      }
+    } catch (error) {
+      console.error("Error verifying license:", error);
+    } finally {
+      setIsLicenseValidating(false);
     }
   };
 
@@ -184,6 +226,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("activeStaff");
     setCashSession(null);
     setNeedsCashFund(false);
+    setIsLicenseExpired(false);
   };
 
   // Validar PIN de empleado SIN iniciar sesión (para auditoria o checks previos)
@@ -306,6 +349,10 @@ export const AuthProvider = ({ children }) => {
     checkCashSession, // Verificar si hay sesión activa
     openCashSession, // Abrir sesión con fondo inicial
     closeCashSession, // Cerrar sesión de caja
+
+    // Info de la licencia
+    isLicenseExpired,
+    isLicenseValidating,
 
     // Info de la tienda
     storeName: profile?.store_name,

@@ -2,20 +2,19 @@
 /* Diseño minimalista inspirado en Tailwind CSS */
 
 .sales-view {
-  min-height: 100vh;
+  flex: 1;
   width: 100%;
   display: flex;
   flex-direction: column;
   background-color: #ffffff;
   font-family: "Inter", sans-serif;
+  height: 100%;
 }
 
 .sales-content-wrapper {
   flex: 1;
   display: flex;
   flex-direction: row;
-  height: calc(100vh - 64px);
-  height: calc(100dvh - 64px);
   overflow: hidden;
 }
 
@@ -2329,21 +2328,41 @@
 
 /* ===== RESPONSIVE - NUEVO DISEÑO MINIMALISTA ===== */
 
-/* Tablets y pantallas medianas (hasta 1024px) */
-@media (max-width: 1399px) {
+/* Tablet Horizontal / Pantallas medianas anchas (Landscape) */
+@media (max-width: 1024px) and (orientation: landscape) {
+  .cart-sidebar {
+    width: 300px; /* Adelgazamos el panel de cobro para la Lenovo y tablets parecidas */
+  }
+}
+
+/* Pantallas súper horizontales (Móviles acostados o tablets ultra saturadas) */
+@media (max-width: 768px) and (orientation: landscape) {
+  .cart-sidebar {
+    width: 280px;
+  }
+}
+
+/* Tablets en modo vertical (Portrait) y teléfonos en su orientación normal vertical */
+@media (max-width: 1024px) and (orientation: portrait) {
   .sales-content-wrapper {
     flex-direction: column;
+    /* Ajuste de altura dinámico para móviles con safe-area */
+    height: auto;
+    flex: 1;
+    overflow: visible;
   }
 
   .sales-main-area {
-    padding: 1.5rem 2rem;
-    max-height: 50vh;
+    padding: 1.5rem 1rem;
+    max-height: none;
+    flex: 1;
   }
 
   .cart-sidebar {
     width: 100%;
     border-left: none;
     border-top: 1px solid #e5e7eb;
+    height: 50vh; /* Se divide a la mitad de la pantalla cuando esta parado */
     max-height: 50vh;
   }
 }
@@ -2352,7 +2371,6 @@
 @media (max-width: 768px) {
   .sales-main-area {
     padding: 1rem 1.5rem;
-    max-height: 60vh;
   }
 
   .sales-title {

@@ -18,8 +18,9 @@
   --min-touch-target: 48px;
 
   /* Safe Area env variables para Notches e iOS/Android status bars */
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  /* Fallback a 32px para tablets Android que reportan safe-area como 0 pero sí muestran la status bar gruesa */
+  --safe-top: max(env(safe-area-inset-top, 0px), 32px);
+  --safe-bottom: max(env(safe-area-inset-bottom, 0px), 24px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
 }
@@ -28,15 +29,13 @@
 body.is-android {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  padding-top: var(--safe-top);
-  padding-bottom: var(--safe-bottom);
-  padding-left: var(--safe-left);
-  padding-right: var(--safe-right);
   background-color: var(--bg-primary, #ffffff);
   /* Prevenir selección de texto accidental al tocar la pantalla */
   -webkit-user-select: none;
   user-select: none;
   font-size: var(--fs-base);
+  margin: 0;
+  overflow: hidden; /* Evita que el contenedor de ventana principal haga scroll */
 }
 
 /* Permitir selección de texto en inputs (Crítico) */
