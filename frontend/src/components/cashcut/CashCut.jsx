@@ -109,9 +109,7 @@ export const CashCut = ({ onClose }) => {
       setSalesDetails(sales);
 
       // Initialize inputs
-      // We don't autofill actual cash to prevent assumption, or we can defaulting to 0 or expected?
-      // Previous code initialized to salesTotal, which was wrong. Let's start empty or 0.
-      // setActualCash(data.salesTotal.toFixed(2)); // Removing this autocalc to force counting
+      // We don't autofill actual cash to prevent assumption
     } catch (error) {
       console.error("Error cargando resumen:", error);
       Swal.fire(
