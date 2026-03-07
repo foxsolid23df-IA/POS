@@ -3,6 +3,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { cashCutService } from "../../services/cashCutService";
 import { salesService } from "../../services/salesService";
 import { terminalService } from "../../services/terminalService";
+import { CashMovementModal } from "../sales/CashMovementModal";
 import Swal from "sweetalert2";
 import "./CashCut.css";
 
@@ -25,6 +26,7 @@ export const CashCut = ({ onClose }) => {
   const [submitting, setSubmitting] = useState(false);
   const [showTicket, setShowTicket] = useState(false);
   const [cutResult, setCutResult] = useState(null);
+  const [mostrarModalMovimiento, setMostrarModalMovimiento] = useState(false);
 
   const ticketRef = useRef(null);
 
@@ -733,6 +735,22 @@ export const CashCut = ({ onClose }) => {
                 Inicio: {formatTime(summary?.startTime)}
               </span>
             </div>
+
+            <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-950/20 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+              <div className="flex-1">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 ml-1">
+                  ¿Olvidaste registrar un gasto o ingreso?
+                </p>
+                <button
+                  onClick={() => setMostrarModalMovimiento(true)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 rounded-xl text-sm font-black hover:scale-[1.02] transition-all border-2 border-emerald-100 dark:border-emerald-900/30 shadow-sm"
+                >
+                  <span className="material-symbols-rounded">payments</span>
+                  REGISTRAR RETIRO / DEPÓSITO
+                </button>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700">
                 <div className="text-2xl font-black text-slate-900 dark:text-white mb-1 leading-none">
@@ -810,6 +828,41 @@ export const CashCut = ({ onClose }) => {
                 </div>
               )}
 
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border-2 border-emerald-100 dark:border-emerald-900/30 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-emerald-100 dark:bg-emerald-900/30 p-2 rounded-xl">
+                    <span className="material-symbols-rounded text-emerald-600 dark:text-emerald-400 text-lg">
+                      add_circle
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-[9px] uppercase font-bold text-slate-400 tracking-widest">
+                      Entradas Extra
+                    </p>
+                    <p className="text-lg font-black text-slate-900 dark:text-white leading-tight">
+                      +{formatMoney(summary?.entradasTotal || 0)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border-2 border-rose-100 dark:border-rose-900/30 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-rose-100 dark:bg-rose-900/30 p-2 rounded-xl">
+                    <span className="material-symbols-rounded text-rose-600 dark:text-rose-400 text-lg">
+                      remove_circle
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-[9px] uppercase font-bold text-slate-400 tracking-widest">
+                      Salidas (Gastos)
+                    </p>
+                    <p className="text-lg font-black text-rose-600 dark:text-rose-400 leading-tight">
+                      -{formatMoney(summary?.salidasTotal || 0)}
+                    </p>
+                  </div>
+                </div>
+              </div>
               {summary?.totalUSD > 0 && (
                 <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border-2 border-emerald-100 dark:border-emerald-900/30 flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -1051,6 +1104,16 @@ export const CashCut = ({ onClose }) => {
           </div>
         </div>
       </div>
+
+      {mostrarModalMovimiento && (
+        <CashMovementModal
+          onClose={() => setMostrarModalMovimiento(false)}
+          onSuccess={() => {
+            loadSummary();
+            setMostrarModalMovimiento(false);
+          }}
+        />
+      )}
     </div>
   );
 };
