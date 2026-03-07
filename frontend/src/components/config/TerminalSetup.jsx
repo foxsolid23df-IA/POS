@@ -137,25 +137,44 @@ export const TerminalSetup = ({ onTerminalConfigured }) => {
           <div
             className="setup-info"
             style={{
-              backgroundColor: "#fef2f2",
-              color: "#b91c1c",
-              borderLeftColor: "#ef4444",
+              backgroundColor: "#fffbeb",
+              color: "#92400e",
+              border: "1px solid #fde68a",
+              borderLeft: "4px solid #f59e0b",
               textAlign: "left",
               marginBottom: "24px",
+              padding: "16px",
+              borderRadius: "8px",
+              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)",
             }}
           >
             <span
               className="material-symbols-outlined info-icon"
-              style={{ color: "#ef4444" }}
+              style={{ color: "#f59e0b", fontSize: "24px" }}
             >
-              error
+              warning
             </span>
             <div className="setup-info-content">
-              <h4>Atención</h4>
-              <p>
-                Para expandir tu negocio y agregar más cajas, comunícate con el
-                administrador del sistema para actualizar a una licencia
-                Multicajas.
+              <h4
+                style={{
+                  color: "#78350f",
+                  fontWeight: "700",
+                  marginBottom: "4px",
+                }}
+              >
+                Atención Comercial
+              </h4>
+              <p
+                style={{
+                  margin: 0,
+                  color: "#92400e",
+                  fontSize: "14px",
+                  lineHeight: "1.4",
+                }}
+              >
+                Para expandir tu negocio y activar más cajas registradoras, por
+                favor comunícate con soporte para subir de nivel a una licencia{" "}
+                <strong>Multicajas</strong>.
               </p>
             </div>
           </div>

@@ -842,27 +842,30 @@ export const SuperAdminPortal = () => {
               <div
                 className="setup-info"
                 style={{
-                  backgroundColor: "rgba(59, 130, 246, 0.1)",
+                  backgroundColor: "#ebf5ff",
                   color: "#1e40af",
-                  padding: "12px",
-                  borderRadius: "8px",
+                  border: "1px solid #bfdbfe",
+                  padding: "16px",
+                  borderRadius: "10px",
                   marginTop: "16px",
-                  fontSize: "12px",
+                  fontSize: "13px",
                   display: "flex",
-                  gap: "8px",
+                  gap: "10px",
                   alignItems: "flex-start",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
                 }}
               >
                 <span
                   className="material-symbols-outlined"
-                  style={{ fontSize: "16px" }}
+                  style={{ fontSize: "20px", color: "#3b82f6" }}
                 >
                   info
                 </span>
-                <p style={{ margin: 0, lineHeight: 1.4 }}>
-                  Este cambio aplicará inmediatamente y actualizará la cuenta
-                  del cliente permitiéndole o restringiéndole el registro de
-                  múltiples cajas temporales.
+                <p style={{ margin: 0, lineHeight: 1.5 }}>
+                  Este cambio es <strong>inmediato</strong>. Al guardar, se
+                  actualizarán los límites de cajas para el comercio,
+                  permitiéndoles o restringiéndoles nuevas terminales sin cerrar
+                  sesión.
                 </p>
               </div>
 
