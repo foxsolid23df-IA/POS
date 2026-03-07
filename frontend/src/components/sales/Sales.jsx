@@ -22,7 +22,7 @@ import "./Sales.css";
 
 export const Sales = () => {
   // HOOKS PERSONALIZADOS
-  const { user, cashSession } = useAuth();
+  const { user, cashSession, isSupervising, needsCashFund } = useAuth();
   const { ticketSettings } = useSettings();
   const { cargando, ejecutarPeticion } = useApi();
   const { isMobile, isTouchDevice } = useIsMobile();
@@ -437,6 +437,15 @@ export const Sales = () => {
       return;
     }
 
+    if (isSupervising) {
+      mostrarModalPersonalizado(
+        "Modo Supervisión",
+        "No se pueden escanear productos mientras la caja esté cerrada.",
+        "warning",
+      );
+      return;
+    }
+
     // Buscar en productos locales primero
     const productoLocal = productos.find((p) => p.barcode === codigo);
     if (productoLocal) {
@@ -516,6 +525,14 @@ export const Sales = () => {
 
   // FUNCIONES PARA MODAL DE PAGO
   const abrirModalPago = () => {
+    if (isSupervising) {
+      mostrarModalPersonalizado(
+        "Modo Supervisión",
+        "Esta función está deshabilitada. Por favor abre caja con un perfil de ventas para cobrar.",
+        "warning",
+      );
+      return;
+    }
     if (carrito.length === 0) {
       mostrarModalPersonalizado(
         "Carrito vacío",
@@ -1281,11 +1298,31 @@ export const Sales = () => {
             </div>
           </div>
 
+          {isSupervising && (
+            <div className="bg-amber-100 border-l-4 border-amber-500 text-amber-800 p-4 mb-4 rounded-r-xl shadow-sm flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-amber-600">
+                  admin_panel_settings
+                </span>
+                <div>
+                  <h3 className="font-bold">Modo Supervisión Activo</h3>
+                  <p className="text-sm">
+                    La caja está cerrada. Las funciones de venta, cobro y
+                    movimientos están deshabilitadas.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* BOTONES EXTRA (PRODUCTO COMÚN, ENTRADA, SALIDA) */}
           <div className="flex gap-3 mb-4 flex-wrap">
             <button
-              onClick={() => setMostrarModalComun(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl transition-colors font-medium text-sm flex-1 md:flex-none justify-center border border-slate-200 dark:border-slate-700 shadow-sm"
+              onClick={() => !isSupervising && setMostrarModalComun(true)}
+              disabled={isSupervising}
+              className={`flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl transition-colors font-medium text-sm flex-1 md:flex-none justify-center border border-slate-200 dark:border-slate-700 shadow-sm ${
+                isSupervising ? "opacity-50 cursor-not-allowed" : ""
+              }`}
               title="Agregar un producto sin registro"
             >
               <span className="material-symbols-outlined text-[18px]">
@@ -1294,8 +1331,11 @@ export const Sales = () => {
               <span>Producto común</span>
             </button>
             <button
-              onClick={() => setMostrarModalSalida(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-900/20 dark:hover:bg-rose-900/40 text-rose-600 dark:text-rose-400 rounded-xl transition-colors font-medium text-sm flex-1 md:flex-none justify-center border border-rose-200 dark:border-rose-800 shadow-sm"
+              onClick={() => !isSupervising && setMostrarModalSalida(true)}
+              disabled={isSupervising}
+              className={`flex items-center gap-2 px-4 py-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-900/20 dark:hover:bg-rose-900/40 text-rose-600 dark:text-rose-400 rounded-xl transition-colors font-medium text-sm flex-1 md:flex-none justify-center border border-rose-200 dark:border-rose-800 shadow-sm ${
+                isSupervising ? "opacity-50 cursor-not-allowed" : ""
+              }`}
               title="Registrar salida de dinero (Gasto)"
             >
               <span className="material-symbols-outlined text-[18px]">
@@ -1304,8 +1344,11 @@ export const Sales = () => {
               <span>Salida</span>
             </button>
             <button
-              onClick={() => setMostrarModalEntrada(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 rounded-xl transition-colors font-medium text-sm flex-1 md:flex-none justify-center border border-emerald-200 dark:border-emerald-800 shadow-sm"
+              onClick={() => !isSupervising && setMostrarModalEntrada(true)}
+              disabled={isSupervising}
+              className={`flex items-center gap-2 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 rounded-xl transition-colors font-medium text-sm flex-1 md:flex-none justify-center border border-emerald-200 dark:border-emerald-800 shadow-sm ${
+                isSupervising ? "opacity-50 cursor-not-allowed" : ""
+              }`}
               title="Registrar entrada de dinero manual"
             >
               <span className="material-symbols-outlined text-[18px]">
@@ -1339,14 +1382,16 @@ export const Sales = () => {
                   value={codigoEscaneado}
                   onChange={manejarCambioCodigo}
                   onKeyDown={manejarEnter}
+                  disabled={isSupervising}
                   className={`barcode-input-modern ${
                     scannerMode ? "scanner-mode-active" : ""
-                  }`}
+                  } ${isSupervising ? "opacity-50 cursor-not-allowed" : ""}`}
                 />
               </div>
               <button
                 onClick={() => setMostrarCameraScanner(true)}
                 className="btn-camera-modern"
+                disabled={isSupervising}
                 type="button"
                 title="Escanear código con cámara"
               >
@@ -1601,8 +1646,10 @@ export const Sales = () => {
             </div>
             <button
               onClick={abrirModalPago}
-              disabled={vendiendo || carrito.length === 0}
-              className="btn-process-payment"
+              disabled={vendiendo || carrito.length === 0 || isSupervising}
+              className={`btn-process-payment ${
+                isSupervising ? "opacity-50 cursor-not-allowed" : ""
+              }`}
             >
               Procesar Pago
             </button>

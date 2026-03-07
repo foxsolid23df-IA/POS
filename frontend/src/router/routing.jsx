@@ -51,6 +51,7 @@ const PrivateLayout = ({ children }) => {
     storeName,
     isLicenseExpired,
     isLicenseValidating,
+    isSupervising,
   } = useAuth();
 
   const location = useLocation();
@@ -127,8 +128,8 @@ const PrivateLayout = ({ children }) => {
   // 2. Si la pantalla está bloqueada, mostrar pantalla de PIN
   if (isLocked) return <LockScreen />;
 
-  // 3. Si necesita ingresar fondo de caja y está en Ventas, mostrar modal
-  if (needsCashFund && isPOSRoute) {
+  // 3. Si necesita ingresar fondo de caja y está en Ventas, mostrar modal (excepto en supervisión)
+  if (needsCashFund && isPOSRoute && !isSupervising) {
     return (
       <CashFundModal
         staffName={activeStaff?.name || storeName || "Operador"}
@@ -277,7 +278,7 @@ export const Routing = () => {
                     />
 
                     <Route
-                      path="/soporte-tecnico-especializado-foxsolid"
+                      path="/mantenimiento"
                       element={
                         <PrivateLayout>
                           <AdminRoute>

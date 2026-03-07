@@ -232,7 +232,55 @@
     font-size: 0.8rem;
 }
 
-/* RESPONSIVE */
+/* SWAL CUSTOM BUTTONS */
+.swal-confirm-btn-modern {
+    background-color: #3b82f6 !important;
+    color: white !important;
+    font-weight: 700 !important;
+    padding: 12px 24px !important;
+    border-radius: 12px !important;
+    border: none !important;
+}
+
+.swal-cancel-btn-modern {
+    background-color: #64748b !important;
+    color: white !important;
+    font-weight: 700 !important;
+    padding: 12px 24px !important;
+    border-radius: 12px !important;
+    border: none !important;
+}
+
+/* Ensure Swal inputs and text are visible */
+.swal2-popup {
+    border-radius: 20px !important;
+    font-family: inherit !important;
+}
+
+.swal2-title {
+    color: #1e293b !important;
+}
+
+.swal2-html-container {
+    color: #64748b !important;
+}
+
+.swal2-input {
+    color: #1e293b !important;
+    background-color: white !important;
+}
+
+.swal-input-modern {
+    color: #1e293b !important;
+    background-color: #f8fafc !important;
+    border: 2px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+    letter-spacing: 5px !important;
+    font-size: 1.5rem !important;
+}
+
 @media (max-width: 480px) {
     .lock-container {
         padding: 2.5rem 1.5rem;

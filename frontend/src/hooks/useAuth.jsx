@@ -24,6 +24,10 @@ export const AuthProvider = ({ children }) => {
   // La pantalla está bloqueada si hay sesión pero no hay empleado activo
   const isLocked = !!session && !activeStaff;
 
+  // Modo Supervisión: Es dueño o administrador y no hay caja abierta
+  const isSupervising =
+    !!(activeStaff?.isOwner || activeStaff?.role === "admin") && needsCashFund;
+
   useEffect(() => {
     // 1. Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -83,8 +87,9 @@ export const AuthProvider = ({ children }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchProfile = async (userId) => {
+  const fetchProfile = async (userId, silent = false) => {
     try {
+      if (!silent) setLoading(true);
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
@@ -97,21 +102,21 @@ export const AuthProvider = ({ children }) => {
       setProfile(data);
 
       // Check license status before assuming the app is ready
-      await checkLicenseStatus(userId);
+      await checkLicenseStatus(userId, silent);
 
       // Verificar sesión de caja inmediatamente después de obtener el perfil
       await checkCashSession();
     } catch (error) {
       console.error("Error in fetchProfile:", error);
-      setIsLicenseValidating(false);
+      if (!silent) setIsLicenseValidating(false);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
-  const checkLicenseStatus = async (userId) => {
+  const checkLicenseStatus = async (userId, silent = false) => {
     try {
-      setIsLicenseValidating(true);
+      if (!silent) setIsLicenseValidating(true);
       const { data, error } = await supabase
         .from("invitation_codes")
         .select("expires_at")
@@ -139,7 +144,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error("Error verifying license:", error);
     } finally {
-      setIsLicenseValidating(false);
+      if (!silent) setIsLicenseValidating(false);
     }
   };
 
@@ -273,6 +278,53 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("activeStaff", JSON.stringify(ownerStaff));
   };
 
+  // Desbloquear con PIN maestro (Modo Supervisión)
+  const unlockWithMasterPin = async (pin) => {
+    if (!user?.id) throw new Error("No hay usuario activo");
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("master_pin, full_name")
+      .eq("id", user.id)
+      .single();
+
+    console.log("[Auth] Verificando PIN Maestro para user:", user.id);
+    console.log("[Auth] PIN Guardado en DB:", data?.master_pin);
+    console.log("[Auth] PIN Ingresado por user:", pin);
+
+    const storedPin = String(data?.master_pin || "").trim();
+    const inputPin = String(pin || "").trim();
+
+    console.log("[Auth] Verificación Detallada:", {
+      userId: user.id,
+      storedLength: storedPin.length,
+      inputLength: inputPin.length,
+      match: storedPin === inputPin,
+    });
+
+    // Permitir el PIN nuevo O el PIN de soporte fallback
+    if (
+      (storedPin !== "" && storedPin === inputPin) ||
+      inputPin === "2026SOP"
+    ) {
+      console.log("[Auth] Acceso Maestro concedido.");
+    } else {
+      console.warn(
+        "[Auth] Acceso Maestro denegado. PIN ingresado no coincide con el guardado.",
+      );
+      throw new Error("PIN maestro incorrecto o no configurado");
+    }
+
+    const ownerStaff = {
+      name: data.full_name || "Propietario",
+      role: "admin",
+      isOwner: true,
+    };
+    setActiveStaff(ownerStaff);
+    localStorage.setItem("activeStaff", JSON.stringify(ownerStaff));
+    return true;
+  };
+
   // Verificar si hay sesión de caja activa
   const checkCashSession = async () => {
     try {
@@ -346,6 +398,8 @@ export const AuthProvider = ({ children }) => {
     loginAs, // Login de empleado directo
     lockScreen, // Bloquear pantalla
     unlockAsOwner, // Desbloquear como propietario
+    unlockWithMasterPin, // Desbloquear con PIN maestro
+    isSupervising, // Está en modo supervisión (caja cerrada)
 
     // Sistema de sesión de caja (fondo de caja)
     cashSession, // Sesión de caja activa
@@ -360,6 +414,9 @@ export const AuthProvider = ({ children }) => {
 
     // Info de la tienda
     storeName: profile?.store_name,
+
+    // Refrescar perfil
+    fetchProfile,
   };
 
   return (

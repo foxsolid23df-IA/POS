@@ -17,6 +17,7 @@ export const LockScreen = () => {
     validateStaffPin,
     loginAs,
     unlockAsOwner,
+    unlockWithMasterPin,
     storeName,
     logout,
     user,
@@ -227,13 +228,76 @@ export const LockScreen = () => {
   };
 
   const handleOwnerAccess = async () => {
+    // Pedir PIN Maestro para verificar identidad
+    const result = await Swal.fire({
+      title: "👑 Acceso de Propietario",
+      html: `
+        <p style="margin-bottom: 15px; color: #666;">
+            Ingresa tu PIN Maestro de 6 dígitos.
+        </p>
+      `,
+      input: "password",
+      inputAttributes: {
+        inputMode: "numeric",
+        pattern: "[0-9]*",
+        maxLength: "6",
+      },
+      inputPlaceholder: "PIN de 6 dígitos",
+      showCancelButton: true,
+      confirmButtonText: "Ingresar",
+      cancelButtonText: "Usar Contraseña",
+      confirmButtonColor: "#3b82f6",
+      cancelButtonColor: "#64748b",
+      customClass: {
+        confirmButton: "swal-confirm-btn-modern",
+        cancelButton: "swal-cancel-btn-modern",
+        input: "swal-input-modern",
+      },
+      inputValidator: (value) => {
+        if (!value || value.length < 4) {
+          return "Ingresa un PIN válido";
+        }
+      },
+    });
+
+    if (result.isConfirmed && result.value) {
+      // Mostrar loading
+      Swal.fire({
+        title: "Verificando...",
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+      });
+
+      try {
+        await unlockWithMasterPin(result.value);
+        Swal.fire({
+          title: "¡Modo Supervisión Activado!",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+        }).then(() => {
+          window.location.hash = "#/estadisticas";
+        });
+      } catch (error) {
+        Swal.fire(
+          "PIN Incorrecto",
+          error.message || "No se pudo verificar el PIN",
+          "error",
+        );
+      }
+    } else if (result.dismiss === Swal.DismissReason.cancel) {
+      handleOwnerPasswordAccess();
+    }
+  };
+
+  const handleOwnerPasswordAccess = async () => {
     // Pedir contraseña para verificar identidad
     const { value: password } = await Swal.fire({
-      title: "🔐 Acceso de Propietario",
+      title: "🔐 Acceso con Contraseña",
       html: `
-                <p style="margin-bottom: 15px; color: #666;">
-                    Por seguridad, ingresa tu contraseña de cuenta
-                </p>
+        <p style="margin-bottom: 15px; color: #666;">
+            Por seguridad, ingresa tu contraseña de cuenta
+        </p>
                 <p style="font-size: 12px; color: #999;">
                     Email: ${user?.email || "usuario@email.com"}
                 </p>
