@@ -166,8 +166,9 @@ export const CashCut = ({ onClose }) => {
             )
             .join("");
 
-          if (isAdmin) {
-            const adminResult = await Swal.fire({
+          if (true) {
+            // Permitir a todos (incluyendo cajeros) forzar el cierre para fluidez
+            const forceResult = await Swal.fire({
               title: "Cajas pendientes",
               html: `
                               <p>Las siguientes cajas aún no han cerrado su turno:</p>
@@ -181,7 +182,7 @@ export const CashCut = ({ onClose }) => {
               confirmButtonColor: "#d32f2f",
             });
 
-            if (adminResult.isConfirmed) {
+            if (forceResult.isConfirmed) {
               setSubmitting(true);
               try {
                 // Cerrar forzosamente cada sesión bloqueante
@@ -203,17 +204,6 @@ export const CashCut = ({ onClose }) => {
             } else {
               return; // Canceló
             }
-          } else {
-            Swal.fire({
-              title: "No se puede cerrar el día",
-              html: `
-                              <p>Hay cajas con turno abierto. Deben realizar su corte primero:</p>
-                              <ul style="text-align: left; margin-top: 10px;">${sessionList}</ul>
-                              <p style="margin-top: 10px; font-size: 0.9em; font-weight: bold; color: #555;">Pide a un Administrador que realice el Cierre de Día para forzar el cierre de las demás cajas.</p>
-                          `,
-              icon: "error",
-            });
-            return;
           }
         }
       }

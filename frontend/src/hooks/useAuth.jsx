@@ -24,9 +24,9 @@ export const AuthProvider = ({ children }) => {
   // La pantalla está bloqueada si hay sesión pero no hay empleado activo
   const isLocked = !!session && !activeStaff;
 
-  // Modo Supervisión: Es dueño o administrador y no hay caja abierta
-  const isSupervising =
-    !!(activeStaff?.isOwner || activeStaff?.role === "admin") && needsCashFund;
+  // Modo Supervisión: No hay caja abierta para el empleado actual
+  // Esto permite entrar al sistema para ver inventario o cerrar el día sin forzar fondo inicial
+  const isSupervising = !!activeStaff && needsCashFund;
 
   useEffect(() => {
     // 1. Get initial session

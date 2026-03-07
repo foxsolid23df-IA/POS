@@ -16,6 +16,7 @@ import { useScannerMode } from "../../hooks/useScannerMode";
 import { exchangeRateService } from "../../services/exchangeRateService";
 import { cashMovementService } from "../../services/cashMovementService";
 import { CashMovementModal } from "./CashMovementModal";
+import { CashFundModal } from "../auth/CashFundModal";
 import { supabase } from "../../supabase";
 import { useProducts } from "../../contexts/ProductContext";
 import { useSettings } from "../../contexts/SettingsContext";
@@ -23,7 +24,15 @@ import "./Sales.css";
 
 export const Sales = () => {
   // HOOKS PERSONALIZADOS
-  const { user, cashSession, isSupervising, needsCashFund } = useAuth();
+  const {
+    user,
+    cashSession,
+    isSupervising,
+    needsCashFund,
+    checkCashSession,
+    storeName,
+  } = useAuth();
+  const [mostrarModalFondo, setMostrarModalFondo] = useState(false);
   const { ticketSettings } = useSettings();
   const { cargando, ejecutarPeticion } = useApi();
   const { isMobile, isTouchDevice } = useIsMobile();
@@ -1645,18 +1654,40 @@ export const Sales = () => {
                 <span className="summary-value">{formatearDinero(total)}</span>
               </div>
             </div>
-            <button
-              onClick={abrirModalPago}
-              disabled={vendiendo || carrito.length === 0 || isSupervising}
-              className={`btn-process-payment ${
-                isSupervising ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-            >
-              Procesar Pago
-            </button>
+            {isSupervising ? (
+              <button
+                onClick={() => setMostrarModalFondo(true)}
+                className="btn-process-payment bg-amber-500 hover:bg-amber-600 border-none shadow-amber-200"
+              >
+                <span className="material-symbols-outlined">key</span>
+                Abrir Caja para Vender
+              </button>
+            ) : (
+              <button
+                onClick={abrirModalPago}
+                disabled={vendiendo || carrito.length === 0}
+                className={`btn-process-payment ${
+                  carrito.length === 0 ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+              >
+                Procesar Pago
+              </button>
+            )}
           </div>
         </div>
       </div>
+
+      {/* MODAL FONDO INICIAL */}
+      {mostrarModalFondo && (
+        <CashFundModal
+          staffName={user?.full_name || "Operador"}
+          staffId={user?.id}
+          onSessionCreated={() => {
+            setMostrarModalFondo(false);
+            checkCashSession();
+          }}
+        />
+      )}
 
       {/* MODAL DE PAGO */}
       {mostrarModalPago && (
