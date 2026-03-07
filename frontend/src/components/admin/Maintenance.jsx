@@ -31,10 +31,6 @@ const Maintenance = () => {
     status: "checking",
     database: "checking",
   });
-  const [cloudHealth, setCloudHealth] = useState({
-    status: "checking",
-    database: "checking",
-  });
   const [auditLogs, setAuditLogs] = useState([]);
 
   const fetchTerminals = async () => {
@@ -46,18 +42,16 @@ const Maintenance = () => {
     }
   };
 
-  const fetchHealth = async (pin) => {
-    // Mostrar estado de carga visualmente
+  const fetchHealth = async () => {
     setSystemHealth({ status: "checking", database: "checking" });
-    setCloudHealth({ status: "checking", database: "checking" });
-
-    // Verificar API Local
-    const local = await maintenanceService.getSystemHealth(pin);
-    setSystemHealth(local);
-
-    // Verificar API Global (Supabase)
-    const cloud = await maintenanceService.getGlobalHealth(pin);
-    setCloudHealth(cloud);
+    try {
+      // Simular verificación de conectividad básica web a base de datos (Serverless)
+      const { error } = await supabase.from("profiles").select("id").limit(1);
+      if (error) throw error;
+      setSystemHealth({ status: "Operational", database: "Connected" });
+    } catch (error) {
+      setSystemHealth({ status: "offline", database: "error" });
+    }
   };
 
   const fetchLogs = async (pin) => {
@@ -72,11 +66,11 @@ const Maintenance = () => {
   React.useEffect(() => {
     if (isAuthorized) {
       fetchTerminals();
-      fetchHealth(masterPin);
+      fetchHealth();
       fetchLogs(masterPin);
 
       // Refrescar salud cada 30 segundos
-      const interval = setInterval(() => fetchHealth(masterPin), 30000);
+      const interval = setInterval(() => fetchHealth(), 30000);
       return () => clearInterval(interval);
     }
   }, [isAuthorized]);
@@ -307,11 +301,19 @@ const Maintenance = () => {
 
       {/* MONITOR DE SALUD DEL SISTEMA */}
       <div className="health-monitor">
-        <div className="health-status-info">
-          {/* Estado Local */}
+        <div
+          className="health-status-info"
+          style={{ justifyContent: "center", gap: "2rem" }}
+        >
+          {/* Estado General del Sistema */}
           <div className="status-item">
-            <span className="material-icons-outlined">lan</span>
-            <strong>API Local:</strong>
+            <span
+              className="material-icons-outlined"
+              style={{ color: "var(--primary-color)" }}
+            >
+              public
+            </span>
+            <strong>Plataforma Web:</strong>
             <span
               className={`status-indicator ${
                 systemHealth.status === "Operational"
@@ -322,57 +324,41 @@ const Maintenance = () => {
               }`}
             >
               {systemHealth.status === "Operational"
-                ? "En línea"
+                ? "Óptimo y en Línea"
                 : systemHealth.status === "checking"
-                ? "..."
-                : "Offline"}
-            </span>
-          </div>
-
-          {/* Estado Nube (Supabase) */}
-          <div className="status-item">
-            <span className="material-icons-outlined">public</span>
-            <strong>API Global:</strong>
-            <span
-              className={`status-indicator ${
-                cloudHealth.status === "Operational"
-                  ? "online"
-                  : cloudHealth.status === "checking"
-                  ? "checking"
-                  : "offline"
-              }`}
-            >
-              {cloudHealth.status === "Operational"
-                ? "Conectada"
-                : cloudHealth.status === "checking"
-                ? "..."
-                : "Inactiva"}
+                ? "Verificando..."
+                : "Desconectado"}
             </span>
           </div>
 
           <div className="status-item">
-            <span className="material-icons-outlined">storage</span>
-            <strong>Base de Datos:</strong>
+            <span
+              className="material-icons-outlined"
+              style={{ color: "var(--success-color)" }}
+            >
+              cloud_done
+            </span>
+            <strong>Base de Datos Segura:</strong>
             <span
               className={`status-indicator ${
-                cloudHealth.database === "Connected"
+                systemHealth.database === "Connected"
                   ? "online"
-                  : cloudHealth.database === "checking"
+                  : systemHealth.database === "checking"
                   ? "checking"
                   : "offline"
               }`}
             >
-              {cloudHealth.database === "Connected"
+              {systemHealth.database === "Connected"
                 ? "Vinculada"
-                : cloudHealth.database === "checking"
-                ? "..."
-                : "Error"}
+                : systemHealth.database === "checking"
+                ? "Verificando..."
+                : "Error de Conexión"}
             </span>
           </div>
         </div>
         <button
           className="btn-icon"
-          onClick={() => fetchHealth(masterPin)}
+          onClick={() => fetchHealth()}
           title="Refrescar Estado"
         >
           <span className="material-icons-outlined">refresh</span>
