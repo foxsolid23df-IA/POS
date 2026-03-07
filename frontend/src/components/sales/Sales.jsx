@@ -15,6 +15,7 @@ import { useIsMobile } from "../../hooks/useIsMobile";
 import { useScannerMode } from "../../hooks/useScannerMode";
 import { exchangeRateService } from "../../services/exchangeRateService";
 import { cashMovementService } from "../../services/cashMovementService";
+import { CashMovementModal } from "./CashMovementModal";
 import { supabase } from "../../supabase";
 import { useProducts } from "../../contexts/ProductContext";
 import { useSettings } from "../../contexts/SettingsContext";

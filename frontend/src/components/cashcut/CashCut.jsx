@@ -153,7 +153,9 @@ export const CashCut = ({ onClose }) => {
           const sessionList = blockingSessions
             .map(
               (s) =>
-                `<li><strong>${s.terminals?.name || "Terminal desconocida"}</strong>: ${s.staff_name}</li>`,
+                `<li><strong>${
+                  s.terminals?.name || "Terminal desconocida"
+                }</strong>: ${s.staff_name}</li>`,
             )
             .join("");
 
@@ -185,18 +187,51 @@ export const CashCut = ({ onClose }) => {
       title: cutType === "dia" ? "¿Cerrar el día?" : "¿Cerrar turno?",
       html: `
                 <div style="text-align: left; font-size: 0.9em;">
-                    <p><strong>Fondo Inicial:</strong> ${formatMoney(parseFloat(cashSession?.opening_fund) || 0)}</p>
+                    <p><strong>Fondo Inicial:</strong> ${formatMoney(
+                      parseFloat(cashSession?.opening_fund) || 0,
+                    )}</p>
                     <hr style="margin: 5px 0;">
-                    ${summary.entradasTotal > 0 ? `<p><strong>Entradas Extras:</strong> ${formatMoney(summary.entradasTotal)}</p>` : ""}
-                    ${summary.salidasTotal > 0 ? `<p><strong>Salidas (Gastos):</strong> -${formatMoney(summary.salidasTotal)}</p>` : ""}
+                    ${
+                      summary.entradasTotal > 0
+                        ? `<p><strong>Entradas Extras:</strong> ${formatMoney(
+                            summary.entradasTotal,
+                          )}</p>`
+                        : ""
+                    }
+                    ${
+                      summary.salidasTotal > 0
+                        ? `<p><strong>Salidas (Gastos):</strong> -${formatMoney(
+                            summary.salidasTotal,
+                          )}</p>`
+                        : ""
+                    }
                     <hr style="margin: 5px 0;">
-                    <p><strong>Esperado MXN:</strong> ${formatMoney(summary.expectedMXN || 0)}</p>
-                    <p><strong>Contado MXN:</strong> ${formatMoney(parseFloat(actualCash) || 0)}</p>
-                    <p style="color: ${diffMXN !== 0 ? "red" : "green"}"><strong>Diferencia MXN:</strong> ${formatMoney(diffMXN)}</p>
+                    <p><strong>Esperado MXN:</strong> ${formatMoney(
+                      summary.expectedMXN || 0,
+                    )}</p>
+                    <p><strong>Contado MXN:</strong> ${formatMoney(
+                      parseFloat(actualCash) || 0,
+                    )}</p>
+                    <p style="color: ${
+                      diffMXN !== 0 ? "red" : "green"
+                    }"><strong>Diferencia MXN:</strong> ${formatMoney(
+        diffMXN,
+      )}</p>
                     <hr style="margin: 5px 0;">
-                    <p><strong>Esperado USD:</strong> ${formatMoney(summary.totalUSD || 0, "USD")}</p>
-                    <p><strong>Contado USD:</strong> ${formatMoney(parseFloat(actualUSD) || 0, "USD")}</p>
-                    <p style="color: ${diffUSD !== 0 ? "red" : "green"}"><strong>Diferencia USD:</strong> ${formatMoney(diffUSD, "USD")}</p>
+                    <p><strong>Esperado USD:</strong> ${formatMoney(
+                      summary.totalUSD || 0,
+                      "USD",
+                    )}</p>
+                    <p><strong>Contado USD:</strong> ${formatMoney(
+                      parseFloat(actualUSD) || 0,
+                      "USD",
+                    )}</p>
+                    <p style="color: ${
+                      diffUSD !== 0 ? "red" : "green"
+                    }"><strong>Diferencia USD:</strong> ${formatMoney(
+        diffUSD,
+        "USD",
+      )}</p>
                 </div>
             `,
       icon: "question",
@@ -255,6 +290,28 @@ export const CashCut = ({ onClose }) => {
     if (!ticketRef.current) return;
 
     import("../../services/printerService").then(({ printerService }) => {
+      const ticketResult = cutResult || summary;
+
+      const expectedMXN = parseFloat(
+        ticketResult.expectedCash || summary?.expectedMXN || 0,
+      );
+      const actualMXN = parseFloat(actualCash || ticketResult.actualCash || 0);
+      const diffMXN = actualMXN - expectedMXN;
+
+      const transferTotal = ticketResult.transferTotal || 0;
+      const cardTotal = ticketResult.cardTotal || 0;
+      const salidasTotal =
+        ticketResult.salidas_total || summary?.salidasTotal || 0;
+      const totalSalesAmount = ticketResult.salesTotal || 0;
+      const totalSalesCount = ticketResult.salesCount || 0;
+      const operatorName =
+        ticketResult.staffName || activeStaff?.name || "Operador";
+
+      // Withdrawals Count
+      const withdrawalsCount =
+        summary?.movements?.filter((m) => m.movement_type === "salida")
+          ?.length || 0;
+
       let htmlPrint = `<!DOCTYPE html>
         <html><head><title>Corte de Caja</title>
         <style>
@@ -267,29 +324,87 @@ export const CashCut = ({ onClose }) => {
               padding: 10px; 
               max-width: 300px;
               margin: 0 auto;
-              font-size: 11px;
+              font-size: 12px;
               color: black;
           }
-          .ticket-header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; }
+          .ticket-header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
           .store-name { font-size: 16px; font-weight: bold; }
           .ticket-title { font-size: 13px; margin-top: 5px; }
           .section { margin: 10px 0; padding: 10px 0; border-bottom: 1px dashed #000; }
           .row { display: flex; justify-content: space-between; margin: 3px 0; }
-          .label { color: #666; }
+          .label { color: #000; }
           .value { font-weight: bold; }
           .total-row { font-size: 13px; font-weight: bold; margin-top: 10px; }
-          .sales-list { font-size: 10px; }
-          .sale-item { padding: 8px 0; border-bottom: 1px dotted #999; margin-bottom: 5px; }
-          .sale-header-row { background: #f0f0f0; padding: 3px 5px; margin-bottom: 3px; }
-          .product-row { display: flex; justify-content: space-between; padding: 2px 0; padding-left: 10px; font-size: 10px; }
-          .product-name { color: #333; }
-          .product-price { font-weight: 500; }
-          .sale-total-row { border-top: 1px solid #ccc; margin-top: 5px; padding-top: 5px; font-size: 11px; }
-          .footer { text-align: center; margin-top: 15px; font-size: 10px; color: #666; }
-          .difference-positive { color: green; }
-          .difference-negative { color: red; }
+          .footer { text-align: center; margin-top: 15px; font-size: 12px; font-weight: bold; }
+          .difference-positive { color: black; font-weight: bold; }
+          .difference-negative { color: red; font-weight: bold; }
+          .retiros-rojo { color: red; font-weight: bold; font-size: 14px; }
+          .separator { border-top: 1px dashed #000; margin: 8px 0; }
         </style>
-        </head><body>${ticketRef.current.innerHTML}</body></html>`;
+        </head><body>
+          <div class="ticket-header">
+            <div class="store-name">${storeName || "NEXUM POS"}</div>
+            <div class="ticket-title">${
+              cutType === "dia" ? "CIERRE FINAL DEL DIA" : "CORTE DE TURNO"
+            }</div>
+            <div>${new Date().toLocaleString("es-MX")}</div>
+          </div>
+          
+          <div class="section">
+            <div class="row">
+              <span class="label">FONDO INICIAL EFECTIVO:</span>
+              <span class="value">${formatMoney(
+                parseFloat(cashSession?.opening_fund) || 0,
+              )}</span>
+            </div>
+            <div class="row">
+              <span class="label">TOTAL TARJETA:</span>
+              <span class="value">${formatMoney(cardTotal)}</span>
+            </div>
+            <div class="row">
+              <span class="label">TOTAL TRANSFERENCIA:</span>
+              <span class="value">${formatMoney(transferTotal)}</span>
+            </div>
+            <div class="separator"></div>
+            <div class="row retiros-rojo">
+              <span class="label retiros-rojo">RETIROS (${withdrawalsCount}):</span>
+              <span class="value retiros-rojo">-${formatMoney(
+                salidasTotal,
+              )}</span>
+            </div>
+            <div class="separator"></div>
+            <div class="row">
+              <span class="label">TOTAL DE VENTAS (${totalSalesCount}):</span>
+              <span class="value">${formatMoney(totalSalesAmount)}</span>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="row">
+              <span class="label">EFECTIVO ESPERADO:</span>
+              <span class="value">${formatMoney(expectedMXN)}</span>
+            </div>
+            <div class="row">
+              <span class="label">EFECTIVO CONTADO:</span>
+              <span class="value">${formatMoney(actualMXN)}</span>
+            </div>
+            <div class="separator"></div>
+            <div class="row ${
+              diffMXN !== 0 ? "difference-negative" : "difference-positive"
+            }">
+              <span class="label">${
+                diffMXN === 0 ? "DIFERENCIA (CORRECTO):" : "DIFERENCIA:"
+              }</span>
+              <span class="value">${formatMoney(diffMXN)}</span>
+            </div>
+          </div>
+
+          <div class="footer">
+            OPERADOR: ${operatorName.toUpperCase()}
+            <div class="separator"></div>
+            TERMINA
+          </div>
+        </body></html>`;
 
       printerService.printHtmlTicket(htmlPrint);
     });
@@ -477,7 +592,13 @@ export const CashCut = ({ onClose }) => {
                   <span>{formatMoney(cutResult.actualCash || 0)}</span>
                 </div>
                 <div
-                  className={`flex justify-between font-black text-lg ${cutResult.difference === 0 ? "text-slate-900 dark:text-white" : cutResult.difference > 0 ? "text-blue-500" : "text-red-500"}`}
+                  className={`flex justify-between font-black text-lg ${
+                    cutResult.difference === 0
+                      ? "text-slate-900 dark:text-white"
+                      : cutResult.difference > 0
+                      ? "text-blue-500"
+                      : "text-red-500"
+                  }`}
                 >
                   <span>DIFERENCIA MXN:</span>
                   <span>
@@ -495,7 +616,13 @@ export const CashCut = ({ onClose }) => {
                       </span>
                     </div>
                     <div
-                      className={`flex justify-between font-black text-lg ${cutResult.differenceUSD === 0 ? "text-slate-900 dark:text-white" : cutResult.differenceUSD > 0 ? "text-blue-500" : "text-red-500"}`}
+                      className={`flex justify-between font-black text-lg ${
+                        cutResult.differenceUSD === 0
+                          ? "text-slate-900 dark:text-white"
+                          : cutResult.differenceUSD > 0
+                          ? "text-blue-500"
+                          : "text-red-500"
+                      }`}
                     >
                       <span>DIFERENCIA USD:</span>
                       <span>
@@ -772,8 +899,8 @@ export const CashCut = ({ onClose }) => {
                 diffMXN === 0
                   ? "bg-emerald-50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-500/20"
                   : diffMXN > 0
-                    ? "bg-blue-50 dark:bg-blue-500/5 border-blue-100 dark:border-blue-500/20"
-                    : "bg-rose-50 dark:bg-rose-500/5 border-rose-100 dark:border-rose-500/20"
+                  ? "bg-blue-50 dark:bg-blue-500/5 border-blue-100 dark:border-blue-500/20"
+                  : "bg-rose-50 dark:bg-rose-500/5 border-rose-100 dark:border-rose-500/20"
               }`}
             >
               <div>
@@ -782,8 +909,8 @@ export const CashCut = ({ onClose }) => {
                     diffMXN === 0
                       ? "text-emerald-500"
                       : diffMXN > 0
-                        ? "text-blue-500"
-                        : "text-rose-500"
+                      ? "text-blue-500"
+                      : "text-rose-500"
                   }`}
                 >
                   Balance MXN
@@ -793,15 +920,15 @@ export const CashCut = ({ onClose }) => {
                     diffMXN === 0
                       ? "text-emerald-700 dark:text-emerald-300"
                       : diffMXN > 0
-                        ? "text-blue-700 dark:text-blue-300"
-                        : "text-rose-700 dark:text-rose-300"
+                      ? "text-blue-700 dark:text-blue-300"
+                      : "text-rose-700 dark:text-rose-300"
                   }`}
                 >
                   {diffMXN === 0
                     ? "✓ MXN Correcto"
                     : diffMXN > 0
-                      ? "⬆ Sobrante MXN"
-                      : "⬇ Faltante MXN"}
+                    ? "⬆ Sobrante MXN"
+                    : "⬇ Faltante MXN"}
                 </span>
               </div>
               <span
@@ -809,8 +936,8 @@ export const CashCut = ({ onClose }) => {
                   diffMXN === 0
                     ? "text-emerald-600"
                     : diffMXN > 0
-                      ? "text-blue-600"
-                      : "text-rose-600"
+                    ? "text-blue-600"
+                    : "text-rose-600"
                 }`}
               >
                 {diffMXN === 0 ? "OK" : formatMoney(diffMXN)}
@@ -823,8 +950,8 @@ export const CashCut = ({ onClose }) => {
                   diffUSD === 0
                     ? "bg-emerald-50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-500/20"
                     : diffUSD > 0
-                      ? "bg-blue-50 dark:bg-blue-500/5 border-blue-100 dark:border-blue-500/20"
-                      : "bg-rose-50 dark:bg-rose-500/5 border-rose-100 dark:border-rose-500/20"
+                    ? "bg-blue-50 dark:bg-blue-500/5 border-blue-100 dark:border-blue-500/20"
+                    : "bg-rose-50 dark:bg-rose-500/5 border-rose-100 dark:border-rose-500/20"
                 }`}
               >
                 <div>
@@ -833,8 +960,8 @@ export const CashCut = ({ onClose }) => {
                       diffUSD === 0
                         ? "text-emerald-500"
                         : diffUSD > 0
-                          ? "text-blue-500"
-                          : "text-rose-500"
+                        ? "text-blue-500"
+                        : "text-rose-500"
                     }`}
                   >
                     Balance USD
@@ -844,15 +971,15 @@ export const CashCut = ({ onClose }) => {
                       diffUSD === 0
                         ? "text-emerald-700 dark:text-emerald-300"
                         : diffUSD > 0
-                          ? "text-blue-700 dark:text-blue-300"
-                          : "text-rose-700 dark:text-rose-300"
+                        ? "text-blue-700 dark:text-blue-300"
+                        : "text-rose-700 dark:text-rose-300"
                     }`}
                   >
                     {diffUSD === 0
                       ? "✓ USD Correcto"
                       : diffUSD > 0
-                        ? "⬆ Sobrante USD"
-                        : "⬇ Faltante USD"}
+                      ? "⬆ Sobrante USD"
+                      : "⬇ Faltante USD"}
                   </span>
                 </div>
                 <span
@@ -860,8 +987,8 @@ export const CashCut = ({ onClose }) => {
                     diffUSD === 0
                       ? "text-emerald-600"
                       : diffUSD > 0
-                        ? "text-blue-600"
-                        : "text-rose-600"
+                      ? "text-blue-600"
+                      : "text-rose-600"
                   }`}
                 >
                   {diffUSD === 0 ? "OK" : formatMoney(diffUSD, "USD")}
@@ -904,7 +1031,9 @@ export const CashCut = ({ onClose }) => {
             >
               {submitting
                 ? "Procesando Corte..."
-                : `Ejecutar ${cutType === "dia" ? "Cierre de Día" : "Cierre de Turno"}`}
+                : `Ejecutar ${
+                    cutType === "dia" ? "Cierre de Día" : "Cierre de Turno"
+                  }`}
               {!submitting && (
                 <span className="material-symbols-rounded">chevron_right</span>
               )}
