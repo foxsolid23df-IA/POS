@@ -59,7 +59,8 @@ const PrivateLayout = ({ children }) => {
     location.pathname === "/" || location.pathname === "/ventas";
 
   const [isTerminalConfigured, setIsTerminalConfigured] = useState(
-    !!terminalService.getTerminalId(),
+    !!terminalService.getTerminalId() ||
+      sessionStorage.getItem("visor_mode") === "true",
   );
   const [isValidating, setIsValidating] = useState(false);
 
@@ -76,6 +77,11 @@ const PrivateLayout = ({ children }) => {
     }
 
     const validateTerminal = async () => {
+      // No validar terminales si estamos en modo visor
+      if (sessionStorage.getItem("visor_mode") === "true") {
+        return;
+      }
+
       if (isTerminalConfigured) {
         setIsValidating(true);
         try {

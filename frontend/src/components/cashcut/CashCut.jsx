@@ -140,16 +140,6 @@ export const CashCut = ({ onClose }) => {
     // Validaciones para Cierre de Día
     try {
       if (cutType === "dia") {
-        const isMain = await terminalService.checkIfMainTerminal();
-        if (!isMain) {
-          Swal.fire(
-            "Acceso Denegado",
-            "El Cierre de Día solo puede realizarse desde la Caja Principal.",
-            "warning",
-          );
-          return;
-        }
-
         const blockingSessions = await cashCutService.checkBlockingSessions();
         if (blockingSessions.length > 0) {
           const sessionList = blockingSessions

@@ -178,15 +178,42 @@ export const TerminalSetup = ({ onTerminalConfigured }) => {
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            className="setup-submit-btn"
-            style={{ backgroundColor: "#64748b", border: "none" }}
-            onClick={logout}
+          <div
+            className="setup-actions"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px",
+              marginTop: "24px",
+            }}
           >
-            <span className="material-symbols-outlined">logout</span>
-            Cerrar Sesión Segura
-          </button>
+            {user?.role === "admin" && (
+              <button
+                type="button"
+                className="setup-submit-btn"
+                style={{ backgroundColor: "#3b82f6", border: "none" }}
+                onClick={() => {
+                  sessionStorage.setItem("visor_mode", "true");
+                  if (onTerminalConfigured) {
+                    onTerminalConfigured({ name: "Modo Visor", id: "visor" });
+                  }
+                }}
+              >
+                <span className="material-symbols-outlined">visibility</span>
+                Entrar como Administrador (Solo Vista)
+              </button>
+            )}
+
+            <button
+              type="button"
+              className="setup-submit-btn"
+              style={{ backgroundColor: "#64748b", border: "none" }}
+              onClick={logout}
+            >
+              <span className="material-symbols-outlined">logout</span>
+              Cerrar Sesión Segura
+            </button>
+          </div>
         </div>
       </div>
     );
