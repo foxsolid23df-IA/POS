@@ -537,6 +537,8 @@ html.dark .utility-box {
     border-radius: 12px;
     margin-bottom: 1.5rem;
     border: 1px solid #e2e8f0;
+    flex-wrap: wrap;
+    gap: 1rem;
 }
 
 html.dark .health-monitor {
@@ -549,6 +551,7 @@ html.dark .health-monitor {
     display: flex;
     align-items: center;
     gap: 1.5rem;
+    flex-wrap: wrap;
 }
 
 .status-item {
@@ -564,6 +567,7 @@ html.dark .health-monitor {
     font-size: 0.75rem;
     font-weight: bold;
     text-transform: uppercase;
+    white-space: nowrap;
 }
 
 .status-indicator.online { background: #dcfce7; color: #166534; }
