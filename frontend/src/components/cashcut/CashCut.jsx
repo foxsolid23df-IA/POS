@@ -304,6 +304,18 @@ export const CashCut = ({ onClose }) => {
         summary?.movements?.filter((m) => m.movement_type === "salida")
           ?.length || 0;
 
+      // Variables de configuración del ticket
+      const showInitialFund = ticketSettings?.cc_show_initial_fund !== false;
+      const showCardSales = ticketSettings?.cc_show_card_sales !== false;
+      const showTransferSales =
+        ticketSettings?.cc_show_transfer_sales !== false;
+      const showWithdrawals = ticketSettings?.cc_show_withdrawals !== false;
+      const showSalesCount = ticketSettings?.cc_show_sales_count !== false;
+      const showExpectedCash = ticketSettings?.cc_show_expected_cash !== false;
+      const showCountedCash = ticketSettings?.cc_show_counted_cash !== false;
+      const showDifferences = ticketSettings?.cc_show_differences !== false;
+      const showOperatorName = ticketSettings?.cc_show_operator_name !== false;
+
       let htmlPrint = `<!DOCTYPE html>
         <html><head><title>Corte de Caja</title>
         <style>
@@ -340,61 +352,92 @@ export const CashCut = ({ onClose }) => {
               cutType === "dia" ? "CIERRE FINAL DEL DIA" : "CORTE DE TURNO"
             }</div>
             <div>${new Date().toLocaleString("es-MX")}</div>
-          </div>
-          
-          <div class="section">
-            <div class="row">
+          </div>`;
+      htmlPrint += `<div class="section">`;
+
+      if (showInitialFund) {
+        htmlPrint += `<div class="row">
               <span class="label">FONDO INICIAL EFECTIVO:</span>
               <span class="value">${formatMoney(
                 parseFloat(cashSession?.opening_fund) || 0,
               )}</span>
-            </div>
-            <div class="row">
+            </div>`;
+      }
+
+      if (showCardSales) {
+        htmlPrint += `<div class="row">
               <span class="label">TOTAL TARJETA:</span>
               <span class="value">${formatMoney(cardTotal)}</span>
-            </div>
-            <div class="row">
+            </div>`;
+      }
+
+      if (showTransferSales) {
+        htmlPrint += `<div class="row">
               <span class="label">TOTAL TRANSFERENCIA:</span>
               <span class="value">${formatMoney(transferTotal)}</span>
-            </div>
-            <div class="separator"></div>
-            <div class="row retiros-rojo">
+            </div>`;
+      }
+
+      htmlPrint += `<div class="separator"></div>`;
+
+      if (showWithdrawals) {
+        htmlPrint += `<div class="row retiros-rojo">
               <span class="label retiros-rojo">RETIROS (${withdrawalsCount}):</span>
               <span class="value retiros-rojo">-${formatMoney(
                 salidasTotal,
               )}</span>
             </div>
-            <div class="separator"></div>
-            <div class="row">
-              <span class="label">TOTAL DE VENTAS (${totalSalesCount}):</span>
+            <div class="separator"></div>`;
+      }
+
+      htmlPrint += `<div class="row">
+              <span class="label">TOTAL DE VENTAS ${
+                showSalesCount ? `(${totalSalesCount})` : ""
+              }:</span>
               <span class="value">${formatMoney(totalSalesAmount)}</span>
             </div>
           </div>
+          
+          <div class="section">`;
 
-          <div class="section">
-            <div class="row">
+      if (showExpectedCash) {
+        htmlPrint += `<div class="row">
               <span class="label">EFECTIVO ESPERADO:</span>
               <span class="value">${formatMoney(expectedMXN)}</span>
-            </div>
-            <div class="row">
+            </div>`;
+      }
+
+      if (showCountedCash) {
+        htmlPrint += `<div class="row">
               <span class="label">EFECTIVO CONTADO:</span>
               <span class="value">${formatMoney(actualMXN)}</span>
-            </div>
-            <div class="separator"></div>
-            <div class="row ${
-              diffMXN !== 0 ? "difference-negative" : "difference-positive"
-            }">
+            </div>`;
+      }
+
+      if (showExpectedCash || showCountedCash) {
+        htmlPrint += `<div class="separator"></div>`;
+      }
+
+      if (showDifferences) {
+        htmlPrint += `<div class="row ${
+          diffMXN !== 0 ? "difference-negative" : "difference-positive"
+        }">
               <span class="label">${
                 diffMXN === 0 ? "DIFERENCIA (CORRECTO):" : "DIFERENCIA:"
               }</span>
               <span class="value">${formatMoney(diffMXN)}</span>
-            </div>
-          </div>
+            </div>`;
+      }
 
-          <div class="footer">
-            OPERADOR: ${operatorName.toUpperCase()}
-            <div class="separator"></div>
-            TERMINA
+      htmlPrint += `</div>
+          <div class="footer">`;
+
+      if (showOperatorName) {
+        htmlPrint += `OPERADOR: ${operatorName.toUpperCase()}
+            <div class="separator"></div>`;
+      }
+
+      htmlPrint += `TERMINA
           </div>
         </body></html>`;
 
@@ -502,31 +545,39 @@ export const CashCut = ({ onClose }) => {
               </div>
 
               <div className="space-y-3 mb-6">
-                <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg">
-                  <span className="text-xs uppercase font-bold text-slate-400">
-                    Fondo Inicial:
-                  </span>
-                  <span className="font-bold">
-                    {formatMoney(parseFloat(cashSession?.opening_fund) || 0)}
-                  </span>
-                </div>
+                {showInitialFund && (
+                  <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg">
+                    <span className="text-xs uppercase font-bold text-slate-400">
+                      Fondo Inicial:
+                    </span>
+                    <span className="font-bold">
+                      {formatMoney(parseFloat(cashSession?.opening_fund) || 0)}
+                    </span>
+                  </div>
+                )}
+
                 <div className="flex justify-between items-center p-3">
                   <span className="text-xs uppercase font-bold text-slate-400">
-                    Total Ventas ({cutResult.salesCount}):
+                    Total Ventas{" "}
+                    {showSalesCount ? `(${cutResult.salesCount})` : ""}:
                   </span>
                   <span className="font-bold">
                     {formatMoney(cutResult.salesTotal)}
                   </span>
                 </div>
-                <div className="flex justify-between items-center bg-emerald-50 dark:bg-emerald-900/10 p-3 rounded-lg border border-emerald-100 dark:border-emerald-900/20">
-                  <span className="text-xs uppercase font-bold text-emerald-600 dark:text-emerald-400">
-                    Total Esperado (MXN):
-                  </span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400 text-lg">
-                    {formatMoney(cutResult.expectedCash)}
-                  </span>
-                </div>
-                {cutResult.expectedUSD > 0 && (
+
+                {showExpectedCash && (
+                  <div className="flex justify-between items-center bg-emerald-50 dark:bg-emerald-900/10 p-3 rounded-lg border border-emerald-100 dark:border-emerald-900/20">
+                    <span className="text-xs uppercase font-bold text-emerald-600 dark:text-emerald-400">
+                      Total Esperado (MXN):
+                    </span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400 text-lg">
+                      {formatMoney(cutResult.expectedCash)}
+                    </span>
+                  </div>
+                )}
+
+                {cutResult.expectedUSD > 0 && showExpectedCash && (
                   <div className="flex justify-between items-center bg-blue-50 dark:bg-blue-900/10 p-3 rounded-lg border border-blue-100 dark:border-blue-900/20">
                     <span className="text-xs uppercase font-bold text-blue-600 dark:text-blue-400">
                       Total Esperado (USD):
@@ -536,7 +587,8 @@ export const CashCut = ({ onClose }) => {
                     </span>
                   </div>
                 )}
-                {cutResult.cardTotal > 0 && (
+
+                {cutResult.cardTotal > 0 && showCardSales && (
                   <div className="flex justify-between items-center bg-indigo-50 dark:bg-indigo-900/10 p-3 rounded-lg border border-indigo-100 dark:border-indigo-900/20">
                     <span className="text-xs uppercase font-bold text-indigo-600 dark:text-indigo-400">
                       Ventas Tarjeta:
@@ -546,7 +598,8 @@ export const CashCut = ({ onClose }) => {
                     </span>
                   </div>
                 )}
-                {cutResult.transferTotal > 0 && (
+
+                {cutResult.transferTotal > 0 && showTransferSales && (
                   <div className="flex justify-between items-center bg-purple-50 dark:bg-purple-900/10 p-3 rounded-lg border border-purple-100 dark:border-purple-900/20">
                     <span className="text-xs uppercase font-bold text-purple-600 dark:text-purple-400">
                       Ventas Transferencia:
@@ -556,6 +609,7 @@ export const CashCut = ({ onClose }) => {
                     </span>
                   </div>
                 )}
+
                 {cutResult.entradas_total > 0 && (
                   <div className="flex justify-between items-center bg-amber-50 dark:bg-amber-900/10 p-3 rounded-lg border border-amber-100 dark:border-amber-900/20">
                     <span className="text-xs uppercase font-bold text-amber-600 dark:text-amber-400">
@@ -566,7 +620,8 @@ export const CashCut = ({ onClose }) => {
                     </span>
                   </div>
                 )}
-                {cutResult.salidas_total > 0 && (
+
+                {cutResult.salidas_total > 0 && showWithdrawals && (
                   <div className="flex justify-between items-center bg-rose-50 dark:bg-rose-900/10 p-3 rounded-lg border border-rose-100 dark:border-rose-900/20">
                     <span className="text-xs uppercase font-bold text-rose-600 dark:text-rose-400">
                       Salidas/Gastos:
@@ -579,26 +634,31 @@ export const CashCut = ({ onClose }) => {
               </div>
 
               <div className="pt-4 border-t-2 border-dashed border-slate-200 dark:border-slate-700 text-center space-y-2">
-                <div className="flex justify-between text-slate-900 dark:text-white font-bold">
-                  <span>EFECTIVO MXN:</span>
-                  <span>{formatMoney(cutResult.actualCash || 0)}</span>
-                </div>
-                <div
-                  className={`flex justify-between font-black text-lg ${
-                    cutResult.difference === 0
-                      ? "text-slate-900 dark:text-white"
-                      : cutResult.difference > 0
-                      ? "text-blue-500"
-                      : "text-red-500"
-                  }`}
-                >
-                  <span>DIFERENCIA MXN:</span>
-                  <span>
-                    {cutResult.difference === 0
-                      ? "CORRECTO"
-                      : formatMoney(cutResult.difference)}
-                  </span>
-                </div>
+                {showCountedCash && (
+                  <div className="flex justify-between text-slate-900 dark:text-white font-bold">
+                    <span>EFECTIVO MXN:</span>
+                    <span>{formatMoney(cutResult.actualCash || 0)}</span>
+                  </div>
+                )}
+
+                {showDifferences && (
+                  <div
+                    className={`flex justify-between font-black text-lg ${
+                      cutResult.difference === 0
+                        ? "text-slate-900 dark:text-white"
+                        : cutResult.difference > 0
+                        ? "text-blue-500"
+                        : "text-red-500"
+                    }`}
+                  >
+                    <span>DIFERENCIA MXN:</span>
+                    <span>
+                      {cutResult.difference === 0
+                        ? "CORRECTO"
+                        : formatMoney(cutResult.difference)}
+                    </span>
+                  </div>
+                )}
                 {cutResult.expectedUSD > 0 && (
                   <>
                     <div className="flex justify-between text-slate-900 dark:text-white font-bold mt-2 pt-2 border-t border-dotted border-slate-300">

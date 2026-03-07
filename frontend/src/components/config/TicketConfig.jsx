@@ -17,6 +17,15 @@ export const TicketConfig = () => {
     margin: 0,
     font_family: "Sistema",
     is_bold: false,
+    cc_show_initial_fund: true,
+    cc_show_card_sales: true,
+    cc_show_transfer_sales: true,
+    cc_show_withdrawals: true,
+    cc_show_sales_count: true,
+    cc_show_expected_cash: true,
+    cc_show_counted_cash: true,
+    cc_show_differences: true,
+    cc_show_operator_name: true,
   });
 
   const [loading, setLoading] = useState(true);
@@ -106,10 +115,20 @@ export const TicketConfig = () => {
                             body { margin: 0; padding: 0; background: none !important; }
                         }
                         body {
-                            font-family: ${settings.font_family === "Sistema" ? "system-ui, sans-serif" : "monospace"};
+                            font-family: ${
+                              settings.font_family === "Sistema"
+                                ? "system-ui, sans-serif"
+                                : "monospace"
+                            };
                             font-size: ${settings.font_size}px;
-                            font-weight: ${settings.is_bold ? "bold" : "normal"};
-                            width: ${settings.paper_width === "58mm" ? "180px" : "280px"};
+                            font-weight: ${
+                              settings.is_bold ? "bold" : "normal"
+                            };
+                            width: ${
+                              settings.paper_width === "58mm"
+                                ? "180px"
+                                : "280px"
+                            };
                             margin: ${settings.margin}px auto;
                             padding: 10px;
                             color: black;
@@ -123,8 +142,14 @@ export const TicketConfig = () => {
                 </head>
                 <body>
                     <div class="header">
-                        ${settings.logo_url ? `<img src="${settings.logo_url}" class="logo" />` : ""}
-                        <div class="name">${settings.business_name || "Nombre del Negocio"}</div>
+                        ${
+                          settings.logo_url
+                            ? `<img src="${settings.logo_url}" class="logo" />`
+                            : ""
+                        }
+                        <div class="name">${
+                          settings.business_name || "Nombre del Negocio"
+                        }</div>
                         <div>${settings.address || "Dirección del Local"}</div>
                         <div>${settings.phone || "Teléfono"}</div>
                     </div>
@@ -360,6 +385,64 @@ export const TicketConfig = () => {
                   </label>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div className="printer-settings-box mt-8 p-6 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 border-b border-slate-200 dark:border-slate-700 pb-2">
+              Configuración de Ticket de Cierre de Día
+            </h3>
+            <p className="text-sm text-slate-500 mb-6">
+              Elige qué información se debe imprimir al realizar el corte de
+              caja.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[
+                { name: "cc_show_initial_fund", label: "Ver Fondo Inicial" },
+                { name: "cc_show_card_sales", label: "Ver Pagos con Tarjeta" },
+                {
+                  name: "cc_show_transfer_sales",
+                  label: "Ver Pagos Transferencia",
+                },
+                { name: "cc_show_withdrawals", label: "Ver Retiros/Depósitos" },
+                {
+                  name: "cc_show_sales_count",
+                  label: "Ver Conteo Total Ventas",
+                },
+                {
+                  name: "cc_show_expected_cash",
+                  label: "Ver Efectivo Esperado",
+                },
+                { name: "cc_show_counted_cash", label: "Ver Efectivo Contado" },
+                {
+                  name: "cc_show_differences",
+                  label: "Ver Diferencias (Sobrante/Faltante)",
+                },
+                {
+                  name: "cc_show_operator_name",
+                  label: "Ver Nombre del Operador",
+                },
+              ].map((toggle) => (
+                <div
+                  key={toggle.name}
+                  className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm"
+                >
+                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                    {toggle.label}
+                  </span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name={toggle.name}
+                      checked={settings[toggle.name]}
+                      onChange={handleChange}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500"></div>
+                  </label>
+                </div>
+              ))}
             </div>
           </div>
 
