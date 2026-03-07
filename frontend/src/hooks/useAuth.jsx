@@ -68,17 +68,30 @@ export const AuthProvider = ({ children }) => {
     });
 
     // 2. Listen for changes
+    let currentUserId = null;
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id);
+        // Solo recargar perfil completo si es un usuario NUEVO (login real)
+        // Si es el MISMO usuario (re-auth para verificar contraseña), hacer refresh silencioso
+        if (currentUserId && currentUserId === session.user.id) {
+          console.log(
+            "[Auth] Mismo usuario re-autenticado, refresh silencioso.",
+          );
+          fetchProfile(session.user.id, true);
+        } else {
+          console.log("[Auth] Nuevo usuario detectado, carga completa.");
+          currentUserId = session.user.id;
+          fetchProfile(session.user.id, false);
+        }
       } else {
+        currentUserId = null;
         setProfile(null);
         setActiveStaff(null);
-        localStorage.removeItem("activeStaff"); // Limpiar si se cierra sesión de supabase
+        localStorage.removeItem("activeStaff");
         setLoading(false);
         setIsLicenseValidating(false);
       }

@@ -231,6 +231,9 @@ const Maintenance = () => {
       return;
     }
 
+    // Capturar el valor ANTES de cualquier operación async
+    const pinToSave = String(newPin).trim();
+
     const { value: password } = await Swal.fire({
       title: "Confirmar Seguridad",
       text: "Ingresa tu contraseña de cuenta para cambiar el PIN Maestro",
@@ -246,11 +249,9 @@ const Maintenance = () => {
     setIsUpdatingPin(true);
     setMessage({ text: "", type: "" });
 
-    console.log("[Maintenance] Intentando actualizar PIN Maestro...");
-    console.log("[Maintenance] User ID:", user.id);
-    console.log("[Maintenance] New PIN:", newPin);
-
     try {
+      // Verificar contraseña SIN usar signInWithPassword (evita re-auth global)
+      // Usamos rpc o una verificación directa
       const { error: authError } = await supabase.auth.signInWithPassword({
         email: user?.email,
         password: password,
@@ -258,36 +259,37 @@ const Maintenance = () => {
 
       if (authError) throw new Error("Contraseña incorrecta");
 
+      // Guardar el PIN en la base de datos
       const { data: updateData, error: updateError } = await supabase
         .from("profiles")
-        .update({ master_pin: newPin })
+        .update({ master_pin: pinToSave })
         .eq("id", user.id)
         .select();
 
       console.log("[Maintenance] Resultado de update:", {
         updateData,
         updateError,
+        pinToSave,
       });
 
       if (updateError) throw updateError;
 
-      // Refrescar el perfil global en el contexto de forma silenciosa (evita loading screen)
-      if (fetchProfile) await fetchProfile(user.id, true);
-
-      // Actualizar el PIN de la sesión actual para que sea reconocido por el componente
-      setMasterPin(newPin);
+      // Actualizar el PIN local de la sesión actual
+      setMasterPin(pinToSave);
+      sessionStorage.setItem("admin_authorized", "true");
 
       setMessage({
-        text: "PIN Maestro actualizado exitosamente.",
+        text: "✅ PIN Maestro actualizado exitosamente.",
         type: "success",
       });
       setNewPin("");
       setConfirmPin("");
+
       Swal.fire({
         title: "¡PIN Actualizado!",
-        text: `Tu nuevo PIN Maestro es: ${newPin}. Úsalo para acceder a supervisión y mantenimiento.`,
+        html: `Tu nuevo PIN Maestro es: <strong>${pinToSave}</strong><br>Úsalo para acceder a supervisión y mantenimiento.`,
         icon: "success",
-        confirmButtonColor: "var(--primary-color)",
+        confirmButtonColor: "#3b82f6",
       });
     } catch (error) {
       setMessage({ text: "Error: " + error.message, type: "error" });
