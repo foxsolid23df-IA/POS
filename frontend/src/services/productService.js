@@ -256,7 +256,23 @@ export const productService = {
         return data || [];
     },
 
-    // Crear múltiples productos (Carga Masiva)
+    // Eliminar todos los productos con datos rotos (de importaciones fallidas)
+    bulkDeleteBrokenProducts: async () => {
+        const { data, error } = await supabase
+            .from('products')
+            .delete()
+            .eq('name', 'Producto Sin Nombre')
+            .select('id');
+
+        if (error) throw error;
+
+        // Invalidar caché
+        productsCache = null;
+
+        return data ? data.length : 0;
+    },
+
+    // Crear múltiples productos (Carga Masiva) - con batching para evitar timeouts
     bulkCreateProducts: async (products) => {
         const { data: userData, error: authError } = await supabase.auth.getUser();
 
@@ -267,29 +283,98 @@ export const productService = {
             throw authError;
         }
 
-        const productsToInsert = products.map(product => ({
-            name: product.name,
-            price: parseFloat(product.price),
-            cost_price: parseFloat(product.cost_price || 0),
-            wholesale_price: parseFloat(product.wholesale_price || 0),
-            stock: parseInt(product.stock),
-            min_stock: parseInt(product.min_stock || 0),
-            barcode: product.barcode || null,
-            image_url: product.image || null,
-            category: product.category || null,
-            user_id: userData.user.id
-        }));
-
-        const { data, error } = await supabase
+        // 1. Obtener todos los productos actuales para verificar códigos de barras
+        const { data: existingProducts, error: fetchError } = await supabase
             .from('products')
-            .insert(productsToInsert)
-            .select();
+            .select('id, barcode');
 
-        if (error) throw error;
+        if (fetchError) throw fetchError;
+
+        // 2. Crear mapa de barcode a ID
+        const existingBarcodeMap = new Map();
+        (existingProducts || []).forEach(p => {
+            if (p.barcode) {
+                existingBarcodeMap.set(String(p.barcode), p.id);
+            }
+        });
+
+        const productsToInsert = [];
+        const productsToUpdate = [];
+
+        // 3. Separar productos en inserciones y actualizaciones
+        products.forEach(product => {
+            const baseData = {
+                name: product.name,
+                category: product.category || null,
+                price: parseFloat(product.price),
+                cost_price: parseFloat(product.cost_price || 0),
+                wholesale_price: parseFloat(product.wholesale_price || 0),
+                stock: parseInt(product.stock),
+                min_stock: parseInt(product.min_stock || 0)
+            };
+
+            const barcodeStr = product.barcode ? String(product.barcode) : null;
+
+            if (barcodeStr && existingBarcodeMap.has(barcodeStr)) {
+                // Producto existe: se actualiza
+                productsToUpdate.push({
+                    id: existingBarcodeMap.get(barcodeStr),
+                    ...baseData
+                });
+            } else {
+                // Producto nuevo: se inserta
+                productsToInsert.push({
+                    barcode: barcodeStr,
+                    image_url: product.image || null,
+                    user_id: userData.user.id,
+                    ...baseData
+                });
+            }
+        });
+
+        console.log(`📦 Import: ${productsToInsert.length} to insert, ${productsToUpdate.length} to update`);
+
+        // 4. Ejecutar actualizaciones EN LOTES de 25
+        const BATCH_SIZE_UPDATE = 25;
+        if (productsToUpdate.length > 0) {
+            for (let i = 0; i < productsToUpdate.length; i += BATCH_SIZE_UPDATE) {
+                const batch = productsToUpdate.slice(i, i + BATCH_SIZE_UPDATE);
+                const updatePromises = batch.map(updateData => {
+                    const id = updateData.id;
+                    const dataToPatch = { ...updateData };
+                    delete dataToPatch.id;
+                    return supabase.from('products').update(dataToPatch).eq('id', id);
+                });
+                await Promise.all(updatePromises);
+                console.log(`🔄 Updated batch ${Math.floor(i / BATCH_SIZE_UPDATE) + 1}/${Math.ceil(productsToUpdate.length / BATCH_SIZE_UPDATE)}`);
+            }
+        }
+
+        // 5. Ejecutar inserciones EN LOTES de 50
+        const BATCH_SIZE_INSERT = 50;
+        let returnedData = [];
+        if (productsToInsert.length > 0) {
+            for (let i = 0; i < productsToInsert.length; i += BATCH_SIZE_INSERT) {
+                const batch = productsToInsert.slice(i, i + BATCH_SIZE_INSERT);
+                const { data, error: insertError } = await supabase
+                    .from('products')
+                    .insert(batch)
+                    .select();
+
+                if (insertError) throw insertError;
+                if (data) returnedData = returnedData.concat(data);
+                console.log(`✅ Inserted batch ${Math.floor(i / BATCH_SIZE_INSERT) + 1}/${Math.ceil(productsToInsert.length / BATCH_SIZE_INSERT)}`);
+            }
+        }
 
         // Invalidar caché
         productsCache = null;
 
-        return data;
+        // Retornar información sobre lo que ocurrió
+        return {
+            insertedData: returnedData,
+            insertedCount: productsToInsert.length,
+            updatedCount: productsToUpdate.length
+        };
     }
 };

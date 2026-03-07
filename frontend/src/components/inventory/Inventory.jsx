@@ -565,59 +565,6 @@ const Inventory = () => {
     }
   }, [formData.name, showModal]);
 
-  // Función para exportar productos a Excel
-  const handleExport = () => {
-    try {
-      // Preparar los datos para el Excel
-      const data = filteredProducts.map((p) => {
-        const productCategory = p.category || getCategory(p.name).name;
-        return {
-          Producto: p.name,
-          Categoría: productCategory,
-          SKU: getSKU(p),
-          Costo: parseFloat(p.cost_price || 0),
-          Precio: parseFloat(p.price),
-          Existencia: p.stock,
-          "Código de Barras": p.barcode || "",
-        };
-      });
-
-      // Crear un libro de trabajo
-      const wb = XLSX.utils.book_new();
-
-      // Crear una hoja de cálculo desde los datos
-      const ws = XLSX.utils.json_to_sheet(data);
-
-      // Ajustar el ancho de las columnas
-      const columnWidths = [
-        { wch: 30 }, // Producto
-        { wch: 15 }, // Categoría
-        { wch: 15 }, // SKU
-        { wch: 12 }, // Costo
-        { wch: 12 }, // Precio
-        { wch: 12 }, // Existencia
-        { wch: 20 }, // Código de Barras
-      ];
-      ws["!cols"] = columnWidths;
-
-      // Agregar la hoja al libro
-      XLSX.utils.book_append_sheet(wb, ws, "Inventario");
-
-      // Generar el archivo Excel
-      const fileName = `inventario_${new Date().toISOString().split("T")[0]}.xlsx`;
-      XLSX.writeFile(wb, fileName);
-
-      Swal.fire(
-        "Éxito",
-        "Inventario exportado correctamente en formato Excel",
-        "success",
-      );
-    } catch (error) {
-      console.error("Error al exportar:", error);
-      Swal.fire("Error", "No se pudo exportar el inventario", "error");
-    }
-  };
-
   // Función para exportar reporte de mermas
   const handleExportMermas = () => {
     try {
@@ -667,7 +614,9 @@ const Inventory = () => {
 
       XLSX.utils.book_append_sheet(wb, ws, "Reporte Mermas");
 
-      const fileName = `reporte_mermas_${new Date().toISOString().split("T")[0]}.xlsx`;
+      const fileName = `reporte_mermas_${
+        new Date().toISOString().split("T")[0]
+      }.xlsx`;
       XLSX.writeFile(wb, fileName);
 
       Swal.fire(
@@ -767,7 +716,9 @@ const Inventory = () => {
               </button>
             )}
             <button
-              className={`control-btn ${getFilterCount() > 0 ? "has-filters" : ""}`}
+              className={`control-btn ${
+                getFilterCount() > 0 ? "has-filters" : ""
+              }`}
               onClick={() => setShowFiltersModal(true)}
             >
               <FiFilter className="btn-icon" />
@@ -776,10 +727,7 @@ const Inventory = () => {
                 <span className="filter-badge">{getFilterCount()}</span>
               )}
             </button>
-            <button className="control-btn" onClick={handleExport}>
-              <FiDownload className="btn-icon" />
-              Catálogo
-            </button>
+
             <button className="control-btn" onClick={handleExportMermas}>
               <FiAlertTriangle className="btn-icon text-red-500" />
               Reporte Mermas
@@ -899,7 +847,9 @@ const Inventory = () => {
                         <td>
                           <div className="stock-cell">
                             <div
-                              className={`stock-dot stock-${stockStatus.color} ${stockStatus.pulse ? "pulse" : ""}`}
+                              className={`stock-dot stock-${
+                                stockStatus.color
+                              } ${stockStatus.pulse ? "pulse" : ""}`}
                             ></div>
                             <span>
                               {product.stock}{" "}
@@ -1040,7 +990,9 @@ const Inventory = () => {
             <div className="new-product-modal-body">
               {/* Image Upload Area */}
               <div
-                className={`new-product-image-upload ${dragActive ? "drag-active" : ""}`}
+                className={`new-product-image-upload ${
+                  dragActive ? "drag-active" : ""
+                }`}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
                 onDragOver={handleDrag}
@@ -1668,6 +1620,9 @@ const Inventory = () => {
             fetchProducts();
             // Optionally refresh categories if needed
           }}
+          currentProducts={products}
+          getCategory={getCategory}
+          getSKU={getSKU}
         />
       )}
 
@@ -1765,7 +1720,11 @@ const Inventory = () => {
                           </td>
                           <td className="py-3 px-4 text-center">
                             <span
-                              className={`inline-flex items-center justify-center min-w-[30px] px-2 py-1 rounded-md text-xs font-bold ${isCritical ? "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400" : "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400"}`}
+                              className={`inline-flex items-center justify-center min-w-[30px] px-2 py-1 rounded-md text-xs font-bold ${
+                                isCritical
+                                  ? "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400"
+                                  : "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400"
+                              }`}
                             >
                               {p.stock}
                             </span>
