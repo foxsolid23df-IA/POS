@@ -4,6 +4,7 @@ import { cashCutService } from "../../services/cashCutService";
 import { salesService } from "../../services/salesService";
 import { terminalService } from "../../services/terminalService";
 import { CashMovementModal } from "../sales/CashMovementModal";
+import { useSettings } from "../../contexts/SettingsContext";
 import Swal from "sweetalert2";
 import "./CashCut.css";
 
@@ -16,6 +17,7 @@ export const CashCut = ({ onClose }) => {
     closeCashSession,
     cashSession,
   } = useAuth();
+  const { ticketSettings } = useSettings();
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState(null);
   const [salesDetails, setSalesDetails] = useState([]);
@@ -29,6 +31,17 @@ export const CashCut = ({ onClose }) => {
   const [mostrarModalMovimiento, setMostrarModalMovimiento] = useState(false);
 
   const ticketRef = useRef(null);
+
+  // Variables de configuración del ticket (definidas a nivel de componente para renderizado y carga)
+  const showInitialFund = ticketSettings?.cc_show_initial_fund !== false;
+  const showCardSales = ticketSettings?.cc_show_card_sales !== false;
+  const showTransferSales = ticketSettings?.cc_show_transfer_sales !== false;
+  const showWithdrawals = ticketSettings?.cc_show_withdrawals !== false;
+  const showSalesCount = ticketSettings?.cc_show_sales_count !== false;
+  const showExpectedCash = ticketSettings?.cc_show_expected_cash !== false;
+  const showCountedCash = ticketSettings?.cc_show_counted_cash !== false;
+  const showDifferences = ticketSettings?.cc_show_differences !== false;
+  const showOperatorName = ticketSettings?.cc_show_operator_name !== false;
 
   useEffect(() => {
     loadSummary();
@@ -303,18 +316,6 @@ export const CashCut = ({ onClose }) => {
       const withdrawalsCount =
         summary?.movements?.filter((m) => m.movement_type === "salida")
           ?.length || 0;
-
-      // Variables de configuración del ticket
-      const showInitialFund = ticketSettings?.cc_show_initial_fund !== false;
-      const showCardSales = ticketSettings?.cc_show_card_sales !== false;
-      const showTransferSales =
-        ticketSettings?.cc_show_transfer_sales !== false;
-      const showWithdrawals = ticketSettings?.cc_show_withdrawals !== false;
-      const showSalesCount = ticketSettings?.cc_show_sales_count !== false;
-      const showExpectedCash = ticketSettings?.cc_show_expected_cash !== false;
-      const showCountedCash = ticketSettings?.cc_show_counted_cash !== false;
-      const showDifferences = ticketSettings?.cc_show_differences !== false;
-      const showOperatorName = ticketSettings?.cc_show_operator_name !== false;
 
       let htmlPrint = `<!DOCTYPE html>
         <html><head><title>Corte de Caja</title>
