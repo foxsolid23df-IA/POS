@@ -83,6 +83,8 @@ export const Login = () => {
           formData.storeName,
           formData.fullName,
           validation.codeId,
+          validation.license_type,
+          validation.max_registers,
         );
       } else {
         await login(formData.email, formData.password);

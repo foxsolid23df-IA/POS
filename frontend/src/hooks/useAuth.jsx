@@ -164,6 +164,8 @@ export const AuthProvider = ({ children }) => {
     storeName,
     fullName,
     invitationCodeId = null,
+    licenseType = "monocaja",
+    maxRegisters = 1,
   ) => {
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
@@ -178,6 +180,8 @@ export const AuthProvider = ({ children }) => {
           store_name: storeName,
           full_name: fullName,
           role: "admin",
+          license_type: licenseType,
+          max_registers: maxRegisters,
         },
       ]);
 

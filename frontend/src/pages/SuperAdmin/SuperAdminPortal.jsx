@@ -19,8 +19,16 @@ export const SuperAdminPortal = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newClientCode, setNewClientCode] = useState("");
   const [newClientDuration, setNewClientDuration] = useState("30");
+  const [newClientLicenseType, setNewClientLicenseType] = useState("monocaja");
   const [creating, setCreating] = useState(false);
   const [actionError, setActionError] = useState("");
+
+  // Edit License state
+  const [showEditLicenseModal, setShowEditLicenseModal] = useState(false);
+  const [editingLicense, setEditingLicense] = useState(null);
+  const [editLicenseType, setEditLicenseType] = useState("monocaja");
+  const [updatingLicense, setUpdatingLicense] = useState(false);
+  const [editLicenseError, setEditLicenseError] = useState("");
 
   // Administrators state
   const [admins, setAdmins] = useState([]);
@@ -85,7 +93,7 @@ export const SuperAdminPortal = () => {
         .from("invitation_codes")
         .select(
           `
-          id, code, expires_at, created_at, used_by,
+          id, code, expires_at, created_at, used_by, license_type,
           profiles (store_name, full_name)
         `,
         )
@@ -142,6 +150,7 @@ export const SuperAdminPortal = () => {
     try {
       if (!newClientCode) throw new Error("Ingrese un nombre para el código");
       const duration = parseInt(newClientDuration);
+      const maxRegisters = newClientLicenseType === "monocaja" ? 1 : 999;
 
       const { error } = await supabase.from("invitation_codes").insert([
         {
@@ -149,6 +158,8 @@ export const SuperAdminPortal = () => {
           expires_at: new Date(
             Date.now() + duration * 24 * 60 * 60 * 1000,
           ).toISOString(),
+          license_type: newClientLicenseType,
+          max_registers: maxRegisters,
         },
       ]);
 
@@ -160,6 +171,53 @@ export const SuperAdminPortal = () => {
       setActionError(err.message);
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleOpenEditLicense = (lic) => {
+    setEditingLicense(lic);
+    setEditLicenseType(lic.license_type || "monocaja");
+    setEditLicenseError("");
+    setShowEditLicenseModal(true);
+  };
+
+  const handleUpdateLicense = async (e) => {
+    e.preventDefault();
+    setUpdatingLicense(true);
+    setEditLicenseError("");
+
+    try {
+      const maxRegisters = editLicenseType === "monocaja" ? 1 : 999;
+
+      // 1. Actualizar el código de invitación
+      const { error: codeError } = await supabase
+        .from("invitation_codes")
+        .update({ license_type: editLicenseType, max_registers: maxRegisters })
+        .eq("id", editingLicense.id);
+
+      if (codeError) throw codeError;
+
+      // 2. Si el código ya fue usado por un cliente, también actualizar su perfil!
+      if (editingLicense.used_by) {
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .update({
+            license_type: editLicenseType,
+            max_registers: maxRegisters,
+          })
+          .eq("id", editingLicense.used_by);
+
+        if (profileError) throw profileError;
+      }
+
+      setShowEditLicenseModal(false);
+      setEditingLicense(null);
+      loadLicenses(); // Refrescar la tabla
+      alert("Licencia actualizada correctamente.");
+    } catch (err) {
+      setEditLicenseError(err.message);
+    } finally {
+      setUpdatingLicense(false);
     }
   };
 
@@ -429,6 +487,7 @@ export const SuperAdminPortal = () => {
                       <th>Código de Cliente</th>
                       <th>Tienda / Dueño</th>
                       <th>Fecha de Expiración</th>
+                      <th>Licencia</th>
                       <th>Estado</th>
                       <th>Acción</th>
                     </tr>
@@ -466,6 +525,19 @@ export const SuperAdminPortal = () => {
                             )}
                           </td>
                           <td>
+                            <span
+                              className={`badge ${
+                                lic.license_type === "monocaja"
+                                  ? "badge-blue"
+                                  : "badge-gold"
+                              }`}
+                            >
+                              {lic.license_type === "multicajas"
+                                ? "Multicajas"
+                                : "Monocaja"}
+                            </span>
+                          </td>
+                          <td>
                             <div
                               className={`status-indicator ${
                                 isExpired ? "inactive" : "active"
@@ -474,17 +546,35 @@ export const SuperAdminPortal = () => {
                             {isExpired ? "Inactiva" : "Activa"}
                           </td>
                           <td>
-                            <button
-                              className={`reactivate-btn ${
-                                isExpired ? "gold-pulse" : "outline"
-                              }`}
-                              onClick={() =>
-                                handleReactivate(lic.id, lic.expires_at)
-                              }
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: "8px",
+                                alignItems: "center",
+                              }}
                             >
-                              <i className="la la-sync"></i>{" "}
-                              {isExpired ? "Reactivar (30d)" : "Extender (30d)"}
-                            </button>
+                              <button
+                                className={`reactivate-btn ${
+                                  isExpired ? "gold-pulse" : "outline"
+                                }`}
+                                onClick={() =>
+                                  handleReactivate(lic.id, lic.expires_at)
+                                }
+                              >
+                                <i className="la la-sync"></i>{" "}
+                                {isExpired
+                                  ? "Reactivar (30d)"
+                                  : "Extender (30d)"}
+                              </button>
+                              <button
+                                className="reactivate-btn outline"
+                                title="Cambiar Licencia"
+                                onClick={() => handleOpenEditLicense(lic)}
+                                style={{ padding: "8px" }}
+                              >
+                                <i className="la la-edit"></i>
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -640,6 +730,16 @@ export const SuperAdminPortal = () => {
                   <option value="365">1 Año</option>
                 </select>
               </div>
+              <div className="input-group">
+                <label>Tipo de Licencia</label>
+                <select
+                  value={newClientLicenseType}
+                  onChange={(e) => setNewClientLicenseType(e.target.value)}
+                >
+                  <option value="monocaja">Monocaja (1 Caja)</option>
+                  <option value="multicajas">Multicajas (Ilimitado)</option>
+                </select>
+              </div>
               {actionError && (
                 <div className="superadmin-error">{actionError}</div>
               )}
@@ -708,6 +808,81 @@ export const SuperAdminPortal = () => {
                   disabled={creatingAdmin}
                 >
                   {creatingAdmin ? "Creando..." : "Crear Admin"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit License Modal */}
+      {showEditLicenseModal && editingLicense && (
+        <div className="superadmin-modal-overlay">
+          <div className="superadmin-modal glass-panel">
+            <h3>Cambiar Tipo de Licencia</h3>
+            <p className="sub-text">
+              Actualiza la licencia para:{" "}
+              <strong>
+                {editingLicense.profiles?.store_name || editingLicense.code}
+              </strong>
+              .
+            </p>
+            <form onSubmit={handleUpdateLicense}>
+              <div className="input-group mt-4">
+                <label>Tipo de Licencia</label>
+                <select
+                  value={editLicenseType}
+                  onChange={(e) => setEditLicenseType(e.target.value)}
+                >
+                  <option value="monocaja">Monocaja (1 Caja)</option>
+                  <option value="multicajas">Multicajas (Ilimitado)</option>
+                </select>
+              </div>
+
+              <div
+                className="setup-info"
+                style={{
+                  backgroundColor: "rgba(59, 130, 246, 0.1)",
+                  color: "#1e40af",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  marginTop: "16px",
+                  fontSize: "12px",
+                  display: "flex",
+                  gap: "8px",
+                  alignItems: "flex-start",
+                }}
+              >
+                <span
+                  className="material-symbols-outlined"
+                  style={{ fontSize: "16px" }}
+                >
+                  info
+                </span>
+                <p style={{ margin: 0, lineHeight: 1.4 }}>
+                  Este cambio aplicará inmediatamente y actualizará la cuenta
+                  del cliente permitiéndole o restringiéndole el registro de
+                  múltiples cajas temporales.
+                </p>
+              </div>
+
+              {editLicenseError && (
+                <div className="superadmin-error">{editLicenseError}</div>
+              )}
+              <div className="modal-actions mt-4">
+                <button
+                  type="button"
+                  className="superadmin-btn outline"
+                  onClick={() => setShowEditLicenseModal(false)}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="superadmin-btn primary-gold"
+                  disabled={updatingLicense}
+                >
+                  {updatingLicense ? "Guardando..." : "Guardar Cambios"}
                 </button>
               </div>
             </form>

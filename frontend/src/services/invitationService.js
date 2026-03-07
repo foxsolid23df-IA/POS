@@ -13,7 +13,7 @@ export const invitationService = {
             // Buscar el código en la base de datos
             const { data, error } = await supabase
                 .from('invitation_codes')
-                .select('id, code, used, used_by, expires_at')
+                .select('id, code, used, used_by, expires_at, license_type, max_registers')
                 .eq('code', codeUpper)
                 .maybeSingle();
 
@@ -42,10 +42,12 @@ export const invitationService = {
             }
 
             // Código válido
-            return { 
-                valid: true, 
+            return {
+                valid: true,
                 codeId: data.id,
-                code: codeUpper 
+                code: codeUpper,
+                license_type: data.license_type || 'monocaja',
+                max_registers: data.max_registers || 1
             };
         } catch (error) {
             console.error('Error validando código de invitación:', error);

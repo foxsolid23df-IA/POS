@@ -1,22 +1,46 @@
 import React, { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { terminalService } from "../../services/terminalService";
+import { useAuth } from "../../hooks/useAuth";
 import "./TerminalSetup.css";
 
 export const TerminalSetup = ({ onTerminalConfigured }) => {
+  const { user, logout } = useAuth();
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
   const [isMain, setIsMain] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasMainAlready, setHasMainAlready] = useState(false);
+  const [terminalsCount, setTerminalsCount] = useState(0);
+  const [checkingLimit, setCheckingLimit] = useState(true);
+  const [limitReached, setLimitReached] = useState(false);
 
   useEffect(() => {
     const checkMainTerminal = async () => {
       const exists = await terminalService.hasMainTerminal();
       setHasMainAlready(exists);
     };
+
+    const checkLimits = async () => {
+      try {
+        const terminals = await terminalService.getTerminals();
+        setTerminalsCount(terminals.length);
+
+        const maxRegisters = user?.max_registers || 1;
+
+        if (terminals.length >= maxRegisters) {
+          setLimitReached(true);
+        }
+      } catch (error) {
+        console.error("Error checking limits:", error);
+      } finally {
+        setCheckingLimit(false);
+      }
+    };
+
     checkMainTerminal();
-  }, []);
+    checkLimits();
+  }, [user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -57,6 +81,97 @@ export const TerminalSetup = ({ onTerminalConfigured }) => {
       setIsSubmitting(false);
     }
   };
+
+  if (checkingLimit) {
+    return (
+      <div className="terminal-setup-overlay">
+        <div
+          className="terminal-setup-modal"
+          style={{
+            textAlign: "center",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "40px 20px",
+          }}
+        >
+          <span
+            className="spinner"
+            style={{
+              width: "32px",
+              height: "32px",
+              borderTopColor: "#3b82f6",
+              marginBottom: "16px",
+            }}
+          ></span>
+          <p>Verificando licencia y cajas registradas...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (limitReached) {
+    return (
+      <div className="terminal-setup-overlay">
+        <div className="terminal-setup-modal" style={{ textAlign: "center" }}>
+          <div
+            className="terminal-icon"
+            style={{
+              backgroundColor: "#fef2f2",
+              color: "#ef4444",
+              margin: "0 auto 20px auto",
+            }}
+          >
+            <span className="material-symbols-outlined">block</span>
+          </div>
+          <h1>Límite de Cajas Alcanzado</h1>
+          <p style={{ margin: "20px 0", color: "#64748b", lineHeight: "1.6" }}>
+            Tu licencia actual (
+            {user?.license_type === "multicajas" ? "Multicajas" : "Monocaja"})
+            te permite registrar hasta{" "}
+            <strong>{user?.max_registers} caja(s)</strong>. Actualmente ya
+            tienes <strong>{terminalsCount} caja(s)</strong> registradas en tu
+            red.
+          </p>
+          <div
+            className="setup-info"
+            style={{
+              backgroundColor: "#fef2f2",
+              color: "#b91c1c",
+              borderLeftColor: "#ef4444",
+              textAlign: "left",
+              marginBottom: "24px",
+            }}
+          >
+            <span
+              className="material-symbols-outlined info-icon"
+              style={{ color: "#ef4444" }}
+            >
+              error
+            </span>
+            <div className="setup-info-content">
+              <h4>Atención</h4>
+              <p>
+                Para expandir tu negocio y agregar más cajas, comunícate con el
+                administrador del sistema para actualizar a una licencia
+                Multicajas.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="setup-submit-btn"
+            style={{ backgroundColor: "#64748b", border: "none" }}
+            onClick={logout}
+          >
+            <span className="material-symbols-outlined">logout</span>
+            Cerrar Sesión Segura
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="terminal-setup-overlay">
