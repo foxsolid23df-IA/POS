@@ -3,6 +3,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { cashCutService } from "../../services/cashCutService";
 import { salesService } from "../../services/salesService";
 import { terminalService } from "../../services/terminalService";
+import { cashSessionService } from "../../services/cashSessionService";
 import { CashMovementModal } from "../sales/CashMovementModal";
 import { useSettings } from "../../contexts/SettingsContext";
 import Swal from "sweetalert2";
@@ -16,6 +17,7 @@ export const CashCut = ({ onClose }) => {
     storeName,
     closeCashSession,
     cashSession,
+    isAdmin,
   } = useAuth();
   const { ticketSettings } = useSettings();
   const [loading, setLoading] = useState(true);
@@ -164,15 +166,55 @@ export const CashCut = ({ onClose }) => {
             )
             .join("");
 
-          Swal.fire({
-            title: "No se puede cerrar el día",
-            html: `
-                            <p>Hay cajas con turno abierto. Deben realizar su corte primero:</p>
-                            <ul style="text-align: left; margin-top: 10px;">${sessionList}</ul>
-                        `,
-            icon: "error",
-          });
-          return;
+          if (isAdmin) {
+            const adminResult = await Swal.fire({
+              title: "Cajas pendientes",
+              html: `
+                              <p>Las siguientes cajas aún no han cerrado su turno:</p>
+                              <ul style="text-align: left; margin-top: 10px; margin-bottom: 10px;">${sessionList}</ul>
+                              <p style="color: #d32f2f; font-weight: bold;">¿Deseas forzar su cierre para continuar con el Cierre de Día?</p>
+                          `,
+              icon: "warning",
+              showCancelButton: true,
+              confirmButtonText: "Sí, forzar cierre",
+              cancelButtonText: "Cancelar",
+              confirmButtonColor: "#d32f2f",
+            });
+
+            if (adminResult.isConfirmed) {
+              setSubmitting(true);
+              try {
+                // Cerrar forzosamente cada sesión bloqueante
+                for (let session of blockingSessions) {
+                  await cashSessionService.closeSession(session.id);
+                }
+              } catch (closeErr) {
+                console.error("Error forzando cierre de sesiones:", closeErr);
+                Swal.fire(
+                  "Error",
+                  "No se pudieron forzar los cierres de caja.",
+                  "error",
+                );
+                setSubmitting(false);
+                return;
+              }
+              setSubmitting(false);
+              // Proceder con el Cierre de Día normalmente
+            } else {
+              return; // Canceló
+            }
+          } else {
+            Swal.fire({
+              title: "No se puede cerrar el día",
+              html: `
+                              <p>Hay cajas con turno abierto. Deben realizar su corte primero:</p>
+                              <ul style="text-align: left; margin-top: 10px;">${sessionList}</ul>
+                              <p style="margin-top: 10px; font-size: 0.9em; font-weight: bold; color: #555;">Pide a un Administrador que realice el Cierre de Día para forzar el cierre de las demás cajas.</p>
+                          `,
+              icon: "error",
+            });
+            return;
+          }
         }
       }
     } catch (error) {
