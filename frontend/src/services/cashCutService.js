@@ -49,8 +49,8 @@ export const cashCutService = {
     },
 
     // Crear un corte de caja
-    createCashCut: async (cutData) => {
-        const { data: userData } = await supabase.auth.getUser();
+        createCashCut: async (cutData, userId) => {
+                if (!userId) throw new Error('Usuario no autenticado');
 
         const { data, error } = await supabase
             .from('cash_cuts')
@@ -71,7 +71,7 @@ export const cashCutService = {
                 card_total: cutData.cardTotal || 0,
                 transfer_total: cutData.transferTotal || 0,
                 notes: cutData.notes || null,
-                user_id: userData.user.id,
+                                    user_id: userId,
                 terminal_id: terminalService.getTerminalId()
             }])
             .select()

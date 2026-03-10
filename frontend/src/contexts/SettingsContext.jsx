@@ -1,10 +1,4 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-} from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { ticketSettingsService } from "../services/ticketSettingsService";
 import { useAuth } from "../hooks/useAuth";
 
@@ -32,7 +26,8 @@ export const SettingsProvider = ({ children }) => {
 
     try {
       setLoading(true);
-      const settings = await ticketSettingsService.getSettings();
+      // Pasamos user.id directamente para evitar llamada HTTP extra a supabase.auth.getUser()
+      const settings = await ticketSettingsService.getSettings(user.id);
       setTicketSettings(settings);
     } catch (error) {
       console.error("[SettingsContext] Error loading settings:", error);

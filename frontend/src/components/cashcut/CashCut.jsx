@@ -18,6 +18,7 @@ export const CashCut = ({ onClose }) => {
     closeCashSession,
     cashSession,
     isAdmin,
+        user,
   } = useAuth();
   const { ticketSettings } = useSettings();
   const [loading, setLoading] = useState(true);
@@ -300,7 +301,7 @@ export const CashCut = ({ onClose }) => {
         notes,
       };
 
-      const savedCut = await cashCutService.createCashCut(cutData);
+      const savedCut = await cashCutService.createCashCut(cutData, user?.id);
 
       // Guardar resultado para el ticket
       setCutResult({

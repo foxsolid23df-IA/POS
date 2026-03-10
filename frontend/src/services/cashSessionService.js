@@ -12,7 +12,7 @@ export const cashSessionService = {
 
         const { data, error } = await supabase
             .from('cash_sessions')
-            .select('*')
+                        .select('id, user_id, staff_id, staff_name, opening_fund, status, opened_at, closed_at, terminal_id')
             .eq('status', 'open')
             .eq('terminal_id', terminalId)
             .order('opened_at', { ascending: false })
@@ -104,7 +104,7 @@ export const cashSessionService = {
     async getSessionHistory(limit = 10) {
         const { data, error } = await supabase
             .from('cash_sessions')
-            .select('*, terminals(name)')
+                        .select('id, staff_name, opening_fund, status, opened_at, closed_at, terminal_id, terminals(name)')
             .order('opened_at', { ascending: false })
             .limit(limit);
 
