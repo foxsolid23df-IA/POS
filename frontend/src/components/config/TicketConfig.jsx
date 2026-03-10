@@ -2,10 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 import Swal from "sweetalert2";
 import { ticketSettingsService } from "../../services/ticketSettingsService";
 import { useSettings } from "../../contexts/SettingsContext";
+import { useAuth } from "../../hooks/useAuth";
 import "./TicketConfig.css";
 
 export const TicketConfig = () => {
   const { refreshSettings } = useSettings();
+    const { user } = useAuth();
   const [settings, setSettings] = useState({
     business_name: "",
     address: "",
@@ -39,7 +41,7 @@ export const TicketConfig = () => {
   const fetchSettings = async () => {
     try {
       setLoading(true);
-      const data = await ticketSettingsService.getSettings();
+      const data = await ticketSettingsService.getSettings(user?.id);
       if (data) {
         setSettings(data);
       }
@@ -86,7 +88,7 @@ export const TicketConfig = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      await ticketSettingsService.saveSettings(settings);
+      await ticketSettingsService.saveSettings(settings, user?.id);
       await refreshSettings();
       Swal.fire({
         title: "¡Guardado!",
