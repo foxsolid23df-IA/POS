@@ -2,14 +2,42 @@ import { supabase } from '../supabase';
 
 export const ticketSettingsService = {
     // Obtener configuración del ticket para el usuario actual
-    getSettings: async () => {
-        const { data: userData } = await supabase.auth.getUser();
-        if (!userData?.user) return null;
+    // userId se recibe como parámetro para evitar llamadas HTTP extra a supabase.auth.getUser()
+    getSettings: async (userId) => {
+        if (!userId) return null;
 
         const { data, error } = await supabase
             .from('ticket_settings')
-            .select('*')
-            .eq('user_id', userData.user.id)
+            .select(`
+                id,
+                user_id,
+                business_name,
+                address,
+                phone,
+                logo_url,
+                footer_message,
+                paper_width,
+                font_size,
+                margin,
+                font_family,
+                is_bold,
+                show_logo,
+                show_business_name,
+                show_address,
+                show_phone,
+                show_footer,
+                cc_show_initial_fund,
+                cc_show_card_sales,
+                cc_show_transfer_sales,
+                cc_show_withdrawals,
+                cc_show_sales_count,
+                cc_show_expected_cash,
+                cc_show_counted_cash,
+                cc_show_differences,
+                cc_show_operator_name,
+                updated_at
+            `)
+            .eq('user_id', userId)
             .maybeSingle();
 
         if (error) {
@@ -21,19 +49,19 @@ export const ticketSettingsService = {
     },
 
     // Guardar o actualizar configuración
-    saveSettings: async (settings) => {
-        const { data: userData } = await supabase.auth.getUser();
-        if (!userData?.user) throw new Error('Usuario no autenticado');
+    // userId se recibe como parámetro para evitar llamadas HTTP extra a supabase.auth.getUser()
+    saveSettings: async (settings, userId) => {
+        if (!userId) throw new Error('Usuario no autenticado');
 
         const { data: existing } = await supabase
             .from('ticket_settings')
             .select('id')
-            .eq('user_id', userData.user.id)
+            .eq('user_id', userId)
             .maybeSingle();
 
         const settingsData = {
             ...settings,
-            user_id: userData.user.id,
+            user_id: userId,
             updated_at: new Date().toISOString()
         };
 
