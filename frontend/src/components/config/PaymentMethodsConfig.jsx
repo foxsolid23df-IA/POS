@@ -41,13 +41,77 @@ const PaymentMethodsConfig = () => {
       if (!data || data.length === 0) {
         await initializeDefaultMethods();
       } else {
-        setPaymentMethods(data);
+        // Limpiamos duplicados si existen y ordenamos
+        const cleaned = processPaymentMethods(data);
+        setPaymentMethods(cleaned);
+        
+        // Elimiamos duplicados de la base de datos si se detectaron
+        const idsToKeep = new Set(cleaned.map(m => m.id));
+        const duplicates = data.filter(m => !idsToKeep.has(m.id));
+        if (duplicates.length > 0) {
+          cleanupDuplicates(duplicates.map(m => m.id));
+        }
       }
     } catch (err) {
       console.error(err);
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Función para procesar, limpiar duplicados y ordenar los métodos
+  const processPaymentMethods = (methods) => {
+    if (!methods || methods.length === 0) return [];
+    
+    // 1. Eliminar duplicados exactos por nombre (ignorando mayúsculas/minúsculas)
+    const seen = new Set();
+    const unique = [];
+    
+    // Primero buscamos el "Efectivo" principal
+    const efectivoPrincipal = methods.find(m => m.name.toLowerCase() === "efectivo");
+    if (efectivoPrincipal) {
+      unique.push(efectivoPrincipal);
+      seen.add("efectivo");
+    }
+
+    methods.forEach(method => {
+      const nameKey = method.name.toLowerCase();
+      if (!seen.has(nameKey)) {
+        unique.push(method);
+        seen.add(nameKey);
+      } else if (method.id !== efectivoPrincipal?.id) {
+        // Si es un duplicado, podríamos opcionalmente borrarlo de la DB
+        console.log("Detectado duplicado de:", method.name);
+      }
+    });
+
+    // 2. Ordenamos para que Efectivo siempre esté arriba, luego Tarjeta y Transferencia
+    return unique.sort((a, b) => {
+      const nameA = a.name.toLowerCase();
+      const nameB = b.name.toLowerCase();
+      
+      if (nameA === "efectivo") return -1;
+      if (nameB === "efectivo") return 1;
+      
+      const priority = { "tarjeta": 1, "transferencia": 2 };
+      const priorityA = priority[nameA] || 99;
+      const priorityB = priority[nameB] || 99;
+      
+      if (priorityA !== priorityB) return priorityA - priorityB;
+    });
+  };
+
+  const cleanupDuplicates = async (ids) => {
+    try {
+      console.log("Eliminando duplicados de la DB:", ids);
+      const { error } = await supabase
+        .from("payment_methods")
+        .delete()
+        .in("id", ids);
+      if (error) console.error("Error al limpiar duplicados:", error);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -65,7 +129,7 @@ const PaymentMethodsConfig = () => {
         .select();
 
       if (error) throw error;
-      setPaymentMethods(data);
+      setPaymentMethods(processPaymentMethods(data));
     } catch (err) {
       console.error("Error al inicializar métodos:", err);
       setError(err.message);
