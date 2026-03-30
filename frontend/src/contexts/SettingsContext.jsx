@@ -40,11 +40,11 @@ export const SettingsProvider = ({ children }) => {
     refreshSettings();
   }, [refreshSettings]);
 
-  const value = {
+  const value = React.useMemo(() => ({
     ticketSettings,
     loading,
     refreshSettings,
-  };
+  }), [ticketSettings, loading, refreshSettings]);
 
   return (
     <SettingsContext.Provider value={value}>

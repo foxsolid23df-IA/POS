@@ -111,29 +111,30 @@ export const Sales = () => {
       );
       return;
     }
-    const cant = parseFloat(comunForm.cantidad) || 0;
-    const precioObj = parseFloat(comunForm.precio) || 0;
 
-    if (cant <= 0 || precioObj < 0) {
+    const cantidad = parseFloat(comunForm.cantidad);
+    const precio = parseFloat(comunForm.precio);
+
+    if (isNaN(cantidad) || cantidad <= 0 || isNaN(precio) || precio < 0) {
       mostrarModalPersonalizado(
         "Error",
-        "Cantidad o precio no válidos.",
+        "Cantidad y Precio deben ser números válidos.",
         "warning",
       );
       return;
     }
 
-    const nuevoProducto = {
-      id: "comun-" + Date.now(),
-      name: comunForm.descripcion,
-      price: precioObj,
-      quantity: cant,
-      stock: 99999, // Stock infinito
-      barcode: "",
+    const itemComun = {
+      id: `COMUN-${Date.now()}`,
+      name: comunForm.descripcion.toUpperCase(),
+      price: precio,
+      quantity: cantidad,
+      stock: 999999, // Producto común no tiene límite de stock manual
       image: null,
+      is_common: true,
     };
 
-    agregarProducto(nuevoProducto);
+    agregarProducto(itemComun);
     setMostrarModalComun(false);
     setComunForm({ descripcion: "", cantidad: 1, precio: "" });
   };

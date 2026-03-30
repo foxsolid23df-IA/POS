@@ -387,9 +387,13 @@ export const AuthProvider = ({ children }) => {
   const canAccessAdmin = activeStaff?.isOwner || activeRole === "admin";
   const canAccessReports = canAccessAdmin || activeRole === "gerente";
 
+  const memoizedUser = React.useMemo(() => 
+    user ? { ...user, ...profile } : null,
+  [user, profile]);
+
   const value = {
     // Usuario autenticado de Supabase (dueño de la tienda)
-    user: user ? { ...user, ...profile } : null,
+    user: memoizedUser,
     token: session?.access_token,
 
     // Funciones de auth principales

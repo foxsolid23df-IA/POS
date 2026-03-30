@@ -22,7 +22,7 @@ export const salesService = {
 
         // Formatear items para el RPC
         const itemsJson = saleData.items.map(item => ({
-            product_id: item.id,
+            product_id: isNaN(parseInt(item.id)) ? null : parseInt(item.id),
             product_name: item.name,
             quantity: item.quantity,
             price: item.price,
