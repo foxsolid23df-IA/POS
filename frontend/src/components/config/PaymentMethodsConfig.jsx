@@ -14,7 +14,12 @@ const PaymentMethodsConfig = () => {
   
   // Para agregar uno nuevo
   const [newMethodName, setNewMethodName] = useState("");
+  const [newMethodSatCode, setNewMethodSatCode] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+
+  // Para editar uno existente
+  const [editingMethod, setEditingMethod] = useState(null);
+  const [activeMenu, setActiveMenu] = useState(null); // ID del método con el menú abierto
 
   useEffect(() => {
     if (user?.id) {
@@ -48,9 +53,9 @@ const PaymentMethodsConfig = () => {
 
   const initializeDefaultMethods = async () => {
     const defaults = [
-      { user_id: user.id, name: "Efectivo", is_active: true },
-      { user_id: user.id, name: "Tarjeta", is_active: true },
-      { user_id: user.id, name: "Transferencia", is_active: true }
+      { user_id: user.id, name: "Efectivo", is_active: true, sat_code: "01" },
+      { user_id: user.id, name: "Tarjeta", is_active: true, sat_code: "04" },
+      { user_id: user.id, name: "Transferencia", is_active: true, sat_code: "03" }
     ];
 
     try {
@@ -75,7 +80,12 @@ const PaymentMethodsConfig = () => {
       setIsAdding(true);
       const { data, error } = await supabase
         .from("payment_methods")
-        .insert([{ user_id: user.id, name: newMethodName.trim(), is_active: true }])
+        .insert([{ 
+          user_id: user.id, 
+          name: newMethodName.trim(), 
+          is_active: true,
+          sat_code: newMethodSatCode.trim() || null
+        }])
         .select()
         .single();
 
@@ -83,6 +93,7 @@ const PaymentMethodsConfig = () => {
 
       setPaymentMethods([...paymentMethods, data]);
       setNewMethodName("");
+      setNewMethodSatCode("");
     } catch (err) {
       console.error(err);
       setError(err.message);
@@ -108,6 +119,35 @@ const PaymentMethodsConfig = () => {
     } catch (err) {
       console.error(err);
       setError("Error al cambiar estado");
+    } finally {
+      setActiveMenu(null);
+    }
+  };
+
+  const handleUpdateMethod = async (e) => {
+    e.preventDefault();
+    if (!editingMethod.name.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from("payment_methods")
+        .update({
+          name: editingMethod.name.trim(),
+          sat_code: editingMethod.sat_code?.trim() || null
+        })
+        .eq("id", editingMethod.id);
+
+      if (error) throw error;
+
+      setPaymentMethods(
+        paymentMethods.map((m) =>
+          m.id === editingMethod.id ? { ...m, name: editingMethod.name, sat_code: editingMethod.sat_code } : m
+        )
+      );
+      setEditingMethod(null);
+    } catch (err) {
+      console.error(err);
+      setError("Error al actualizar método de pago");
     }
   };
 
@@ -133,6 +173,8 @@ const PaymentMethodsConfig = () => {
     } catch (err) {
       console.error(err);
       setError("No se puede eliminar porque existen ventas o cortes vinculados a este método.");
+    } finally {
+      setActiveMenu(null);
     }
   };
 
@@ -151,15 +193,27 @@ const PaymentMethodsConfig = () => {
         {error && <div className="error-message">{error}</div>}
 
         <form className="add-method-form" onSubmit={handleAddMethod}>
-          <div className="input-group">
-            <input
-              type="text"
-              placeholder="Nueva forma de pago (Ej. Vales de Despensa)"
-              value={newMethodName}
-              onChange={(e) => setNewMethodName(e.target.value)}
-              required
-            />
-            <button type="submit" disabled={isAdding || !newMethodName.trim()}>
+          <div className="input-row">
+            <div className="input-group">
+              <label>Nombre del método</label>
+              <input
+                type="text"
+                placeholder="Ej. Vales de Despensa"
+                value={newMethodName}
+                onChange={(e) => setNewMethodName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="input-group">
+              <label>Clave SAT (Opcional)</label>
+              <input
+                type="text"
+                placeholder="Ej. 08"
+                value={newMethodSatCode}
+                onChange={(e) => setNewMethodSatCode(e.target.value)}
+              />
+            </div>
+            <button type="submit" className="add-btn" disabled={isAdding || !newMethodName.trim()}>
               <span className="material-symbols-outlined">add</span>
               {isAdding ? "Añadiendo..." : "Añadir"}
             </button>
@@ -184,30 +238,58 @@ const PaymentMethodsConfig = () => {
                        method.name.toLowerCase() === "transferencia" ? "account_balance" : "wallet"}
                     </span>
                     <span className="method-name">{method.name}</span>
+                    {method.sat_code && (
+                      <span className="badge-sat" title="Clave SAT">SAT: {method.sat_code}</span>
+                    )}
                     {isBasic && <span className="badge-system">Sistema</span>}
                   </div>
 
                   <div className="method-actions">
-                    <button
-                      type="button"
-                      className={`toggle-btn ${method.is_active ? "active" : ""}`}
-                      onClick={() => handleToggleStatus(method.id, method.is_active)}
-                      title={method.is_active ? "Desactivar" : "Activar"}
-                    >
-                      <span className="material-symbols-outlined">
-                        {method.is_active ? "toggle_on" : "toggle_off"}
-                      </span>
-                    </button>
+                    <div className="actions-menu-container">
+                      <button 
+                        className="menu-trigger-btn" 
+                        onClick={() => setActiveMenu(activeMenu === method.id ? null : method.id)}
+                      >
+                        <span className="material-symbols-outlined">more_vert</span>
+                      </button>
 
-                    <button
-                      type="button"
-                      className="delete-btn"
-                      onClick={() => handleDelete(method.id, method.name)}
-                      disabled={isBasic}
-                      title={isBasic ? "No se puede eliminar" : "Eliminar método"}
-                    >
-                      <span className="material-symbols-outlined">delete</span>
-                    </button>
+                      {activeMenu === method.id && (
+                        <div className="actions-dropdown">
+                          <button
+                            type="button"
+                            className="dropdown-item"
+                            onClick={() => {
+                              setEditingMethod({ ...method });
+                              setActiveMenu(null);
+                            }}
+                          >
+                            <span className="material-symbols-outlined">edit</span>
+                            Editar
+                          </button>
+                          
+                          <button
+                            type="button"
+                            className="dropdown-item"
+                            onClick={() => handleToggleStatus(method.id, method.is_active)}
+                          >
+                            <span className="material-symbols-outlined">
+                              {method.is_active ? "toggle_on" : "toggle_off"}
+                            </span>
+                            {method.is_active ? "Desactivar" : "Activar"}
+                          </button>
+
+                          <button
+                            type="button"
+                            className={`dropdown-item delete ${isBasic ? "disabled" : ""}`}
+                            onClick={() => !isBasic && handleDelete(method.id, method.name)}
+                            disabled={isBasic}
+                          >
+                            <span className="material-symbols-outlined">delete</span>
+                            Eliminar
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -215,6 +297,57 @@ const PaymentMethodsConfig = () => {
           )}
         </div>
       </div>
+
+      {editingMethod && (
+        <div className="modal-overlay">
+          <div className="edit-modal">
+            <div className="modal-header">
+              <h3>Editar Forma de Pago</h3>
+              <button 
+                className="close-btn" 
+                onClick={() => setEditingMethod(null)}
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <form onSubmit={handleUpdateMethod}>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label>Nombre del método</label>
+                  <input
+                    type="text"
+                    value={editingMethod.name}
+                    onChange={(e) => setEditingMethod({ ...editingMethod, name: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Clave SAT</label>
+                  <input
+                    type="text"
+                    placeholder="Ej. 01, 04, 03..."
+                    value={editingMethod.sat_code || ""}
+                    onChange={(e) => setEditingMethod({ ...editingMethod, sat_code: e.target.value })}
+                  />
+                  <small>Clave oficial para el timbrado de facturas</small>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button 
+                  type="button" 
+                  className="cancel-btn" 
+                  onClick={() => setEditingMethod(null)}
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="save-btn">
+                  Guardar Cambios
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
