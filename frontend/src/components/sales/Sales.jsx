@@ -241,7 +241,6 @@ export const Sales = () => {
   // ESTADOS PARA PAGOS MIXTOS
   const [pagosRealizados, setPagosRealizados] = useState([]);
   const [saldoPendiente, setSaldoPendiente] = useState(0);
-  const [facturar, setFacturar] = useState(false);
 
   // ESTADOS NUEVOS PARA FUNCIONES EXTRA
   const [mostrarModalComun, setMostrarModalComun] = useState(false);
