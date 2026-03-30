@@ -1,4 +1,8 @@
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
+import { staffService } from "../../services/staffService";
+import "./UserManager.css";
 
 export const UserManager = () => {
   const navigate = useNavigate();
