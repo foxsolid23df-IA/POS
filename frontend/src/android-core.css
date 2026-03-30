@@ -46,6 +46,14 @@ body.is-android textarea {
   font-size: 16px !important; /* Evita que Android haga auto-zoom */
 }
 
+/* FIX: Asegurar que los inputs en formularios sean clickeables */
+body.is-android .form-group input,
+body.is-android .form-group label,
+body.is-android .form-group select {
+  pointer-events: auto !important;
+  cursor: pointer;
+}
+
 /* Ocultar barra de scroll en Android, pero permitiendo el touch scrolling suave */
 body.is-android ::-webkit-scrollbar {
   display: none;
