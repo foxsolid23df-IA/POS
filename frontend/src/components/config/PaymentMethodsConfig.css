@@ -2,6 +2,8 @@
   padding: 2rem;
   max-width: 800px;
   margin: 0 auto;
+  background-color: var(--dm-bg-primary);
+  color: var(--dm-text-primary);
 }
 
 .payment-config-header {
@@ -40,8 +42,8 @@
 
 .back-button:hover {
   background-color: var(--dm-hover-bg);
-  border-color: var(--accent-color);
-  color: var(--accent-color);
+  border-color: var(--accent);
+  color: var(--accent);
   transform: translateX(-4px);
 }
 
@@ -338,7 +340,7 @@
 
 .form-group input:focus {
   outline: none;
-  border-color: var(--accent-color);
+  border-color: var(--accent);
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
 }
 
@@ -379,7 +381,7 @@
 
 .save-btn {
   padding: 0.85rem 1.75rem;
-  background-color: var(--accent-color);
+  background-color: var(--accent);
   color: white;
   border: none;
   border-radius: 10px;
@@ -445,7 +447,7 @@
 
 .method-name {
   font-weight: 800;
-  color: var(--dm-text-primary);
+  color: var(--dm-text-primary) !important;
   font-size: 1.15rem;
   letter-spacing: 0.25px;
 }

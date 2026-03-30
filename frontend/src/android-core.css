@@ -29,7 +29,8 @@
 body.is-android {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--bg-primary, #ffffff);
+  background-color: var(--dm-bg-primary);
+  color: var(--dm-text-primary);
   /* Prevenir selección de texto accidental al tocar la pantalla */
   -webkit-user-select: none;
   user-select: none;
