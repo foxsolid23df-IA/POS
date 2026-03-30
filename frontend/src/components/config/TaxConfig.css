@@ -2,6 +2,8 @@
   padding: 2rem;
   max-width: 600px;
   margin: 0 auto;
+  background-color: var(--dm-bg-primary);
+  color: var(--dm-text-primary);
 }
 
 .tax-config-header {
@@ -12,12 +14,12 @@
 .tax-config-header h2 {
   font-size: 2rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--dm-text-primary);
   margin-bottom: 0.5rem;
 }
 
 .tax-config-header p {
-  color: var(--text-secondary);
+  color: var(--dm-text-muted);
   font-size: 1rem;
 }
 
@@ -26,9 +28,9 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
-  background-color: var(--bg-secondary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
+  background-color: var(--dm-bg-secondary);
+  color: var(--dm-text-primary);
+  border: 1px solid var(--dm-border);
   border-radius: 8px;
   font-weight: 500;
   cursor: pointer;
@@ -39,8 +41,8 @@
 
 .back-button:hover {
   background-color: var(--bg-hover);
-  border-color: var(--accent-color);
-  color: var(--accent-color);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .back-button .material-symbols-outlined {
@@ -48,11 +50,11 @@
 }
 
 .tax-config-content {
-  background: var(--bg-card);
+  background: var(--dm-card-bg);
   border-radius: 12px;
   padding: 2rem;
   box-shadow: 0 8px 16px var(--shadow-color);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--dm-border);
 }
 
 .form-group {
@@ -63,7 +65,7 @@
   display: block;
   font-weight: 600;
   margin-bottom: 0.5rem;
-  color: var(--text-primary);
+  color: var(--dm-text-primary);
 }
 
 .input-with-icon {
@@ -82,10 +84,10 @@
 .input-with-icon input {
   width: 100%;
   padding: 0.75rem 1rem 0.75rem 2.5rem;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--dm-border);
   border-radius: 8px;
-  background-color: var(--bg-secondary);
-  color: var(--text-primary);
+  background-color: var(--dm-bg-secondary);
+  color: var(--dm-text-primary);
   font-size: 1rem;
   transition: all 0.2s;
 }
@@ -114,8 +116,8 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background-color: var(--accent-color);
-  color: white;
+  background-color: var(--accent);
+  color: white !important;
   border: none;
   border-radius: 8px;
   font-weight: 600;
