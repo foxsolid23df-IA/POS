@@ -70,6 +70,11 @@ export const Sales = () => {
     total,
   } = useCart(mostrarError);
 
+  const taxRateValue = user?.tax_enabled !== false ? (parseFloat(user?.tax_percentage) || 0) : 0;
+  const totalConImpuesto = total * (1 + (taxRateValue / 100));
+  const totalVenta = facturar ? totalConImpuesto : total;
+  const taxAmount = totalVenta - total;
+
   const [modal, setModal] = useState({
     isOpen: false,
     title: "",
@@ -234,6 +239,7 @@ export const Sales = () => {
   // ESTADOS PARA PAGOS MIXTOS
   const [pagosRealizados, setPagosRealizados] = useState([]);
   const [saldoPendiente, setSaldoPendiente] = useState(0);
+  const [facturar, setFacturar] = useState(false);
 
   // ESTADOS NUEVOS PARA FUNCIONES EXTRA
   const [mostrarModalComun, setMostrarModalComun] = useState(false);
@@ -302,7 +308,7 @@ export const Sales = () => {
     // Debounce: Esperar 500ms antes de enviar a la DB para evitar saturación y AbortErrors
     const syncTimer = setTimeout(() => {
       activeCartService
-        .updateCart(carrito, total, cashSession.id)
+        .updateCart(carrito, totalVenta, cashSession.id)
         .then(() => {
           // Log discreto solo para debug
           // console.log('[Sync] Carrito sincronizado');
@@ -320,7 +326,7 @@ export const Sales = () => {
 
     // Limpiar timer si el carrito cambia antes de los 500ms
     return () => clearTimeout(syncTimer);
-  }, [carrito, total, cashSession, user]);
+  }, [carrito, totalVenta, cashSession, user]);
 
   // BÚSQUEDA POR NOMBRE Y SKU - Filtrar sugerencias cuando cambia el texto
   useEffect(() => {
@@ -371,7 +377,7 @@ export const Sales = () => {
     const syncCart = async () => {
       if (user && !mostrarModalPago && isMounted) {
         try {
-          await activeCartService.updateCart(carrito, total, cashSession?.id);
+          await activeCartService.updateCart(carrito, totalVenta, cashSession?.id);
         } catch (err) {
           // Silenciar errores si el componente se desmontó
           if (isMounted && err.name !== "AbortError") {
@@ -386,7 +392,7 @@ export const Sales = () => {
     return () => {
       isMounted = false;
     };
-  }, [carrito, total, user, cashSession, mostrarModalPago]);
+  }, [carrito, totalVenta, user, cashSession, mostrarModalPago]);
 
   // Sincronizar info de pago cuando cambia
   useEffect(() => {
@@ -400,6 +406,7 @@ export const Sales = () => {
             received: parseFloat(montoRecibido) || 0,
             change: calcularCambio(),
             status: "processing",
+            total: totalVenta,
             sessionId: cashSession?.id,
           });
         } catch (err) {
@@ -416,13 +423,15 @@ export const Sales = () => {
     return () => {
       isMounted = false;
     };
-  }, [metodoPago, montoRecibido, mostrarModalPago, user, total]);
+  }, [metodoPago, montoRecibido, mostrarModalPago, user, totalVenta]);
 
   // Efecto para calcular el saldo pendiente
   useEffect(() => {
+    const taxRateValue = user?.tax_enabled !== false ? (parseFloat(user?.tax_percentage) || 0) : 0;
+    const totalFinal = facturar ? total * (1 + (taxRateValue / 100)) : total;
     const pagado = pagosRealizados.reduce((sum, p) => sum + p.amount, 0);
-    setSaldoPendiente(total - pagado);
-  }, [pagosRealizados, total]);
+    setSaldoPendiente(totalFinal - pagado);
+  }, [pagosRealizados, total, facturar, user]);
 
   // Seleccionar producto de las sugerencias
   const seleccionarProducto = (producto) => {
@@ -558,6 +567,7 @@ export const Sales = () => {
     setMetodoPago("efectivo");
     setPagosRealizados([]);
     setModalReady(false);
+    setFacturar(false);
     setMostrarModalPago(true);
     // Aumentar el tiempo de seguridad a 500ms para evitar capturas accidentales del primer ENTER
     setTimeout(() => {
@@ -571,6 +581,7 @@ export const Sales = () => {
     setMontoRecibido("");
     setMetodoPago("efectivo");
     setPagosRealizados([]);
+    setFacturar(false);
   };
 
   const agregarPago = () => {
@@ -702,11 +713,12 @@ export const Sales = () => {
     cerrarModalPago();
 
     try {
-      // Calcular Impuestos (basado en configuración del perfil)
-      const taxEnabled = user?.tax_enabled !== false; // Default true if not defined
-      const taxRate = taxEnabled ? (parseFloat(user?.tax_percentage) || 0) : 0;
-      const subtotal = taxRate > 0 ? total / (1 + (taxRate / 100)) : total;
-      const taxAmount = total - subtotal;
+      // Calcular Impuestos (basado en configurarción del perfil y el toggle de facturar)
+      const taxRateValue = user?.tax_enabled !== false ? (parseFloat(user?.tax_percentage) || 0) : 0;
+      const currentTaxRate = facturar ? taxRateValue : 0;
+      const totalVenta = facturar ? total * (1 + (taxRateValue / 100)) : total;
+      const subtotal = total; // El total del carrito actúa como el subtotal base
+      const taxAmount = totalVenta - subtotal;
 
       // Preparar datos para Supabase
       const ventaData = {
@@ -720,9 +732,10 @@ export const Sales = () => {
             price: item.price,
             stock: item.stock || 0,
           })),
-        total: total,
+        total: totalVenta,
         subtotal: subtotal,
         tax_amount: taxAmount,
+        tax_percentage: currentTaxRate,
         payments: pagosActualizados,
         // Mantener campos legacy por compatibilidad
         metodoPago:
@@ -752,9 +765,10 @@ export const Sales = () => {
         // Campos legacy para ticket
         montoRecibido: totalReceivedPesos,
         cambio: totalChange,
+        total: totalVenta,
         subtotal: subtotal,
         tax_amount: taxAmount,
-        tax_percentage: taxRate
+        tax_percentage: currentTaxRate
       });
 
       // Vaciar carrito y mostrar modal de éxito YA
@@ -1845,17 +1859,17 @@ export const Sales = () => {
                   <div className="payment-summary-totals">
                     <div className="payment-summary-row">
                       <span>Subtotal</span>
-                      <span>{formatearDinero(total / 1.16)}</span>
+                      <span>{formatearDinero(total)}</span>
                     </div>
                     <div className="payment-summary-row">
-                      <span>Impuestos (16%)</span>
-                      <span>{formatearDinero(total - (total / 1.16))}</span>
+                      <span>Impuestos ({taxRateValue}%)</span>
+                      <span>{formatearDinero(taxAmount)}</span>
                     </div>
                   </div>
                   <div className="payment-total-final">
                     <span className="payment-total-label">Total</span>
                     <span className="payment-total-amount">
-                      {formatearDinero(total)}
+                      {formatearDinero(totalVenta)}
                     </span>
                   </div>
                 </div>
@@ -1864,7 +1878,18 @@ export const Sales = () => {
               {/* LADO DERECHO - MÉTODO DE PAGO */}
               <div className="payment-method-section">
                 <div className="payment-method-content">
-                  <h3 className="payment-method-title">MÉTODO DE PAGO</h3>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="payment-method-title !m-0">MÉTODO DE PAGO</h3>
+                    <label 
+                      className="flex items-center gap-2 cursor-pointer bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-indigo-300 transition-all select-none"
+                      onClick={() => setFacturar(!facturar)}
+                    >
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Facturar</span>
+                      <div className={`relative w-8 h-4 rounded-full transition-colors ${facturar ? 'bg-indigo-600' : 'bg-slate-300'}`}>
+                        <div className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform ${facturar ? 'translate-x-4' : ''}`} />
+                      </div>
+                    </label>
+                  </div>
 
                   <div className="payment-method-buttons">
                     <button
