@@ -9,13 +9,19 @@ const TaxConfig = () => {
   const navigate = useNavigate();
 
   const [taxPercentage, setTaxPercentage] = useState("");
+  const [taxEnabled, setTaxEnabled] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    if (user && user.tax_percentage !== undefined) {
-      setTaxPercentage(user.tax_percentage.toString());
+    if (user) {
+      if (user.tax_percentage !== undefined) {
+        setTaxPercentage(user.tax_percentage.toString());
+      }
+      if (user.tax_enabled !== undefined) {
+        setTaxEnabled(user.tax_enabled);
+      }
     }
   }, [user]);
 
@@ -34,7 +40,10 @@ const TaxConfig = () => {
 
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ tax_percentage: percentage })
+        .update({ 
+          tax_percentage: percentage,
+          tax_enabled: taxEnabled
+        })
         .eq("id", user.id);
 
       if (updateError) throw updateError;
@@ -65,7 +74,23 @@ const TaxConfig = () => {
 
       <div className="tax-config-content">
         <form className="tax-config-form" onSubmit={handleSave}>
-          <div className="form-group">
+          <div className="form-group tax-toggle-group">
+            <div className="toggle-label-container">
+              <label htmlFor="taxEnabled">Habilitar desglose de impuestos</label>
+              <p className="help-text">Si se desactiva, no se mostrará subtotal ni impuestos en el ticket.</p>
+            </div>
+            <label className="switch">
+              <input
+                type="checkbox"
+                id="taxEnabled"
+                checked={taxEnabled}
+                onChange={(e) => setTaxEnabled(e.target.checked)}
+              />
+              <span className="slider round"></span>
+            </label>
+          </div>
+
+          <div className={`form-group ${!taxEnabled ? 'disabled-group' : ''}`}>
             <label htmlFor="taxPercentage">Porcentaje de Impuesto (%)</label>
             <div className="input-with-icon">
               <span className="material-symbols-outlined">percent</span>
@@ -80,10 +105,11 @@ const TaxConfig = () => {
                 onChange={(e) => setTaxPercentage(e.target.value)}
                 placeholder="Ejemplo: 16"
                 required
+                disabled={!taxEnabled}
               />
             </div>
             <span className="help-text">
-              Introduce 0 si no deseas aplicar impuestos. Este valor se reflejará como desglose en el cobro.
+              Este valor se utilizará para calcular el desglose del IVA en cada ticket (IVA Incluido).
             </span>
           </div>
 

@@ -113,19 +113,55 @@ const TicketVenta = forwardRef(({ venta }, ref) => {
           NO. DE ARTICULOS: {totalArticulos}
         </div>
 
-        <div className="ticket-summary-row">
-          <span className="ticket-summary-label">SUBTOTAL:</span>
-          <span className="ticket-summary-value">
-            {formatearDinero((parseFloat(venta.total) || 0) / 1.16)}
-          </span>
-        </div>
-        
-        <div className="ticket-summary-row">
-          <span className="ticket-summary-label">IMPUESTOS (16%):</span>
-          <span className="ticket-summary-value">
-            {formatearDinero((parseFloat(venta.total) || 0) - ((parseFloat(venta.total) || 0) / 1.16))}
-          </span>
-        </div>
+        {/* SUBTOTAL E IVA DINÁMICO */}
+        {(() => {
+          // Prioridad: 
+          // 1. Campos directos de la venta (subtotal, tax_amount)
+          // 2. Cálculo basado en tax_percentage guardado en la venta
+          // 3. Fallback (si todo falla, no mostrar o usar 0)
+          
+          const totalVal = parseFloat(venta.total) || 0;
+          const subtotalStored = parseFloat(venta.subtotal);
+          const taxAmountStored = parseFloat(venta.tax_amount);
+          
+          let subtotal = 0;
+          let taxAmount = 0;
+          let taxRate = parseFloat(venta.tax_percentage);
+
+          if (!isNaN(subtotalStored) && !isNaN(taxAmountStored)) {
+            subtotal = subtotalStored;
+            taxAmount = taxAmountStored;
+          } else if (!isNaN(taxRate) && taxRate > 0) {
+            subtotal = totalVal / (1 + (taxRate / 100));
+            taxAmount = totalVal - subtotal;
+          } else {
+            // Sin info de impuestos, mostramos solo total o calculamos con base en venta.total
+            subtotal = totalVal;
+            taxAmount = 0;
+          }
+
+          if (taxAmount > 0) {
+            return (
+              <>
+                <div className="ticket-summary-row">
+                  <span className="ticket-summary-label">SUBTOTAL:</span>
+                  <span className="ticket-summary-value">{formatearDinero(subtotal)}</span>
+                </div>
+                <div className="ticket-summary-row">
+                  <span className="ticket-summary-label">IMPUESTOS ({taxRate || 16}%):</span>
+                  <span className="ticket-summary-value">{formatearDinero(taxAmount)}</span>
+                </div>
+              </>
+            );
+          } else {
+            return (
+              <div className="ticket-summary-row">
+                <span className="ticket-summary-label">SUBTOTAL:</span>
+                <span className="ticket-summary-value">{formatearDinero(subtotal)}</span>
+              </div>
+            );
+          }
+        })()}
 
         <div className="ticket-summary-row ticket-summary-bold">
           <span className="ticket-summary-label">TOTAL:</span>

@@ -42,6 +42,8 @@ export const salesService = {
         // Llamada única al RPC optimizado (Transacción atómica en DB)
         const { data: sale, error: rpcError } = await supabase.rpc('process_perfect_sale', {
             p_total: saleData.total,
+            p_subtotal: saleData.subtotal || 0,
+            p_tax_amount: saleData.tax_amount || 0,
             p_user_id: userId,
             p_currency: saleData.currency || 'MXN',
             p_exchange_rate: saleData.exchange_rate || null,

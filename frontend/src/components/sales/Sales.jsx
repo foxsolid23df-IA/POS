@@ -702,6 +702,12 @@ export const Sales = () => {
     cerrarModalPago();
 
     try {
+      // Calcular Impuestos (basado en configuración del perfil)
+      const taxEnabled = user?.tax_enabled !== false; // Default true if not defined
+      const taxRate = taxEnabled ? (parseFloat(user?.tax_percentage) || 0) : 0;
+      const subtotal = taxRate > 0 ? total / (1 + (taxRate / 100)) : total;
+      const taxAmount = total - subtotal;
+
       // Preparar datos para Supabase
       const ventaData = {
         user_id: user?.id,
@@ -715,6 +721,8 @@ export const Sales = () => {
             stock: item.stock || 0,
           })),
         total: total,
+        subtotal: subtotal,
+        tax_amount: taxAmount,
         payments: pagosActualizados,
         // Mantener campos legacy por compatibilidad
         metodoPago:
@@ -744,6 +752,9 @@ export const Sales = () => {
         // Campos legacy para ticket
         montoRecibido: totalReceivedPesos,
         cambio: totalChange,
+        subtotal: subtotal,
+        tax_amount: taxAmount,
+        tax_percentage: taxRate
       });
 
       // Vaciar carrito y mostrar modal de éxito YA
@@ -1202,6 +1213,21 @@ export const Sales = () => {
     html += '<div class="ticket-summary">';
     html += `<div class="ticket-summary-articles">NO. DE ARTICULOS: ${totalArticulos}</div>`;
 
+    // SUBTOTAL E IVA (Si está habilitado)
+    const taxEnabled = user?.tax_enabled !== false;
+    const taxRate = taxEnabled ? (parseFloat(user?.tax_percentage) || 0) : 0;
+    
+    if (taxRate > 0) {
+      const subtotalVal = total / (1 + (taxRate / 100));
+      const taxVal = total - subtotalVal;
+      
+      html += '<div class="ticket-summary-row"><span class="ticket-summary-label">SUBTOTAL:</span>';
+      html += `<span class="ticket-summary-value">${formatearDinero(subtotalVal)}</span></div>`;
+      
+      html += `<div class="ticket-summary-row"><span class="ticket-summary-label">IVA (${taxRate}%):</span>`;
+      html += `<span class="ticket-summary-value">${formatearDinero(taxVal)}</span></div>`;
+    }
+
     html +=
       '<div class="ticket-summary-row ticket-summary-bold"><span class="ticket-summary-label">TOTAL:</span>';
     html += `<span class="ticket-summary-value">${formatearDinero(
@@ -1650,12 +1676,22 @@ export const Sales = () => {
             <div className="cart-summary-modern">
               <div className="summary-row">
                 <span className="summary-label">Subtotal</span>
-                <span className="summary-value">{formatearDinero(total / 1.16)}</span>
+                <span className="summary-value">
+                  {formatearDinero(
+                    (user?.tax_enabled !== false && (parseFloat(user?.tax_percentage) || 0) > 0)
+                      ? (total / (1 + ((parseFloat(user?.tax_percentage) || 0) / 100)))
+                      : total
+                  )}
+                </span>
               </div>
-              <div className="summary-row">
-                <span className="summary-label">Impuestos (16%)</span>
-                <span className="summary-value">{formatearDinero(total - (total / 1.16))}</span>
-              </div>
+              {(user?.tax_enabled !== false && (parseFloat(user?.tax_percentage) || 0) > 0) && (
+                <div className="summary-row">
+                  <span className="summary-label">Impuestos ({user?.tax_percentage}%)</span>
+                  <span className="summary-value">
+                    {formatearDinero(total - (total / (1 + ((parseFloat(user?.tax_percentage) || 0) / 100))))}
+                  </span>
+                </div>
+              )}
               <div className="summary-row summary-total">
                 <span className="summary-label">Total</span>
                 <span className="summary-value">{formatearDinero(total)}</span>
