@@ -178,6 +178,7 @@
     max-height: none !important;
     border-left: none !important;
     border-top: 1px solid #e5e7eb !important;
+    padding-bottom: 180px !important; /* Espacio para el footer fijo en tablets/movil */
   }
 
   .cart-items-modern {
@@ -186,6 +187,15 @@
 
   .cart-footer-modern {
     padding: 1rem !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    z-index: 1000 !important;
+    background: white !important;
+    box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.1) !important;
+    border-top: 1px solid #e5e7eb !important;
+    padding-bottom: calc(1rem + var(--safe-area-bottom, 0px)) !important;
   }
 
   /* Cart item compacto */
@@ -761,6 +771,11 @@
 @media (max-width: 1399px) {
   html.dark .cart-sidebar {
     border-top-color: var(--dm-border) !important;
+  }
+
+  html.dark .cart-footer-modern {
+    background: var(--dm-card-bg, #1f2937) !important;
+    border-top: 1px solid var(--dm-border, #374151) !important;
   }
 
   html.dark .suppliers-table-th,

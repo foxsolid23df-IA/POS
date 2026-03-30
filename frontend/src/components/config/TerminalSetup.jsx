@@ -295,7 +295,53 @@ export const TerminalSetup = ({ onTerminalConfigured }) => {
           </button>
         </form>
 
-        <div className="setup-info">
+        {user?.role === "admin" && (
+          <button
+            type="button"
+            className="setup-visor-btn"
+            style={{
+              width: "100%",
+              marginTop: "16px",
+              padding: "16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+              backgroundColor: "transparent",
+              border: "1px solid #e2e8f0",
+              color: "#64748b",
+              borderRadius: "12px",
+              cursor: "pointer",
+              fontWeight: "600",
+              fontSize: "15px",
+              transition: "all 0.2s ease",
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = "#f8fafc";
+              e.currentTarget.style.borderColor = "#cbd5e1";
+              e.currentTarget.style.color = "#334155";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+              e.currentTarget.style.borderColor = "#e2e8f0";
+              e.currentTarget.style.color = "#64748b";
+            }}
+            onClick={() => {
+              sessionStorage.setItem("visor_mode", "true");
+              if (onTerminalConfigured) {
+                onTerminalConfigured({ name: "Modo Visor", id: "visor" });
+              }
+            }}
+          >
+            <span className="material-symbols-outlined">visibility</span>
+            Entrar como Administrador (Solo Vista)
+          </button>
+        )}
+
+        <div
+          className="setup-info"
+          style={{ marginTop: user?.role === "admin" ? "16px" : "24px" }}
+        >
           <span className="material-symbols-outlined info-icon">info</span>
           <div className="setup-info-content">
             <h4>Importante</h4>
