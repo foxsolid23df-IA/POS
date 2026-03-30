@@ -727,6 +727,12 @@ export const Sales = () => {
       // Crear venta en Supabase
       const ventaCreada = await salesService.createSale(ventaData);
 
+      // Calcular el cambio real y monto total recibido
+      const totalChange = pagosActualizados.reduce((sum, p) => sum + p.change, 0);
+      const totalReceivedPesos = pagosActualizados.reduce((sum, p) => {
+        return sum + (p.currency === "USD" && p.exchange_rate ? p.received * p.exchange_rate : p.received);
+      }, 0);
+
       // Actualizar UI inmediatamente para mostrar el ticket
       setVentaCompletada({
         ...ventaCreada,
@@ -735,8 +741,8 @@ export const Sales = () => {
         payments: [...pagosActualizados],
         metodoPago: ventaData.metodoPago,
         // Campos legacy para ticket
-        montoRecibido: total,
-        cambio: 0,
+        montoRecibido: totalReceivedPesos,
+        cambio: totalChange,
       });
 
       // Vaciar carrito y mostrar modal de éxito YA
@@ -1643,11 +1649,11 @@ export const Sales = () => {
             <div className="cart-summary-modern">
               <div className="summary-row">
                 <span className="summary-label">Subtotal</span>
-                <span className="summary-value">{formatearDinero(total)}</span>
+                <span className="summary-value">{formatearDinero(total / 1.16)}</span>
               </div>
               <div className="summary-row">
-                <span className="summary-label">Impuestos</span>
-                <span className="summary-value">$0.00</span>
+                <span className="summary-label">Impuestos (16%)</span>
+                <span className="summary-value">{formatearDinero(total - (total / 1.16))}</span>
               </div>
               <div className="summary-row summary-total">
                 <span className="summary-label">Total</span>
@@ -1763,9 +1769,16 @@ export const Sales = () => {
                             )}
                           </div>
                           <div className="flex items-center gap-3">
-                            <span className="font-bold text-slate-800 dark:text-slate-100 text-xs">
-                              ${formatearDinero(p.amount)}
-                            </span>
+                            <div className="flex flex-col items-end">
+                              <span className="font-bold text-slate-800 dark:text-slate-100 text-xs">
+                                ${formatearDinero(p.amount)}
+                              </span>
+                              {p.change > 0 && (
+                                <span className="text-[10px] text-emerald-600 dark:text-emerald-400">
+                                  Cambio: ${formatearDinero(p.change)}
+                                </span>
+                              )}
+                            </div>
                             <button
                               onClick={() => eliminarPago(p.id)}
                               className="text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 p-1 rounded-md transition-all"
@@ -1795,11 +1808,11 @@ export const Sales = () => {
                   <div className="payment-summary-totals">
                     <div className="payment-summary-row">
                       <span>Subtotal</span>
-                      <span>{formatearDinero(total)}</span>
+                      <span>{formatearDinero(total / 1.16)}</span>
                     </div>
                     <div className="payment-summary-row">
                       <span>Impuestos (16%)</span>
-                      <span>$0.00</span>
+                      <span>{formatearDinero(total - (total / 1.16))}</span>
                     </div>
                   </div>
                   <div className="payment-total-final">

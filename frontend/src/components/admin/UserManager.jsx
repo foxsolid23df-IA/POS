@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { staffService } from "../../services/staffService";
-import Swal from "sweetalert2";
-import "./UserManager.css";
+import { useNavigate } from "react-router-dom";
 
 export const UserManager = () => {
+  const navigate = useNavigate();
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -260,6 +258,13 @@ export const UserManager = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate("/configuracion")}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all text-slate-600 dark:text-slate-300 font-bold text-xs"
+          >
+            <span className="material-icons-outlined text-[18px]">arrow_back</span>
+            <span>Regresar</span>
+          </button>
           <button
             onClick={() => {
               document.documentElement.classList.toggle("dark");

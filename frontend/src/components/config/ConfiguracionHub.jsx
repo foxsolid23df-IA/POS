@@ -58,6 +58,26 @@ export const ConfiguracionHub = () => {
       color: "text-amber-500",
       bgColor: "bg-amber-500/10",
     },
+    {
+      id: "taxes",
+      title: "Impuestos",
+      description: "Ajustar el porcentaje de impuestos aplicable a ventas",
+      icon: "request_quote",
+      path: "/config-impuestos",
+      adminOnly: true,
+      color: "text-rose-500",
+      bgColor: "bg-rose-500/10",
+    },
+    {
+      id: "payments",
+      title: "Formas de Pago",
+      description: "Administrar métodos de pago disponibles en el sistema",
+      icon: "payments",
+      path: "/config-pagos",
+      adminOnly: true,
+      color: "text-indigo-500",
+      bgColor: "bg-indigo-500/10",
+    },
   ];
 
   // Filtramos las opciones según el rol del usuario

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from "react-router-dom";
 import { exchangeRateService } from '../../services/exchangeRateService';
 import './ExchangeRateSettings.css';
 
 const ExchangeRateSettings = () => {
+    const navigate = useNavigate();
     const [rate, setRate] = useState('');
     const [isActive, setIsActive] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -56,7 +58,17 @@ const ExchangeRateSettings = () => {
 
     return (
         <div className="exchange-rate-settings-container">
-            <h2 className="settings-title">Configuración de Dólares (USD)</h2>
+            <div className="flex justify-between items-center mb-2">
+                <h2 className="settings-title m-0">Configuración de Dólares (USD)</h2>
+                <button
+                    onClick={() => navigate("/configuracion")}
+                    type="button"
+                    className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all text-slate-600 dark:text-slate-300 font-bold text-xs"
+                >
+                    <span className="material-icons-outlined text-[16px]">arrow_back</span>
+                    <span>Regresar</span>
+                </button>
+            </div>
             <p className="settings-subtitle">Establece el tipo de cambio para aceptar pagos en moneda extranjera.</p>
 
             {message && (

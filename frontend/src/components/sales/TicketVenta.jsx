@@ -113,6 +113,20 @@ const TicketVenta = forwardRef(({ venta }, ref) => {
           NO. DE ARTICULOS: {totalArticulos}
         </div>
 
+        <div className="ticket-summary-row">
+          <span className="ticket-summary-label">SUBTOTAL:</span>
+          <span className="ticket-summary-value">
+            {formatearDinero((parseFloat(venta.total) || 0) / 1.16)}
+          </span>
+        </div>
+        
+        <div className="ticket-summary-row">
+          <span className="ticket-summary-label">IMPUESTOS (16%):</span>
+          <span className="ticket-summary-value">
+            {formatearDinero((parseFloat(venta.total) || 0) - ((parseFloat(venta.total) || 0) / 1.16))}
+          </span>
+        </div>
+
         <div className="ticket-summary-row ticket-summary-bold">
           <span className="ticket-summary-label">TOTAL:</span>
           <span className="ticket-summary-value">

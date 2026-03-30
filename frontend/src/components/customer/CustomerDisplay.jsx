@@ -163,6 +163,20 @@ const CustomerDisplay = () => {
         </div>
 
         <div className="summary-column">
+          <div className="total-card pop-animate mb-4 pb-4 border-b border-indigo-500/30">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-indigo-200 text-sm font-medium">Subtotal</span>
+              <span className="text-white text-lg font-semibold">
+                ${(parseFloat(cart?.total || 0) / 1.16).toFixed(2)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-indigo-200 text-sm font-medium">Impuestos (16%)</span>
+              <span className="text-white text-lg font-semibold">
+                ${(parseFloat(cart?.total || 0) - (parseFloat(cart?.total || 0) / 1.16)).toFixed(2)}
+              </span>
+            </div>
+          </div>
           <div className="total-card pop-animate">
             <span className="total-label">Total a Pagar</span>
             <span className="total-value">

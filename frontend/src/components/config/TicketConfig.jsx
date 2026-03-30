@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { ticketSettingsService } from "../../services/ticketSettingsService";
 import { useSettings } from "../../contexts/SettingsContext";
@@ -6,6 +7,7 @@ import { useAuth } from "../../hooks/useAuth";
 import "./TicketConfig.css";
 
 export const TicketConfig = () => {
+  const navigate = useNavigate();
   const { refreshSettings } = useSettings();
     const { user } = useAuth();
   const [settings, setSettings] = useState({
@@ -187,6 +189,14 @@ export const TicketConfig = () => {
             Personaliza la información que aparece en el ticket de venta para
             tus clientes.
           </p>
+          <button
+            onClick={() => navigate("/configuracion")}
+            type="button"
+            className="mt-4 mx-auto flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition-all text-slate-600 dark:text-slate-300 font-bold text-xs w-fit"
+          >
+            <span className="material-icons-outlined text-[18px]">arrow_back</span>
+            <span>Regresar a Configuración</span>
+          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="ticket-config-form mt-8">

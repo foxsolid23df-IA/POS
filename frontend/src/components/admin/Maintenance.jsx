@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase";
 import { maintenanceService } from "../../services/maintenanceService";
 import { terminalService } from "../../services/terminalService";
@@ -7,6 +8,7 @@ import Swal from "sweetalert2";
 import "./Maintenance.css";
 
 const Maintenance = () => {
+  const navigate = useNavigate();
   const { user, fetchProfile } = useAuth();
   const [isAuthorized, setIsAuthorized] = useState(() => {
     return sessionStorage.getItem("admin_authorized") === "true";
@@ -123,6 +125,14 @@ const Maintenance = () => {
           <span className="material-icons-outlined lock-icon">
             admin_panel_settings
           </span>
+          <button
+            onClick={() => navigate("/configuracion")}
+            type="button"
+            className="mb-4 flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all text-slate-600 dark:text-slate-300 font-bold text-xs w-fit mx-auto"
+          >
+            <span className="material-icons-outlined text-[16px]">arrow_back</span>
+            <span>Regresar</span>
+          </button>
           <h2>Seguridad de Administración</h2>
           <p>
             Para configurar el PIN Maestro por primera vez o realizar cambios,
@@ -297,6 +307,13 @@ const Maintenance = () => {
       <header className="maintenance-header">
         <h1>Administración y Mantenimiento</h1>
         <p>Gestiona la limpieza de datos y licencias del sistema.</p>
+        <button
+          onClick={() => navigate("/configuracion")}
+          className="mt-4 flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-slate-600 dark:text-slate-300 font-bold text-xs w-fit"
+        >
+          <span className="material-icons-outlined text-[18px]">arrow_back</span>
+          <span>Regresar a Configuración</span>
+        </button>
       </header>
 
       {/* MONITOR DE SALUD DEL SISTEMA */}

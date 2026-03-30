@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { attendanceService } from "../../services/attendanceService";
 import * as XLSX from "xlsx";
 import "./AttendanceRegistry.css";
 
 export const AttendanceRegistry = () => {
+  const navigate = useNavigate();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -100,6 +102,13 @@ export const AttendanceRegistry = () => {
         </div>
 
         <div className="registry-controls flex gap-3">
+          <button
+            onClick={() => navigate("/configuracion")}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all text-slate-600 dark:text-slate-300 font-bold text-xs"
+          >
+            <span className="material-icons-outlined text-[18px]">arrow_back</span>
+            <span>Regresar</span>
+          </button>
           <div className="search-container">
             <span className="material-icons-outlined search-icon">search</span>
             <input

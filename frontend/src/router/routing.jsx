@@ -25,6 +25,8 @@ import ExchangeRateSettings from "../components/admin/ExchangeRateSettings";
 import { TerminalSetup } from "../components/config/TerminalSetup";
 import { TicketConfig } from "../components/config/TicketConfig";
 import { ConfiguracionHub } from "../components/config/ConfiguracionHub";
+import TaxConfig from "../components/config/TaxConfig";
+import PaymentMethodsConfig from "../components/config/PaymentMethodsConfig";
 import { terminalService } from "../services/terminalService";
 import Maintenance from "../components/admin/Maintenance";
 import { ScrollToTop } from "../components/common/ScrollToTop";
@@ -288,6 +290,28 @@ export const Routing = () => {
                         <PrivateLayout>
                           <AdminRoute>
                             <TicketConfig />
+                          </AdminRoute>
+                        </PrivateLayout>
+                      }
+                    />
+
+                    <Route
+                      path="/config-impuestos"
+                      element={
+                        <PrivateLayout>
+                          <AdminRoute>
+                            <TaxConfig />
+                          </AdminRoute>
+                        </PrivateLayout>
+                      }
+                    />
+
+                    <Route
+                      path="/config-pagos"
+                      element={
+                        <PrivateLayout>
+                          <AdminRoute>
+                            <PaymentMethodsConfig />
                           </AdminRoute>
                         </PrivateLayout>
                       }
