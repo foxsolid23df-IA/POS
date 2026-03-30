@@ -154,10 +154,10 @@ const PaymentMethodsConfig = () => {
   const handleDelete = async (id, name) => {
     if (!window.confirm(`¿Estás seguro de eliminar el método de pago "${name}"?`)) return;
     
-    // Las protecciones básicas para no eliminar efectivo o tarjeta
-    const isBasic = ["efectivo", "tarjeta", "transferencia"].includes(name.toLowerCase());
-    if (isBasic) {
-      alert("No puedes eliminar un método de pago del sistema base. Sólo puedes desactivarlo.");
+    // Sólo protegemos el Efectivo como método de sistema que no se puede borrar
+    const isProtected = name.toLowerCase() === "efectivo";
+    if (isProtected) {
+      alert("No puedes eliminar el método de pago 'Efectivo' por ser fundamental para el sistema. Sólo puedes desactivarlo si es necesario.");
       return;
     }
 
@@ -241,53 +241,68 @@ const PaymentMethodsConfig = () => {
                     {method.sat_code && (
                       <span className="badge-sat" title="Clave SAT">SAT: {method.sat_code}</span>
                     )}
-                    {isBasic && <span className="badge-system">Sistema</span>}
+                    {method.name.toLowerCase() === "efectivo" && <span className="badge-system">Sistema</span>}
                   </div>
 
                   <div className="method-actions">
                     <div className="actions-menu-container">
                       <button 
                         className="menu-trigger-btn" 
-                        onClick={() => setActiveMenu(activeMenu === method.id ? null : method.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveMenu(activeMenu === method.id ? null : method.id);
+                        }}
                       >
                         <span className="material-symbols-outlined">more_vert</span>
                       </button>
 
                       {activeMenu === method.id && (
-                        <div className="actions-dropdown">
-                          <button
-                            type="button"
-                            className="dropdown-item"
-                            onClick={() => {
-                              setEditingMethod({ ...method });
-                              setActiveMenu(null);
-                            }}
-                          >
-                            <span className="material-symbols-outlined">edit</span>
-                            Editar
-                          </button>
-                          
-                          <button
-                            type="button"
-                            className="dropdown-item"
-                            onClick={() => handleToggleStatus(method.id, method.is_active)}
-                          >
-                            <span className="material-symbols-outlined">
-                              {method.is_active ? "toggle_on" : "toggle_off"}
-                            </span>
-                            {method.is_active ? "Desactivar" : "Activar"}
-                          </button>
+                        <>
+                          <div className="menu-backdrop" onClick={() => setActiveMenu(null)} />
+                          <div className="actions-dropdown">
+                            <button
+                              type="button"
+                              className="dropdown-item"
+                              onClick={() => {
+                                setEditingMethod({ ...method });
+                                setActiveMenu(null);
+                              }}
+                            >
+                              <span className="material-symbols-outlined">edit</span>
+                              <div className="item-content">
+                                <span className="item-title">Editar</span>
+                                <span className="item-desc">Renombrar o clave SAT</span>
+                              </div>
+                            </button>
+                            
+                            <button
+                              type="button"
+                              className="dropdown-item"
+                              onClick={() => handleToggleStatus(method.id, method.is_active)}
+                            >
+                              <span className="material-symbols-outlined">
+                                {method.is_active ? "visibility_off" : "visibility"}
+                              </span>
+                              <div className="item-content">
+                                <span className="item-title">{method.is_active ? "Desactivar" : "Activar"}</span>
+                                <span className="item-desc">{method.is_active ? "Ocultar en ventas" : "Mostrar en ventas"}</span>
+                              </div>
+                            </button>
 
-                          <button
-                            type="button"
-                            className={`dropdown-item delete ${isBasic ? "disabled" : ""}`}
-                            onClick={() => !isBasic && handleDelete(method.id, method.name)}
-                            disabled={isBasic}
-                          >
-                            <span className="material-symbols-outlined">delete</span>
-                            Eliminar
-                          </button>
-                        </div>
+                            <button
+                              type="button"
+                              className={`dropdown-item delete ${method.name.toLowerCase() === "efectivo" ? "disabled" : ""}`}
+                              onClick={() => method.name.toLowerCase() !== "efectivo" && handleDelete(method.id, method.name)}
+                              disabled={method.name.toLowerCase() === "efectivo"}
+                            >
+                              <span className="material-symbols-outlined">delete</span>
+                              <div className="item-content">
+                                <span className="item-title">Eliminar</span>
+                                <span className="item-desc">Borrar permanente</span>
+                              </div>
+                            </button>
+                          </div>
+                        </>
                       )}
                     </div>
                   </div>
