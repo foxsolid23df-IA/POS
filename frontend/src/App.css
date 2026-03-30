@@ -84,8 +84,8 @@ body {
     "Segoe UI",
     Roboto,
     sans-serif;
-  background-color: var(--bg-primary);
-  color: var(--text-main);
+  background-color: var(--dm-bg-primary);
+  color: var(--dm-text-primary);
   line-height: 1.25;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
