@@ -70,10 +70,6 @@ export const Sales = () => {
     total,
   } = useCart(mostrarError);
 
-  const taxRateValue = user?.tax_enabled !== false ? (parseFloat(user?.tax_percentage) || 0) : 0;
-  const totalConImpuesto = total * (1 + (taxRateValue / 100));
-  const totalVenta = facturar ? totalConImpuesto : total;
-  const taxAmount = totalVenta - total;
 
   const [modal, setModal] = useState({
     isOpen: false,
@@ -235,6 +231,12 @@ export const Sales = () => {
   const [transactionId, setTransactionId] = useState("");
   // Estado para evitar que el primer ENTER abra y el segundo cierre instantáneamente
   const [modalReady, setModalReady] = useState(false);
+  const [facturar, setFacturar] = useState(false);
+
+  const taxRateValue = user?.tax_enabled !== false ? (parseFloat(user?.tax_percentage) || 0) : 0;
+  const totalConImpuesto = total * (1 + (taxRateValue / 100));
+  const totalVenta = facturar ? totalConImpuesto : total;
+  const taxAmount = totalVenta - total;
 
   // ESTADOS PARA PAGOS MIXTOS
   const [pagosRealizados, setPagosRealizados] = useState([]);
