@@ -1879,7 +1879,7 @@ export const Sales = () => {
               {/* LADO DERECHO - MÉTODO DE PAGO */}
               <div className="payment-method-section">
                 <div className="payment-method-content">
-                  <div className="flex justify-between items-center mb-4">
+                  <div className="flex justify-start items-center gap-6 mb-4">
                     <h3 className="payment-method-title !m-0">MÉTODO DE PAGO</h3>
                     <label 
                       className="flex items-center gap-2 cursor-pointer bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-indigo-300 transition-all select-none"
