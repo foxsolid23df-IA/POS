@@ -3,6 +3,11 @@ import { Search, FileText, Download, CheckCircle, ArrowRight, ArrowLeft } from '
 import { supabase } from './supabase';
 import Swal from 'sweetalert2';
 
+// ── Configuración Multi-Negocio vía Variables de Entorno ──
+const APP_NAME = import.meta.env.VITE_APP_NAME || 'Mi Negocio';
+const APP_TITLE = import.meta.env.VITE_APP_TITLE || 'Portal de Auto-Facturación';
+const ACCENT_HUE = import.meta.env.VITE_ACCENT_HUE || '220'; // 220=blue, 160=teal/lavandería, 0=red, 30=orange
+
 export default function App() {
   const [step, setStep] = useState(1);
   const [folioValue, setFolioValue] = useState('');
@@ -346,14 +351,19 @@ export default function App() {
     <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center justify-center p-4 font-sans">
       <div className="w-full max-w-lg bg-slate-800 p-8 rounded-2xl shadow-xl border border-slate-700">
         
-        {/* CABECERA GENERAL */}
+        {/* CABECERA GENERAL - Branding dinámico */}
         <div className="flex justify-center mb-6">
-          <div className="h-16 w-16 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+          <div className="h-16 w-16 rounded-2xl flex items-center justify-center shadow-lg" style={{ backgroundColor: `hsl(${ACCENT_HUE}, 65%, 50%)`, boxShadow: `0 10px 15px -3px hsl(${ACCENT_HUE}, 65%, 50%, 0.3)` }}>
             {step === 4 ? <CheckCircle size={32} className="text-white" /> : <FileText size={32} className="text-white" />}
           </div>
         </div>
         
-        {step < 4 && <h1 className="text-2xl font-bold text-center mb-2 text-white">Auto-Facturación</h1>}
+        {step < 4 && (
+          <>
+            <h1 className="text-2xl font-bold text-center mb-1 text-white">{APP_TITLE}</h1>
+            <p className="text-center font-medium mb-0" style={{ color: `hsl(${ACCENT_HUE}, 65%, 50%)`, fontSize: '0.65rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{APP_NAME}</p>
+          </>
+        )}
 
         {/* ========================================================= */}
         {/* PASO 1: Buscar Ticket                                     */}
@@ -367,7 +377,7 @@ export default function App() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-400 mb-1">Folio (Ticket)</label>
-                  <input required type="text" value={folioValue} onChange={(e) => setFolioValue(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ej. 1254" />
+                  <input required type="text" value={folioValue} onChange={(e) => setFolioValue(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-opacity-50" style={{ '--tw-ring-color': `hsl(${ACCENT_HUE}, 65%, 50%)` }} placeholder="Ej. 1254" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-400 mb-1">PIN</label>
@@ -378,12 +388,12 @@ export default function App() {
                 <label className="block text-sm font-medium text-slate-400 mb-1">Total de la Compra</label>
                 <div className="relative">
                   <span className="absolute left-4 top-3 text-slate-500 font-medium">$</span>
-                  <input required type="number" step="0.01" value={totalValue} onChange={(e) => setTotalValue(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-8 pr-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0.00" />
+                  <input required type="number" step="0.01" value={totalValue} onChange={(e) => setTotalValue(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-8 pr-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-opacity-50" style={{ '--tw-ring-color': `hsl(${ACCENT_HUE}, 65%, 50%)` }} placeholder="0.00" />
                 </div>
               </div>
               {errorMsg && <div className="bg-red-900/40 border border-red-500/50 rounded-lg p-3 text-sm text-red-200 text-center">{errorMsg}</div>}
-              <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 mt-6">
-                {loading ? <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white"></div> : <><Search size={20} /> Buscar Fichaje</>}
+              <button type="submit" disabled={loading} className="w-full text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 mt-6 transition-colors" style={{ backgroundColor: `hsl(${ACCENT_HUE}, 65%, 50%)` }} onMouseEnter={e => e.currentTarget.style.backgroundColor = `hsl(${ACCENT_HUE}, 65%, 58%)`} onMouseLeave={e => e.currentTarget.style.backgroundColor = `hsl(${ACCENT_HUE}, 65%, 50%)`}>
+                {loading ? <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white"></div> : <><Search size={20} /> Buscar Ticket</>}
               </button>
             </form>
           </div>
@@ -407,7 +417,7 @@ export default function App() {
               <button onClick={() => setStep(1)} className="flex-1 bg-transparent border border-slate-700 text-slate-400 hover:text-white py-3 rounded-lg flex justify-center items-center gap-2">
                 <ArrowLeft size={18}/> Atrás
               </button>
-              <button onClick={() => setStep(3)} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-lg flex justify-center items-center gap-2">
+              <button onClick={() => setStep(3)} className="flex-1 text-white font-semibold py-3 rounded-lg flex justify-center items-center gap-2 transition-colors" style={{ backgroundColor: `hsl(${ACCENT_HUE}, 65%, 50%)` }} onMouseEnter={e => e.currentTarget.style.backgroundColor = `hsl(${ACCENT_HUE}, 65%, 58%)`} onMouseLeave={e => e.currentTarget.style.backgroundColor = `hsl(${ACCENT_HUE}, 65%, 50%)`}>
                 Continuar <ArrowRight size={18}/>
               </button>
             </div>
@@ -513,7 +523,10 @@ export default function App() {
                     <button 
                       disabled={loading}
                       onClick={handleSendEmail}
-                      className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+                      className="w-full flex items-center justify-center gap-2 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+                      style={{ backgroundColor: `hsl(${ACCENT_HUE}, 65%, 50%)` }}
+                      onMouseEnter={e => e.currentTarget.style.backgroundColor = `hsl(${ACCENT_HUE}, 65%, 58%)`}
+                      onMouseLeave={e => e.currentTarget.style.backgroundColor = `hsl(${ACCENT_HUE}, 65%, 50%)`}
                     >
                       {loading ? (
                         <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white"></div>
