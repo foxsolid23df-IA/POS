@@ -16,12 +16,15 @@ import { exportToExcel } from "../../utils/exportToExcel";
 import { salesService } from "../../services/salesService";
 import { productService } from "../../services/productService";
 import Modal from "../common/Modal";
+import Swal from "sweetalert2";
+import { supabase } from "../../supabase";
 
 export const Historial = () => {
   // 1. ESTADOS PRINCIPALES
   const [productos, setProductos] = useState([]); // Lista de productos para mostrar en el modal
   const [ventas, setVentas] = useState([]); // Lista de todas las ventas
   const [ventasFiltradas, setVentasFiltradas] = useState([]); // Ventas después de filtrar
+  const [searchTerm, setSearchTerm] = useState(""); // Estado para búsqueda por folio o monto
 
   // 2. ESTADOS PARA PAGINACIÓN
   const [paginaActual, setPaginaActual] = useState(1); // Página actual
@@ -102,6 +105,7 @@ export const Historial = () => {
         id: venta.id,
         total: venta.total,
         createdAt: venta.created_at,
+        pin: venta.pin_facturacion,
         items: (venta.sale_items || []).map((item) => ({
           id: item.id,
           productId: item.product_id || null,
@@ -112,6 +116,7 @@ export const Historial = () => {
           price: item.price || 0,
           total: item.total || 0,
         })),
+        invoice: (venta.invoices || []).sort((a,b) => new Date(b.created_at) - new Date(a.created_at))[0] || null,
       }));
 
       // Validar que productosData sea un array
@@ -170,17 +175,96 @@ export const Historial = () => {
     setVentaSeleccionada(null);
   };
 
+  const handleCancelInvoice = async (invoiceId) => {
+    const { isConfirmed } = await Swal.fire({
+      title: '¿Confirmar Cancelación?',
+      text: "Se anulará el CFDI ante el SAT. Esta acción es administrativa y no se puede deshacer.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, CANCELAR CFDI',
+      cancelButtonText: 'No'
+    });
+
+    if (!isConfirmed) return;
+
+    Swal.fire({
+        title: 'Cancelando CFDI...',
+        didOpen: () => Swal.showLoading(),
+        allowOutsideClick: false
+    });
+
+    try {
+        const { data, error } = await supabase.functions.invoke('cancelar-cfdi', {
+            body: { id: invoiceId, motive: '02' }
+        });
+
+        if (error) throw error;
+
+        if (data && data.success) {
+            Swal.fire('Éxito', 'La factura ha sido cancelada ante el SAT. La venta vuelve a estar disponible para re-facturar.', 'success');
+            cargarVentasYProductos(); // Recargar historial
+            cerrarModal();
+        } else {
+            throw new Error(data?.message || 'Error al procesar la cancelación.');
+        }
+    } catch (err) {
+        console.error("Error al cancelar factura:", err);
+        Swal.fire('Error', err.message || 'No se pudo comunicar con el sistema de cancelación.', 'error');
+    }
+  };
+
+  const handleDownloadPDF = (base64, filename) => {
+    if (!base64) return;
+    try {
+      // Si por alguna razón ya es una URL, abrirla
+      if (base64.startsWith('http')) {
+        window.open(base64, '_blank');
+        return;
+      }
+
+      // Convertir Base64 a Blob
+      const byteCharacters = atob(base64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+      
+      // Crear URL y descargar
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename || 'factura.pdf';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Error al descargar PDF:", err);
+      Swal.fire('Error', 'No se pudo procesar el archivo PDF.', 'error');
+    }
+  };
+
   // 11. FUNCIÓN PARA FILTRAR LAS VENTAS POR FECHAS
   const filtrarPorFecha = useCallback(() => {
     const filtradas = dateFilter.filtrarPorFecha(ventas);
-    setVentasFiltradas(filtradas);
+    
+    // Aplicar filtro de búsqueda adicional
+    const conBusqueda = filtradas.filter(venta => {
+      if (!searchTerm) return true;
+      const term = searchTerm.toLowerCase().trim();
+      const matchFolio = venta.id.toString().includes(term);
+      const matchTotal = venta.total.toString().includes(term);
+      const matchPin = venta.pin && venta.pin.toLowerCase().includes(term);
+      return matchFolio || matchTotal || matchPin;
+    });
+
+    setVentasFiltradas(conBusqueda);
     setPaginaActual(1);
-  }, [
-    dateFilter.fechaDesde,
-    dateFilter.fechaHasta,
-    ventas,
-    dateFilter.filtrarPorFecha,
-  ]);
+  }, [ventas, dateFilter, searchTerm]);
 
   // 12. CALCULAR VENTAS PARA LA PÁGINA ACTUAL
   const calcularVentasPaginadas = () => {
@@ -281,30 +365,45 @@ export const Historial = () => {
       <section className="px-8 py-4 flex-shrink-0">
         <div className="max-w-5xl mx-auto w-full">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-xl flex flex-wrap items-end gap-6 shadow-sm">
-            <div className="flex-1 min-w-[200px]">
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">
-                Desde:
-              </label>
-              <div className="relative">
-                <input
-                  className="date-input-modern"
-                  type="date"
-                  value={dateFilter.fechaDesde}
-                  onChange={(e) => dateFilter.setFechaDesde(e.target.value)}
-                />
+            <div className="flex gap-4 items-end flex-wrap">
+              <div className="flex-1 min-w-[240px]">
+                <div className="relative group">
+                  <span className="material-icons-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                    search
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Buscar por Folio, Monto o PIN..."
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-slate-800 rounded-lg text-sm dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-inner"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
               </div>
-            </div>
-            <div className="flex-1 min-w-[200px]">
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">
-                Hasta:
-              </label>
-              <div className="relative">
-                <input
-                  className="date-input-modern"
-                  type="date"
-                  value={dateFilter.fechaHasta}
-                  onChange={(e) => dateFilter.setFechaHasta(e.target.value)}
-                />
+
+              <div className="flex gap-4">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 px-2 uppercase tracking-widest">
+                    Desde
+                  </label>
+                  <input
+                    className="date-input-modern"
+                    type="date"
+                    value={dateFilter.fechaDesde}
+                    onChange={(e) => dateFilter.setFechaDesde(e.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 px-2 uppercase tracking-widest">
+                    Hasta
+                  </label>
+                  <input
+                    className="date-input-modern"
+                    type="date"
+                    value={dateFilter.fechaHasta}
+                    onChange={(e) => dateFilter.setFechaHasta(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
             <div className="flex gap-2">
@@ -530,6 +629,35 @@ export const Historial = () => {
               </div>
             </div>
 
+            {/* Billing Recovery Info (Folio + PIN) */}
+            {ventaSeleccionada && (
+              <div className="mb-8 p-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl flex items-center justify-between">
+                <div className="flex gap-8">
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-0.5">
+                      FOLIO / TICKET
+                    </p>
+                    <p className="text-sm font-black text-slate-900 dark:text-white font-mono tracking-tighter">
+                      #{ventaSeleccionada.id}
+                    </p>
+                  </div>
+                  {ventaSeleccionada.pin && (
+                    <div className="border-l border-slate-200 dark:border-white/10 pl-8">
+                      <p className="text-[10px] font-bold text-blue-500 dark:text-blue-400 uppercase tracking-widest mb-0.5">
+                        PIN DE FACTURACIÓN
+                      </p>
+                      <p className="text-sm font-black text-blue-900 dark:text-blue-200 font-mono tracking-tighter">
+                        {ventaSeleccionada.pin}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                <div className="h-8 w-8 bg-blue-100 dark:bg-blue-800/50 rounded-lg flex items-center justify-center text-blue-600 dark:text-blue-300">
+                  <span className="material-icons-outlined text-sm">content_copy</span>
+                </div>
+              </div>
+            )}
+
             {/* Products List */}
             <div className="space-y-4">
               <div className="flex justify-between items-center px-2">
@@ -580,6 +708,61 @@ export const Historial = () => {
                 </table>
               </div>
             </div>
+            
+            {/* Invoice Section for Admin */}
+            {ventaSeleccionada && ventaSeleccionada.invoice && (
+              <div className="mt-8 pt-6 border-t border-slate-100 dark:border-white/5">
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                      Información de Factura (CFDI)
+                    </h3>
+                    <p className="text-[10px] text-slate-400 font-medium">Facturado vía portal de clientes</p>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${
+                    ventaSeleccionada.invoice.status === 'CANCELADO' 
+                      ? 'bg-red-100 dark:bg-red-950/40 text-red-600' 
+                      : 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600'
+                  }`}>
+                    {ventaSeleccionada.invoice.status}
+                  </span>
+                </div>
+
+                <div className="bg-slate-50 dark:bg-white/5 p-4 rounded-xl border border-slate-100 dark:border-white/5">
+                   <div className="grid grid-cols-2 gap-y-3 gap-x-6 text-sm">
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">UUID SAT</span>
+                        <span className="font-mono text-xs dark:text-slate-300 truncate block">
+                          {ventaSeleccionada.invoice.uuid_cfdi}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Fecha Emisión</span>
+                        <span className="dark:text-slate-300">
+                           {formatearFechaHora(ventaSeleccionada.invoice.created_at)}
+                        </span>
+                      </div>
+                   </div>
+
+                   <div className="flex gap-4 mt-4">
+                      <button 
+                        onClick={() => handleDownloadPDF(ventaSeleccionada.invoice.pdf_url, `Factura_${ventaSeleccionada.id}.pdf`)}
+                        className="flex-1 text-center py-2 bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-300 transition-colors"
+                      >
+                        DESCARGAR PDF
+                      </button>
+                      {ventaSeleccionada.invoice.status !== 'CANCELADO' && (
+                        <button 
+                          onClick={() => handleCancelInvoice(ventaSeleccionada.invoice.id)}
+                          className="flex-1 py-2 bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400 rounded-lg text-xs font-bold hover:bg-red-200 transition-colors border border-red-200 dark:border-red-900/30"
+                        >
+                          SOLICITAR CANCELACIÓN
+                        </button>
+                      )}
+                   </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="px-8 py-6 bg-slate-50 dark:bg-white/5 flex justify-end">

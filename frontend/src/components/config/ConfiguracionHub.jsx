@@ -78,6 +78,16 @@ export const ConfiguracionHub = () => {
       color: "text-indigo-500",
       bgColor: "bg-indigo-500/10",
     },
+    {
+      id: "billing_issuers",
+      title: "Emisores Fiscales",
+      description: "Configuración de RFC, CSD y datos de facturación",
+      icon: "account_balance",
+      path: "/config-emisores",
+      adminOnly: true,
+      color: "text-sky-500",
+      bgColor: "bg-sky-500/10",
+    },
   ];
 
   // Filtramos las opciones según el rol del usuario
