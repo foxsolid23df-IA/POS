@@ -80,14 +80,38 @@ const TicketVenta = forwardRef(({ venta }, ref) => {
 
       <div className="ticket-meta">
         <div className="ticket-meta-row">
-          <span className="ticket-meta-label">CAJERO:</span>
+          <span className="ticket-meta-label">ATENDIO:</span>
           <span className="ticket-meta-value">{userName}</span>
         </div>
         <div className="ticket-meta-row">
           <span className="ticket-meta-label">FOLIO:</span>
-          <span className="ticket-meta-value">{folio}</span>
+          <span className="ticket-meta-value">{venta.id || folio}</span>
         </div>
       </div>
+
+      {venta.pin_facturacion && (
+        <div className="ticket-billing-section">
+          <div className="ticket-divider-eq">{dividerString}</div>
+          <div className="ticket-title" style={{ fontSize: '1.0em', marginBottom: '5px' }}>FACTURACIÓN EN LÍNEA</div>
+          <div className="ticket-info" style={{ marginBottom: '8px' }}>Sitio: {import.meta.env.VITE_BILLING_PORTAL_URL || 'facturacion.pos_ideal.com'}</div>
+          
+          <div className="ticket-meta-row" style={{ justifyContent: 'space-between', padding: '0 5px' }}>
+            <span className="ticket-meta-label">FOLIO:</span>
+            <span className="ticket-meta-value" style={{ fontWeight: 'bold' }}>{venta.id || folio}</span>
+          </div>
+          <div className="ticket-meta-row" style={{ justifyContent: 'space-between', padding: '0 5px' }}>
+            <span className="ticket-meta-label">PIN:</span>
+            <span className="ticket-meta-value" style={{ fontWeight: 'bold', fontSize: '1.2em' }}>{venta.pin_facturacion}</span>
+          </div>
+
+          {venta.ticket_uuid && (
+            <div className="ticket-info" style={{ fontSize: '7px', marginTop: '8px', opacity: 0.6 }}>
+              ID Técnico: {venta.ticket_uuid}
+            </div>
+          )}
+          <div className="ticket-divider-eq">{dividerString}</div>
+        </div>
+      )}
 
       <div className="ticket-table-header">
         <div className="ticket-col-cant">CANT.</div>

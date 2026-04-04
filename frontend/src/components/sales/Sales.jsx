@@ -232,6 +232,21 @@ export const Sales = () => {
   // Estado para evitar que el primer ENTER abra y el segundo cierre instantáneamente
   const [modalReady, setModalReady] = useState(false);
   const [facturar, setFacturar] = useState(false);
+  const [issuers, setIssuers] = useState([]);
+  const [selectedIssuerId, setSelectedIssuerId] = useState("");
+
+  useEffect(() => {
+    if (facturar && issuers.length === 0) {
+      const fetchIssuers = async () => {
+        const { data } = await supabase.from('billing_issuers').select('id, rfc, razon_social').order('created_at', { ascending: false });
+        if (data) {
+          setIssuers(data);
+          if (data.length > 0) setSelectedIssuerId(data[0].id);
+        }
+      };
+      fetchIssuers();
+    }
+  }, [facturar, issuers.length]);
 
   const taxRateValue = user?.tax_enabled !== false ? (parseFloat(user?.tax_percentage) || 0) : 0;
   const totalConImpuesto = total * (1 + (taxRateValue / 100));
@@ -745,6 +760,7 @@ export const Sales = () => {
             : "múltiple",
         currency: "MXN",
         exchange_rate: null,
+        billing_issuer_id: facturar ? selectedIssuerId : null,
       };
 
       // Crear venta en Supabase
@@ -1890,6 +1906,25 @@ export const Sales = () => {
                         <div className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform ${facturar ? 'translate-x-4' : ''}`} />
                       </div>
                     </label>
+                    {facturar && issuers.length > 0 && (
+                      <div className="ml-auto w-1/3 flex border border-indigo-200/60 bg-indigo-50/50 rounded-lg overflow-hidden transition-all duration-300 animate-in fade-in zoom-in-95">
+                        <div className="bg-indigo-100 text-indigo-600 px-2 flex items-center justify-center">
+                          <span className="material-icons-outlined text-[14px]">storefront</span>
+                        </div>
+                        <select
+                          value={selectedIssuerId}
+                          onChange={(e) => setSelectedIssuerId(e.target.value)}
+                          className="w-full text-xs font-semibold px-2 py-1.5 bg-transparent text-indigo-800 outline-none cursor-pointer truncate"
+                          title="Seleccionar Emisor"
+                        >
+                          {issuers.map(i => (
+                            <option key={i.id} value={i.id}>
+                              {i.rfc} - {i.razon_social}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                   </div>
 
                   <div className="payment-method-buttons">

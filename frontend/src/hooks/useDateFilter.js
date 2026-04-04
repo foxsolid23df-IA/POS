@@ -142,7 +142,7 @@ export const useDateFilter = (options = {}) => {
         return fechaDesde !== '' || fechaHasta !== ''
     }, [fechaDesde, fechaHasta])
 
-    return {
+    return useMemo(() => ({
         // Estados
         fechaDesde,
         fechaHasta,
@@ -158,5 +158,14 @@ export const useDateFilter = (options = {}) => {
         // Valores computados
         textoRango,
         hayFiltrosActivos
-    }
+    }), [
+        fechaDesde, 
+        fechaHasta, 
+        validarFechas, 
+        filtrarPorFecha, 
+        prepararFechasParaAPI, 
+        limpiarFiltros, 
+        textoRango, 
+        hayFiltrosActivos
+    ])
 }

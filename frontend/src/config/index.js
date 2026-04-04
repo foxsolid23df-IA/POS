@@ -7,7 +7,8 @@ export const config = {
     },
     app: {
         name: import.meta.env.VITE_APP_NAME || 'Sistema ventas',
-        version: import.meta.env.VITE_APP_VERSION || '1.0.0'
+        version: import.meta.env.VITE_APP_VERSION || '1.0.0',
+        billingPortalUrl: import.meta.env.VITE_BILLING_PORTAL_URL || 'http://localhost:5174'
     },
     dev: {
         mode: import.meta.env.VITE_DEV_MODE === 'true' || false

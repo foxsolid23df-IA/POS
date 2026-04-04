@@ -106,7 +106,8 @@ export const salesService = {
             .from('sales')
             .select(`
                 *,
-                sale_items (*)
+                sale_items (*),
+                invoices (*)
             `)
             .order('created_at', { ascending: false })
             .limit(limit);
@@ -323,5 +324,26 @@ export const salesService = {
             fechaInicio: fechaInicio || 'Sin límite inicial',
             fechaFin: fechaFin || 'Sin límite final'
         };
+    },
+
+    // Obtener una venta para facturación usando Folio + PIN
+    getSaleByFolioAndPin: async (folio, pin) => {
+        const { data, error } = await supabase
+            .from('sales')
+            .select(`
+                *,
+                sale_items (*)
+            `)
+            .eq('id', folio)
+            .eq('pin_facturacion', pin.trim().toUpperCase())
+            .single();
+
+        if (error) {
+            if (error.code === 'PGRST116') {
+                throw new Error("No se encontró ninguna venta con ese Folio y PIN. Verifica tus datos.");
+            }
+            throw error;
+        }
+        return data;
     }
 };
