@@ -283,7 +283,7 @@
 
 .products-table {
     width: 100%;
-    min-width: 1100px; /* Asegura espacio suficiente para las 9 columnas */
+    min-width: 2200px; /* Ancho ampliado para las 18+ columnas avanzadas */
     border-collapse: separate; /* Cambiado a separate para bordes redondeados y sticky si fuera necesario */
     border-spacing: 0;
     background-color: #ffffff;
@@ -374,6 +374,30 @@
     color: #000000;
     background-color: #ffffff;
     font-weight: 500;
+    white-space: nowrap;
+}
+
+/* Advanced inventory cells */
+.notes-cell {
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: default;
+}
+
+.unit-cell {
+    text-align: center;
+    font-weight: 600;
+}
+
+.iva-cell {
+    text-align: center;
+    font-weight: 500;
+}
+
+.text-slate-500 {
+    color: #64748b;
 }
 
 /* Product Cell */

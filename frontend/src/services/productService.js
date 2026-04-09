@@ -117,13 +117,21 @@ export const productService = {
             price: parseFloat(product.price),
             cost_price: parseFloat(product.cost_price || 0),
             wholesale_price: parseFloat(product.wholesale_price || 0),
+            special_price: parseFloat(product.special_price || 0),
+            suggested_price: parseFloat(product.suggested_price || 0),
             stock: parseInt(product.stock),
             min_stock: parseInt(product.min_stock || 0),
             barcode: product.barcode || null,
             image_url: product.image || null,
             merma: parseInt(product.merma || 0),
             user_id: userData.user.id,
-            metadata: product.metadata || {}
+            metadata: product.metadata || {},
+            notes: product.notes || null,
+            unit: product.unit || 'PZA',
+            iva: parseFloat(product.iva || 0),
+            wholesale_unit: product.wholesale_unit || null,
+            brand: product.brand || null,
+            supplier: product.supplier || null
         };
 
         // Agregar categoría si existe
@@ -153,12 +161,20 @@ export const productService = {
             price: parseFloat(updates.price),
             cost_price: parseFloat(updates.cost_price || 0),
             wholesale_price: parseFloat(updates.wholesale_price || 0),
+            special_price: parseFloat(updates.special_price || 0),
+            suggested_price: parseFloat(updates.suggested_price || 0),
             stock: parseInt(updates.stock),
             min_stock: parseInt(updates.min_stock || 0),
             barcode: updates.barcode || null,
             image_url: updates.image || null,
             merma: parseInt(updates.merma || 0),
-            metadata: updates.metadata || {}
+            metadata: updates.metadata || {},
+            notes: updates.notes || null,
+            unit: updates.unit || 'PZA',
+            iva: parseFloat(updates.iva || 0),
+            wholesale_unit: updates.wholesale_unit || null,
+            brand: updates.brand || null,
+            supplier: updates.supplier || null
         };
 
         // Agregar categoría si existe
@@ -313,10 +329,18 @@ export const productService = {
                 price: parseFloat(product.price),
                 cost_price: parseFloat(product.cost_price || 0),
                 wholesale_price: parseFloat(product.wholesale_price || 0),
+                special_price: parseFloat(product.special_price || 0),
+                suggested_price: parseFloat(product.suggested_price || 0),
                 stock: parseInt(product.stock),
                 min_stock: parseInt(product.min_stock || 0),
                 merma: parseInt(product.merma || 0),
-                metadata: product.metadata || {}
+                metadata: product.metadata || {},
+                notes: product.notes || null,
+                unit: product.unit || 'PZA',
+                iva: parseFloat(product.iva || 0),
+                wholesale_unit: product.wholesale_unit || null,
+                brand: product.brand || null,
+                supplier: product.supplier || null
             };
 
             const barcodeStr = product.barcode ? String(product.barcode) : null;

@@ -71,6 +71,14 @@ const Inventory = () => {
     min_stock: "",
     image: "",
     category: "",
+    notes: "",
+    unit: "PZA",
+    iva: "",
+    special_price: "",
+    suggested_price: "",
+    wholesale_unit: "",
+    brand: "",
+    supplier: "",
   });
 
   // Image Upload State
@@ -127,6 +135,14 @@ const Inventory = () => {
       min_stock: "",
       image: "",
       category: "",
+      notes: "",
+      unit: "PZA",
+      iva: "",
+      special_price: "",
+      suggested_price: "",
+      wholesale_unit: "",
+      brand: "",
+      supplier: "",
     });
     setPreviewImage(null);
     setEditingProduct(null);
@@ -148,6 +164,14 @@ const Inventory = () => {
         min_stock: product.min_stock || "",
         image: product.image_url || "",
         category: productCategory,
+        notes: product.notes || "",
+        unit: product.unit || "PZA",
+        iva: product.iva || "",
+        special_price: product.special_price || "",
+        suggested_price: product.suggested_price || "",
+        wholesale_unit: product.wholesale_unit || "",
+        brand: product.brand || "",
+        supplier: product.supplier || "",
       });
       setPreviewImage(product.image_url || null);
     } else {
@@ -251,6 +275,14 @@ const Inventory = () => {
         min_stock: parseInt(formData.min_stock || 0),
         image: formData.image,
         category: category,
+        notes: formData.notes || "",
+        unit: formData.unit || "PZA",
+        iva: parseFloat(formData.iva || 0),
+        special_price: parseFloat(formData.special_price || 0),
+        suggested_price: parseFloat(formData.suggested_price || 0),
+        wholesale_unit: formData.wholesale_unit || "",
+        brand: formData.brand || "",
+        supplier: formData.supplier || "",
       };
 
       if (editingProduct) {
@@ -781,7 +813,16 @@ const Inventory = () => {
                   <th>SKU</th>
                   {!isSimplified && <th>Costo</th>}
                   <th>Venta</th>
+                  {!isSimplified && <th>Mayoreo</th>}
+                  {!isSimplified && <th>P. Especial</th>}
+                  {!isSimplified && <th>P. Sugerido</th>}
                   <th>Existencia</th>
+                  {!isSimplified && <th>Unidad</th>}
+                  {!isSimplified && <th>IVA %</th>}
+                  {!isSimplified && <th>Und. Mayoreo</th>}
+                  {!isSimplified && <th>Marca</th>}
+                  {!isSimplified && <th>Proveedor</th>}
+                  {!isSimplified && <th>Notas</th>}
                   <th className="merma-col" style={{ color: "#ef4444" }}>
                     Merma
                   </th>
@@ -851,6 +892,21 @@ const Inventory = () => {
                         <td className="price-cell font-medium">
                           ${parseFloat(product.price || 0).toFixed(2)}
                         </td>
+                        {!isSimplified && (
+                          <td className="price-cell text-slate-500">
+                            ${parseFloat(product.wholesale_price || 0).toFixed(2)}
+                          </td>
+                        )}
+                        {!isSimplified && (
+                          <td className="price-cell text-slate-500">
+                            ${parseFloat(product.special_price || 0).toFixed(2)}
+                          </td>
+                        )}
+                        {!isSimplified && (
+                          <td className="price-cell text-slate-500">
+                            ${parseFloat(product.suggested_price || 0).toFixed(2)}
+                          </td>
+                        )}
                         <td>
                           <div className="stock-cell">
                             <div
@@ -860,12 +916,34 @@ const Inventory = () => {
                             ></div>
                             <span>
                               {product.stock}{" "}
-                              {product.name.toLowerCase().includes("kg")
+                              {product.unit || (product.name.toLowerCase().includes("kg")
                                 ? "kg"
-                                : "un."}
+                                : "un.")}
                             </span>
                           </div>
                         </td>
+                        {!isSimplified && (
+                          <td className="unit-cell">{product.unit || "PZA"}</td>
+                        )}
+                        {!isSimplified && (
+                          <td className="iva-cell" style={{ textAlign: "center" }}>
+                            {parseFloat(product.iva || 0)}%
+                          </td>
+                        )}
+                        {!isSimplified && (
+                          <td className="text-slate-500">{product.wholesale_unit || "—"}</td>
+                        )}
+                        {!isSimplified && (
+                          <td className="text-slate-500">{product.brand || "—"}</td>
+                        )}
+                        {!isSimplified && (
+                          <td className="text-slate-500">{product.supplier || "—"}</td>
+                        )}
+                        {!isSimplified && (
+                          <td className="notes-cell" title={product.notes || ""}>
+                            {product.notes ? (product.notes.length > 20 ? product.notes.substring(0, 20) + "…" : product.notes) : "—"}
+                          </td>
+                        )}
                         <td
                           className="merma-cell"
                           style={{
@@ -918,7 +996,7 @@ const Inventory = () => {
                   })
                 ) : (
                   <tr>
-                    <td colSpan="7" className="empty-state-cell">
+                    <td colSpan="18" className="empty-state-cell">
                       <div className="empty-state">
                         <p>No se encontraron productos</p>
                       </div>
@@ -1338,6 +1416,147 @@ const Inventory = () => {
                       )}
                     </div>
                   </div>
+
+                  {/* Advanced Fields - Solo modo avanzado */}
+                  {!isSimplified && (
+                    <div className="new-product-form-group col-span-12">
+                      <label className="new-product-label">Información Avanzada</label>
+                      <div className="grid grid-cols-12 gap-4">
+                        {/* Unidad */}
+                        <div className="col-span-12 md:col-span-3">
+                          <label className="text-xs text-gray-500 mb-1 block">Unidad</label>
+                          <div className="new-product-select-wrapper">
+                            <select
+                              className="new-product-select"
+                              name="unit"
+                              value={formData.unit}
+                              onChange={handleInputChange}
+                            >
+                              <option value="PZA">PZA (Pieza)</option>
+                              <option value="KG">KG (Kilogramo)</option>
+                              <option value="LT">LT (Litro)</option>
+                              <option value="MT">MT (Metro)</option>
+                              <option value="CAJA">CAJA</option>
+                              <option value="PAQ">PAQ (Paquete)</option>
+                              <option value="ROLLO">ROLLO</option>
+                              <option value="BOLSA">BOLSA</option>
+                            </select>
+                            <div className="new-product-select-arrow">
+                              <svg className="new-product-select-arrow-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
+                              </svg>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* IVA */}
+                        <div className="col-span-12 md:col-span-3">
+                          <label className="text-xs text-gray-500 mb-1 block">IVA %</label>
+                          <div className="new-product-price-wrapper">
+                            <span className="new-product-price-symbol">%</span>
+                            <input
+                              className="new-product-input new-product-price-input"
+                              type="number"
+                              name="iva"
+                              value={formData.iva}
+                              onChange={handleInputChange}
+                              placeholder="16"
+                              step="0.01"
+                              min="0"
+                              max="100"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Precio Especial */}
+                        <div className="col-span-12 md:col-span-3">
+                          <label className="text-xs text-gray-500 mb-1 block">Precio Especial</label>
+                          <div className="new-product-price-wrapper">
+                            <span className="new-product-price-symbol">$</span>
+                            <input
+                              className="new-product-input new-product-price-input"
+                              type="number"
+                              name="special_price"
+                              value={formData.special_price}
+                              onChange={handleInputChange}
+                              placeholder="0.00"
+                              step="0.01"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Precio Sugerido */}
+                        <div className="col-span-12 md:col-span-3">
+                          <label className="text-xs text-gray-500 mb-1 block">Precio Sugerido</label>
+                          <div className="new-product-price-wrapper">
+                            <span className="new-product-price-symbol">$</span>
+                            <input
+                              className="new-product-input new-product-price-input"
+                              type="number"
+                              name="suggested_price"
+                              value={formData.suggested_price}
+                              onChange={handleInputChange}
+                              placeholder="0.00"
+                              step="0.01"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Unidad Mayoreo */}
+                        <div className="col-span-12 md:col-span-4">
+                          <label className="text-xs text-gray-500 mb-1 block">Unidad Mayoreo</label>
+                          <input
+                            className="new-product-input"
+                            type="text"
+                            name="wholesale_unit"
+                            value={formData.wholesale_unit}
+                            onChange={handleInputChange}
+                            placeholder="Ej. Caja de 24"
+                          />
+                        </div>
+
+                        {/* Marca */}
+                        <div className="col-span-12 md:col-span-4">
+                          <label className="text-xs text-gray-500 mb-1 block">Marca</label>
+                          <input
+                            className="new-product-input"
+                            type="text"
+                            name="brand"
+                            value={formData.brand}
+                            onChange={handleInputChange}
+                            placeholder="Ej. Coca-Cola"
+                          />
+                        </div>
+
+                        {/* Proveedor */}
+                        <div className="col-span-12 md:col-span-4">
+                          <label className="text-xs text-gray-500 mb-1 block">Proveedor</label>
+                          <input
+                            className="new-product-input"
+                            type="text"
+                            name="supplier"
+                            value={formData.supplier}
+                            onChange={handleInputChange}
+                            placeholder="Ej. Distribuidora ACME"
+                          />
+                        </div>
+
+                        {/* Notas */}
+                        <div className="col-span-12">
+                          <label className="text-xs text-gray-500 mb-1 block">Notas</label>
+                          <textarea
+                            className="new-product-input"
+                            name="notes"
+                            value={formData.notes}
+                            onChange={handleInputChange}
+                            placeholder="Notas adicionales del producto..."
+                            rows="2"
+                            style={{ resize: "vertical", minHeight: "60px" }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </form>
             </div>
