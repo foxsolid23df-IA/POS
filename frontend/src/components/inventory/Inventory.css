@@ -243,13 +243,49 @@
 
 /* Table Container */
 .table-container {
-    box-shadow: 0 2px 10px -3px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.1);
     width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    background-color: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+}
+
+/* Scrollbar personalizado Estilo Premium */
+.table-container::-webkit-scrollbar {
+    height: 10px;
+}
+
+.table-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+    border: 2px solid #f1f5f9;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.dark .table-container::-webkit-scrollbar-track {
+    background: #1e293b;
+}
+
+.dark .table-container::-webkit-scrollbar-thumb {
+    background: #475569;
+    border: 2px solid #1e293b;
 }
 
 .products-table {
     width: 100%;
-    border-collapse: collapse;
+    min-width: 1100px; /* Asegura espacio suficiente para las 9 columnas */
+    border-collapse: separate; /* Cambiado a separate para bordes redondeados y sticky si fuera necesario */
+    border-spacing: 0;
     background-color: #ffffff;
 }
 
@@ -271,14 +307,47 @@
     position: sticky;
     top: 0;
     z-index: 10;
+    white-space: nowrap; /* Evita que el texto de cabecera se amontone */
 }
 
 .products-table th.checkbox-col {
-    width: 40px;
+    width: 48px;
+    position: sticky;
+    left: 0;
+    z-index: 20;
+    border-right: 1px solid #e5e7eb;
 }
 
 .products-table th.actions-col {
     text-align: right;
+    position: sticky;
+    right: 0;
+    z-index: 20;
+    border-left: 1px solid #e5e7eb;
+}
+
+.products-table td.checkbox-col {
+    position: sticky;
+    left: 0;
+    z-index: 15;
+    background-color: inherit;
+    border-right: 1px solid #f3f4f6;
+}
+
+.products-table td.actions-col {
+    position: sticky;
+    right: 0;
+    z-index: 15;
+    background-color: inherit;
+    border-left: 1px solid #f3f4f6;
+}
+
+.dark .products-table th.checkbox-col,
+.dark .products-table th.actions-col,
+.dark .products-table td.checkbox-col,
+.dark .products-table td.actions-col {
+    background-color: #1f2937;
+    border-color: #374151;
 }
 
 .products-table tbody {
@@ -312,6 +381,7 @@
     display: flex;
     align-items: center;
     gap: 16px;
+    min-width: 250px;
 }
 
 .product-image-wrapper {
@@ -403,12 +473,14 @@
     font-family: 'Courier New', monospace;
     color: #000000;
     font-weight: 600;
+    white-space: nowrap;
 }
 
 .price-cell {
     font-weight: 700;
     color: #000000;
     font-size: 14px;
+    white-space: nowrap;
 }
 
 /* Stock Cell */
@@ -416,6 +488,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    white-space: nowrap;
 }
 
 .stock-cell span {
@@ -1828,3 +1901,48 @@
 .dark .inventario-alerta-content::-webkit-scrollbar-thumb {
     background-color: #475569;
 }
+
+/* ===== MEJORAS DE TABLA Y MODO OSCURO ===== */
+.dark .products-table {
+    background-color: #111827;
+}
+
+.dark .products-table thead,
+.dark .products-table th {
+    background-color: #1f2937;
+    border-color: #374151;
+    color: #f3f4f6;
+}
+
+.dark .products-table tbody tr {
+    background-color: #111827;
+    border-bottom: 1px solid #1f2937;
+}
+
+.dark .products-table tbody tr:hover {
+    background-color: #1f2937;
+}
+
+.dark .products-table td {
+    color: #e5e7eb;
+}
+
+.dark .product-name {
+    color: #ffffff;
+}
+
+.dark .product-description {
+    color: #9ca3af;
+}
+
+.dark .sku-cell,
+.dark .price-cell,
+.dark .stock-cell span {
+    color: #ffffff;
+}
+
+.dark .actions-button:hover {
+    background-color: #374151;
+    color: #ffffff;
+}
+
