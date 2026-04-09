@@ -28,6 +28,7 @@ import { ConfiguracionHub } from "../components/config/ConfiguracionHub";
 import TaxConfig from "../components/config/TaxConfig";
 import PaymentMethodsConfig from "../components/config/PaymentMethodsConfig";
 import BillingIssuers from "../components/config/BillingIssuers";
+import InventoryConfig from "../components/config/InventoryConfig";
 import { terminalService } from "../services/terminalService";
 import Maintenance from "../components/admin/Maintenance";
 import { ScrollToTop } from "../components/common/ScrollToTop";
@@ -324,6 +325,17 @@ export const Routing = () => {
                         <PrivateLayout>
                           <AdminRoute>
                             <BillingIssuers />
+                          </AdminRoute>
+                        </PrivateLayout>
+                      }
+                    />
+
+                    <Route
+                      path="/config-inventario"
+                      element={
+                        <PrivateLayout>
+                          <AdminRoute>
+                            <InventoryConfig />
                           </AdminRoute>
                         </PrivateLayout>
                       }

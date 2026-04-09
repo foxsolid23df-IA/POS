@@ -121,10 +121,12 @@ export const productService = {
             min_stock: parseInt(product.min_stock || 0),
             barcode: product.barcode || null,
             image_url: product.image || null,
-            user_id: userData.user.id
+            merma: parseInt(product.merma || 0),
+            user_id: userData.user.id,
+            metadata: product.metadata || {}
         };
 
-        // Agregar categoría si existe (puede no estar en el esquema de BD, pero lo intentamos)
+        // Agregar categoría si existe
         if (product.category) {
             insertData.category = product.category;
         }
@@ -154,7 +156,9 @@ export const productService = {
             stock: parseInt(updates.stock),
             min_stock: parseInt(updates.min_stock || 0),
             barcode: updates.barcode || null,
-            image_url: updates.image || null
+            image_url: updates.image || null,
+            merma: parseInt(updates.merma || 0),
+            metadata: updates.metadata || {}
         };
 
         // Agregar categoría si existe
@@ -310,7 +314,9 @@ export const productService = {
                 cost_price: parseFloat(product.cost_price || 0),
                 wholesale_price: parseFloat(product.wholesale_price || 0),
                 stock: parseInt(product.stock),
-                min_stock: parseInt(product.min_stock || 0)
+                min_stock: parseInt(product.min_stock || 0),
+                merma: parseInt(product.merma || 0),
+                metadata: product.metadata || {}
             };
 
             const barcodeStr = product.barcode ? String(product.barcode) : null;

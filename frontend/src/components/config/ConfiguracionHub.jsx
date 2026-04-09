@@ -79,6 +79,16 @@ export const ConfiguracionHub = () => {
       bgColor: "bg-indigo-500/10",
     },
     {
+      id: "inventory_config",
+      title: "Preferencias de Inventario",
+      description: "Cambiar nivel de detalle (Costo, Mayoreo, Stock Mínimo)",
+      icon: "inventory_2",
+      path: "/config-inventario",
+      adminOnly: true,
+      color: "text-blue-600",
+      bgColor: "bg-blue-600/10",
+    },
+    {
       id: "billing_issuers",
       title: "Emisores Fiscales",
       description: "Configuración de RFC, CSD y datos de facturación",

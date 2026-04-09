@@ -8,6 +8,7 @@ import * as XLSX from "xlsx";
 import BulkImportModal from "./BulkImportModal";
 import EntradasModal from "./EntradasModal";
 import { useProducts } from "../../contexts/ProductContext";
+import { useAuth } from "../../hooks/useAuth";
 
 import {
   FiPlus,
@@ -30,6 +31,10 @@ const Inventory = () => {
     loading,
     loadProducts: fetchProducts,
   } = useProducts();
+
+  const { user } = useAuth();
+  const inventoryMode = user?.inventory_mode || "comprehensive";
+  const isSimplified = inventoryMode === "simplified";
 
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -774,7 +779,7 @@ const Inventory = () => {
                   <th>Producto</th>
                   <th>Categoría</th>
                   <th>SKU</th>
-                  <th>Costo</th>
+                  {!isSimplified && <th>Costo</th>}
                   <th>Venta</th>
                   <th>Existencia</th>
                   <th className="merma-col" style={{ color: "#ef4444" }}>
@@ -838,9 +843,11 @@ const Inventory = () => {
                           </span>
                         </td>
                         <td className="sku-cell">{sku}</td>
-                        <td className="price-cell text-slate-500">
-                          ${parseFloat(product.cost_price || 0).toFixed(2)}
-                        </td>
+                        {!isSimplified && (
+                          <td className="price-cell text-slate-500">
+                            ${parseFloat(product.cost_price || 0).toFixed(2)}
+                          </td>
+                        )}
                         <td className="price-cell font-medium">
                           ${parseFloat(product.price || 0).toFixed(2)}
                         </td>
@@ -1224,32 +1231,34 @@ const Inventory = () => {
                   {/* Precios Group */}
                   <div className="new-product-form-group col-span-12">
                     <label className="new-product-label">
-                      Configuración de Precios
+                      {isSimplified ? "Precio" : "Configuración de Precios"}
                     </label>
                     <div className="grid grid-cols-12 gap-4">
                       {/* Costo */}
-                      <div className="col-span-12 md:col-span-4">
-                        <label className="text-xs text-gray-500 mb-1 block">
-                          Precio Costo
-                        </label>
-                        <div className="new-product-price-wrapper">
-                          <span className="new-product-price-symbol">$</span>
-                          <input
-                            className="new-product-input new-product-price-input"
-                            type="number"
-                            name="cost_price"
-                            value={formData.cost_price}
-                            onChange={handleInputChange}
-                            placeholder="0.00"
-                            step="0.01"
-                          />
+                      {!isSimplified && (
+                        <div className="col-span-12 md:col-span-4">
+                          <label className="text-xs text-gray-500 mb-1 block">
+                            Precio Costo
+                          </label>
+                          <div className="new-product-price-wrapper">
+                            <span className="new-product-price-symbol">$</span>
+                            <input
+                              className="new-product-input new-product-price-input"
+                              type="number"
+                              name="cost_price"
+                              value={formData.cost_price}
+                              onChange={handleInputChange}
+                              placeholder="0.00"
+                              step="0.01"
+                            />
+                          </div>
                         </div>
-                      </div>
+                      )}
 
                       {/* Venta */}
-                      <div className="col-span-12 md:col-span-4">
+                      <div className={`col-span-12 ${isSimplified ? "md:col-span-12" : "md:col-span-4"}`}>
                         <label className="text-xs text-gray-500 mb-1 block">
-                          Precio Venta <span className="text-red-500">*</span>
+                          {isSimplified ? "Precio de Venta" : "Precio Venta"} <span className="text-red-500">*</span>
                         </label>
                         <div className="new-product-price-wrapper">
                           <span className="new-product-price-symbol">$</span>
@@ -1267,23 +1276,25 @@ const Inventory = () => {
                       </div>
 
                       {/* Mayoreo */}
-                      <div className="col-span-12 md:col-span-4">
-                        <label className="text-xs text-gray-500 mb-1 block">
-                          Precio Mayoreo
-                        </label>
-                        <div className="new-product-price-wrapper">
-                          <span className="new-product-price-symbol">$</span>
-                          <input
-                            className="new-product-input new-product-price-input"
-                            type="number"
-                            name="wholesale_price"
-                            value={formData.wholesale_price}
-                            onChange={handleInputChange}
-                            placeholder="0.00"
-                            step="0.01"
-                          />
+                      {!isSimplified && (
+                        <div className="col-span-12 md:col-span-4">
+                          <label className="text-xs text-gray-500 mb-1 block">
+                            Precio Mayoreo
+                          </label>
+                          <div className="new-product-price-wrapper">
+                            <span className="new-product-price-symbol">$</span>
+                            <input
+                              className="new-product-input new-product-price-input"
+                              type="number"
+                              name="wholesale_price"
+                              value={formData.wholesale_price}
+                              onChange={handleInputChange}
+                              placeholder="0.00"
+                              step="0.01"
+                            />
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   </div>
 
@@ -1292,7 +1303,7 @@ const Inventory = () => {
                     <label className="new-product-label">Inventario</label>
                     <div className="grid grid-cols-12 gap-4">
                       {/* Stock Actual */}
-                      <div className="col-span-12 md:col-span-6">
+                      <div className={`col-span-12 ${isSimplified ? "md:col-span-12" : "md:col-span-6"}`}>
                         <label className="text-xs text-gray-500 mb-1 block">
                           Existencia Actual{" "}
                           <span className="text-red-500">*</span>
@@ -1310,19 +1321,21 @@ const Inventory = () => {
                       </div>
 
                       {/* Stock Minimo */}
-                      <div className="col-span-12 md:col-span-6">
-                        <label className="text-xs text-gray-500 mb-1 block">
-                          Inventario Mínimo
-                        </label>
-                        <input
-                          className="new-product-input"
-                          type="number"
-                          name="min_stock"
-                          value={formData.min_stock}
-                          onChange={handleInputChange}
-                          placeholder="5"
-                        />
-                      </div>
+                      {!isSimplified && (
+                        <div className="col-span-12 md:col-span-6">
+                          <label className="text-xs text-gray-500 mb-1 block">
+                            Inventario Mínimo
+                          </label>
+                          <input
+                            className="new-product-input"
+                            type="number"
+                            name="min_stock"
+                            value={formData.min_stock}
+                            onChange={handleInputChange}
+                            placeholder="5"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
