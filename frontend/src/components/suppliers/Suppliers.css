@@ -832,7 +832,697 @@
     transform: translateY(-1px);
 }
 
+/* ===== DARK MODE — SUPPLIERS ===== */
+
+/* Page background */
+html.dark .suppliers-page {
+    background-color: #0f172a;
+}
+
+/* Header */
+html.dark .suppliers-header {
+    background-color: #1e293b;
+    border-bottom-color: #334155;
+}
+
+/* Search Container */
+html.dark .suppliers-search-container {
+    background-color: #1e293b;
+    border-color: #475569;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+html.dark .suppliers-search-container:focus-within {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+html.dark .suppliers-search-input {
+    color: #f1f5f9 !important;
+}
+
+html.dark .suppliers-search-input::placeholder {
+    color: #64748b;
+}
+
+/* Breadcrumb */
+html.dark .suppliers-breadcrumb {
+    color: #94a3b8;
+}
+
+html.dark .suppliers-breadcrumb-active {
+    color: #60a5fa;
+}
+
+/* Title */
+html.dark .suppliers-title {
+    color: #f1f5f9;
+}
+
+/* Action buttons */
+html.dark .suppliers-btn-export {
+    background-color: #1e293b;
+    border-color: #475569;
+    color: #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+html.dark .suppliers-btn-export:hover {
+    background-color: #334155;
+    border-color: #60a5fa;
+    color: #f8fafc;
+}
+
+html.dark .suppliers-btn-new {
+    background-color: #3b82f6;
+    color: #ffffff;
+}
+
+html.dark .suppliers-btn-new:hover {
+    background-color: #2563eb;
+}
+
+/* KPI Cards */
+html.dark .suppliers-kpi-card {
+    background-color: #1e293b;
+    border-color: #334155;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+html.dark .suppliers-kpi-label {
+    color: #94a3b8;
+}
+
+html.dark .suppliers-kpi-value {
+    color: #f1f5f9;
+}
+
+html.dark .suppliers-kpi-badge-success {
+    background-color: rgba(37, 99, 235, 0.15);
+    color: #60a5fa;
+}
+
+html.dark .suppliers-kpi-badge-danger {
+    background-color: rgba(220, 38, 38, 0.15);
+    color: #f87171;
+}
+
+html.dark .suppliers-kpi-badge-neutral {
+    background-color: rgba(100, 116, 139, 0.2);
+    color: #94a3b8;
+}
+
+html.dark .suppliers-kpi-progress {
+    background-color: #334155;
+}
+
+/* Table Container */
+html.dark .suppliers-table-container {
+    background-color: #1e293b;
+    border-color: #334155;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+html.dark .suppliers-table-controls {
+    border-bottom-color: #334155;
+}
+
+/* Filters */
+html.dark .suppliers-filter-btn {
+    color: #94a3b8;
+}
+
+html.dark .suppliers-filter-btn:hover {
+    background-color: #334155;
+    color: #e2e8f0;
+}
+
+html.dark .suppliers-filter-btn.active {
+    background-color: #3b82f6;
+    color: #ffffff;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+/* Table header */
+html.dark .suppliers-table-header {
+    background-color: #0f172a;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+html.dark .suppliers-table-th {
+    color: #64748b;
+    border-bottom-color: #334155;
+}
+
+/* Table body */
+html.dark .suppliers-table-body {
+    border-top-color: #334155;
+}
+
+html.dark .suppliers-table-row {
+    border-bottom-color: #1e293b;
+}
+
+html.dark .suppliers-table-row:hover {
+    background-color: #334155;
+}
+
+/* Table cells — text colors */
+html.dark .suppliers-table-supplier-name {
+    color: #f1f5f9;
+}
+
+html.dark .suppliers-table-supplier-id {
+    color: #64748b;
+}
+
+html.dark .suppliers-table-contact-email {
+    color: #cbd5e1;
+}
+
+html.dark .suppliers-table-contact-phone {
+    color: #94a3b8;
+}
+
+html.dark .suppliers-table-products {
+    color: #e2e8f0;
+}
+
+html.dark .suppliers-table-last-purchase {
+    color: #e2e8f0;
+}
+
+/* Avatar */
+html.dark .suppliers-table-avatar {
+    background: linear-gradient(135deg, #334155 0%, #475569 100%);
+    color: #e2e8f0;
+    border: 1px solid #64748b;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Badges de Condiciones - Dark Mode (Mejorados con gradientes) */
+html.dark .suppliers-table-badge-blue {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.15) 100%);
+    color: #93c5fd;
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    box-shadow: 0 1px 3px rgba(59, 130, 246, 0.2);
+}
+
+html.dark .suppliers-table-badge-green {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.15) 100%);
+    color: #6ee7b7;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.2);
+}
+
+/* Balance - Dark Mode */
+html.dark .suppliers-table-balance-amount {
+    color: #f87171;
+}
+
+html.dark .suppliers-table-balance-zero {
+    color: #64748b;
+}
+
+html.dark .suppliers-table-status {
+    color: #64748b;
+}
+
+/* Action buttons */
+html.dark .suppliers-table-action-btn {
+    color: #64748b;
+}
+
+html.dark .suppliers-table-action-btn:hover {
+    color: #60a5fa;
+}
+
+html.dark .suppliers-table-action-btn:last-child:hover {
+    color: #f87171;
+}
+
+/* Pagination */
+html.dark .suppliers-pagination {
+    border-top-color: #334155;
+    background: #1e293b;
+}
+
+html.dark .suppliers-pagination-info {
+    color: #94a3b8;
+}
+
+html.dark .suppliers-pagination-btn {
+    color: #94a3b8;
+}
+
+html.dark .suppliers-pagination-btn:hover:not(:disabled) {
+    background-color: #334155;
+    color: #e2e8f0;
+}
+
+html.dark .suppliers-pagination-btn.active {
+    background-color: #3b82f6;
+    color: #ffffff;
+}
+
+html.dark .suppliers-pagination-dots {
+    color: #475569;
+}
+
+/* Form elements for modals */
+html.dark .form-label {
+    color: #94a3b8;
+}
+
+html.dark .form-input {
+    background-color: #0f172a;
+    border-color: #475569;
+    color: #f1f5f9;
+}
+
+html.dark .form-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+html.dark .form-select {
+    background-color: #0f172a;
+    border-color: #475569;
+    color: #f1f5f9;
+}
+
+html.dark .form-select:focus {
+    border-color: #3b82f6;
+}
+
+/* Conditions */
+html.dark .conditions-management {
+    background-color: #0f172a;
+    border-color: #334155;
+}
+
+html.dark .condition-tag {
+    background-color: #1e293b;
+    border-color: #475569;
+    color: #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+html.dark .condition-tag:hover {
+    border-color: #60a5fa;
+    background-color: #334155;
+}
+
+html.dark .condition-delete-btn {
+    color: #64748b;
+}
+
+html.dark .btn-add-condition {
+    border-color: #475569;
+    color: #94a3b8;
+}
+
+html.dark .btn-add-condition:hover {
+    border-color: #60a5fa;
+    color: #60a5fa;
+}
+
+html.dark .form-label-small {
+    color: #64748b;
+}
+
+html.dark .btn-condition-cancel {
+    background-color: #1e293b;
+    color: #94a3b8;
+    border-color: #475569;
+}
+
+html.dark .btn-condition-cancel:hover {
+    background-color: #334155;
+    border-color: #60a5fa;
+}
+
+/* Transition for smooth theme switching */
+.suppliers-page,
+.suppliers-header,
+.suppliers-kpi-card,
+.suppliers-table-container,
+.suppliers-pagination {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
 /* Material Icons */
 .material-symbols-outlined {
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* ===== MEJORAS COMPLETAS DE DARK MODE PARA PROVEEDORES ===== */
+
+/* SweetAlert2 - Modal de Acciones */
+html.dark .swal2-popup {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+    border: 1px solid #334155;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5) !important;
+}
+
+html.dark .swal2-title {
+    color: #f1f5f9 !important;
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+html.dark .swal2-html-container {
+    color: #cbd5e1 !important;
+}
+
+html.dark .swal2-confirm {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4) !important;
+}
+
+html.dark .swal2-confirm:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5) !important;
+}
+
+html.dark .swal2-deny {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4) !important;
+}
+
+html.dark .swal2-deny:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.5) !important;
+}
+
+html.dark .swal2-cancel {
+    background: #334155 !important;
+    color: #e2e8f0 !important;
+    border: 1px solid #475569 !important;
+}
+
+html.dark .swal2-cancel:hover {
+    background: #475569 !important;
+    border-color: #64748b !important;
+}
+
+/* Header y KPIs - Dark Mode Mejorado */
+html.dark .suppliers-header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border-bottom-color: #334155;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+html.dark .suppliers-header h1 {
+    color: #f1f5f9;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+html.dark .suppliers-header p {
+    color: #94a3b8;
+}
+
+/* KPI Cards - Dark Mode */
+html.dark .suppliers-kpi-card {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-color: #334155;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+html.dark .suppliers-kpi-card:hover {
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    border-color: #475569;
+}
+
+html.dark .suppliers-kpi-label {
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+html.dark .suppliers-kpi-value {
+    color: #f1f5f9;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+html.dark .suppliers-kpi-badge-success {
+    background: rgba(16, 185, 129, 0.15);
+    color: #6ee7b7;
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+html.dark .suppliers-kpi-badge-danger {
+    background: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+html.dark .suppliers-kpi-badge-neutral {
+    background: rgba(59, 130, 246, 0.15);
+    color: #93c5fd;
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+html.dark .suppliers-kpi-progress {
+    background: #334155;
+}
+
+/* Botones del Header - Dark Mode */
+html.dark .suppliers-btn-export {
+    background: #1e293b;
+    border-color: #334155;
+    color: #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+html.dark .suppliers-btn-export:hover {
+    background: #334155;
+    border-color: #475569;
+    color: #f1f5f9;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+html.dark .suppliers-btn-new {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: #ffffff;
+    border-color: #3b82f6;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+}
+
+html.dark .suppliers-btn-new:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+}
+
+/* Tabs de Filtros - Dark Mode */
+html.dark .suppliers-tabs {
+    background: #0f172a;
+    border-bottom-color: #334155;
+}
+
+html.dark .suppliers-tab {
+    background: #1e293b;
+    border-color: #334155;
+    color: #94a3b8;
+}
+
+html.dark .suppliers-tab:hover {
+    background: #334155;
+    color: #e2e8f0;
+}
+
+html.dark .suppliers-tab.active {
+    background: #3b82f6;
+    color: #ffffff;
+    border-color: #3b82f6;
+}
+
+/* Tabla - Dark Mode Mejorado */
+html.dark .suppliers-table-container {
+    background: #0f172a;
+    border-color: #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+html.dark .suppliers-table-controls {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+html.dark .suppliers-table-header {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-bottom: 2px solid #334155;
+}
+
+html.dark .suppliers-table-th {
+    background: #1e293b;
+    color: #cbd5e1;
+    border-color: #334155;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+html.dark .suppliers-table-body {
+    background: #0f172a;
+}
+
+html.dark .suppliers-table-row {
+    background: #0f172a;
+    border-bottom: 1px solid #1e293b;
+    transition: all 0.2s ease;
+}
+
+html.dark .suppliers-table-row:hover {
+    background: #1e293b;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+}
+
+html.dark .suppliers-table-row:nth-child(even) {
+    background: #0c1322;
+}
+
+html.dark .suppliers-table-row:nth-child(even):hover {
+    background: #1e293b;
+}
+
+/* Celdas de Tabla - Dark Mode */
+html.dark .suppliers-table-supplier-name {
+    color: #f1f5f9;
+    font-weight: 700;
+}
+
+html.dark .suppliers-table-supplier-id {
+    color: #94a3b8;
+}
+
+html.dark .suppliers-table-contact-email {
+    color: #93c5fd;
+}
+
+html.dark .suppliers-table-contact-phone {
+    color: #94a3b8;
+}
+
+html.dark .suppliers-table-products {
+    color: #cbd5e1;
+    font-weight: 600;
+}
+
+html.dark .suppliers-table-last-purchase {
+    color: #cbd5e1;
+}
+
+/* Badges de Estado - Dark Mode */
+html.dark .suppliers-table-badge-blue {
+    background: rgba(59, 130, 246, 0.15);
+    color: #93c5fd;
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+html.dark .suppliers-table-badge-green {
+    background: rgba(16, 185, 129, 0.15);
+    color: #6ee7b7;
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+html.dark .suppliers-table-balance-amount {
+    color: #f1f5f9;
+    font-weight: 700;
+}
+
+html.dark .suppliers-table-balance-zero {
+    color: #64748b;
+}
+
+html.dark .suppliers-table-status {
+    color: #cbd5e1;
+}
+
+/* Botones de Acción - Dark Mode */
+html.dark .suppliers-table-action-btn {
+    background: #1e293b;
+    border-color: #334155;
+    color: #94a3b8;
+}
+
+html.dark .suppliers-table-action-btn:hover {
+    background: #334155;
+    border-color: #475569;
+    color: #f1f5f9;
+}
+
+html.dark .suppliers-table-action-btn:last-child:hover {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.4);
+    color: #60a5fa;
+}
+
+/* Avatares - Dark Mode */
+html.dark .suppliers-table-avatar {
+    background: linear-gradient(135deg, #334155 0%, #475569 100%);
+    border-color: #64748b;
+    color: #e2e8f0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Paginación - Dark Mode */
+html.dark .suppliers-pagination {
+    background: #1e293b;
+    border-top-color: #334155;
+}
+
+html.dark .suppliers-pagination-info {
+    color: #94a3b8;
+}
+
+html.dark .suppliers-pagination-btn {
+    background: #0f172a;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+
+html.dark .suppliers-pagination-btn:hover:not(:disabled) {
+    background: #334155;
+    border-color: #475569;
+    color: #f1f5f9;
+}
+
+html.dark .suppliers-pagination-btn.active {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #ffffff;
+}
+
+html.dark .suppliers-pagination-dots {
+    color: #64748b;
+}
+
+/* Scrollbars - Dark Mode */
+html.dark .suppliers-table-container::-webkit-scrollbar-track {
+    background: #0f172a;
+}
+
+html.dark .suppliers-table-container::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 3px;
+}
+
+html.dark .suppliers-table-container::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+
+/* Transiciones suaves */
+html.dark .suppliers-table-row,
+html.dark .suppliers-kpi-card,
+html.dark .suppliers-table-action-btn,
+html.dark .suppliers-btn-new,
+html.dark .suppliers-btn-export {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }

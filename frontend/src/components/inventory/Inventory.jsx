@@ -761,10 +761,12 @@ const Inventory = () => {
 
   return (
     <div className="inventory-page">
-      <header className="inventory-header">
+      <header className="inventory-header bg-white dark:bg-gradient-to-r dark:from-slate-900 dark:to-slate-800 border-b border-slate-200 dark:border-slate-700 shadow-sm dark:shadow-lg">
         <div>
-          <h1 className="inventory-title">Inventario</h1>
-          <p className="inventory-subtitle">
+          <h1 className="inventory-title text-slate-900 dark:text-slate-50">
+            Inventario
+          </h1>
+          <p className="inventory-subtitle text-slate-600 dark:text-slate-400">
             Gestiona el catálogo de productos y existencias
           </p>
         </div>
@@ -876,7 +878,9 @@ const Inventory = () => {
             </div>
             <div className="bulk-buttons">
               <button
-                className={`bulk-btn filter ${showOnlySelected ? "active" : ""}`}
+                className={`bulk-btn filter ${
+                  showOnlySelected ? "active" : ""
+                }`}
                 onClick={() => setShowOnlySelected(!showOnlySelected)}
               >
                 <FiFilter className="btn-icon" />
@@ -1001,7 +1005,10 @@ const Inventory = () => {
                         </td>
                         {!isSimplified && (
                           <td className="price-cell text-slate-500">
-                            ${parseFloat(product.wholesale_price || 0).toFixed(2)}
+                            $
+                            {parseFloat(product.wholesale_price || 0).toFixed(
+                              2,
+                            )}
                           </td>
                         )}
                         {!isSimplified && (
@@ -1011,7 +1018,10 @@ const Inventory = () => {
                         )}
                         {!isSimplified && (
                           <td className="price-cell text-slate-500">
-                            ${parseFloat(product.suggested_price || 0).toFixed(2)}
+                            $
+                            {parseFloat(product.suggested_price || 0).toFixed(
+                              2,
+                            )}
                           </td>
                         )}
                         <td>
@@ -1023,9 +1033,10 @@ const Inventory = () => {
                             ></div>
                             <span>
                               {product.stock}{" "}
-                              {product.unit || (product.name.toLowerCase().includes("kg")
-                                ? "kg"
-                                : "un.")}
+                              {product.unit ||
+                                (product.name.toLowerCase().includes("kg")
+                                  ? "kg"
+                                  : "un.")}
                             </span>
                           </div>
                         </td>
@@ -1033,22 +1044,38 @@ const Inventory = () => {
                           <td className="unit-cell">{product.unit || "PZA"}</td>
                         )}
                         {!isSimplified && (
-                          <td className="iva-cell" style={{ textAlign: "center" }}>
+                          <td
+                            className="iva-cell"
+                            style={{ textAlign: "center" }}
+                          >
                             {parseFloat(product.iva || 0)}%
                           </td>
                         )}
                         {!isSimplified && (
-                          <td className="text-slate-500">{product.wholesale_unit || "—"}</td>
+                          <td className="text-slate-500">
+                            {product.wholesale_unit || "—"}
+                          </td>
                         )}
                         {!isSimplified && (
-                          <td className="text-slate-500">{product.brand || "—"}</td>
+                          <td className="text-slate-500">
+                            {product.brand || "—"}
+                          </td>
                         )}
                         {!isSimplified && (
-                          <td className="text-slate-500">{product.supplier || "—"}</td>
+                          <td className="text-slate-500">
+                            {product.supplier || "—"}
+                          </td>
                         )}
                         {!isSimplified && (
-                          <td className="notes-cell" title={product.notes || ""}>
-                            {product.notes ? (product.notes.length > 20 ? product.notes.substring(0, 20) + "…" : product.notes) : "—"}
+                          <td
+                            className="notes-cell"
+                            title={product.notes || ""}
+                          >
+                            {product.notes
+                              ? product.notes.length > 20
+                                ? product.notes.substring(0, 20) + "…"
+                                : product.notes
+                              : "—"}
                           </td>
                         )}
                         <td
@@ -1441,9 +1468,14 @@ const Inventory = () => {
                       )}
 
                       {/* Venta */}
-                      <div className={`col-span-12 ${isSimplified ? "md:col-span-12" : "md:col-span-4"}`}>
+                      <div
+                        className={`col-span-12 ${
+                          isSimplified ? "md:col-span-12" : "md:col-span-4"
+                        }`}
+                      >
                         <label className="text-xs text-gray-500 mb-1 block">
-                          {isSimplified ? "Precio de Venta" : "Precio Venta"} <span className="text-red-500">*</span>
+                          {isSimplified ? "Precio de Venta" : "Precio Venta"}{" "}
+                          <span className="text-red-500">*</span>
                         </label>
                         <div className="new-product-price-wrapper">
                           <span className="new-product-price-symbol">$</span>
@@ -1488,7 +1520,11 @@ const Inventory = () => {
                     <label className="new-product-label">Inventario</label>
                     <div className="grid grid-cols-12 gap-4">
                       {/* Stock Actual */}
-                      <div className={`col-span-12 ${isSimplified ? "md:col-span-12" : "md:col-span-6"}`}>
+                      <div
+                        className={`col-span-12 ${
+                          isSimplified ? "md:col-span-12" : "md:col-span-6"
+                        }`}
+                      >
                         <label className="text-xs text-gray-500 mb-1 block">
                           Existencia Actual{" "}
                           <span className="text-red-500">*</span>
@@ -1527,11 +1563,15 @@ const Inventory = () => {
                   {/* Advanced Fields - Solo modo avanzado */}
                   {!isSimplified && (
                     <div className="new-product-form-group col-span-12">
-                      <label className="new-product-label">Información Avanzada</label>
+                      <label className="new-product-label">
+                        Información Avanzada
+                      </label>
                       <div className="grid grid-cols-12 gap-4">
                         {/* Unidad */}
                         <div className="col-span-12 md:col-span-3">
-                          <label className="text-xs text-gray-500 mb-1 block">Unidad</label>
+                          <label className="text-xs text-gray-500 mb-1 block">
+                            Unidad
+                          </label>
                           <div className="new-product-select-wrapper">
                             <select
                               className="new-product-select"
@@ -1549,8 +1589,18 @@ const Inventory = () => {
                               <option value="BOLSA">BOLSA</option>
                             </select>
                             <div className="new-product-select-arrow">
-                              <svg className="new-product-select-arrow-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
+                              <svg
+                                className="new-product-select-arrow-icon"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  d="M19 9l-7 7-7-7"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                ></path>
                               </svg>
                             </div>
                           </div>
@@ -1558,7 +1608,9 @@ const Inventory = () => {
 
                         {/* IVA */}
                         <div className="col-span-12 md:col-span-3">
-                          <label className="text-xs text-gray-500 mb-1 block">IVA %</label>
+                          <label className="text-xs text-gray-500 mb-1 block">
+                            IVA %
+                          </label>
                           <div className="new-product-price-wrapper">
                             <span className="new-product-price-symbol">%</span>
                             <input
@@ -1577,7 +1629,9 @@ const Inventory = () => {
 
                         {/* Precio Especial */}
                         <div className="col-span-12 md:col-span-3">
-                          <label className="text-xs text-gray-500 mb-1 block">Precio Especial</label>
+                          <label className="text-xs text-gray-500 mb-1 block">
+                            Precio Especial
+                          </label>
                           <div className="new-product-price-wrapper">
                             <span className="new-product-price-symbol">$</span>
                             <input
@@ -1594,7 +1648,9 @@ const Inventory = () => {
 
                         {/* Precio Sugerido */}
                         <div className="col-span-12 md:col-span-3">
-                          <label className="text-xs text-gray-500 mb-1 block">Precio Sugerido</label>
+                          <label className="text-xs text-gray-500 mb-1 block">
+                            Precio Sugerido
+                          </label>
                           <div className="new-product-price-wrapper">
                             <span className="new-product-price-symbol">$</span>
                             <input
@@ -1611,7 +1667,9 @@ const Inventory = () => {
 
                         {/* Unidad Mayoreo */}
                         <div className="col-span-12 md:col-span-4">
-                          <label className="text-xs text-gray-500 mb-1 block">Unidad Mayoreo</label>
+                          <label className="text-xs text-gray-500 mb-1 block">
+                            Unidad Mayoreo
+                          </label>
                           <input
                             className="new-product-input"
                             type="text"
@@ -1624,7 +1682,9 @@ const Inventory = () => {
 
                         {/* Marca */}
                         <div className="col-span-12 md:col-span-4">
-                          <label className="text-xs text-gray-500 mb-1 block">Marca</label>
+                          <label className="text-xs text-gray-500 mb-1 block">
+                            Marca
+                          </label>
                           <input
                             className="new-product-input"
                             type="text"
@@ -1637,7 +1697,9 @@ const Inventory = () => {
 
                         {/* Proveedor */}
                         <div className="col-span-12 md:col-span-4">
-                          <label className="text-xs text-gray-500 mb-1 block">Proveedor</label>
+                          <label className="text-xs text-gray-500 mb-1 block">
+                            Proveedor
+                          </label>
                           <input
                             className="new-product-input"
                             type="text"
@@ -1650,7 +1712,9 @@ const Inventory = () => {
 
                         {/* Notas */}
                         <div className="col-span-12">
-                          <label className="text-xs text-gray-500 mb-1 block">Notas</label>
+                          <label className="text-xs text-gray-500 mb-1 block">
+                            Notas
+                          </label>
                           <textarea
                             className="new-product-input"
                             name="notes"

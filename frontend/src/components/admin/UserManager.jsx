@@ -266,7 +266,9 @@ export const UserManager = () => {
             onClick={() => navigate("/configuracion")}
             className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all text-slate-600 dark:text-slate-300 font-bold text-xs"
           >
-            <span className="material-icons-outlined text-[18px]">arrow_back</span>
+            <span className="material-icons-outlined text-[18px]">
+              arrow_back
+            </span>
             <span>Regresar</span>
           </button>
           <button
@@ -327,24 +329,41 @@ export const UserManager = () => {
                     </td>
                     <td>
                       <span
-                        className={`status-badge ${s.active ? "active" : "inactive"}`}
+                        className={`status-badge ${
+                          s.active ? "active" : "inactive"
+                        }`}
                         onClick={() => toggleActive(s)}
                         style={{ cursor: "pointer" }}
                       >
                         {s.active ? "✓ Activo" : "✗ Inactivo"}
                       </span>
                     </td>
-                    <td className="actions-cell">
+                    <td className="actions-cell-separated">
                       <button
                         className="btn-edit"
                         onClick={() => handleOpenModal(s)}
+                        title="Editar empleado"
                       >
+                        <span
+                          className="material-icons-outlined"
+                          style={{ fontSize: "18px", marginRight: "4px" }}
+                        >
+                          edit
+                        </span>
                         Editar
                       </button>
+                      <div className="action-separator"></div>
                       <button
                         className="btn-delete"
                         onClick={() => handleDelete(s.id, s.name)}
+                        title="Eliminar empleado"
                       >
+                        <span
+                          className="material-icons-outlined"
+                          style={{ fontSize: "18px", marginRight: "4px" }}
+                        >
+                          delete
+                        </span>
                         Eliminar
                       </button>
                     </td>
@@ -485,8 +504,8 @@ export const UserManager = () => {
                         {isCapturing
                           ? "Esperando huella..."
                           : formData.fingerprint_data
-                            ? "Re-capturar Huella"
-                            : "Registrar Huella"}
+                          ? "Re-capturar Huella"
+                          : "Registrar Huella"}
                       </button>
                       {formData.fingerprint_data && !isCapturing && (
                         <span

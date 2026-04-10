@@ -428,3 +428,134 @@
     justify-content: center;
   }
 }
+
+/* ===================================================================
+   DARK MODE — Inventory Config
+   =================================================================== */
+
+/* Container */
+html.dark .inventory-config-container {
+  background-color: var(--dm-bg-primary);
+}
+
+/* Header text */
+html.dark .inventory-config-title {
+  color: #f1f5f9;
+}
+
+html.dark .inventory-config-subtitle {
+  color: #94a3b8;
+}
+
+/* Mode Cards */
+html.dark .mode-card {
+  background-color: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+html.dark .mode-card:hover {
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+html.dark .mode-card.active {
+  border-color: #3b82f6;
+  background-color: rgba(59, 130, 246, 0.05);
+  box-shadow: 0 25px 50px rgba(59, 130, 246, 0.15);
+}
+
+html.dark .mode-card-icon {
+  background: #334155;
+}
+
+html.dark .mode-card-icon .material-symbols-outlined {
+  color: #94a3b8;
+}
+
+html.dark .mode-card.active .mode-card-icon {
+  background: #3b82f6;
+}
+
+html.dark .mode-card.active .mode-card-icon .material-symbols-outlined {
+  color: #ffffff;
+}
+
+html.dark .mode-card-title {
+  color: #f1f5f9;
+}
+
+html.dark .mode-card-description {
+  color: #94a3b8;
+}
+
+html.dark .mode-card-features li {
+  color: #cbd5e1;
+}
+
+html.dark .mode-card-features li span:first-child {
+  color: #60a5fa;
+}
+
+/* Selected Badge */
+html.dark .mode-selected-badge {
+  background: #3b82f6;
+  color: #ffffff;
+}
+
+/* Loading overlay */
+html.dark .config-loading-overlay {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+}
+
+html.dark .spinner {
+  border-color: #334155;
+  border-top-color: #3b82f6;
+}
+
+/* Danger Zone — Dark Mode */
+html.dark .danger-zone-section {
+  border-top-color: #334155;
+}
+
+html.dark .danger-zone-card {
+  background: linear-gradient(135deg, rgba(127, 29, 29, 0.15) 0%, rgba(153, 27, 27, 0.1) 50%, rgba(127, 29, 29, 0.15) 100%);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+html.dark .danger-zone-card:hover {
+  border-color: rgba(239, 68, 68, 0.5);
+  box-shadow: 0 8px 32px -4px rgba(239, 68, 68, 0.2);
+}
+
+html.dark .danger-zone-title {
+  color: #fca5a5;
+}
+
+html.dark .danger-zone-subtitle {
+  color: #f87171;
+}
+
+html.dark .danger-zone-description {
+  color: #cbd5e1;
+}
+
+html.dark .danger-zone-info-list li {
+  color: #e2e8f0;
+}
+
+html.dark .danger-zone-info-list li .material-symbols-outlined {
+  color: #f87171;
+}
+
+html.dark .danger-zone-note {
+  color: #f87171;
+}
+
+/* Transitions */
+.inventory-config-container,
+.mode-card,
+.danger-zone-card {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}

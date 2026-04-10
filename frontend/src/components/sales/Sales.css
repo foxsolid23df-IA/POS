@@ -2567,3 +2567,487 @@
 .text-red-500 {
   color: #ef4444;
 }
+
+/* ===== DARK MODE ENHANCEMENTS ===== */
+
+/* Supervision Banner - Dark Mode (override Tailwind defaults) */
+html.dark div[class*="bg-gradient-to-r"][class*="amber"] {
+  background: linear-gradient(135deg, rgba(146, 64, 14, 0.2) 0%, rgba(217, 119, 6, 0.15) 100%) !important;
+}
+
+html.dark div[class*="bg-gradient-to-r"][class*="amber"] h3 {
+  color: #fef3c7 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+html.dark div[class*="bg-gradient-to-r"][class*="amber"] p {
+  color: #fde68a !important;
+}
+
+/* Search Section - Dark Mode Enhanced */
+html.dark .search-input-wrapper {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+html.dark .search-input-wrapper:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+html.dark .search-icon-wrapper .material-symbols-outlined {
+  color: #60a5fa;
+}
+
+html.dark .btn-camera-modern {
+  background: #334155;
+  border-color: #475569;
+  color: #e2e8f0;
+}
+
+html.dark .btn-camera-modern:hover {
+  background: #475569;
+  border-color: #64748b;
+  color: #ffffff;
+}
+
+html.dark .btn-camera-modern .material-symbols-outlined {
+  color: #94a3b8;
+}
+
+html.dark .btn-camera-modern:hover .material-symbols-outlined {
+  color: #e2e8f0;
+}
+
+/* Empty Scan Area - Dark Mode Enhanced */
+html.dark .empty-scan-area {
+  background: rgba(30, 41, 59, 0.5);
+  border-color: #334155;
+}
+
+html.dark .empty-scan-icon {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+html.dark .empty-scan-icon .material-symbols-outlined {
+  color: #64748b;
+}
+
+html.dark .empty-scan-title {
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+html.dark .empty-scan-text {
+  color: #94a3b8;
+}
+
+/* Quick Actions - Dark Mode */
+html.dark .quick-actions-section {
+  border-top-color: #334155;
+}
+
+html.dark .quick-actions-label {
+  color: #64748b;
+}
+
+html.dark .quick-action-btn {
+  color: #94a3b8;
+}
+
+html.dark .quick-action-btn:hover {
+  color: #e2e8f0;
+  background: #334155;
+}
+
+/* Cart Sidebar - Dark Mode Enhanced */
+html.dark .cart-sidebar {
+  background: #0f172a;
+  border-left-color: #1e293b;
+  box-shadow: inset 1px 0 0 0 rgba(255, 255, 255, 0.05);
+}
+
+html.dark .cart-sidebar-header {
+  background: #1e293b;
+  border-bottom-color: #334155;
+}
+
+html.dark .cart-sidebar-title {
+  color: #f1f5f9;
+  font-weight: 700;
+}
+
+html.dark .empty-cart-modern {
+  background: rgba(15, 23, 42, 0.5);
+}
+
+html.dark .empty-cart-icon {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+html.dark .empty-cart-icon .material-symbols-outlined {
+  color: #64748b;
+}
+
+html.dark .empty-cart-text {
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+html.dark .empty-cart-subtext {
+  color: #64748b;
+}
+
+/* Cart Items - Dark Mode Enhanced */
+html.dark .cart-items-modern {
+  background: #0f172a;
+}
+
+html.dark .cart-item-modern {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+html.dark .cart-item-modern:hover {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.2);
+}
+
+html.dark .item-image-modern {
+  border-color: #334155;
+  background: #0f172a;
+}
+
+html.dark .item-name-modern {
+  color: #f1f5f9;
+  font-weight: 700;
+}
+
+html.dark .item-price-modern {
+  color: #94a3b8;
+}
+
+html.dark .quantity-controls-modern {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+html.dark .qty-btn-modern {
+  background: #1e293b;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+html.dark .qty-btn-modern:hover:not(:disabled) {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
+html.dark .quantity-modern,
+html.dark .quantity-input-modern {
+  background: #1e293b;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+html.dark .quantity-input-modern:focus {
+  background: #1e293b;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+  color: #f1f5f9;
+}
+
+html.dark .item-total-modern {
+  color: #60a5fa;
+  font-weight: 800;
+}
+
+html.dark .remove-btn-modern {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+html.dark .remove-btn-modern:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+/* Cart Footer - Dark Mode Enhanced */
+html.dark .cart-footer-modern {
+  background: #1e293b;
+  border-top-color: #334155;
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.2);
+}
+
+html.dark .summary-row {
+  color: #94a3b8;
+}
+
+html.dark .summary-row.summary-total {
+  border-top-color: #334155;
+  color: #f1f5f9;
+}
+
+html.dark .summary-total .summary-label {
+  color: #f1f5f9;
+}
+
+html.dark .summary-total .summary-value {
+  color: #f1f5f9;
+}
+
+html.dark .btn-process-payment {
+  background: #334155;
+  color: #64748b;
+  border-color: #475569;
+}
+
+html.dark .btn-process-payment:not(:disabled) {
+  background: #3b82f6;
+  color: #ffffff;
+  border-color: #3b82f6;
+}
+
+html.dark .btn-process-payment:not(:disabled):hover {
+  background: #2563eb;
+}
+
+/* Header Buttons - Dark Mode */
+html.dark .sales-title {
+  color: #f1f5f9;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+html.dark .sales-subtitle {
+  color: #94a3b8;
+}
+
+/* Subtle glow effect for dark mode elements */
+html.dark .cart-item-modern,
+html.dark .search-input-wrapper {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Improved scrollbar for dark mode */
+html.dark .cart-items-modern::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+html.dark .cart-items-modern::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+
+html.dark .cart-items-modern::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Suggestion Dropdown - Dark Mode */
+html.dark .suggestions-dropdown {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+html.dark .suggestion-item {
+  border-bottom-color: #334155;
+}
+
+html.dark .suggestion-item:hover,
+html.dark .suggestion-item.active {
+  background: rgba(59, 130, 246, 0.15);
+  border-left-color: #3b82f6;
+}
+
+html.dark .suggestion-image {
+  background: #0f172a;
+}
+
+html.dark .suggestion-name {
+  color: #f1f5f9;
+}
+
+html.dark .suggestion-price {
+  color: #60a5fa;
+}
+
+html.dark .suggestion-stock {
+  color: #94a3b8;
+  background: #0f172a;
+}
+
+/* Payment Modal - Dark Mode Enhancements */
+html.dark .payment-modal-container {
+  background: #1e293b;
+}
+
+html.dark .payment-modal-close {
+  background: #334155;
+  color: #94a3b8;
+}
+
+html.dark .payment-modal-close:hover {
+  background: #475569;
+}
+
+html.dark .payment-summary-section {
+  background: #0f172a;
+  border-right-color: #334155;
+}
+
+html.dark .payment-summary-header {
+  border-bottom-color: #334155;
+}
+
+html.dark .payment-summary-title {
+  color: #f1f5f9;
+}
+
+html.dark .payment-transaction-id {
+  background: #334155;
+  color: #94a3b8;
+}
+
+html.dark .payment-item-name {
+  color: #f1f5f9;
+}
+
+html.dark .payment-item-category {
+  color: #94a3b8;
+}
+
+html.dark .payment-item-price {
+  color: #f1f5f9;
+}
+
+html.dark .payment-summary-footer {
+  background: #0f172a;
+  border-top-color: #334155;
+}
+
+html.dark .payment-summary-row {
+  color: #94a3b8;
+}
+
+html.dark .payment-total-label {
+  color: #f1f5f9;
+}
+
+html.dark .payment-total-amount {
+  color: #f1f5f9;
+}
+
+html.dark .payment-method-section {
+  background: #1e293b;
+}
+
+html.dark .payment-method-content {
+  background: #1e293b;
+}
+
+html.dark .payment-method-title {
+  color: #94a3b8;
+}
+
+html.dark .payment-method-btn {
+  background: #334155;
+  border-color: #475569;
+  color: #e2e8f0;
+}
+
+html.dark .payment-method-btn:hover {
+  border-color: #64748b;
+  color: #f1f5f9;
+}
+
+html.dark .payment-method-btn.active {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+}
+
+html.dark .payment-amount-display {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+html.dark .payment-amount-value {
+  color: #f1f5f9;
+}
+
+html.dark .payment-amount-label {
+  color: #94a3b8;
+}
+
+html.dark .payment-key {
+  background: #334155;
+  border-color: #475569;
+  color: #f1f5f9;
+}
+
+html.dark .payment-key:hover {
+  background: #475569;
+}
+
+html.dark .payment-key:active {
+  background: #64748b;
+}
+
+html.dark .payment-key.backspace {
+  border-color: #7f1d1d;
+  color: #f87171;
+}
+
+html.dark .payment-key.backspace:hover {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+html.dark .payment-change-box {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+html.dark .payment-change-label {
+  color: #60a5fa;
+}
+
+html.dark .payment-change-amount {
+  color: #93c5fd;
+}
+
+html.dark .payment-receipt-btn {
+  background: #334155;
+  border-color: #475569;
+  color: #e2e8f0;
+}
+
+html.dark .payment-receipt-btn:hover {
+  background: #475569;
+  border-color: #64748b;
+}
+
+html.dark .payment-modal-actions {
+  border-top-color: #334155;
+}
+
+html.dark .payment-finalize-btn {
+  background: #3b82f6;
+}
+
+html.dark .payment-finalize-btn:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+html.dark .payment-cancel-btn {
+  color: #94a3b8;
+}
+
+html.dark .payment-cancel-btn:hover {
+  color: #e2e8f0;
+}

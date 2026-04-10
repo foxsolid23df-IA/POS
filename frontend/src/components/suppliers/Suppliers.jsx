@@ -191,7 +191,9 @@ const Suppliers = () => {
       XLSX.utils.book_append_sheet(wb, ws, "Proveedores");
 
       // Generar el archivo Excel
-      const fileName = `proveedores_${new Date().toISOString().split("T")[0]}.xlsx`;
+      const fileName = `proveedores_${
+        new Date().toISOString().split("T")[0]
+      }.xlsx`;
       XLSX.writeFile(wb, fileName);
 
       Swal.fire(
@@ -256,7 +258,11 @@ const Suppliers = () => {
     }).then((result) => {
       if (result.isConfirmed) {
         // Here you would call the API to delete
-        Swal.fire("Eliminado", "El proveedor ha sido eliminado correctamente", "success");
+        Swal.fire(
+          "Eliminado",
+          "El proveedor ha sido eliminado correctamente",
+          "success",
+        );
       }
     });
   };
@@ -328,11 +334,13 @@ const Suppliers = () => {
     // Here you would typically send the data to your backend
     const endpoint = modalMode === "create" ? "Agregando" : "Actualizando";
     console.log(`${endpoint} proveedor:`, newSupplierForm);
-    
+
     Swal.fire(
-      "Éxito", 
-      `Proveedor ${modalMode === "create" ? "agregado" : "actualizado"} correctamente`, 
-      "success"
+      "Éxito",
+      `Proveedor ${
+        modalMode === "create" ? "agregado" : "actualizado"
+      } correctamente`,
+      "success",
     );
     handleCloseModal();
   };
@@ -374,21 +382,34 @@ const Suppliers = () => {
             <h1 className="suppliers-title">Proveedores</h1>
           </div>
           <div className="suppliers-actions flex flex-wrap items-center gap-2 md:gap-3">
-            <button 
+            <button
               onClick={() => {
-                document.documentElement.classList.toggle('dark');
-                localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+                document.documentElement.classList.toggle("dark");
+                localStorage.setItem(
+                  "theme",
+                  document.documentElement.classList.contains("dark")
+                    ? "dark"
+                    : "light",
+                );
               }}
               className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm hover:shadow-md transition-all text-slate-600 dark:text-slate-300 font-bold text-xs"
             >
-              <span className="material-icons-outlined text-[18px]">dark_mode</span>
+              <span className="material-icons-outlined text-[18px]">
+                dark_mode
+              </span>
               <span className="hidden lg:inline">Modo Oscuro</span>
             </button>
-            <button className="suppliers-btn-export text-xs md:text-sm px-3 md:px-4" onClick={handleExport}>
+            <button
+              className="suppliers-btn-export text-xs md:text-sm px-3 md:px-4"
+              onClick={handleExport}
+            >
               <span className="material-symbols-outlined">file_download</span>
               Exportar
             </button>
-            <button className="suppliers-btn-new text-xs md:text-sm px-4 md:px-6" onClick={handleNewSupplier}>
+            <button
+              className="suppliers-btn-new text-xs md:text-sm px-4 md:px-6"
+              onClick={handleNewSupplier}
+            >
               <span className="material-symbols-outlined">add</span>
               <span className="hidden sm:inline">Nuevo Proveedor</span>
               <span className="sm:hidden">Nuevo</span>
@@ -468,19 +489,25 @@ const Suppliers = () => {
           <div className="suppliers-table-controls">
             <div className="suppliers-filters">
               <button
-                className={`suppliers-filter-btn ${activeFilter === "Todos" ? "active" : ""}`}
+                className={`suppliers-filter-btn ${
+                  activeFilter === "Todos" ? "active" : ""
+                }`}
                 onClick={() => setActiveFilter("Todos")}
               >
                 Todos
               </button>
               <button
-                className={`suppliers-filter-btn ${activeFilter === "Con Deuda" ? "active" : ""}`}
+                className={`suppliers-filter-btn ${
+                  activeFilter === "Con Deuda" ? "active" : ""
+                }`}
                 onClick={() => setActiveFilter("Con Deuda")}
               >
                 Con Deuda
               </button>
               <button
-                className={`suppliers-filter-btn ${activeFilter === "Activos" ? "active" : ""}`}
+                className={`suppliers-filter-btn ${
+                  activeFilter === "Activos" ? "active" : ""
+                }`}
                 onClick={() => setActiveFilter("Activos")}
               >
                 Activos
@@ -552,7 +579,11 @@ const Suppliers = () => {
                       </td>
                       <td className="suppliers-table-td suppliers-table-td-right">
                         <p
-                          className={`suppliers-table-balance ${supplier.balance === "$0.00" ? "suppliers-table-balance-zero" : "suppliers-table-balance-amount"}`}
+                          className={`suppliers-table-balance ${
+                            supplier.balance === "$0.00"
+                              ? "suppliers-table-balance-zero"
+                              : "suppliers-table-balance-amount"
+                          }`}
                         >
                           {supplier.balance}
                         </p>
@@ -562,7 +593,7 @@ const Suppliers = () => {
                       </td>
                       <td className="suppliers-table-td">
                         <div className="suppliers-table-actions">
-                          <button 
+                          <button
                             className="suppliers-table-action-btn"
                             onClick={() => handleEditSupplier(supplier)}
                             title="Editar"
@@ -571,7 +602,7 @@ const Suppliers = () => {
                               edit
                             </span>
                           </button>
-                          <button 
+                          <button
                             className="suppliers-table-action-btn"
                             onClick={() => handleViewSupplier(supplier)}
                             title="Ver detalles"
@@ -580,24 +611,63 @@ const Suppliers = () => {
                               visibility
                             </span>
                           </button>
-                          <button 
+                          <button
                             className="suppliers-table-action-btn"
                             onClick={() => {
+                              const isDark =
+                                document.documentElement.classList.contains(
+                                  "dark",
+                                );
                               Swal.fire({
-                                title: 'Acciones',
+                                title:
+                                  '<strong style="color: ' +
+                                  (isDark ? "#f1f5f9" : "#111827") +
+                                  '">Acciones</strong>',
+                                html: `
+                                  <div style="padding: 10px 0;">
+                                    <p style="color: ${
+                                      isDark ? "#cbd5e1" : "#6b7280"
+                                    }; margin-bottom: 15px;">Selecciona una acción para este proveedor</p>
+                                  </div>
+                                `,
                                 showDenyButton: true,
                                 showCancelButton: true,
-                                confirmButtonText: 'Gestionar Pedidos',
-                                denyButtonText: `Eliminar Proveedor`,
-                                confirmButtonColor: '#000',
-                                denyButtonColor: '#d33',
+                                confirmButtonText:
+                                  "<strong>Gestionar Pedidos</strong>",
+                                denyButtonText:
+                                  "<strong>Eliminar Proveedor</strong>",
+                                cancelButtonText: "Cancelar",
+                                confirmButtonColor: isDark
+                                  ? "#3b82f6"
+                                  : "#111827",
+                                denyButtonColor: isDark ? "#dc2626" : "#d33",
+                                cancelButtonColor: isDark
+                                  ? "#475569"
+                                  : "#6b7280",
+                                background: isDark ? "#1e293b" : "#ffffff",
+                                color: isDark ? "#f1f5f9" : "#111827",
+                                borderColor: isDark ? "#334155" : "#e5e7eb",
+                                customClass: {
+                                  popup: isDark ? "swal2-dark-mode" : "",
+                                  title: "swal-title-custom",
+                                  htmlContainer: "swal-html-custom",
+                                },
                               }).then((result) => {
                                 if (result.isConfirmed) {
-                                  Swal.fire('Próximamente', 'Gestión de pedidos en desarrollo', 'info');
+                                  Swal.fire({
+                                    title: "Próximamente",
+                                    text: "Gestión de pedidos en desarrollo",
+                                    icon: "info",
+                                    background: isDark ? "#1e293b" : "#ffffff",
+                                    color: isDark ? "#f1f5f9" : "#111827",
+                                    confirmButtonColor: isDark
+                                      ? "#3b82f6"
+                                      : "#111827",
+                                  });
                                 } else if (result.isDenied) {
                                   handleDeleteSupplier(supplier);
                                 }
-                              })
+                              });
                             }}
                             title="Más opciones"
                           >
@@ -642,26 +712,34 @@ const Suppliers = () => {
                 <span className="material-symbols-outlined">chevron_left</span>
               </button>
               <button
-                className={`suppliers-pagination-btn ${currentPage === 1 ? "active" : ""}`}
+                className={`suppliers-pagination-btn ${
+                  currentPage === 1 ? "active" : ""
+                }`}
                 onClick={() => setCurrentPage(1)}
               >
                 1
               </button>
               <button
-                className={`suppliers-pagination-btn ${currentPage === 2 ? "active" : ""}`}
+                className={`suppliers-pagination-btn ${
+                  currentPage === 2 ? "active" : ""
+                }`}
                 onClick={() => setCurrentPage(2)}
               >
                 2
               </button>
               <button
-                className={`suppliers-pagination-btn ${currentPage === 3 ? "active" : ""}`}
+                className={`suppliers-pagination-btn ${
+                  currentPage === 3 ? "active" : ""
+                }`}
                 onClick={() => setCurrentPage(3)}
               >
                 3
               </button>
               <span className="suppliers-pagination-dots">...</span>
               <button
-                className={`suppliers-pagination-btn ${currentPage === 12 ? "active" : ""}`}
+                className={`suppliers-pagination-btn ${
+                  currentPage === 12 ? "active" : ""
+                }`}
                 onClick={() => setCurrentPage(12)}
               >
                 12
@@ -690,7 +768,11 @@ const Suppliers = () => {
         <div className="bg-white dark:bg-[#111] border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/5">
             <h1 className="text-lg font-bold text-gray-900 dark:text-white">
-              {modalMode === "create" ? "Nuevo Proveedor" : modalMode === "edit" ? "Editar Proveedor" : "Detalles del Proveedor"}
+              {modalMode === "create"
+                ? "Nuevo Proveedor"
+                : modalMode === "edit"
+                ? "Editar Proveedor"
+                : "Detalles del Proveedor"}
             </h1>
             <button
               className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
@@ -705,14 +787,16 @@ const Suppliers = () => {
               <label className="text-[10px] font-bold tracking-widest text-gray-500 dark:text-gray-400 uppercase">
                 Proveedor
               </label>
-                <input
-                 className={`w-full px-3 py-2 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none text-sm dark:text-white transition-all font-display ${modalMode === "view" ? "opacity-70 cursor-not-allowed" : ""}`}
-                 placeholder="Nombre del proveedor"
-                 type="text"
-                 value={newSupplierForm.name}
-                 onChange={(e) => handleFormChange("name", e.target.value)}
-                 readOnly={modalMode === "view"}
-               />
+              <input
+                className={`w-full px-3 py-2 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none text-sm dark:text-white transition-all font-display ${
+                  modalMode === "view" ? "opacity-70 cursor-not-allowed" : ""
+                }`}
+                placeholder="Nombre del proveedor"
+                type="text"
+                value={newSupplierForm.name}
+                onChange={(e) => handleFormChange("name", e.target.value)}
+                readOnly={modalMode === "view"}
+              />
             </div>
 
             <div className="space-y-2">
@@ -720,22 +804,26 @@ const Suppliers = () => {
                 Contacto
               </label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <input
-                   className={`w-full px-3 py-2 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none text-sm dark:text-white transition-all font-display ${modalMode === "view" ? "opacity-70 cursor-not-allowed" : ""}`}
-                   placeholder="Email del contacto"
-                   type="email"
-                   value={newSupplierForm.email}
-                   onChange={(e) => handleFormChange("email", e.target.value)}
-                   readOnly={modalMode === "view"}
-                 />
-                 <input
-                   className={`w-full px-3 py-2 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none text-sm dark:text-white transition-all font-display ${modalMode === "view" ? "opacity-70 cursor-not-allowed" : ""}`}
-                   placeholder="Teléfono"
-                   type="tel"
-                   value={newSupplierForm.phone}
-                   onChange={(e) => handleFormChange("phone", e.target.value)}
-                   readOnly={modalMode === "view"}
-                 />
+                <input
+                  className={`w-full px-3 py-2 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none text-sm dark:text-white transition-all font-display ${
+                    modalMode === "view" ? "opacity-70 cursor-not-allowed" : ""
+                  }`}
+                  placeholder="Email del contacto"
+                  type="email"
+                  value={newSupplierForm.email}
+                  onChange={(e) => handleFormChange("email", e.target.value)}
+                  readOnly={modalMode === "view"}
+                />
+                <input
+                  className={`w-full px-3 py-2 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none text-sm dark:text-white transition-all font-display ${
+                    modalMode === "view" ? "opacity-70 cursor-not-allowed" : ""
+                  }`}
+                  placeholder="Teléfono"
+                  type="tel"
+                  value={newSupplierForm.phone}
+                  onChange={(e) => handleFormChange("phone", e.target.value)}
+                  readOnly={modalMode === "view"}
+                />
               </div>
             </div>
 
@@ -746,7 +834,11 @@ const Suppliers = () => {
                 </label>
                 <div className="relative">
                   <select
-                    className={`w-full px-3 py-2 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md appearance-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none text-sm dark:text-white transition-all font-display ${modalMode === "view" ? "opacity-70 cursor-not-allowed" : ""}`}
+                    className={`w-full px-3 py-2 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md appearance-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none text-sm dark:text-white transition-all font-display ${
+                      modalMode === "view"
+                        ? "opacity-70 cursor-not-allowed"
+                        : ""
+                    }`}
                     value={newSupplierForm.conditions}
                     onChange={(e) =>
                       handleFormChange("conditions", e.target.value)
@@ -768,7 +860,7 @@ const Suppliers = () => {
               </div>
 
               <div className="p-4 bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-lg space-y-4">
-                 {modalMode !== "view" && (
+                {modalMode !== "view" && (
                   <div className="flex flex-wrap gap-2">
                     {availableConditions.map((condition) => (
                       <div
@@ -855,14 +947,16 @@ const Suppliers = () => {
                   $
                 </span>
                 <input
-                   className={`w-full pl-7 pr-3 py-2 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none text-sm dark:text-white transition-all font-display ${modalMode === "view" ? "opacity-70 cursor-not-allowed" : ""}`}
-                   type="number"
-                   step="0.01"
-                   min="0"
-                   value={newSupplierForm.balance}
-                   onChange={(e) => handleFormChange("balance", e.target.value)}
-                   readOnly={modalMode === "view"}
-                 />
+                  className={`w-full pl-7 pr-3 py-2 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none text-sm dark:text-white transition-all font-display ${
+                    modalMode === "view" ? "opacity-70 cursor-not-allowed" : ""
+                  }`}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={newSupplierForm.balance}
+                  onChange={(e) => handleFormChange("balance", e.target.value)}
+                  readOnly={modalMode === "view"}
+                />
               </div>
             </div>
           </div>
@@ -879,7 +973,9 @@ const Suppliers = () => {
                 className="px-6 py-2.5 text-sm font-bold text-white bg-black hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 rounded-lg transition-all shadow-lg active:scale-95 font-display"
                 onClick={handleSubmitSupplier}
               >
-                {modalMode === "create" ? "Agregar Proveedor" : "Guardar Cambios"}
+                {modalMode === "create"
+                  ? "Agregar Proveedor"
+                  : "Guardar Cambios"}
               </button>
             )}
           </div>

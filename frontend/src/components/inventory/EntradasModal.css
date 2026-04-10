@@ -442,3 +442,145 @@ html:not(.dark) .entradas-modal-footer {
         grid-template-columns: 1fr;
     }
 }
+
+/* ===== MEJORAS DE DARK MODE PARA ENTRADAS ===== */
+
+/* Header mejorado */
+.dark .entradas-modal-header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border-bottom-color: #334155;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.dark .entradas-modal-header h2 {
+    color: #f1f5f9;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.dark .entradas-modal-header p {
+    color: #94a3b8;
+}
+
+.dark .entradas-close-btn {
+    color: #94a3b8;
+}
+
+.dark .entradas-close-btn:hover {
+    color: #f1f5f9;
+}
+
+/* Body mejorado */
+.dark .entradas-modal-body {
+    background: #1e293b;
+}
+
+/* Search input */
+.dark .entradas-search-input {
+    background: #0f172a;
+    border-color: #334155;
+    color: #f1f5f9;
+}
+
+.dark .entradas-search-input:focus {
+    background: #0f172a;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    color: #f1f5f9;
+}
+
+.dark .entradas-search-input::placeholder {
+    color: #64748b;
+}
+
+.dark .entradas-search-icon {
+    color: #60a5fa;
+}
+
+/* Productos lista */
+.dark .entradas-product-item {
+    background: #0f172a;
+    border-color: #334155;
+}
+
+.dark .entradas-product-item:hover {
+    background: #334155;
+    border-color: #475569;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+}
+
+.dark .entradas-product-name {
+    color: #f1f5f9;
+    font-weight: 600;
+}
+
+.dark .entradas-product-sku {
+    color: #94a3b8;
+}
+
+.dark .entradas-product-stock {
+    color: #cbd5e1;
+}
+
+/* Stats badges */
+.dark .stat-badge {
+    background: #0f172a;
+    border-color: #334155;
+}
+
+.dark .stat-badge strong {
+    color: #f1f5f9;
+}
+
+/* Input con hint */
+.dark .input-with-hint input {
+    background: #0f172a;
+    border-color: #334155;
+    color: #f1f5f9;
+}
+
+.dark .input-with-hint input:focus {
+    background: #0f172a;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    color: #f1f5f9;
+}
+
+.dark .input-hint {
+    color: #64748b;
+}
+
+/* Footer */
+.dark .entradas-modal-footer {
+    background: #0f172a;
+    border-top-color: #334155;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dark .entradas-btn-cancel {
+    background-color: #1e293b;
+    border-color: #334155;
+    color: #cbd5e1;
+}
+
+.dark .entradas-btn-cancel:hover {
+    background-color: #334155;
+    color: #f1f5f9;
+}
+
+.dark .entradas-btn-submit:disabled {
+    background-color: #475569;
+}
+
+/* Scrollbar */
+.dark .entradas-modal-body::-webkit-scrollbar-track {
+    background: #1e293b;
+}
+
+.dark .entradas-modal-body::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 3px;
+}
+
+.dark .entradas-modal-body::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
