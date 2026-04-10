@@ -21,6 +21,9 @@ const Suppliers = () => {
     balance: "0.00",
   });
 
+  const [modalMode, setModalMode] = useState("create"); // 'create', 'edit', 'view'
+  const [selectedSupplier, setSelectedSupplier] = useState(null);
+
   // Conditions management state
   const [availableConditions, setAvailableConditions] = useState([
     "Contado",
@@ -203,7 +206,59 @@ const Suppliers = () => {
   };
 
   const handleNewSupplier = () => {
+    setModalMode("create");
+    setNewSupplierForm({
+      name: "",
+      email: "",
+      phone: "",
+      conditions: "Contado",
+      balance: "0.00",
+    });
     setIsNewSupplierModalOpen(true);
+  };
+
+  const handleEditSupplier = (supplier) => {
+    setModalMode("edit");
+    setSelectedSupplier(supplier);
+    setNewSupplierForm({
+      name: supplier.name,
+      email: supplier.email,
+      phone: supplier.phone,
+      conditions: supplier.conditions,
+      balance: supplier.balance.replace("$", "").replace(",", ""),
+    });
+    setIsNewSupplierModalOpen(true);
+  };
+
+  const handleViewSupplier = (supplier) => {
+    setModalMode("view");
+    setSelectedSupplier(supplier);
+    setNewSupplierForm({
+      name: supplier.name,
+      email: supplier.email,
+      phone: supplier.phone,
+      conditions: supplier.conditions,
+      balance: supplier.balance.replace("$", "").replace(",", ""),
+    });
+    setIsNewSupplierModalOpen(true);
+  };
+
+  const handleDeleteSupplier = (supplier) => {
+    Swal.fire({
+      title: "¿Estás seguro?",
+      text: `¿Deseas eliminar al proveedor ${supplier.name}?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Here you would call the API to delete
+        Swal.fire("Eliminado", "El proveedor ha sido eliminado correctamente", "success");
+      }
+    });
   };
 
   const handleCloseModal = () => {
@@ -217,6 +272,8 @@ const Suppliers = () => {
     });
     setNewConditionInput("");
     setShowNewConditionInput(false);
+    setModalMode("create");
+    setSelectedSupplier(null);
   };
 
   const handleFormChange = (field, value) => {
@@ -269,8 +326,14 @@ const Suppliers = () => {
     }
 
     // Here you would typically send the data to your backend
-    console.log("Nuevo proveedor:", newSupplierForm);
-    Swal.fire("Éxito", "Proveedor agregado correctamente", "success");
+    const endpoint = modalMode === "create" ? "Agregando" : "Actualizando";
+    console.log(`${endpoint} proveedor:`, newSupplierForm);
+    
+    Swal.fire(
+      "Éxito", 
+      `Proveedor ${modalMode === "create" ? "agregado" : "actualizado"} correctamente`, 
+      "success"
+    );
     handleCloseModal();
   };
 
@@ -499,17 +562,45 @@ const Suppliers = () => {
                       </td>
                       <td className="suppliers-table-td">
                         <div className="suppliers-table-actions">
-                          <button className="suppliers-table-action-btn">
+                          <button 
+                            className="suppliers-table-action-btn"
+                            onClick={() => handleEditSupplier(supplier)}
+                            title="Editar"
+                          >
                             <span className="material-symbols-outlined">
                               edit
                             </span>
                           </button>
-                          <button className="suppliers-table-action-btn">
+                          <button 
+                            className="suppliers-table-action-btn"
+                            onClick={() => handleViewSupplier(supplier)}
+                            title="Ver detalles"
+                          >
                             <span className="material-symbols-outlined">
                               visibility
                             </span>
                           </button>
-                          <button className="suppliers-table-action-btn">
+                          <button 
+                            className="suppliers-table-action-btn"
+                            onClick={() => {
+                              Swal.fire({
+                                title: 'Acciones',
+                                showDenyButton: true,
+                                showCancelButton: true,
+                                confirmButtonText: 'Gestionar Pedidos',
+                                denyButtonText: `Eliminar Proveedor`,
+                                confirmButtonColor: '#000',
+                                denyButtonColor: '#d33',
+                              }).then((result) => {
+                                if (result.isConfirmed) {
+                                  Swal.fire('Próximamente', 'Gestión de pedidos en desarrollo', 'info');
+                                } else if (result.isDenied) {
+                                  handleDeleteSupplier(supplier);
+                                }
+                              })
+                            }}
+                            title="Más opciones"
+                          >
                             <span className="material-symbols-outlined">
                               more_vert
                             </span>
@@ -599,7 +690,7 @@ const Suppliers = () => {
         <div className="bg-white dark:bg-[#111] border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/5">
             <h1 className="text-lg font-bold text-gray-900 dark:text-white">
-              Nuevo Proveedor
+              {modalMode === "create" ? "Nuevo Proveedor" : modalMode === "edit" ? "Editar Proveedor" : "Detalles del Proveedor"}
             </h1>
             <button
               className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
@@ -614,13 +705,14 @@ const Suppliers = () => {
               <label className="text-[10px] font-bold tracking-widest text-gray-500 dark:text-gray-400 uppercase">
                 Proveedor
               </label>
-              <input
-                className="w-full px-3 py-2 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none text-sm dark:text-white transition-all font-display"
-                placeholder="Nombre del proveedor"
-                type="text"
-                value={newSupplierForm.name}
-                onChange={(e) => handleFormChange("name", e.target.value)}
-              />
+                <input
+                 className={`w-full px-3 py-2 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none text-sm dark:text-white transition-all font-display ${modalMode === "view" ? "opacity-70 cursor-not-allowed" : ""}`}
+                 placeholder="Nombre del proveedor"
+                 type="text"
+                 value={newSupplierForm.name}
+                 onChange={(e) => handleFormChange("name", e.target.value)}
+                 readOnly={modalMode === "view"}
+               />
             </div>
 
             <div className="space-y-2">
@@ -628,20 +720,22 @@ const Suppliers = () => {
                 Contacto
               </label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input
-                  className="w-full px-3 py-2 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none text-sm dark:text-white transition-all font-display"
-                  placeholder="Email del contacto"
-                  type="email"
-                  value={newSupplierForm.email}
-                  onChange={(e) => handleFormChange("email", e.target.value)}
-                />
-                <input
-                  className="w-full px-3 py-2 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none text-sm dark:text-white transition-all font-display"
-                  placeholder="Teléfono"
-                  type="tel"
-                  value={newSupplierForm.phone}
-                  onChange={(e) => handleFormChange("phone", e.target.value)}
-                />
+                 <input
+                   className={`w-full px-3 py-2 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none text-sm dark:text-white transition-all font-display ${modalMode === "view" ? "opacity-70 cursor-not-allowed" : ""}`}
+                   placeholder="Email del contacto"
+                   type="email"
+                   value={newSupplierForm.email}
+                   onChange={(e) => handleFormChange("email", e.target.value)}
+                   readOnly={modalMode === "view"}
+                 />
+                 <input
+                   className={`w-full px-3 py-2 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none text-sm dark:text-white transition-all font-display ${modalMode === "view" ? "opacity-70 cursor-not-allowed" : ""}`}
+                   placeholder="Teléfono"
+                   type="tel"
+                   value={newSupplierForm.phone}
+                   onChange={(e) => handleFormChange("phone", e.target.value)}
+                   readOnly={modalMode === "view"}
+                 />
               </div>
             </div>
 
@@ -652,11 +746,12 @@ const Suppliers = () => {
                 </label>
                 <div className="relative">
                   <select
-                    className="w-full px-3 py-2 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md appearance-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none text-sm dark:text-white transition-all font-display"
+                    className={`w-full px-3 py-2 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md appearance-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none text-sm dark:text-white transition-all font-display ${modalMode === "view" ? "opacity-70 cursor-not-allowed" : ""}`}
                     value={newSupplierForm.conditions}
                     onChange={(e) =>
                       handleFormChange("conditions", e.target.value)
                     }
+                    disabled={modalMode === "view"}
                   >
                     {availableConditions.map((condition) => (
                       <option key={condition} value={condition}>
@@ -673,31 +768,33 @@ const Suppliers = () => {
               </div>
 
               <div className="p-4 bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-lg space-y-4">
-                <div className="flex flex-wrap gap-2">
-                  {availableConditions.map((condition) => (
-                    <div
-                      key={condition}
-                      className="inline-flex items-center px-2 py-1 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md group"
-                    >
-                      <span className="text-xs text-gray-600 dark:text-gray-300 font-display">
-                        {condition}
-                      </span>
-                      <button
-                        className="ml-2 text-gray-400 hover:text-red-500 transition-colors"
-                        onClick={() => handleDeleteCondition(condition)}
+                 {modalMode !== "view" && (
+                  <div className="flex flex-wrap gap-2">
+                    {availableConditions.map((condition) => (
+                      <div
+                        key={condition}
+                        className="inline-flex items-center px-2 py-1 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md group"
                       >
-                        <span
-                          className="material-symbols-outlined"
-                          style={{ fontSize: "14px" }}
-                        >
-                          close
+                        <span className="text-xs text-gray-600 dark:text-gray-300 font-display">
+                          {condition}
                         </span>
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                        <button
+                          className="ml-2 text-gray-400 hover:text-red-500 transition-colors"
+                          onClick={() => handleDeleteCondition(condition)}
+                        >
+                          <span
+                            className="material-symbols-outlined"
+                            style={{ fontSize: "14px" }}
+                          >
+                            close
+                          </span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-                {!showNewConditionInput ? (
+                {modalMode !== "view" && !showNewConditionInput ? (
                   <button
                     className="w-full flex items-center justify-center py-3 border-2 border-dashed border-gray-200 dark:border-white/10 rounded-lg text-gray-400 hover:border-gray-400 dark:hover:border-white/30 hover:text-gray-600 dark:hover:text-gray-200 transition-all group"
                     onClick={() => setShowNewConditionInput(true)}
@@ -758,13 +855,14 @@ const Suppliers = () => {
                   $
                 </span>
                 <input
-                  className="w-full pl-7 pr-3 py-2 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none text-sm dark:text-white transition-all font-display"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={newSupplierForm.balance}
-                  onChange={(e) => handleFormChange("balance", e.target.value)}
-                />
+                   className={`w-full pl-7 pr-3 py-2 bg-white dark:bg-black border border-gray-200 dark:border-white/10 rounded-md focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent outline-none text-sm dark:text-white transition-all font-display ${modalMode === "view" ? "opacity-70 cursor-not-allowed" : ""}`}
+                   type="number"
+                   step="0.01"
+                   min="0"
+                   value={newSupplierForm.balance}
+                   onChange={(e) => handleFormChange("balance", e.target.value)}
+                   readOnly={modalMode === "view"}
+                 />
               </div>
             </div>
           </div>
@@ -776,12 +874,14 @@ const Suppliers = () => {
             >
               Cancelar
             </button>
-            <button
-              className="px-6 py-2.5 text-sm font-bold text-white bg-black hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 rounded-lg transition-all shadow-lg active:scale-95 font-display"
-              onClick={handleSubmitSupplier}
-            >
-              Agregar Proveedor
-            </button>
+            {modalMode !== "view" && (
+              <button
+                className="px-6 py-2.5 text-sm font-bold text-white bg-black hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 rounded-lg transition-all shadow-lg active:scale-95 font-display"
+                onClick={handleSubmitSupplier}
+              >
+                {modalMode === "create" ? "Agregar Proveedor" : "Guardar Cambios"}
+              </button>
+            )}
           </div>
         </div>
       </Modal>
