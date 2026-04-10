@@ -406,5 +406,60 @@ export const productService = {
             insertedCount: productsToInsert.length,
             updatedCount: productsToUpdate.length
         };
+    },
+
+    // =====================================================
+    // BORRADO TOTAL DE INVENTARIO (Clean Wipe)
+    // Solo elimina productos del usuario autenticado.
+    // RLS de Supabase garantiza aislamiento multi-tenant.
+    // =====================================================
+    deleteAllProducts: async () => {
+        // 1. Obtener el usuario autenticado para filtrar explícitamente
+        const { data: userData, error: authError } = await supabase.auth.getUser();
+
+        if (authError) {
+            if (authError.message?.includes('aborted') || authError.name === 'AbortError') {
+                throw new Error('Operación cancelada');
+            }
+            throw authError;
+        }
+
+        const userId = userData.user.id;
+        if (!userId) {
+            throw new Error('No se pudo identificar al usuario. Inicia sesión nuevamente.');
+        }
+
+        console.log(`🗑️ [deleteAllProducts] Iniciando borrado total para user_id: ${userId}`);
+
+        // 2. Contar productos antes del borrado (para reportar al usuario)
+        const { count, error: countError } = await supabase
+            .from('products')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', userId);
+
+        if (countError) throw countError;
+
+        if (count === 0) {
+            console.log('🗑️ [deleteAllProducts] No hay productos para eliminar.');
+            return { deletedCount: 0 };
+        }
+
+        // 3. Ejecutar DELETE masivo — filtro explícito por user_id + RLS
+        const { error: deleteError } = await supabase
+            .from('products')
+            .delete()
+            .eq('user_id', userId);
+
+        if (deleteError) {
+            console.error('❌ [deleteAllProducts] Error en borrado:', deleteError);
+            throw deleteError;
+        }
+
+        // 4. Invalidar caché completamente
+        productsCache = null;
+        lastFetchTime = 0;
+
+        console.log(`✅ [deleteAllProducts] ${count} productos eliminados exitosamente.`);
+        return { deletedCount: count };
     }
 };
