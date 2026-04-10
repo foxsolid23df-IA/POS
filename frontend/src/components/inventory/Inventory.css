@@ -8,6 +8,112 @@
     font-family: 'Inter', sans-serif;
 }
 
+/* Bulk Actions Bar */
+.bulk-actions-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    animation: slideDown 0.3s ease-out;
+}
+
+.dark .bulk-actions-bar {
+    background-color: #1f2937;
+    border-color: #374151;
+}
+
+.selection-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.selection-count {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.dark .selection-count {
+    color: #f3f4f6;
+}
+
+.clear-selection-btn {
+    font-size: 13px;
+    color: #3b82f6;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+.clear-selection-btn:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+    text-decoration: underline;
+}
+
+.bulk-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+.bulk-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.bulk-btn.filter {
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    color: #374151;
+}
+
+.bulk-btn.filter:hover {
+    background-color: #f9fafb;
+}
+
+.bulk-btn.filter.active {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+    color: #ffffff;
+}
+
+.bulk-btn.delete {
+    background-color: #ef4444;
+    border: 1px solid #ef4444;
+    color: #ffffff;
+}
+
+.bulk-btn.delete:hover {
+    background-color: #dc2626;
+    border-color: #dc2626;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-10px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
 /* Header */
 .inventory-header {
     min-height: 64px;

@@ -42,6 +42,10 @@ const Inventory = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
+  // Mass Selection State
+  const [selectedProductIds, setSelectedProductIds] = useState([]);
+  const [showOnlySelected, setShowOnlySelected] = useState(false);
+
   // Actions Menu State
   const [activeMenuId, setActiveMenuId] = useState(null);
 
@@ -484,6 +488,10 @@ const Inventory = () => {
     if (filters.maxPrice && product.price > parseFloat(filters.maxPrice))
       return false;
 
+    // Filtro de productos seleccionados
+    if (showOnlySelected && !selectedProductIds.includes(product.id))
+      return false;
+
     return true;
   });
 
@@ -584,6 +592,61 @@ const Inventory = () => {
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
+
+  // Handlers for selection
+  const handleSelectProduct = (productId) => {
+    setSelectedProductIds((prev) =>
+      prev.includes(productId)
+        ? prev.filter((id) => id !== productId)
+        : [...prev, productId],
+    );
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      const allPaginatedIds = paginatedProducts.map((p) => p.id);
+      setSelectedProductIds((prev) => {
+        const uniqueIds = new Set([...prev, ...allPaginatedIds]);
+        return Array.from(uniqueIds);
+      });
+    } else {
+      const allPaginatedIds = paginatedProducts.map((p) => p.id);
+      setSelectedProductIds((prev) =>
+        prev.filter((id) => !allPaginatedIds.includes(id)),
+      );
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedProductIds.length === 0) return;
+
+    const result = await Swal.fire({
+      title: "¿Estás seguro?",
+      text: `Se eliminarán ${selectedProductIds.length} productos seleccionados. Esta acción no se puede deshacer.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await productService.bulkDeleteProducts(selectedProductIds);
+        setSelectedProductIds([]);
+        await fetchProducts();
+        Swal.fire(
+          "Eliminados",
+          "Los productos han sido eliminados.",
+          "success",
+        );
+      } catch (error) {
+        console.error("Error al eliminar productos:", error);
+        Swal.fire("Error", "No se pudieron eliminar los productos.", "error");
+      }
+    }
+  };
 
   // Resetear página cuando cambia la búsqueda
   useEffect(() => {
@@ -798,6 +861,35 @@ const Inventory = () => {
           </div>
         </div>
 
+        {selectedProductIds.length > 0 && (
+          <div className="bulk-actions-bar animate-fade-in">
+            <div className="selection-info">
+              <span className="selection-count">
+                {selectedProductIds.length} productos seleccionados
+              </span>
+              <button
+                className="clear-selection-btn"
+                onClick={() => setSelectedProductIds([])}
+              >
+                Limpiar selección
+              </button>
+            </div>
+            <div className="bulk-buttons">
+              <button
+                className={`bulk-btn filter ${showOnlySelected ? "active" : ""}`}
+                onClick={() => setShowOnlySelected(!showOnlySelected)}
+              >
+                <FiFilter className="btn-icon" />
+                {showOnlySelected ? "Mostrar todos" : "Ver seleccionados"}
+              </button>
+              <button className="bulk-btn delete" onClick={handleBulkDelete}>
+                <FiTrash2 className="btn-icon" />
+                Eliminar seleccionados
+              </button>
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <div className="loading-state">Cargando inventario...</div>
         ) : (
@@ -806,7 +898,17 @@ const Inventory = () => {
               <thead>
                 <tr>
                   <th className="checkbox-col">
-                    <input type="checkbox" className="table-checkbox" />
+                    <input
+                      type="checkbox"
+                      className="table-checkbox"
+                      onChange={handleSelectAll}
+                      checked={
+                        paginatedProducts.length > 0 &&
+                        paginatedProducts.every((p) =>
+                          selectedProductIds.includes(p.id),
+                        )
+                      }
+                    />
                   </th>
                   <th>Producto</th>
                   <th>Categoría</th>
@@ -849,7 +951,12 @@ const Inventory = () => {
                     return (
                       <tr key={product.id} className="table-row">
                         <td className="checkbox-col">
-                          <input type="checkbox" className="table-checkbox" />
+                          <input
+                            type="checkbox"
+                            className="table-checkbox"
+                            checked={selectedProductIds.includes(product.id)}
+                            onChange={() => handleSelectProduct(product.id)}
+                          />
                         </td>
                         <td>
                           <div className="product-cell">
