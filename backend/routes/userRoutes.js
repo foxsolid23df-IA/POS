@@ -4,7 +4,9 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const { authMiddleware, isAdmin } = require('../middleware/authMiddleware');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'secret_key_123';
+// JWT_SECRET se obtiene exclusivamente de variables de entorno
+// (validado en index.js al iniciar el servidor)
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Login con PIN
 router.post('/login', async (req, res) => {

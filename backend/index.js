@@ -4,6 +4,36 @@
 // Cargar variables de entorno desde .env
 require('dotenv').config();
 
+// ===== VALIDACIÓN DE SECRETOS CRÍTICOS =====
+// Estos secretos son obligatorios para la seguridad de la aplicación
+const requiredSecrets = ['JWT_SECRET', 'MASTER_PIN'];
+const missingSecrets = requiredSecrets.filter(secret => !process.env[secret]);
+
+if (missingSecrets.length > 0) {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const errorMsg = `
+╔═══════════════════════════════════════════════════════════╗
+║  ERROR: Faltan variables de entorno obligatorias          ║
+╠═══════════════════════════════════════════════════════════╣
+║  Variables faltantes: ${missingSecrets.join(', ')}
+║                                                           ║
+║  Para generar secretos seguros, ejecuta:                  ║
+║    node scripts/generate-secrets.js                       ║
+║                                                           ║
+║  Luego copia los valores generados a backend/.env         ║
+╚═══════════════════════════════════════════════════════════╝
+`;
+    if (isProduction) {
+        console.error(errorMsg);
+        process.exit(1);
+    }
+    console.warn('⚠️  ADVERTENCIA: Usando secretos por defecto (INSEGURO)');
+    console.warn('   Ejecuta: node scripts/generate-secrets.js');
+    // Fallback solo en desarrollo para no romper el flujo local
+    process.env.JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_do_not_use_in_production';
+    process.env.MASTER_PIN = process.env.MASTER_PIN || 'dev_pin_do_not_use';
+}
+
 const express = require('express');
 const cors = require('cors');
 const sequelize = require('./db/conexion');
