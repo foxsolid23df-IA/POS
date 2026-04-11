@@ -674,25 +674,42 @@ export const Sales = () => {
         }
         return prev;
       } else {
-        return prev + valor;
+        // Automatizar punto decimal: si no hay punto, agregamos el dígito
+        // y si el resultado tiene más de 2 dígitos, insertamos el punto antes de los últimos 2
+        if (!prev.includes(".")) {
+          const nuevoValor = prev + valor;
+          // Si tiene 3 o más dígitos, insertar punto antes de los últimos 2
+          if (nuevoValor.length > 2) {
+            const cents = nuevoValor.slice(-2);
+            const dollars = nuevoValor.slice(0, -2);
+            return `${dollars}.${cents}`;
+          }
+          return nuevoValor;
+        } else {
+          // Si ya hay punto, agregar dígito solo si hay menos de 2 decimales
+          const parts = prev.split(".");
+          if (parts[1] && parts[1].length >= 2) {
+            return prev; // Ya tiene 2 decimales, no agregar más
+          }
+          return prev + valor;
+        }
       }
     });
   };
 
   const calcularCambio = () => {
-    const valMonto = montoRecibidoRef?.current || montoRecibido;
-    if (!valMonto) return 0;
-    const monto = parseFloat(valMonto) || 0;
+    // Usar directamente el estado montoRecibido en lugar de la ref
+    const monto = parseFloat(montoRecibido) || 0;
 
     if (metodoPago === "dolares" && tipoCambio) {
       // Convertir dólares recibidos a pesos
       const totalEnPesos = monto * tipoCambio;
       // Calcular cambio en pesos basado en el saldo que falta por cubrir
-      return totalEnPesos - saldoPendiente;
+      return Math.max(0, totalEnPesos - saldoPendiente);
     }
 
-    // Para los demás métodos (tarjeta, transferencia), el cambio se calcula sobre el saldo pendiente
-    return monto - saldoPendiente;
+    // Para los demás métodos (efectivo, tarjeta, transferencia), el cambio se calcula sobre el saldo pendiente
+    return Math.max(0, monto - saldoPendiente);
   };
 
   const formatearMontoRecibido = () => {
