@@ -2682,6 +2682,30 @@
     color: #f1f5f9;
 }
 
+/* Filtros botones - Dark Mode */
+.dark .filter-clear-btn {
+    background: #0f172a;
+    color: #f1f5f9;
+    border-color: #334155;
+}
+
+.dark .filter-clear-btn:hover {
+    background: #1e293b;
+    border-color: #475569;
+    color: #f1f5f9;
+}
+
+.dark .filter-apply-btn {
+    background: #3b82f6;
+    color: #ffffff;
+    border-color: #3b82f6;
+}
+
+.dark .filter-apply-btn:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+}
+
 /* Modal de Gestión de Categorías - Dark Mode */
 .dark .categories-modal {
     background: #1e293b;
