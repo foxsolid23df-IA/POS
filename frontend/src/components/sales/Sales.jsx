@@ -674,25 +674,15 @@ export const Sales = () => {
         }
         return prev;
       } else {
-        // Automatizar punto decimal: si no hay punto, agregamos el dígito
-        // y si el resultado tiene más de 2 dígitos, insertamos el punto antes de los últimos 2
-        if (!prev.includes(".")) {
-          const nuevoValor = prev + valor;
-          // Si tiene 3 o más dígitos, insertar punto antes de los últimos 2
-          if (nuevoValor.length > 2) {
-            const cents = nuevoValor.slice(-2);
-            const dollars = nuevoValor.slice(0, -2);
-            return `${dollars}.${cents}`;
-          }
-          return nuevoValor;
-        } else {
-          // Si ya hay punto, agregar dígito solo si hay menos de 2 decimales
+        // Si ya hay punto decimal, solo permitir hasta 2 decimales
+        if (prev.includes(".")) {
           const parts = prev.split(".");
           if (parts[1] && parts[1].length >= 2) {
             return prev; // Ya tiene 2 decimales, no agregar más
           }
-          return prev + valor;
         }
+        // Agregar dígito libremente (sin auto-insertar punto)
+        return prev + valor;
       }
     });
   };
