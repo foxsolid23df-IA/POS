@@ -2776,3 +2776,47 @@
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Camera button - Dark Mode */
+.dark .new-product-camera-btn {
+    background: #0f172a;
+    border-color: #334155;
+    color: #f1f5f9;
+}
+
+.dark .new-product-camera-btn:hover {
+    background: #1e293b;
+    border-color: #3b82f6;
+    color: #f1f5f9;
+}
+
+.dark .new-product-camera-icon {
+    color: #3b82f6;
+}
+
+/* Modal footer buttons - Dark Mode */
+.dark .new-product-modal-footer {
+    border-top-color: #334155;
+}
+
+.dark .new-product-btn-cancel {
+    background: #0f172a;
+    border-color: #334155;
+    color: #f1f5f9;
+}
+
+.dark .new-product-btn-cancel:hover {
+    background: #1e293b;
+    border-color: #475569;
+}
+
+.dark .new-product-btn-save {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #ffffff;
+}
+
+.dark .new-product-btn-save:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+}
+

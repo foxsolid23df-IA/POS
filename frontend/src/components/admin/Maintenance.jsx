@@ -328,24 +328,22 @@ const Maintenance = () => {
             <span className="material-icons-outlined status-icon-primary">
               public
             </span>
-            <div className="status-text-wrapper">
-              <strong>Plataforma Web:</strong>
-              <span
-                className={`status-indicator ${
-                  systemHealth.status === "Operational"
-                    ? "online"
-                    : systemHealth.status === "checking"
-                    ? "checking"
-                    : "offline"
-                }`}
-              >
-                {systemHealth.status === "Operational"
-                  ? "Óptimo y en Línea"
+            <span className="status-label">Plataforma Web:</span>
+            <span
+              className={`status-indicator ${
+                systemHealth.status === "Operational"
+                  ? "online"
                   : systemHealth.status === "checking"
-                  ? "Verificando..."
-                  : "Desconectado"}
-              </span>
-            </div>
+                  ? "checking"
+                  : "offline"
+              }`}
+            >
+              {systemHealth.status === "Operational"
+                ? "Óptimo y en Línea"
+                : systemHealth.status === "checking"
+                ? "Verificando..."
+                : "Desconectado"}
+            </span>
           </div>
 
           <div className="status-divider"></div>
@@ -354,24 +352,22 @@ const Maintenance = () => {
             <span className="material-icons-outlined status-icon-success">
               cloud_done
             </span>
-            <div className="status-text-wrapper">
-              <strong>Base de Datos Segura:</strong>
-              <span
-                className={`status-indicator ${
-                  systemHealth.database === "Connected"
-                    ? "online"
-                    : systemHealth.database === "checking"
-                    ? "checking"
-                    : "offline"
-                }`}
-              >
-                {systemHealth.database === "Connected"
-                  ? "Vinculada"
+            <span className="status-label">Base de Datos Segura:</span>
+            <span
+              className={`status-indicator ${
+                systemHealth.database === "Connected"
+                  ? "online"
                   : systemHealth.database === "checking"
-                  ? "Verificando..."
-                  : "Error de Conexión"}
-              </span>
-            </div>
+                  ? "checking"
+                  : "offline"
+              }`}
+            >
+              {systemHealth.database === "Connected"
+                ? "Vinculada"
+                : systemHealth.database === "checking"
+                ? "Verificando..."
+                : "Error de Conexión"}
+            </span>
           </div>
         </div>
         <button

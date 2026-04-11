@@ -36,8 +36,13 @@ export const Sales = () => {
   const { ticketSettings } = useSettings();
   const { cargando, ejecutarPeticion } = useApi();
   const { isMobile, isTouchDevice } = useIsMobile();
-  const { isAndroid, scannerMode, scannerInputMode, toggleScannerMode } =
-    useScannerMode();
+  const {
+    isAndroid,
+    isAvailable,
+    scannerMode,
+    scannerInputMode,
+    toggleScannerMode,
+  } = useScannerMode();
 
   // USAR CONTEXTO GLOBAL DE PRODUCTOS
   const {
@@ -1474,8 +1479,8 @@ export const Sales = () => {
                   inputMode={scannerInputMode}
                   placeholder={
                     scannerMode
-                      ? "Escáner BT activo - escanee un código..."
-                      : "Buscar por nombre o código de..."
+                      ? "Escáner activo - escanee un código de barras..."
+                      : "Buscar por nombre o código de barras..."
                   }
                   value={codigoEscaneado}
                   onChange={manejarCambioCodigo}
@@ -1496,8 +1501,8 @@ export const Sales = () => {
                 <span className="material-symbols-outlined">photo_camera</span>
                 <span>Cámara</span>
               </button>
-              {/* Toggle Modo Escáner Bluetooth — solo visible en Android */}
-              {isAndroid && (
+              {/* Toggle Modo Escáner - disponible para todos los dispositivos */}
+              {isAvailable && (
                 <button
                   onClick={toggleScannerMode}
                   className={`btn-camera-modern ${
@@ -1506,8 +1511,8 @@ export const Sales = () => {
                   type="button"
                   title={
                     scannerMode
-                      ? "Desactivar modo escáner (mostrar teclado)"
-                      : "Activar modo escáner Bluetooth (ocultar teclado)"
+                      ? "Desactivar modo escáner (mostrar teclado virtual)"
+                      : "Activar modo escáner de código de barras (bloquear teclado virtual)"
                   }
                 >
                   <span className="material-symbols-outlined">

@@ -1,4 +1,4 @@
-// Hook para manejar el modo escáner Bluetooth en tablets Android
+// Hook para manejar el modo escáner Bluetooth en tablets Android y otros dispositivos
 // Cuando está activo, suprime el teclado virtual en los inputs de búsqueda
 // ya que el escáner Bluetooth actúa como un teclado hardware.
 import { useState, useEffect, useCallback } from 'react'
@@ -7,12 +7,12 @@ import { Capacitor } from '@capacitor/core'
 const STORAGE_KEY = 'pos_scanner_mode'
 
 export const useScannerMode = () => {
-    // Solo relevante en Android nativo
+    // Habilitar para todos los dispositivos (Android nativo y navegadores web)
     const isAndroid = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
+    const isAvailable = true // Disponible en todos los dispositivos
 
     // Leer estado guardado desde localStorage
     const [scannerMode, setScannerMode] = useState(() => {
-        if (!isAndroid) return false
         try {
             const saved = localStorage.getItem(STORAGE_KEY)
             return saved === 'true'
@@ -23,10 +23,8 @@ export const useScannerMode = () => {
 
     // Persistir cambios
     useEffect(() => {
-        if (isAndroid) {
-            localStorage.setItem(STORAGE_KEY, scannerMode ? 'true' : 'false')
-        }
-    }, [scannerMode, isAndroid])
+        localStorage.setItem(STORAGE_KEY, scannerMode ? 'true' : 'false')
+    }, [scannerMode])
 
     // Toggle
     const toggleScannerMode = useCallback(() => {
@@ -46,10 +44,11 @@ export const useScannerMode = () => {
     // El inputMode que se debe aplicar a los inputs de búsqueda/escaneo
     // "none" = no muestra teclado virtual, pero el campo sigue recibiendo input del escáner BT
     // "search" / "text" = comportamiento normal con teclado virtual
-    const scannerInputMode = (isAndroid && scannerMode) ? 'none' : 'search'
+    const scannerInputMode = scannerMode ? 'none' : 'search'
 
     return {
-        isAndroid,
+        isAvailable,         // Siempre true - disponible en todos los dispositivos
+        isAndroid,           // true solo en Android nativo
         scannerMode,         // true = modo escáner activo (sin teclado virtual)
         scannerInputMode,    // "none" o "search" - usar directamente en el prop inputMode
         toggleScannerMode,

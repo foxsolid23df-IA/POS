@@ -5,7 +5,17 @@
       "Bash(timeout *)",
       "Bash(netstat *)",
       "Bash(findstr *)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(npm install *)",
+      "Bash(start *)",
+      "Bash(do *)",
+      "Bash(echo.)",
+      "Bash(taskkill *)",
+      "Bash(npm ls *)",
+      "Bash(curl *)",
+      "Bash(copy *)",
+      "Bash(.\\dev-electron.bat)",
+      "Bash(select-string *)"
     ]
   },
   "$version": 3

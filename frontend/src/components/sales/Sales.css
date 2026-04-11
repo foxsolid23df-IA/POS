@@ -260,9 +260,10 @@
 /* Indicador visual cuando el modo escáner BT está activo */
 .barcode-input-modern.scanner-mode-active {
   border-color: #10b981 !important;
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(16, 185, 129, 0.02)) !important;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(16, 185, 129, 0.03)) !important;
   animation: scannerPulse 2s ease-in-out infinite;
   caret-color: transparent; /* Ocultar cursor de texto */
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
 }
 
 .barcode-input-modern.scanner-mode-active::placeholder {
@@ -272,7 +273,8 @@
 
 .dark .barcode-input-modern.scanner-mode-active {
   border-color: #34d399 !important;
-  background: linear-gradient(135deg, rgba(52, 211, 153, 0.1), rgba(52, 211, 153, 0.03)) !important;
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.15), rgba(52, 211, 153, 0.05)) !important;
+  box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.2);
 }
 
 .dark .barcode-input-modern.scanner-mode-active::placeholder {
@@ -281,27 +283,40 @@
 
 @keyframes scannerPulse {
   0%, 100% {
-    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
   }
   50% {
-    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.25), 0 0 20px rgba(16, 185, 129, 0.1);
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0.25), 0 0 24px rgba(16, 185, 129, 0.15);
   }
 }
 
 /* Botón toggle escáner - estado activo */
 .btn-camera-modern.scanner-mode-btn-active {
-  background: #10b981 !important;
+  background: linear-gradient(135deg, #10b981, #059669) !important;
   color: white !important;
   border-color: #059669 !important;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  transform: translateY(-1px);
 }
 
 .btn-camera-modern.scanner-mode-btn-active .material-symbols-outlined {
   color: white !important;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+.btn-camera-modern.scanner-mode-btn-active span {
+  color: white !important;
+  font-weight: 600;
 }
 
 .btn-camera-modern.scanner-mode-btn-active:hover {
-  background: #059669 !important;
+  background: linear-gradient(135deg, #059669, #047857) !important;
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.5);
+  transform: translateY(-2px);
+}
+
+.btn-camera-modern.scanner-mode-btn-active:active {
+  transform: translateY(0);
 }
 
 /* EMPTY SCAN AREA */
@@ -2617,6 +2632,28 @@ html.dark .btn-camera-modern .material-symbols-outlined {
 
 html.dark .btn-camera-modern:hover .material-symbols-outlined {
   color: #e2e8f0;
+}
+
+/* Scanner Mode Button - Dark Mode */
+html.dark .btn-camera-modern.scanner-mode-btn-active {
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  color: white !important;
+  border-color: #059669 !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.5);
+}
+
+html.dark .btn-camera-modern.scanner-mode-btn-active .material-symbols-outlined {
+  color: white !important;
+}
+
+html.dark .btn-camera-modern.scanner-mode-btn-active span {
+  color: white !important;
+  font-weight: 600;
+}
+
+html.dark .btn-camera-modern.scanner-mode-btn-active:hover {
+  background: linear-gradient(135deg, #059669, #047857) !important;
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.6);
 }
 
 /* Empty Scan Area - Dark Mode Enhanced */
