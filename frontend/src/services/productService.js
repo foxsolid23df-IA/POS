@@ -117,14 +117,24 @@ export const productService = {
             price: parseFloat(product.price),
             cost_price: parseFloat(product.cost_price || 0),
             wholesale_price: parseFloat(product.wholesale_price || 0),
+            special_price: parseFloat(product.special_price || 0),
+            suggested_price: parseFloat(product.suggested_price || 0),
             stock: parseInt(product.stock),
             min_stock: parseInt(product.min_stock || 0),
             barcode: product.barcode || null,
             image_url: product.image || null,
-            user_id: userData.user.id
+            merma: parseInt(product.merma || 0),
+            user_id: userData.user.id,
+            metadata: product.metadata || {},
+            notes: product.notes || null,
+            unit: product.unit || 'PZA',
+            iva: parseFloat(product.iva || 0),
+            wholesale_unit: product.wholesale_unit || null,
+            brand: product.brand || null,
+            supplier: product.supplier || null
         };
 
-        // Agregar categoría si existe (puede no estar en el esquema de BD, pero lo intentamos)
+        // Agregar categoría si existe
         if (product.category) {
             insertData.category = product.category;
         }
@@ -151,10 +161,20 @@ export const productService = {
             price: parseFloat(updates.price),
             cost_price: parseFloat(updates.cost_price || 0),
             wholesale_price: parseFloat(updates.wholesale_price || 0),
+            special_price: parseFloat(updates.special_price || 0),
+            suggested_price: parseFloat(updates.suggested_price || 0),
             stock: parseInt(updates.stock),
             min_stock: parseInt(updates.min_stock || 0),
             barcode: updates.barcode || null,
-            image_url: updates.image || null
+            image_url: updates.image || null,
+            merma: parseInt(updates.merma || 0),
+            metadata: updates.metadata || {},
+            notes: updates.notes || null,
+            unit: updates.unit || 'PZA',
+            iva: parseFloat(updates.iva || 0),
+            wholesale_unit: updates.wholesale_unit || null,
+            brand: updates.brand || null,
+            supplier: updates.supplier || null
         };
 
         // Agregar categoría si existe
@@ -224,6 +244,22 @@ export const productService = {
 
         // Actualizar caché local
         productService.updateCache({ id }, 'DELETE');
+    },
+
+    // Eliminar múltiples productos por ID
+    bulkDeleteProducts: async (ids) => {
+        if (!ids || ids.length === 0) return;
+
+        const { error } = await supabase
+            .from('products')
+            .delete()
+            .in('id', ids);
+
+        if (error) throw error;
+
+        // Invalidar caché local
+        productsCache = null;
+        lastFetchTime = 0;
     },
 
     // Buscar producto por código de barras
@@ -309,8 +345,18 @@ export const productService = {
                 price: parseFloat(product.price),
                 cost_price: parseFloat(product.cost_price || 0),
                 wholesale_price: parseFloat(product.wholesale_price || 0),
+                special_price: parseFloat(product.special_price || 0),
+                suggested_price: parseFloat(product.suggested_price || 0),
                 stock: parseInt(product.stock),
-                min_stock: parseInt(product.min_stock || 0)
+                min_stock: parseInt(product.min_stock || 0),
+                merma: parseInt(product.merma || 0),
+                metadata: product.metadata || {},
+                notes: product.notes || null,
+                unit: product.unit || 'PZA',
+                iva: parseFloat(product.iva || 0),
+                wholesale_unit: product.wholesale_unit || null,
+                brand: product.brand || null,
+                supplier: product.supplier || null
             };
 
             const barcodeStr = product.barcode ? String(product.barcode) : null;
@@ -376,5 +422,60 @@ export const productService = {
             insertedCount: productsToInsert.length,
             updatedCount: productsToUpdate.length
         };
+    },
+
+    // =====================================================
+    // BORRADO TOTAL DE INVENTARIO (Clean Wipe)
+    // Solo elimina productos del usuario autenticado.
+    // RLS de Supabase garantiza aislamiento multi-tenant.
+    // =====================================================
+    deleteAllProducts: async () => {
+        // 1. Obtener el usuario autenticado para filtrar explícitamente
+        const { data: userData, error: authError } = await supabase.auth.getUser();
+
+        if (authError) {
+            if (authError.message?.includes('aborted') || authError.name === 'AbortError') {
+                throw new Error('Operación cancelada');
+            }
+            throw authError;
+        }
+
+        const userId = userData.user.id;
+        if (!userId) {
+            throw new Error('No se pudo identificar al usuario. Inicia sesión nuevamente.');
+        }
+
+        console.log(`🗑️ [deleteAllProducts] Iniciando borrado total para user_id: ${userId}`);
+
+        // 2. Contar productos antes del borrado (para reportar al usuario)
+        const { count, error: countError } = await supabase
+            .from('products')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', userId);
+
+        if (countError) throw countError;
+
+        if (count === 0) {
+            console.log('🗑️ [deleteAllProducts] No hay productos para eliminar.');
+            return { deletedCount: 0 };
+        }
+
+        // 3. Ejecutar DELETE masivo — filtro explícito por user_id + RLS
+        const { error: deleteError } = await supabase
+            .from('products')
+            .delete()
+            .eq('user_id', userId);
+
+        if (deleteError) {
+            console.error('❌ [deleteAllProducts] Error en borrado:', deleteError);
+            throw deleteError;
+        }
+
+        // 4. Invalidar caché completamente
+        productsCache = null;
+        lastFetchTime = 0;
+
+        console.log(`✅ [deleteAllProducts] ${count} productos eliminados exitosamente.`);
+        return { deletedCount: count };
     }
 };

@@ -179,24 +179,112 @@
     font-size: 0.9em;
 }
 
-/* Dark Mode Support */
+/* Dark Mode Support - Mejorado */
+html.dark .bulk-import-modal {
+    background: #1e293b;
+    border-color: #334155;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+}
+
+html.dark .bulk-import-modal h2,
+html.dark .bulk-import-modal h3 {
+    color: #f1f5f9;
+}
+
+html.dark .bulk-import-modal p {
+    color: #cbd5e1;
+}
+
 html.dark .bulk-import-modal .drop-zone {
-    background-color: #1f2937;
-    border-color: #374151;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border-color: #334155;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+html.dark .bulk-import-modal .drop-zone:hover {
+    border-color: #3b82f6;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(59, 130, 246, 0.1) 100%);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+html.dark .bulk-import-modal .drop-zone-icon {
+    color: #60a5fa;
+}
+
+html.dark .bulk-import-modal .drop-zone-text {
+    color: #cbd5e1;
 }
 
 html.dark .bulk-import-modal .preview-header,
 html.dark .bulk-import-modal .preview-table th,
 html.dark .bulk-import-modal .preview-footer {
-    background-color: #1f2937;
+    background-color: #1e293b;
     color: #cbd5e1;
+    border-color: #334155;
+}
+
+html.dark .bulk-import-modal .preview-table {
+    background: #0f172a;
+    border-color: #334155;
 }
 
 html.dark .bulk-import-modal .preview-table td {
-    border-bottom-color: #374151;
-    color: #cbd5e1;
+    border-bottom-color: #1e293b;
+    color: #e2e8f0;
+}
+
+html.dark .bulk-import-modal .preview-table tr:hover {
+    background: #1e293b;
 }
 
 html.dark .bulk-import-modal .template-section {
-    border-top-color: #374151;
+    border-top-color: #334155;
+    background: #0f172a;
+}
+
+html.dark .bulk-import-modal .template-item {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+html.dark .bulk-import-modal .template-item:hover {
+    background: #334155;
+    border-color: #475569;
+}
+
+html.dark .bulk-import-modal .btn-cancel {
+    background: #334155;
+    border-color: #475569;
+    color: #e2e8f0;
+}
+
+html.dark .bulk-import-modal .btn-cancel:hover {
+    background: #475569;
+    border-color: #64748b;
+}
+
+html.dark .bulk-import-modal .btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    border-color: #3b82f6;
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+}
+
+html.dark .bulk-import-modal .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+}
+
+/* Scrollbar */
+html.dark .bulk-import-modal::-webkit-scrollbar-track {
+    background: #1e293b;
+}
+
+html.dark .bulk-import-modal::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 3px;
+}
+
+html.dark .bulk-import-modal::-webkit-scrollbar-thumb:hover {
+    background: #475569;
 }

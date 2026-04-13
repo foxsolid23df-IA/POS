@@ -1,12 +1,13 @@
 /**
  * Middleware para validar el acceso de Soporte Maestro / Administrador Global
+ * Usa exclusivamente la variable de entorno MASTER_PIN (sin fallback hardcodeado)
  */
 
 const authAdmin = (req, res, next) => {
     try {
         // Log para depuración (verás esto en la consola del backend)
         console.log('🔍 Validando acceso administrativo...');
-        
+
         let masterPin = null;
 
         if (req.headers && req.headers['x-master-pin']) {
@@ -17,9 +18,17 @@ const authAdmin = (req, res, next) => {
             masterPin = req.body.masterPin;
         }
 
-        const MASTER_PIN_VALIDO = process.env.MASTER_PIN || '2026SOP';
+        const MASTER_PIN = process.env.MASTER_PIN;
 
-        if (masterPin === MASTER_PIN_VALIDO) {
+        if (!MASTER_PIN) {
+            console.error('❌ MASTER_PIN no está configurado en las variables de entorno');
+            return res.status(500).json({
+                success: false,
+                message: 'Error de configuración del servidor: MASTER_PIN no configurado.'
+            });
+        }
+
+        if (masterPin === MASTER_PIN) {
             console.log('✅ Acceso administrativo concedido');
             return next();
         }

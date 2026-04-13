@@ -318,13 +318,29 @@ body {
   --dm-card-bg: #ffffff;
   --dm-input-bg: #ffffff;
   --dm-hover-bg: #f9fafb;
+
+  /* Slate Design Tokens — Light Mode */
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
+
+  /* Primary / Accent */
+  --primary: #3b82f6;
+  --primary-light: #dbeafe;
 }
 
 /* Dark Mode Variables */
 html.dark {
-  --dm-bg-primary: #111827; /* Dark slate */
-  --dm-bg-secondary: #1f2937; /* Lighter slate / inputs */
-  --dm-bg-tertiary: #374151; /* Borders / hovers */
+  --dm-bg-primary: #111827;
+  --dm-bg-secondary: #1f2937;
+  --dm-bg-tertiary: #374151;
   --dm-text-primary: #f8fafc;
   --dm-text-secondary: #cbd5e1;
   --dm-text-muted: #94a3b8;
@@ -333,6 +349,20 @@ html.dark {
   --dm-card-bg: #1f2937;
   --dm-input-bg: #111827;
   --dm-hover-bg: #374151;
+
+  /* Slate Design Tokens — Dark Mode (inverted) */
+  --slate-50: #0f172a;
+  --slate-100: #1e293b;
+  --slate-200: #334155;
+  --slate-300: #475569;
+  --slate-400: #94a3b8;
+  --slate-500: #94a3b8;
+  --slate-600: #cbd5e1;
+  --slate-700: #e2e8f0;
+  --slate-800: #f1f5f9;
+  --slate-900: #f8fafc;
+
+  --primary-light: rgba(59, 130, 246, 0.15);
 }
 
 /* Global Dark Mode Base Styles */
@@ -623,6 +653,70 @@ html.dark .new-product-input {
   background: var(--dm-input-bg);
   border-color: var(--dm-border);
   color: var(--dm-text-primary);
+}
+
+html.dark .new-product-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+html.dark .new-product-select {
+  background: var(--dm-input-bg);
+  border-color: var(--dm-border);
+  color: var(--dm-text-primary);
+}
+
+html.dark .new-product-close-btn {
+  background: var(--dm-bg-tertiary);
+  color: var(--dm-text-primary);
+}
+
+html.dark .new-product-close-btn:hover {
+  background: var(--dm-hover-bg);
+  color: var(--dm-text-primary);
+}
+
+html.dark .new-product-camera-btn {
+  background: var(--dm-input-bg);
+  border-color: var(--dm-border);
+  color: var(--dm-text-primary);
+}
+
+html.dark .new-product-camera-btn:hover {
+  background: var(--dm-bg-secondary);
+  border-color: #3b82f6;
+  color: var(--dm-text-primary);
+}
+
+html.dark .new-product-camera-icon {
+  color: #3b82f6;
+}
+
+html.dark .new-product-btn-cancel {
+  background: var(--dm-input-bg);
+  border-color: var(--dm-border);
+  color: var(--dm-text-primary);
+}
+
+html.dark .new-product-btn-cancel:hover {
+  background: var(--dm-bg-secondary);
+  border-color: var(--dm-border-light);
+}
+
+html.dark .new-product-btn-save {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
+html.dark .new-product-btn-save:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+html.dark .new-product-modal-footer {
+  border-top-color: var(--dm-border);
+  background: var(--dm-bg-secondary);
 }
 
 /* Stats Page Dark Mode */
@@ -947,4 +1041,154 @@ html.dark .form-group label {
 .modal-content h3, 
 .modal-content h4 {
     color: var(--dm-text-primary) !important;
+}
+
+/* ============================================================
+   GLOBAL DARK MODE CATCH-ALL RULES
+   Ensures ALL modules inherit proper contrast without needing
+   per-component dark mode overrides.
+   ============================================================ */
+
+/* --- Text Hierarchy --- */
+html.dark h1,
+html.dark h2,
+html.dark h3,
+html.dark h4,
+html.dark h5,
+html.dark h6 {
+    color: #f1f5f9;
+}
+
+html.dark p {
+    color: #cbd5e1;
+}
+
+html.dark span {
+    color: inherit;
+}
+
+html.dark small {
+    color: #94a3b8;
+}
+
+html.dark a:not([class]) {
+    color: #60a5fa;
+}
+
+/* --- Generic table dark mode --- */
+html.dark table {
+    border-color: #334155;
+}
+
+html.dark thead,
+html.dark thead tr {
+    background-color: #0f172a;
+}
+
+html.dark th {
+    color: #94a3b8;
+    border-color: #334155;
+    background-color: #0f172a;
+}
+
+html.dark td {
+    color: #e2e8f0;
+    border-color: #1e293b;
+}
+
+html.dark tbody tr {
+    border-color: #1e293b;
+}
+
+html.dark tbody tr:hover {
+    background-color: #334155;
+}
+
+/* --- Inputs, selects, textareas --- */
+html.dark input,
+html.dark select,
+html.dark textarea {
+    background-color: var(--dm-input-bg);
+    border-color: var(--dm-border);
+    color: var(--dm-text-primary);
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+    color: #64748b;
+}
+
+html.dark input:focus,
+html.dark select:focus,
+html.dark textarea:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+/* --- Generic cards & surfaces --- */
+html.dark [class*="card"],
+html.dark [class*="Card"] {
+    background-color: var(--dm-card-bg);
+    border-color: var(--dm-border);
+    color: var(--dm-text-primary);
+}
+
+html.dark [class*="container"] {
+    color: var(--dm-text-primary);
+}
+
+/* --- Generic button fixes --- */
+html.dark button {
+    color: inherit;
+}
+
+/* --- Badges global fix --- */
+html.dark [class*="badge"] {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* --- Pagination global --- */
+html.dark [class*="pagination"] {
+    color: #94a3b8;
+    border-color: #334155;
+    background-color: var(--dm-card-bg);
+}
+
+/* --- Dropdown / popover surfaces --- */
+html.dark [class*="dropdown"],
+html.dark [class*="Dropdown"],
+html.dark [class*="popover"],
+html.dark [class*="menu"] {
+    background-color: var(--dm-card-bg);
+    border-color: var(--dm-border);
+    color: var(--dm-text-primary);
+}
+
+/* --- Separator / divider / border-bottom --- */
+html.dark hr {
+    border-color: #334155;
+}
+
+/* --- Loading / empty states --- */
+html.dark [class*="loading"],
+html.dark [class*="empty"] {
+    color: #94a3b8;
+}
+
+/* --- Breadcrumbs --- */
+html.dark [class*="breadcrumb"] {
+    color: #94a3b8;
+}
+
+/* --- Global scrollbar in dark mode --- */
+html.dark ::-webkit-scrollbar-track {
+    background: #111827;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+    background: #374151;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+    background: #4b5563;
 }

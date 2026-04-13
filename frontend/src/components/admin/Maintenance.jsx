@@ -130,7 +130,9 @@ const Maintenance = () => {
             type="button"
             className="mb-4 flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all text-slate-600 dark:text-slate-300 font-bold text-xs w-fit mx-auto"
           >
-            <span className="material-icons-outlined text-[16px]">arrow_back</span>
+            <span className="material-icons-outlined text-[16px]">
+              arrow_back
+            </span>
             <span>Regresar</span>
           </button>
           <h2>Seguridad de Administración</h2>
@@ -311,26 +313,22 @@ const Maintenance = () => {
           onClick={() => navigate("/configuracion")}
           className="mt-4 flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-slate-600 dark:text-slate-300 font-bold text-xs w-fit"
         >
-          <span className="material-icons-outlined text-[18px]">arrow_back</span>
+          <span className="material-icons-outlined text-[18px]">
+            arrow_back
+          </span>
           <span>Regresar a Configuración</span>
         </button>
       </header>
 
       {/* MONITOR DE SALUD DEL SISTEMA */}
       <div className="health-monitor">
-        <div
-          className="health-status-info"
-          style={{ justifyContent: "center", gap: "2rem" }}
-        >
+        <div className="health-status-wrapper">
           {/* Estado General del Sistema */}
           <div className="status-item">
-            <span
-              className="material-icons-outlined"
-              style={{ color: "var(--primary-color)" }}
-            >
+            <span className="material-icons-outlined status-icon-primary">
               public
             </span>
-            <strong>Plataforma Web:</strong>
+            <span className="status-label">Plataforma Web:</span>
             <span
               className={`status-indicator ${
                 systemHealth.status === "Operational"
@@ -348,14 +346,13 @@ const Maintenance = () => {
             </span>
           </div>
 
+          <div className="status-divider"></div>
+
           <div className="status-item">
-            <span
-              className="material-icons-outlined"
-              style={{ color: "var(--success-color)" }}
-            >
+            <span className="material-icons-outlined status-icon-success">
               cloud_done
             </span>
-            <strong>Base de Datos Segura:</strong>
+            <span className="status-label">Base de Datos Segura:</span>
             <span
               className={`status-indicator ${
                 systemHealth.database === "Connected"
@@ -397,10 +394,10 @@ const Maintenance = () => {
         <section className="pin-master-card">
           <div className="pin-badge-info">
             <span className="material-icons-outlined">verified_user</span>
-            <span>Seguridad de Acceso Maestro</span>
+            <span className="pin-badge-text">Seguridad de Acceso Maestro</span>
           </div>
 
-          <div className="flex flex-col mb-6">
+          <div className="pin-master-content">
             <h3 className="text-xl font-bold mb-1">PIN Maestro</h3>
             <p className="text-sm text-slate-500">
               Configura acceso rápido de supervisión (4 a 6 dígitos).

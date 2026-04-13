@@ -2,6 +2,13 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "../supabase";
 import { staffService } from "../services/staffService";
 import { cashSessionService } from "../services/cashSessionService";
+import {
+  secureSet,
+  secureGet,
+  secureRemove,
+  purgeSessionData,
+  useSessionTimeout,
+} from "../utils/secureStorage";
 
 const AuthContext = createContext();
 
@@ -28,6 +35,27 @@ export const AuthProvider = ({ children }) => {
   // Esto permite entrar al sistema para ver inventario o cerrar el día sin forzar fondo inicial
   const isSupervising = !!activeStaff && needsCashFund;
 
+  // Timeout de sesión por inactividad (15 minutos)
+  const handleSessionTimeout = () => {
+    console.warn("[Auth] Cerrando sesión por inactividad");
+    purgeSessionData();
+    supabase.auth
+      .signOut({ scope: "local" })
+      .then(() => {
+        setProfile(null);
+        setUser(null);
+        setSession(null);
+        setActiveStaff(null);
+        setCashSession(null);
+        setNeedsCashFund(false);
+      })
+      .catch(() => {
+        /* silenciar error de logout automático */
+      });
+  };
+
+  useSessionTimeout(handleSessionTimeout, 15 * 60 * 1000);
+
   useEffect(() => {
     // 1. Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -35,32 +63,35 @@ export const AuthProvider = ({ children }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchProfile(session.user.id);
-        // Intentar restaurar sesión de empleado activa
-        const savedStaff = localStorage.getItem("activeStaff");
-        if (savedStaff) {
-          try {
-            const staff = JSON.parse(savedStaff);
-            // Si tiene el permiso, verificar asistencia antes de restaurar
-            if (staff.permissions?.require_check_in) {
-              import("../services/attendanceService").then(
-                ({ attendanceService }) => {
-                  attendanceService.getLastLog(staff.id).then((lastLog) => {
-                    if (!lastLog || lastLog.action === "check_out") {
-                      localStorage.removeItem("activeStaff");
-                      setActiveStaff(null);
-                    } else {
-                      setActiveStaff(staff);
-                    }
-                  });
-                },
-              );
-            } else {
-              setActiveStaff(staff);
+        // Intentar restaurar sesion de empleado activa (con integridad verificada)
+        secureGet("activeStaff", 24 * 60 * 60 * 1000)
+          .then((savedStaff) => {
+            if (savedStaff) {
+              // Si tiene el permiso, verificar asistencia antes de restaurar
+              if (savedStaff.permissions?.require_check_in) {
+                import("../services/attendanceService").then(
+                  ({ attendanceService }) => {
+                    attendanceService
+                      .getLastLog(savedStaff.id)
+                      .then((lastLog) => {
+                        if (!lastLog || lastLog.action === "check_out") {
+                          secureRemove("activeStaff");
+                          setActiveStaff(null);
+                        } else {
+                          setActiveStaff(savedStaff);
+                        }
+                      });
+                  },
+                );
+              } else {
+                setActiveStaff(savedStaff);
+              }
             }
-          } catch (e) {
-            localStorage.removeItem("activeStaff");
-          }
-        }
+          })
+          .catch(() => {
+            // Si hay error de integridad, limpiar
+            secureRemove("activeStaff");
+          });
       } else {
         setLoading(false);
         setIsLicenseValidating(false);
@@ -91,7 +122,7 @@ export const AuthProvider = ({ children }) => {
         currentUserId = null;
         setProfile(null);
         setActiveStaff(null);
-        localStorage.removeItem("activeStaff");
+        secureRemove("activeStaff");
         setLoading(false);
         setIsLicenseValidating(false);
       }
@@ -168,10 +199,10 @@ export const AuthProvider = ({ children }) => {
       password,
     });
     if (error) throw error;
-    // Al iniciar sesión, el dueño es el operador activo
+    // Al iniciar sesion, el dueno es el operador activo
     const ownerStaff = { name: "Propietario", role: "admin", isOwner: true };
     setActiveStaff(ownerStaff);
-    localStorage.setItem("activeStaff", JSON.stringify(ownerStaff));
+    secureSet("activeStaff", ownerStaff);
     return data;
   };
 
@@ -229,14 +260,14 @@ export const AuthProvider = ({ children }) => {
         }
       }
     }
-    // Al registrarse, el dueño es el operador activo
+    // Al registrarse, el dueno es el operador activo
     const ownerStaff = { name: fullName, role: "admin", isOwner: true };
     setActiveStaff(ownerStaff);
-    localStorage.setItem("activeStaff", JSON.stringify(ownerStaff));
+    secureSet("activeStaff", ownerStaff);
     return authData;
   };
 
-  // Cerrar sesión LOCAL (afecta solo a este dispositivo)
+  // Cerrar sesion LOCAL (afecta solo a este dispositivo)
   const logout = async () => {
     // Usamos { scope: 'local' } para que no cierre las sesiones en otros equipos
     // del mismo usuario (propietario).
@@ -245,7 +276,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setSession(null);
     setActiveStaff(null);
-    localStorage.removeItem("activeStaff");
+    secureRemove("activeStaff");
     setCashSession(null);
     setNeedsCashFund(false);
     setIsLicenseExpired(false);
@@ -260,27 +291,27 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Login de empleado por PIN (Carga la sesión)
+  // Login de empleado por PIN (Carga la sesion)
   const loginWithPin = async (pin) => {
     const staff = await validateStaffPin(pin);
     setActiveStaff(staff);
-    localStorage.setItem("activeStaff", JSON.stringify(staff));
+    secureSet("activeStaff", staff);
     return staff;
   };
 
   // Login directo de empleado (usado para auto-login por huella)
   const loginAs = (staff) => {
     setActiveStaff(staff);
-    localStorage.setItem("activeStaff", JSON.stringify(staff));
+    secureSet("activeStaff", staff);
   };
 
   // Bloquear pantalla (requiere PIN para continuar)
   const lockScreen = () => {
     setActiveStaff(null);
-    localStorage.removeItem("activeStaff");
+    secureRemove("activeStaff");
   };
 
-  // Desbloquear como propietario (sin cerrar sesión de la tienda)
+  // Desbloquear como propietario (sin cerrar sesion de la tienda)
   const unlockAsOwner = () => {
     const ownerStaff = {
       name: profile?.full_name || "Propietario",
@@ -288,7 +319,7 @@ export const AuthProvider = ({ children }) => {
       isOwner: true,
     };
     setActiveStaff(ownerStaff);
-    localStorage.setItem("activeStaff", JSON.stringify(ownerStaff));
+    secureSet("activeStaff", ownerStaff);
   };
 
   // Desbloquear con PIN maestro (Modo Supervisión)
@@ -334,7 +365,7 @@ export const AuthProvider = ({ children }) => {
       isOwner: true,
     };
     setActiveStaff(ownerStaff);
-    localStorage.setItem("activeStaff", JSON.stringify(ownerStaff));
+    secureSet("activeStaff", ownerStaff);
     return true;
   };
 
@@ -387,9 +418,10 @@ export const AuthProvider = ({ children }) => {
   const canAccessAdmin = activeStaff?.isOwner || activeRole === "admin";
   const canAccessReports = canAccessAdmin || activeRole === "gerente";
 
-  const memoizedUser = React.useMemo(() => 
-    user ? { ...user, ...profile } : null,
-  [user, profile]);
+  const memoizedUser = React.useMemo(
+    () => (user ? { ...user, ...profile } : null),
+    [user, profile],
+  );
 
   const value = {
     // Usuario autenticado de Supabase (dueño de la tienda)

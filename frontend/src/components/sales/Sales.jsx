@@ -36,8 +36,13 @@ export const Sales = () => {
   const { ticketSettings } = useSettings();
   const { cargando, ejecutarPeticion } = useApi();
   const { isMobile, isTouchDevice } = useIsMobile();
-  const { isAndroid, scannerMode, scannerInputMode, toggleScannerMode } =
-    useScannerMode();
+  const {
+    isAndroid,
+    isAvailable,
+    scannerMode,
+    scannerInputMode,
+    toggleScannerMode,
+  } = useScannerMode();
 
   // USAR CONTEXTO GLOBAL DE PRODUCTOS
   const {
@@ -69,7 +74,6 @@ export const Sales = () => {
     vaciarCarrito,
     total,
   } = useCart(mostrarError);
-
 
   const [modal, setModal] = useState({
     isOpen: false,
@@ -238,7 +242,10 @@ export const Sales = () => {
   useEffect(() => {
     if (facturar && issuers.length === 0) {
       const fetchIssuers = async () => {
-        const { data } = await supabase.from('billing_issuers').select('id, rfc, razon_social').order('created_at', { ascending: false });
+        const { data } = await supabase
+          .from("billing_issuers")
+          .select("id, rfc, razon_social")
+          .order("created_at", { ascending: false });
         if (data) {
           setIssuers(data);
           if (data.length > 0) setSelectedIssuerId(data[0].id);
@@ -248,8 +255,9 @@ export const Sales = () => {
     }
   }, [facturar, issuers.length]);
 
-  const taxRateValue = user?.tax_enabled !== false ? (parseFloat(user?.tax_percentage) || 0) : 0;
-  const totalConImpuesto = total * (1 + (taxRateValue / 100));
+  const taxRateValue =
+    user?.tax_enabled !== false ? parseFloat(user?.tax_percentage) || 0 : 0;
+  const totalConImpuesto = total * (1 + taxRateValue / 100);
   const totalVenta = facturar ? totalConImpuesto : total;
   const taxAmount = totalVenta - total;
 
@@ -393,7 +401,11 @@ export const Sales = () => {
     const syncCart = async () => {
       if (user && !mostrarModalPago && isMounted) {
         try {
-          await activeCartService.updateCart(carrito, totalVenta, cashSession?.id);
+          await activeCartService.updateCart(
+            carrito,
+            totalVenta,
+            cashSession?.id,
+          );
         } catch (err) {
           // Silenciar errores si el componente se desmontó
           if (isMounted && err.name !== "AbortError") {
@@ -443,8 +455,9 @@ export const Sales = () => {
 
   // Efecto para calcular el saldo pendiente
   useEffect(() => {
-    const taxRateValue = user?.tax_enabled !== false ? (parseFloat(user?.tax_percentage) || 0) : 0;
-    const totalFinal = facturar ? total * (1 + (taxRateValue / 100)) : total;
+    const taxRateValue =
+      user?.tax_enabled !== false ? parseFloat(user?.tax_percentage) || 0 : 0;
+    const totalFinal = facturar ? total * (1 + taxRateValue / 100) : total;
     const pagado = pagosRealizados.reduce((sum, p) => sum + p.amount, 0);
     setSaldoPendiente(totalFinal - pagado);
   }, [pagosRealizados, total, facturar, user]);
@@ -661,25 +674,32 @@ export const Sales = () => {
         }
         return prev;
       } else {
+        // Si ya hay punto decimal, solo permitir hasta 2 decimales
+        if (prev.includes(".")) {
+          const parts = prev.split(".");
+          if (parts[1] && parts[1].length >= 2) {
+            return prev; // Ya tiene 2 decimales, no agregar más
+          }
+        }
+        // Agregar dígito libremente (sin auto-insertar punto)
         return prev + valor;
       }
     });
   };
 
   const calcularCambio = () => {
-    const valMonto = montoRecibidoRef?.current || montoRecibido;
-    if (!valMonto) return 0;
-    const monto = parseFloat(valMonto) || 0;
+    // Usar directamente el estado montoRecibido en lugar de la ref
+    const monto = parseFloat(montoRecibido) || 0;
 
     if (metodoPago === "dolares" && tipoCambio) {
       // Convertir dólares recibidos a pesos
       const totalEnPesos = monto * tipoCambio;
       // Calcular cambio en pesos basado en el saldo que falta por cubrir
-      return totalEnPesos - saldoPendiente;
+      return Math.max(0, totalEnPesos - saldoPendiente);
     }
 
-    // Para los demás métodos (tarjeta, transferencia), el cambio se calcula sobre el saldo pendiente
-    return monto - saldoPendiente;
+    // Para los demás métodos (efectivo, tarjeta, transferencia), el cambio se calcula sobre el saldo pendiente
+    return Math.max(0, monto - saldoPendiente);
   };
 
   const formatearMontoRecibido = () => {
@@ -730,9 +750,10 @@ export const Sales = () => {
 
     try {
       // Calcular Impuestos (basado en configurarción del perfil y el toggle de facturar)
-      const taxRateValue = user?.tax_enabled !== false ? (parseFloat(user?.tax_percentage) || 0) : 0;
+      const taxRateValue =
+        user?.tax_enabled !== false ? parseFloat(user?.tax_percentage) || 0 : 0;
       const currentTaxRate = facturar ? taxRateValue : 0;
-      const totalVenta = facturar ? total * (1 + (taxRateValue / 100)) : total;
+      const totalVenta = facturar ? total * (1 + taxRateValue / 100) : total;
       const subtotal = total; // El total del carrito actúa como el subtotal base
       const taxAmount = totalVenta - subtotal;
 
@@ -767,9 +788,17 @@ export const Sales = () => {
       const ventaCreada = await salesService.createSale(ventaData);
 
       // Calcular el cambio real y monto total recibido
-      const totalChange = pagosActualizados.reduce((sum, p) => sum + p.change, 0);
+      const totalChange = pagosActualizados.reduce(
+        (sum, p) => sum + p.change,
+        0,
+      );
       const totalReceivedPesos = pagosActualizados.reduce((sum, p) => {
-        return sum + (p.currency === "USD" && p.exchange_rate ? p.received * p.exchange_rate : p.received);
+        return (
+          sum +
+          (p.currency === "USD" && p.exchange_rate
+            ? p.received * p.exchange_rate
+            : p.received)
+        );
       }, 0);
 
       // Actualizar UI inmediatamente para mostrar el ticket
@@ -785,7 +814,7 @@ export const Sales = () => {
         total: totalVenta,
         subtotal: subtotal,
         tax_amount: taxAmount,
-        tax_percentage: currentTaxRate
+        tax_percentage: currentTaxRate,
       });
 
       // Vaciar carrito y mostrar modal de éxito YA
@@ -1246,17 +1275,22 @@ export const Sales = () => {
 
     // SUBTOTAL E IVA (Si está habilitado)
     const taxEnabled = user?.tax_enabled !== false;
-    const taxRate = taxEnabled ? (parseFloat(user?.tax_percentage) || 0) : 0;
-    
+    const taxRate = taxEnabled ? parseFloat(user?.tax_percentage) || 0 : 0;
+
     if (taxRate > 0) {
-      const subtotalVal = total / (1 + (taxRate / 100));
+      const subtotalVal = total / (1 + taxRate / 100);
       const taxVal = total - subtotalVal;
-      
-      html += '<div class="ticket-summary-row"><span class="ticket-summary-label">SUBTOTAL:</span>';
-      html += `<span class="ticket-summary-value">${formatearDinero(subtotalVal)}</span></div>`;
-      
+
+      html +=
+        '<div class="ticket-summary-row"><span class="ticket-summary-label">SUBTOTAL:</span>';
+      html += `<span class="ticket-summary-value">${formatearDinero(
+        subtotalVal,
+      )}</span></div>`;
+
       html += `<div class="ticket-summary-row"><span class="ticket-summary-label">IVA (${taxRate}%):</span>`;
-      html += `<span class="ticket-summary-value">${formatearDinero(taxVal)}</span></div>`;
+      html += `<span class="ticket-summary-value">${formatearDinero(
+        taxVal,
+      )}</span></div>`;
     }
 
     html +=
@@ -1373,14 +1407,16 @@ export const Sales = () => {
           </div>
 
           {isSupervising && (
-            <div className="bg-amber-100 border-l-4 border-amber-500 text-amber-800 p-4 mb-4 rounded-r-xl shadow-sm flex items-center justify-between">
+            <div className="bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900/40 dark:to-yellow-900/40 border-l-4 border-amber-500 dark:border-amber-400 text-amber-900 dark:text-amber-100 p-4 mb-4 rounded-r-xl shadow-md dark:shadow-lg flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-amber-600">
+                <span className="material-symbols-outlined text-amber-600 dark:text-amber-400">
                   admin_panel_settings
                 </span>
                 <div>
-                  <h3 className="font-bold">Modo Supervisión Activo</h3>
-                  <p className="text-sm">
+                  <h3 className="font-bold text-amber-900 dark:text-amber-50">
+                    Modo Supervisión Activo
+                  </h3>
+                  <p className="text-sm text-amber-800 dark:text-amber-200">
                     La caja está cerrada. Las funciones de venta, cobro y
                     movimientos están deshabilitadas.
                   </p>
@@ -1450,8 +1486,8 @@ export const Sales = () => {
                   inputMode={scannerInputMode}
                   placeholder={
                     scannerMode
-                      ? "Escáner BT activo - escanee un código..."
-                      : "Buscar por nombre o código de..."
+                      ? "Escáner activo - escanee un código de barras..."
+                      : "Buscar por nombre o código de barras..."
                   }
                   value={codigoEscaneado}
                   onChange={manejarCambioCodigo}
@@ -1472,8 +1508,8 @@ export const Sales = () => {
                 <span className="material-symbols-outlined">photo_camera</span>
                 <span>Cámara</span>
               </button>
-              {/* Toggle Modo Escáner Bluetooth — solo visible en Android */}
-              {isAndroid && (
+              {/* Toggle Modo Escáner - disponible para todos los dispositivos */}
+              {isAvailable && (
                 <button
                   onClick={toggleScannerMode}
                   className={`btn-camera-modern ${
@@ -1482,8 +1518,8 @@ export const Sales = () => {
                   type="button"
                   title={
                     scannerMode
-                      ? "Desactivar modo escáner (mostrar teclado)"
-                      : "Activar modo escáner Bluetooth (ocultar teclado)"
+                      ? "Desactivar modo escáner (mostrar teclado virtual)"
+                      : "Activar modo escáner de código de barras (bloquear teclado virtual)"
                   }
                 >
                   <span className="material-symbols-outlined">
@@ -1709,20 +1745,29 @@ export const Sales = () => {
                 <span className="summary-label">Subtotal</span>
                 <span className="summary-value">
                   {formatearDinero(
-                    (user?.tax_enabled !== false && (parseFloat(user?.tax_percentage) || 0) > 0)
-                      ? (total / (1 + ((parseFloat(user?.tax_percentage) || 0) / 100)))
-                      : total
+                    user?.tax_enabled !== false &&
+                      (parseFloat(user?.tax_percentage) || 0) > 0
+                      ? total /
+                          (1 + (parseFloat(user?.tax_percentage) || 0) / 100)
+                      : total,
                   )}
                 </span>
               </div>
-              {(user?.tax_enabled !== false && (parseFloat(user?.tax_percentage) || 0) > 0) && (
-                <div className="summary-row">
-                  <span className="summary-label">Impuestos ({user?.tax_percentage}%)</span>
-                  <span className="summary-value">
-                    {formatearDinero(total - (total / (1 + ((parseFloat(user?.tax_percentage) || 0) / 100))))}
-                  </span>
-                </div>
-              )}
+              {user?.tax_enabled !== false &&
+                (parseFloat(user?.tax_percentage) || 0) > 0 && (
+                  <div className="summary-row">
+                    <span className="summary-label">
+                      Impuestos ({user?.tax_percentage}%)
+                    </span>
+                    <span className="summary-value">
+                      {formatearDinero(
+                        total -
+                          total /
+                            (1 + (parseFloat(user?.tax_percentage) || 0) / 100),
+                      )}
+                    </span>
+                  </div>
+                )}
               <div className="summary-row summary-total">
                 <span className="summary-label">Total</span>
                 <span className="summary-value">{formatearDinero(total)}</span>
@@ -1896,20 +1941,34 @@ export const Sales = () => {
               <div className="payment-method-section">
                 <div className="payment-method-content">
                   <div className="flex justify-start items-center gap-6 mb-4">
-                    <h3 className="payment-method-title !m-0">MÉTODO DE PAGO</h3>
-                    <label 
+                    <h3 className="payment-method-title !m-0">
+                      MÉTODO DE PAGO
+                    </h3>
+                    <label
                       className="flex items-center gap-2 cursor-pointer bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-indigo-300 transition-all select-none"
                       onClick={() => setFacturar(!facturar)}
                     >
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Facturar</span>
-                      <div className={`relative w-8 h-4 rounded-full transition-colors ${facturar ? 'bg-indigo-600' : 'bg-slate-300'}`}>
-                        <div className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform ${facturar ? 'translate-x-4' : ''}`} />
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                        Facturar
+                      </span>
+                      <div
+                        className={`relative w-8 h-4 rounded-full transition-colors ${
+                          facturar ? "bg-indigo-600" : "bg-slate-300"
+                        }`}
+                      >
+                        <div
+                          className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform ${
+                            facturar ? "translate-x-4" : ""
+                          }`}
+                        />
                       </div>
                     </label>
                     {facturar && issuers.length > 0 && (
                       <div className="ml-auto w-1/3 flex border border-indigo-200/60 bg-indigo-50/50 rounded-lg overflow-hidden transition-all duration-300 animate-in fade-in zoom-in-95">
                         <div className="bg-indigo-100 text-indigo-600 px-2 flex items-center justify-center">
-                          <span className="material-icons-outlined text-[14px]">storefront</span>
+                          <span className="material-icons-outlined text-[14px]">
+                            storefront
+                          </span>
                         </div>
                         <select
                           value={selectedIssuerId}
@@ -1917,7 +1976,7 @@ export const Sales = () => {
                           className="w-full text-xs font-semibold px-2 py-1.5 bg-transparent text-indigo-800 outline-none cursor-pointer truncate"
                           title="Seleccionar Emisor"
                         >
-                          {issuers.map(i => (
+                          {issuers.map((i) => (
                             <option key={i.id} value={i.id}>
                               {i.rfc} - {i.razon_social}
                             </option>

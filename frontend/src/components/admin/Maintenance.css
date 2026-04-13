@@ -554,25 +554,70 @@ html.dark .health-monitor {
     flex-wrap: wrap;
 }
 
+/* Status Items - Layout horizontal profesional */
 .status-item {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 8px;
     font-size: 0.9rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.status-item .material-icons-outlined {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+}
+
+.status-label {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    color: #1e293b;
+}
+
+html.dark .status-label {
+    color: #f1f5f9;
 }
 
 .status-indicator {
-    padding: 0.25rem 0.6rem;
-    border-radius: 8px;
-    font-size: 0.75rem;
-    font-weight: bold;
+    padding: 0;
+    border-radius: 0;
+    font-size: 12px;
+    font-weight: 600;
     text-transform: uppercase;
+    letter-spacing: 0.025em;
     white-space: nowrap;
+    display: inline-block;
+    line-height: 1.4;
+    background: transparent;
+    border: none;
 }
 
-.status-indicator.online { background: #dcfce7; color: #166534; }
-.status-indicator.offline { background: #fee2e2; color: #991b1b; }
-.status-indicator.checking { background: #f1f5f9; color: #475569; }
+.status-indicator.online {
+    color: #16a34a;
+}
+
+.status-indicator.offline {
+    color: #dc2626;
+}
+
+.status-indicator.checking {
+    color: #64748b;
+}
+
+html.dark .status-indicator.online {
+    color: #4ade80;
+}
+
+html.dark .status-indicator.offline {
+    color: #f87171;
+}
+
+html.dark .status-indicator.checking {
+    color: #94a3b8;
+}
 
 .logs-viewer {
     grid-column: 1 / -1;
@@ -710,20 +755,289 @@ html.dark .pin-input-modern {
     background: #94a3b8;
 }
 
+/* Badge de Información - Mejorado */
 .pin-badge-info {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: #eff6ff;
+    gap: 12px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
     color: #1d4ed8;
-    border-radius: 99px;
-    font-size: 0.8rem;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 9999px;
+    font-size: 14px;
     font-weight: 600;
-    margin-bottom: 1.5rem;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+}
+
+.pin-badge-info .material-icons-outlined {
+    font-size: 20px;
+    flex-shrink: 0;
 }
 
 html.dark .pin-badge-info {
-    background: rgba(30, 64, 175, 0.2);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%);
     color: #93c5fd;
+    border-color: rgba(59, 130, 246, 0.3);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+}
+
+/* Contenido del PIN Master - Mejorado */
+.pin-master-content {
+    margin-bottom: 24px;
+}
+
+.pin-master-content h3 {
+    margin-bottom: 4px;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.pin-master-content p {
+    margin: 0;
+    font-size: 14px;
+}
+
+/* Health Monitor - Layout Corregido */
+html.dark .health-monitor {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 24px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.health-monitor {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 24px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.health-status-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+    flex: 1;
+    min-width: 0;
+}
+
+.status-divider {
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, transparent, #e2e8f0, transparent);
+    flex-shrink: 0;
+}
+
+html.dark .status-divider {
+    background: linear-gradient(to bottom, transparent, #334155, transparent);
+}
+
+/* Health Monitor - Mobile Responsive */
+@media (max-width: 768px) {
+    .health-status-wrapper {
+        flex-direction: column;
+        gap: 20px;
+        align-items: flex-start;
+    }
+
+    .status-divider {
+        width: 100%;
+        height: 1px;
+        background: linear-gradient(to right, transparent, #e2e8f0, transparent);
+    }
+
+    html.dark .status-divider {
+        background: linear-gradient(to right, transparent, #334155, transparent);
+    }
+
+    .health-monitor {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+    }
+
+    .btn-icon {
+        align-self: flex-end;
+    }
+}
+
+/* Status Icons - Colores */
+.status-icon-primary {
+    color: #3b82f6;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.status-icon-success {
+    color: #10b981;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+html.dark .status-icon-primary {
+    color: #60a5fa;
+}
+
+html.dark .status-icon-success {
+    color: #34d399;
+}
+
+/* PIN Form - Mejorado */
+.pin-input-group {
+    margin-bottom: 20px;
+}
+
+.pin-input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+}
+
+html.dark .pin-input-group label {
+    color: #94a3b8;
+}
+
+.pin-form-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.btn-update-pin {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.btn-update-pin:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    transform: translateY(-1px);
+}
+
+.btn-update-pin:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Responsive - Health Monitor */
+@media (max-width: 768px) {
+    .health-status-wrapper {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .status-divider {
+        width: 100%;
+        height: 1px;
+        background: linear-gradient(to right, transparent, #e2e8f0, transparent);
+    }
+
+    html.dark .status-divider {
+        background: linear-gradient(to right, transparent, #334155, transparent);
+    }
+
+    .health-monitor {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btn-icon {
+        align-self: flex-end;
+    }
+}
+
+/* Dark mode catch-all for elements missing overrides */
+html.dark .maintenance-container {
+    color: #e2e8f0;
+}
+
+html.dark .maintenance-header {
+    border-bottom-color: #374151;
+}
+
+html.dark .maintenance-header p {
+    color: #94a3b8;
+}
+
+html.dark .reset-section {
+    background: #1e293b;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+html.dark .reset-section h3 {
+    color: #f1f5f9;
+}
+
+html.dark .section-description {
+    color: #94a3b8;
+}
+
+html.dark .warning-content h2 {
+    color: #fbbf24;
+}
+
+html.dark .maintenance-card.warning {
+    background-color: rgba(251, 191, 36, 0.1);
+    border-left-color: #f59e0b;
+}
+
+html.dark .maintenance-table th {
+    color: #94a3b8;
+}
+
+html.dark .maintenance-table td {
+    color: #e2e8f0;
+}
+
+html.dark .status-message.success {
+    background: rgba(22, 101, 52, 0.2);
+    color: #4ade80;
+}
+
+html.dark .status-message.error {
+    background: rgba(153, 27, 27, 0.2);
+    color: #f87171;
+}
+
+html.dark .status-badge.main {
+    background: rgba(22, 163, 74, 0.15);
+    color: #4ade80;
+}
+
+html.dark .pin-input-group label {
+    color: #94a3b8;
+}
+
+html.dark .log-date {
+    color: #94a3b8;
 }

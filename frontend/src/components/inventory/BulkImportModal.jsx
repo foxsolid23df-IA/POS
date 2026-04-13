@@ -19,11 +19,14 @@ const COLUMN_ALIASES = {
   barcode: [
     "Codigo",
     "SKU",
+    "Sku",
     "Codigo de Barras",
     "Barcode",
     "Código",
     "Código de Barras",
     "Code",
+    "codigo",
+    "sku",
   ],
   name: [
     "Descripcion",
@@ -34,6 +37,7 @@ const COLUMN_ALIASES = {
     "Articulo",
     "Nombre del Producto",
     "Product",
+    "producto",
   ],
   cost_price: [
     "Precio Costo",
@@ -41,9 +45,34 @@ const COLUMN_ALIASES = {
     "Cost",
     "Precio de Costo",
     "Costo Unitario",
+    "precio_compra",
+    "Precio Compra",
+    "PrecioCompra",
+    "costo",
   ],
-  price: ["Precio Venta", "Precio", "Venta", "Price", "Precio de Venta", "PVP"],
-  wholesale_price: ["Precio Mayoreo", "Mayoreo", "Wholesale"],
+  price: [
+    "Precio Venta",
+    "Precio",
+    "Venta",
+    "Price",
+    "Precio de Venta",
+    "PVP",
+    "precio_men",
+    "Precio Menudeo",
+    "PrecioMenor",
+    "Precio Men",
+    "Menudeo",
+    "precio",
+  ],
+  wholesale_price: [
+    "Precio Mayoreo",
+    "Mayoreo",
+    "Wholesale",
+    "precio_may",
+    "Precio May",
+    "PrecioMayoreo",
+    "mayoreo",
+  ],
   stock: [
     "Existencia",
     "Existencias",
@@ -51,6 +80,8 @@ const COLUMN_ALIASES = {
     "Stock",
     "Inventario",
     "Qty",
+    "existencia",
+    "stock",
   ],
   min_stock: [
     "Inv. Minimo",
@@ -70,6 +101,76 @@ const COLUMN_ALIASES = {
     "Depto",
     "Category",
     "Rubro",
+    "categoria",
+  ],
+  // ===== ADVANCED FIELDS =====
+  notes: [
+    "Notas",
+    "notas",
+    "Notes",
+    "Observaciones",
+    "Comentarios",
+    "Nota",
+  ],
+  unit: [
+    "Unidad",
+    "unidad",
+    "Unit",
+    "Medida",
+    "Unidad de Medida",
+    "UdM",
+    "udm",
+  ],
+  iva: [
+    "IVA",
+    "iva",
+    "Iva",
+    "IVA %",
+    "Impuesto",
+    "Tax",
+    "iva%",
+  ],
+  special_price: [
+    "Precio Especial",
+    "P. Especial",
+    "precio_esp",
+    "PrecioEspecial",
+    "Especial",
+    "Special Price",
+    "Precio Esp",
+  ],
+  suggested_price: [
+    "Precio Sugerido",
+    "P. Sugerido",
+    "precio_sugerido",
+    "PrecioSugerido",
+    "Sugerido",
+    "Suggested Price",
+    "MSRP",
+  ],
+  wholesale_unit: [
+    "Unidad Mayoreo",
+    "Und. Mayoreo",
+    "umay",
+    "Umay",
+    "UMay",
+    "Unidad May",
+    "Wholesale Unit",
+    "und_mayoreo",
+  ],
+  brand: [
+    "Marca",
+    "marca",
+    "Brand",
+    "Fabricante",
+    "Manufacturer",
+  ],
+  supplier: [
+    "Proveedor",
+    "proveedor",
+    "Supplier",
+    "Vendor",
+    "Distribuidor",
   ],
 };
 
@@ -112,6 +213,16 @@ const mapRowToProduct = (row) => {
   const minStockVal = get("min_stock");
   const categoryVal = get("category");
 
+  // Advanced fields
+  const notesVal = get("notes");
+  const unitVal = get("unit");
+  const ivaVal = get("iva");
+  const specialPriceVal = get("special_price");
+  const suggestedPriceVal = get("suggested_price");
+  const wholesaleUnitVal = get("wholesale_unit");
+  const brandVal = get("brand");
+  const supplierVal = get("supplier");
+
   return {
     barcode: barcodeVal !== null ? String(barcodeVal) : null,
     name: nameVal !== null ? String(nameVal) : "Producto Sin Nombre",
@@ -121,6 +232,15 @@ const mapRowToProduct = (row) => {
     stock: parseInt(stockVal || 0),
     min_stock: parseInt(minStockVal || 0),
     category: categoryVal !== null ? String(categoryVal) : "General",
+    // Advanced fields
+    notes: notesVal !== null ? String(notesVal) : "",
+    unit: unitVal !== null ? String(unitVal).toUpperCase() : "PZA",
+    iva: parseFloat(ivaVal || 0),
+    special_price: parseFloat(specialPriceVal || 0),
+    suggested_price: parseFloat(suggestedPriceVal || 0),
+    wholesale_unit: wholesaleUnitVal !== null ? String(wholesaleUnitVal) : "",
+    brand: brandVal !== null ? String(brandVal) : "",
+    supplier: supplierVal !== null ? String(supplierVal) : "",
   };
 };
 
@@ -143,14 +263,22 @@ const BulkImportModal = ({
   const handleDownloadTemplate = () => {
     const ws = XLSX.utils.json_to_sheet([
       {
-        Codigo: "PRUEBA01",
-        Descripcion: "Producto de Ejemplo",
-        "Precio Costo": 10.0,
+        SKU: "PRUEBA01",
+        Producto: "Producto de Ejemplo",
+        Notas: "",
+        Unidad: "PZA",
+        IVA: 16,
+        "Precio Compra": 10.0,
         "Precio Venta": 15.0,
         "Precio Mayoreo": 12.5,
+        "Precio Especial": 0,
+        "Precio Sugerido": 0,
+        "Und. Mayoreo": "",
         Existencia: 10,
         "Inv. Minimo": 5,
-        Departamento: "General",
+        Categoria: "General",
+        Marca: "",
+        Proveedor: "",
       },
     ]);
     const wb = XLSX.utils.book_new();
@@ -175,14 +303,22 @@ const BulkImportModal = ({
         : p.category || "General";
       const sku = getSKU ? getSKU(p) : p.barcode || p.id;
       return {
-        Codigo: sku,
-        Descripcion: p.name,
-        "Precio Costo": parseFloat(p.cost_price || 0),
+        SKU: sku,
+        Producto: p.name,
+        Notas: p.notes || "",
+        Unidad: p.unit || "PZA",
+        IVA: parseFloat(p.iva || 0),
+        "Precio Compra": parseFloat(p.cost_price || 0),
         "Precio Venta": parseFloat(p.price || 0),
         "Precio Mayoreo": parseFloat(p.wholesale_price || 0),
+        "Precio Especial": parseFloat(p.special_price || 0),
+        "Precio Sugerido": parseFloat(p.suggested_price || 0),
+        "Und. Mayoreo": p.wholesale_unit || "",
         Existencia: parseInt(p.stock || 0),
         "Inv. Minimo": parseInt(p.min_stock || 0),
-        Departamento: productCategory,
+        Categoria: productCategory,
+        Marca: p.brand || "",
+        Proveedor: p.supplier || "",
       };
     });
 
@@ -193,12 +329,20 @@ const BulkImportModal = ({
     const columnWidths = [
       { wch: 20 },
       { wch: 30 },
+      { wch: 20 },
+      { wch: 10 },
+      { wch: 8 },
+      { wch: 14 },
+      { wch: 14 },
+      { wch: 14 },
+      { wch: 14 },
+      { wch: 14 },
+      { wch: 14 },
       { wch: 12 },
       { wch: 12 },
       { wch: 15 },
-      { wch: 12 },
-      { wch: 12 },
       { wch: 15 },
+      { wch: 20 },
     ];
     ws["!cols"] = columnWidths;
 
@@ -452,11 +596,18 @@ const BulkImportModal = ({
                 <table className="preview-table">
                   <thead>
                     <tr>
-                      <th>Código</th>
+                      <th>SKU</th>
                       <th>Producto</th>
                       <th>Costo</th>
-                      <th>Precio</th>
-                      <th>Existencia</th>
+                      <th>Venta</th>
+                      <th>Mayoreo</th>
+                      <th>P.Esp</th>
+                      <th>P.Sug</th>
+                      <th>Stock</th>
+                      <th>Und</th>
+                      <th>IVA</th>
+                      <th>Marca</th>
+                      <th>Proveedor</th>
                       <th>Categoría</th>
                     </tr>
                   </thead>
@@ -467,7 +618,14 @@ const BulkImportModal = ({
                         <td>{product.name}</td>
                         <td>${Number(product.cost_price || 0).toFixed(2)}</td>
                         <td>${Number(product.price || 0).toFixed(2)}</td>
+                        <td>${Number(product.wholesale_price || 0).toFixed(2)}</td>
+                        <td>${Number(product.special_price || 0).toFixed(2)}</td>
+                        <td>${Number(product.suggested_price || 0).toFixed(2)}</td>
                         <td>{product.stock}</td>
+                        <td>{product.unit || "PZA"}</td>
+                        <td>{product.iva || 0}%</td>
+                        <td>{product.brand || "-"}</td>
+                        <td>{product.supplier || "-"}</td>
                         <td>{product.category}</td>
                       </tr>
                     ))}
