@@ -162,7 +162,7 @@ html.dark .form-group-input label {
     align-items: center;
 }
 
-.currency-symbol {
+.exchange-rate-settings-container .currency-symbol {
     position: absolute;
     left: 1rem;
     color: #3b82f6;
@@ -173,7 +173,7 @@ html.dark .form-group-input label {
     transition: color 0.3s ease;
 }
 
-html.dark .currency-symbol {
+html.dark .exchange-rate-settings-container .currency-symbol {
     color: #60a5fa;
 }
 
@@ -217,7 +217,7 @@ html.dark .input-with-icon input:focus {
     background: #0f172a;
 }
 
-.currency-code {
+.exchange-rate-settings-container .currency-code {
     position: absolute;
     right: 1.2rem;
     color: #3b82f6;
@@ -231,7 +231,7 @@ html.dark .input-with-icon input:focus {
     transition: all 0.3s ease;
 }
 
-html.dark .currency-code {
+html.dark .exchange-rate-settings-container .currency-code {
     color: #60a5fa;
     background: rgba(59, 130, 246, 0.15);
 }

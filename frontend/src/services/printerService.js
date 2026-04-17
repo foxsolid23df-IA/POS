@@ -1,17 +1,32 @@
 // Servicio genérico para manejar la impresión de tickets
-// Soporta window.print() para Web/Local y Capacitor de forma nativa mediante Iframe
+// Soporta: Electron (nativo), Web (iframe), Capacitor/Android (iframe + RawBT)
 
 /**
- * Imprime un string HTML (en formato de ticket) usando un iframe oculto.
- * Esto evita usar window.open() que suele ser bloqueado por Android WebViews (Capacitor).
- * En Android, usando apps como "RawBT", window.print() del iframe es capturado
- * y mandado directo a la impresora térmica (Bluetooth, USB o LAN).
+ * Imprime un string HTML (en formato de ticket).
+ * 
+ * - En ELECTRON (.exe): Usa IPC para imprimir directamente por el sistema operativo,
+ *   sin abrir diálogo de vista previa (impresión silenciosa a la impresora por defecto).
+ * - En WEB/ANDROID: Usa un iframe oculto + window.print() que en Android es
+ *   capturado por apps como RawBT para enviar a impresora térmica.
  *
  * @param {string} htmlContent - El contenido HTML completo con hoja de estilos inline
  */
 export const printHtmlTicket = (htmlContent) => {
     try {
-        // Crear un iframe oculto
+        // ═══════════════════════════════════════════════════════════
+        // RUTA 1: ELECTRON (app de escritorio .exe)
+        // ═══════════════════════════════════════════════════════════
+        if (window.electronAPI && window.electronAPI.isElectron) {
+            console.log("[PrinterService] ✅ Electron detectado — imprimiendo por IPC nativo");
+            window.electronAPI.print(htmlContent);
+            return; // Salir inmediatamente, no crear iframe
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // RUTA 2: WEB / ANDROID (Capacitor + RawBT)
+        // ═══════════════════════════════════════════════════════════
+        console.log("[PrinterService] Usando método de iframe (Web/Android)");
+
         const iframe = document.createElement('iframe');
         iframe.style.visibility = 'hidden';
         iframe.style.position = 'absolute';
@@ -26,14 +41,6 @@ export const printHtmlTicket = (htmlContent) => {
         iframeDoc.document.write(htmlContent);
         iframeDoc.document.close();
 
-        // Si estamos en Electron, usar la API nativa
-        if (window.electronAPI && window.electronAPI.print) {
-            console.log("[PrinterService] Usando API nativa de Electron");
-            window.electronAPI.print(htmlContent);
-            return;
-        }
-
-        // Si no estamos en Electron (Web o Capacitor), usar el método del iframe
         // Esperar un breve momento para renderizar estilos/fuentes
         setTimeout(() => {
             iframe.contentWindow.focus();

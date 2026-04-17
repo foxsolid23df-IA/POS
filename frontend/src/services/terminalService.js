@@ -21,12 +21,22 @@ export const terminalService = {
         // Si el usuario usa el mismo nombre, se crea un nuevo registro con ID único.
         // Esto evita que dos PCs compartan el mismo ID de terminal y por tanto la misma sesión de caja.
 
+        let machineId = null;
+        if (window.electronAPI && window.electronAPI.isElectron) {
+            try {
+                machineId = await window.electronAPI.getMachineId();
+            } catch (err) {
+                console.warn('[TerminalService] No se pudo obtener el Machine ID:', err);
+            }
+        }
+
         const { data, error } = await supabase
             .from('terminals')
             .insert([{
                 name: name.trim(),
                 location: location.trim(),
-                is_main: isMain
+                is_main: isMain,
+                machine_id: machineId
             }])
             .select()
             .single();
@@ -113,14 +123,36 @@ export const terminalService = {
 
         console.log(`[TerminalService] Validando terminal: ${terminalName} (${terminalId})`);
 
-        if (!terminalId) {
-            console.log('[TerminalService] No hay terminal configurada localmente.');
-            return false;
-        }
-
         try {
             // Pequeña espera para asegurar que la sesión de Supabase esté estable
             await new Promise(resolve => setTimeout(resolve, 500));
+
+            if (!terminalId) {
+                console.log('[TerminalService] No hay terminal configurada localmente. Intentando auto-recuperar por Machine ID...');
+                if (window.electronAPI && window.electronAPI.isElectron) {
+                    try {
+                        const machineId = await window.electronAPI.getMachineId();
+                        if (machineId) {
+                            const { data: mData, error: mError } = await supabase
+                                .from('terminals')
+                                .select('id, name')
+                                .eq('machine_id', machineId)
+                                .eq('is_active', true)
+                                .maybeSingle();
+                            
+                            if (mData && !mError) {
+                                console.log(`[TerminalService] ¡Caja encontrada por Machine ID! Asociando como: ${mData.name}`);
+                                localStorage.setItem(TERMINAL_ID_KEY, mData.id);
+                                localStorage.setItem(TERMINAL_NAME_KEY, mData.name);
+                                return true;
+                            }
+                        }
+                    } catch (err) {
+                        console.error('[TerminalService] Error en búsqueda por Machine ID:', err);
+                    }
+                }
+                return false;
+            }
 
             const { data, error } = await supabase
                 .from('terminals')

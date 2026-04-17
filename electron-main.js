@@ -263,12 +263,15 @@ function crearVentana() {
     });
 }
 
-// Manejador para impresión de tickets
-ipcMain.on('print-ticket', (event, htmlContent) => {
-    if (!mainWindow) return;
+// ═══════════════════════════════════════════════════════════
+// MANEJADORES DE IMPRESIÓN PARA TICKETS (IPC)
+// ═══════════════════════════════════════════════════════════
 
-    // Crear una ventana oculta para la impresión
-    let workerWindow = new BrowserWindow({
+// Imprimir ticket — modo silencioso (directo a impresora por defecto)
+ipcMain.on('print-ticket', (event, htmlContent) => {
+    console.log('[Print] Recibido print-ticket via IPC');
+
+    const workerWindow = new BrowserWindow({
         show: false,
         webPreferences: {
             nodeIntegration: false,
@@ -276,20 +279,115 @@ ipcMain.on('print-ticket', (event, htmlContent) => {
         }
     });
 
-    // Cargar el contenido HTML
     workerWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
 
     workerWindow.webContents.on('did-finish-load', () => {
-        // Imprimir usando el diálogo del sistema (evita el error de preview de Chrome)
+        // Obtener la lista de impresoras para log
+        const printers = workerWindow.webContents.getPrintersAsync
+            ? null // handled below
+            : workerWindow.webContents.getPrinters?.() || [];
+
+        if (printers && printers.length > 0) {
+            const defaultPrinter = printers.find(p => p.isDefault);
+            console.log(`[Print] Impresora por defecto: ${defaultPrinter?.name || 'ninguna'}`);
+            console.log(`[Print] Total impresoras: ${printers.length}`);
+        }
+
+        // Primero intentar SILENCIOSO (directo a impresora por defecto)
         workerWindow.webContents.print({
-            silent: false,
+            silent: true,
             printBackground: true,
-            deviceName: '' // Usar la predeterminada
+            margins: { marginType: 'none' },
+            pageSize: { width: 80000, height: 297000 } // 80mm x ~infinito en micrones
         }, (success, failureReason) => {
-            if (!success) console.error('Error al imprimir:', failureReason);
+            if (success) {
+                console.log('[Print] ✅ Ticket impreso silenciosamente');
+            } else {
+                console.warn(`[Print] ⚠️ Impresión silenciosa falló: ${failureReason}`);
+                console.log('[Print] Reintentando con diálogo del sistema...');
+
+                // Fallback: abrir diálogo del sistema
+                workerWindow.webContents.print({
+                    silent: false,
+                    printBackground: true
+                }, (success2, reason2) => {
+                    if (!success2) {
+                        console.error(`[Print] ❌ Impresión con diálogo también falló: ${reason2}`);
+                    }
+                    workerWindow.close();
+                });
+                return; // No cerrar aún, esperar al fallback
+            }
             workerWindow.close();
         });
     });
+
+    // Timeout de seguridad para no dejar ventanas zombies
+    setTimeout(() => {
+        if (!workerWindow.isDestroyed()) {
+            console.warn('[Print] ⚠️ Timeout — cerrando ventana de impresión');
+            workerWindow.close();
+        }
+    }, 15000);
+});
+
+// Imprimir a impresora específica por nombre
+ipcMain.on('print-ticket-silent', (event, htmlContent, printerName) => {
+    console.log(`[Print] Impresión dirigida a: ${printerName}`);
+
+    const workerWindow = new BrowserWindow({
+        show: false,
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true
+        }
+    });
+
+    workerWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
+
+    workerWindow.webContents.on('did-finish-load', () => {
+        workerWindow.webContents.print({
+            silent: true,
+            printBackground: true,
+            deviceName: printerName,
+            margins: { marginType: 'none' },
+            pageSize: { width: 80000, height: 297000 }
+        }, (success, failureReason) => {
+            if (!success) console.error(`[Print] ❌ Error: ${failureReason}`);
+            else console.log(`[Print] ✅ Impreso en ${printerName}`);
+            workerWindow.close();
+        });
+    });
+});
+
+// Listar impresoras del sistema
+ipcMain.handle('get-printers', async (event) => {
+    try {
+        // Electron 39+ usa getPrintersAsync
+        if (mainWindow && mainWindow.webContents.getPrintersAsync) {
+            return await mainWindow.webContents.getPrintersAsync();
+        }
+        // Fallback para versiones anteriores
+        if (mainWindow && mainWindow.webContents.getPrinters) {
+            return mainWindow.webContents.getPrinters();
+        }
+        return [];
+    } catch (err) {
+        console.error('[Print] Error listando impresoras:', err);
+        return [];
+    }
+});
+
+// Obtener ID único de la máquina (Hardware ID)
+ipcMain.handle('get-machine-id', async () => {
+    try {
+        const { machineId } = require('node-machine-id');
+        const id = await machineId();
+        return id;
+    } catch (err) {
+        console.error('[MachineID] Error obteniendo Machine ID:', err);
+        return null;
+    }
 });
 
 // Cuando Electron esté listo

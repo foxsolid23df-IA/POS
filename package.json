@@ -36,6 +36,7 @@
     },
     "files": [
       "electron-main.js",
+      "preload.js",
       "icon.ico",
       "icon.png",
       "frontend/dist/**/*",
@@ -80,5 +81,8 @@
       "createStartMenuShortcut": true,
       "shortcutName": "NEXUM POS"
     }
+  },
+  "dependencies": {
+    "node-machine-id": "^1.1.12"
   }
 }

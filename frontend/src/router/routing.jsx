@@ -200,7 +200,7 @@ export const Routing = () => {
                       path="/"
                       element={
                         <PrivateLayout>
-                          <Sales />
+                          {sessionStorage.getItem("visor_mode") === "true" ? <Navigate to="/estadisticas" replace /> : <Sales />}
                         </PrivateLayout>
                       }
                     />
@@ -208,7 +208,7 @@ export const Routing = () => {
                       path="/ventas"
                       element={
                         <PrivateLayout>
-                          <Sales />
+                          {sessionStorage.getItem("visor_mode") === "true" ? <Navigate to="/estadisticas" replace /> : <Sales />}
                         </PrivateLayout>
                       }
                     />

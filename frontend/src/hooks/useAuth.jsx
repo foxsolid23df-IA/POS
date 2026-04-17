@@ -62,6 +62,9 @@ export const AuthProvider = ({ children }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
+        if (!window.electronAPI || !window.electronAPI.isElectron) {
+          sessionStorage.setItem("visor_mode", "true");
+        }
         fetchProfile(session.user.id);
         // Intentar restaurar sesion de empleado activa (con integridad verificada)
         secureGet("activeStaff", 24 * 60 * 60 * 1000)
@@ -203,6 +206,11 @@ export const AuthProvider = ({ children }) => {
     const ownerStaff = { name: "Propietario", role: "admin", isOwner: true };
     setActiveStaff(ownerStaff);
     secureSet("activeStaff", ownerStaff);
+    
+    if (!window.electronAPI || !window.electronAPI.isElectron) {
+      sessionStorage.setItem("visor_mode", "true");
+    }
+    
     return data;
   };
 
