@@ -23,19 +23,20 @@ if (missingSecrets.length > 0) {
 ║  Luego copia los valores generados a backend/.env         ║
 ╚═══════════════════════════════════════════════════════════╝
 `;
-    if (isProduction) {
-        console.error(errorMsg);
-        process.exit(1);
-    }
+    // No salimos en modo producción para permitir que la app de Electron inicie
+    // con valores por defecto si no hay un .env presente.
+    console.warn(errorMsg);
     console.warn('⚠️  ADVERTENCIA: Usando secretos por defecto (INSEGURO)');
     console.warn('   Ejecuta: node scripts/generate-secrets.js');
-    // Fallback solo en desarrollo para no romper el flujo local
+    
+    // Fallback para no romper el flujo
     process.env.JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_do_not_use_in_production';
     process.env.MASTER_PIN = process.env.MASTER_PIN || 'dev_pin_do_not_use';
 }
 
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const sequelize = require('./db/conexion');
 
 // Importar modelos para que Sequelize los registre antes de sync
@@ -59,10 +60,8 @@ function parseAllowedOrigins() {
     const raw = process.env.FRONTEND_URL;
     const isProduction = process.env.NODE_ENV === 'production';
 
-    // Valores por defecto según entorno
-    const defaultOrigins = isProduction
-        ? [] // En producción NO hay defaults — se deben configurar explícitamente
-        : ['http://localhost:5173', 'http://localhost:3001', 'http://localhost:3000'];
+    // Valores por defecto: siempre permitir localhost para la comunicación interna
+    const defaultOrigins = ['http://localhost:5173', 'http://localhost:3001', 'http://localhost:3000'];
 
     if (!raw) return defaultOrigins;
 
@@ -96,14 +95,7 @@ function parseAllowedOrigins() {
 
     // En producción, si no hay orígenes válidos, es un error crítico
     if (isProduction && validOrigins.length === 0) {
-        console.error('╔═══════════════════════════════════════════════════════════╗');
-        console.error('║  ERROR: No hay orígenes CORS válidos configurados         ║');
-        console.error('║  Configura FRONTEND_URL en .env con URLs válidas          ║');
-        console.error('║  Ejemplo: https://miapp.com,https://staging.miapp.com     ║');
-        console.error('╚═══════════════════════════════════════════════════════════╝');
-        if (isProduction) {
-            process.exit(1);
-        }
+        console.log('ℹ️  CORS: Usando orígenes por defecto para entorno local');
     }
 
     // En desarrollo, mezclar con defaults de localhost
@@ -187,6 +179,16 @@ app.use(errorHandler);
 // Puerto y host configurables por variable de entorno
 const PORT = process.env.PORT || 3001;
 const HOST = process.env.HOST || '0.0.0.0';
+
+// Asegurar que la carpeta data existe para el SQLite
+const fs = require('fs');
+const dataDir = process.env.DB_PATH
+    ? path.dirname(process.env.DB_PATH)
+    : path.join(__dirname, 'data');
+if (!fs.existsSync(dataDir)) {
+    console.log(`📂 Creando carpeta data en: ${dataDir}`);
+    fs.mkdirSync(dataDir, { recursive: true });
+}
 
 async function startServer() {
     try {

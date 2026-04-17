@@ -37,25 +37,41 @@
     "files": [
       "electron-main.js",
       "icon.ico",
+      "icon.png",
       "frontend/dist/**/*",
-      "!backend/node_modules",
-      "!backend/.env",
-      "!backend/.env.*"
+      "!backend/**",
+      "!node_modules",
+      "!scripts",
+      "!*.md",
+      "!*.sql",
+      "!*.bat"
     ],
     "extraResources": [
       {
+        "from": "bin/node.exe",
+        "to": "bin/node.exe"
+      },
+      {
         "from": "backend",
-        "to": "app/backend"
+        "to": "app/backend",
+        "filter": [
+          "**/*",
+          "!node_modules/**"
+        ]
       },
       {
         "from": "backend/node_modules",
         "to": "app/backend/node_modules"
+      },
+      {
+        "from": "backend/.env",
+        "to": "app/backend/.env"
       }
     ],
     "win": {
       "target": "nsis",
       "icon": "icon.ico",
-      "signAndEditExecutable": false
+      "signAndEditExecutable": true
     },
     "nsis": {
       "oneClick": false,

@@ -26,6 +26,14 @@ export const printHtmlTicket = (htmlContent) => {
         iframeDoc.document.write(htmlContent);
         iframeDoc.document.close();
 
+        // Si estamos en Electron, usar la API nativa
+        if (window.electronAPI && window.electronAPI.print) {
+            console.log("[PrinterService] Usando API nativa de Electron");
+            window.electronAPI.print(htmlContent);
+            return;
+        }
+
+        // Si no estamos en Electron (Web o Capacitor), usar el método del iframe
         // Esperar un breve momento para renderizar estilos/fuentes
         setTimeout(() => {
             iframe.contentWindow.focus();
@@ -33,7 +41,9 @@ export const printHtmlTicket = (htmlContent) => {
 
             // Remover el iframe después de un tiempo razonable para no llenar el DOM
             setTimeout(() => {
-                document.body.removeChild(iframe);
+                if (document.body.contains(iframe)) {
+                    document.body.removeChild(iframe);
+                }
             }, 5000);
         }, 300);
 

@@ -10,11 +10,11 @@ export const invitationService = {
         try {
             const codeUpper = code.toUpperCase().trim();
 
-            // Buscar el código en la base de datos
+            // Buscar el código en la base de datos (usamos ilike para insensibilidad a mayúsculas/minúsculas)
             const { data, error } = await supabase
                 .from('invitation_codes')
                 .select('id, code, used, used_by, expires_at, license_type, max_registers')
-                .eq('code', codeUpper)
+                .ilike('code', codeUpper)
                 .maybeSingle();
 
             if (error) {

@@ -32,3 +32,9 @@ backend/data/
 # Cache
 .cache/
 .vercel
+
+# Build artifacts
+bin/
+release/
+build/
+
