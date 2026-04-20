@@ -353,6 +353,17 @@ export const Routing = () => {
                     />
 
                     <Route
+                      path="/nexumpos-soporte"
+                      element={
+                        <PrivateLayout>
+                          <AdminRoute>
+                            <Maintenance />
+                          </AdminRoute>
+                        </PrivateLayout>
+                      }
+                    />
+
+                    <Route
                       path="*"
                       element={
                         <div style={{ padding: "2rem", textAlign: "center" }}>

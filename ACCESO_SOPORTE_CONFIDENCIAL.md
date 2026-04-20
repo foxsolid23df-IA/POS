@@ -11,10 +11,10 @@ Dado que la herramienta de mantenimiento ha sido eliminada de todos los menús v
 ### 1. Dirección Secreta
 
 Escriba lo siguiente al final de la URL de su aplicación:
-`#/soporte-tecnico-especializado-foxsolid`
+`#/nexumpos-soporte`
 
 **Ejemplo completo:**
-`https://tu-pos-url.com/#/soporte-tecnico-especializado-foxsolid`
+`https://tu-pos-url.com/#/nexumpos-soporte`
 
 ### 2. PIN Maestro de Desbloqueo
 

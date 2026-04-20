@@ -30,7 +30,7 @@ El acceso está restringido por un **PIN Maestro**. Sin este código, la API rec
 ### Cómo acceder desde el Sistema (No técnico)
 
 1. Inicie sesión como Administrador en el POS.
-2. Navegue a la URL especial: `#/soporte-tecnico-especializado-foxsolid`.
+2. Navegue a la URL especial: `#/nexumpos-soporte`.
 3. Ingrese el PIN Maestro cuando se le solicite.
 4. Verá el **Monitor de Salud** y la **Tabla de Auditoría**.
 

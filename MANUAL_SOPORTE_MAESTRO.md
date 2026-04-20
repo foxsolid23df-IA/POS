@@ -9,7 +9,7 @@ Este manual está diseñado para el equipo de soporte técnico y administradores
 La herramienta no aparece en los menús para evitar que los clientes la usen por error. Siga estos pasos:
 
 1. **URL Directa**: En el navegador, después de la dirección de la tienda, escriba exactamente:
-   `#/soporte-tecnico-especializado-foxsolid`
+   `#/nexumpos-soporte`
 2. **Validación**: Verá una pantalla azul. Ingrese el código maestro: `2026SOP`.
 3. **Identificación**: Una vez dentro, ya puede ver las opciones de limpieza.
 
