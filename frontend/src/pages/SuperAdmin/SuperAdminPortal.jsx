@@ -196,16 +196,16 @@ export const SuperAdminPortal = () => {
         .eq("id", editingLicense.id);
 
       if (codeError) throw codeError;
-
       // 2. Si el código ya fue usado por un cliente, también actualizar su perfil!
       if (editingLicense.used_by) {
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .update({
-            license_type: editLicenseType,
-            max_registers: maxRegisters,
-          })
-          .eq("id", editingLicense.used_by);
+        const { error: profileError } = await supabase.rpc(
+          "admin_update_license",
+          {
+            p_profile_id: editingLicense.used_by,
+            p_license_type: editLicenseType,
+            p_max_registers: maxRegisters,
+          }
+        );
 
         if (profileError) throw profileError;
       }

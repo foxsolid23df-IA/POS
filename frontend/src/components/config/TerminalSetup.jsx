@@ -30,6 +30,8 @@ export const TerminalSetup = ({ onTerminalConfigured }) => {
 
         if (terminals.length >= maxRegisters) {
           setLimitReached(true);
+        } else {
+          setLimitReached(false);
         }
       } catch (error) {
         console.error("Error checking limits:", error);
@@ -187,6 +189,18 @@ export const TerminalSetup = ({ onTerminalConfigured }) => {
               marginTop: "24px",
             }}
           >
+            <button
+              type="button"
+              className="setup-submit-btn"
+              style={{ backgroundColor: "#10b981", border: "none" }}
+              onClick={() => {
+                window.location.reload();
+              }}
+            >
+              <span className="material-symbols-outlined">refresh</span>
+              Verificar Licencia de Nuevo
+            </button>
+
             {user?.role === "admin" && (
               <button
                 type="button"
