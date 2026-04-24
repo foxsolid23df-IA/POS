@@ -1334,12 +1334,6 @@ export const Sales = () => {
     return html;
   };
 
-  // Función para imprimir desde el modal de pago
-  const imprimirTicketPago = () => {
-    const ticketHTML = generarHTMLTicketPago();
-    imprimirTicketTérmico(ticketHTML, null);
-  };
-
   return (
     <div className="sales-view">
       <div className="sales-content-wrapper">
@@ -2124,17 +2118,6 @@ export const Sales = () => {
                           <p className="payment-change-amount">
                             {formatearDinero(Math.max(0, calcularCambio()))}
                           </p>
-                        </div>
-                        <div className="payment-receipt-actions">
-                          <button
-                            className="payment-receipt-btn"
-                            onClick={imprimirTicketPago}
-                          >
-                            <span className="material-symbols-outlined">
-                              print
-                            </span>
-                            Imprimir Ticket
-                          </button>
                         </div>
                       </div>
                     )}

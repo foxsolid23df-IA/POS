@@ -140,7 +140,12 @@ const PrivateLayout = ({ children }) => {
   if (isLocked) return <LockScreen />;
 
   // 3. Si necesita ingresar fondo de caja y está en Ventas, mostrar modal (excepto en supervisión)
-  if (needsCashFund && isPOSRoute && !isSupervising) {
+  if (
+    needsCashFund &&
+    isPOSRoute &&
+    !isSupervising &&
+    !(sessionStorage.getItem("visor_mode") === "true")
+  ) {
     return (
       <CashFundModal
         staffName={activeStaff?.name || storeName || "Operador"}
