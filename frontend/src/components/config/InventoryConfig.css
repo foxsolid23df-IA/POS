@@ -430,6 +430,144 @@
 }
 
 /* ===================================================================
+   REGLAS DE VENTA — Toggles de Configuración
+   =================================================================== */
+
+.inventory-rules-section {
+  margin-top: 3rem;
+  margin-bottom: 3rem;
+}
+
+.section-card {
+  background: white;
+  border: 2px solid var(--slate-200);
+  border-radius: 1.5rem;
+  padding: 2.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s ease;
+}
+
+.section-card:hover {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.section-card-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--slate-900);
+  margin: 0 0 0.35rem 0;
+  letter-spacing: -0.01em;
+}
+
+.section-card-subtitle {
+  font-size: 0.95rem;
+  color: var(--slate-500);
+  margin: 0 0 2rem 0;
+  line-height: 1.5;
+}
+
+.toggles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.toggle-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--slate-50, #f8fafc);
+  border: 1.5px solid var(--slate-200);
+  border-radius: 1rem;
+  transition: all 0.25s ease;
+}
+
+.toggle-item:hover {
+  border-color: var(--primary-light, #c7d2fe);
+  background: rgba(67, 97, 238, 0.02);
+}
+
+.toggle-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.toggle-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--slate-800);
+  margin: 0 0 0.25rem 0;
+}
+
+.toggle-description {
+  font-size: 0.875rem;
+  color: var(--slate-500);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* Toggle Switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--slate-300, #cbd5e1);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slider::before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+input:checked + .slider {
+  background-color: var(--primary, #4361ee);
+  box-shadow: 0 0 8px rgba(67, 97, 238, 0.35);
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+}
+
+input:checked + .slider::before {
+  transform: translateX(24px);
+}
+
+.slider.round {
+  border-radius: 28px;
+}
+
+.slider.round::before {
+  border-radius: 50%;
+}
+
+/* ===================================================================
    DARK MODE — Inventory Config
    =================================================================== */
 
@@ -553,9 +691,55 @@ html.dark .danger-zone-note {
   color: #f87171;
 }
 
+/* Sales Rules Section — Dark Mode */
+html.dark .section-card {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+html.dark .section-card:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+html.dark .section-card-title {
+  color: #f1f5f9;
+}
+
+html.dark .section-card-subtitle {
+  color: #94a3b8;
+}
+
+html.dark .toggle-item {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+html.dark .toggle-item:hover {
+  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+html.dark .toggle-title {
+  color: #f1f5f9;
+}
+
+html.dark .toggle-description {
+  color: #94a3b8;
+}
+
+html.dark .slider {
+  background-color: #475569;
+}
+
+html.dark input:checked + .slider {
+  background-color: #3b82f6;
+}
+
 /* Transitions */
 .inventory-config-container,
 .mode-card,
-.danger-zone-card {
+.danger-zone-card,
+.section-card {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }

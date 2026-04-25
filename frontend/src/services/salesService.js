@@ -51,7 +51,8 @@ export const salesService = {
             p_payment_method: saleData.payments && saleData.payments.length > 1 ? 'múltiple' : (saleData.metodoPago || 'efectivo'),
             p_terminal_id: terminalId,
             p_items: itemsJson,
-            p_payments: paymentsJson
+            p_payments: paymentsJson,
+            p_affect_inventory: saleData.affect_inventory !== undefined ? saleData.affect_inventory : true
         });
 
         if (rpcError) throw rpcError;

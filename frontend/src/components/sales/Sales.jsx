@@ -73,7 +73,7 @@ export const Sales = () => {
     quitarProducto,
     vaciarCarrito,
     total,
-  } = useCart(mostrarError);
+  } = useCart(mostrarError, user?.allow_negative_stock);
 
   const [modal, setModal] = useState({
     isOpen: false,
@@ -782,6 +782,7 @@ export const Sales = () => {
         currency: "MXN",
         exchange_rate: null,
         billing_issuer_id: facturar ? selectedIssuerId : null,
+        affect_inventory: user?.affect_inventory !== undefined ? user?.affect_inventory : true
       };
 
       // Crear venta en Supabase

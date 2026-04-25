@@ -10,34 +10,42 @@ const InventoryConfig = () => {
   const [loading, setLoading] = useState(false);
   const [wiping, setWiping] = useState(false);
   const [mode, setMode] = useState(user?.inventory_mode || "comprehensive");
+  const [affectInventory, setAffectInventory] = useState(user?.affect_inventory ?? true);
+  const [allowNegativeStock, setAllowNegativeStock] = useState(user?.allow_negative_stock ?? false);
 
-  const handleSave = async (selectedMode) => {
+  const handleUpdateProfile = async (updates) => {
     try {
       setLoading(true);
       const { error } = await supabase
         .from("profiles")
-        .update({ inventory_mode: selectedMode })
+        .update(updates)
         .eq("id", user.id);
 
       if (error) throw error;
 
-      setMode(selectedMode);
+      // Actualizar estados locales si es necesario
+      if (updates.inventory_mode) setMode(updates.inventory_mode);
+      if (updates.affect_inventory !== undefined) setAffectInventory(updates.affect_inventory);
+      if (updates.allow_negative_stock !== undefined) setAllowNegativeStock(updates.allow_negative_stock);
+
       await fetchProfile(user.id, true);
       
       Swal.fire({
         icon: "success",
         title: "Configuración guardada",
-        text: `El inventario ahora opera en modo ${selectedMode === "comprehensive" ? "Completo" : "Simplificado"}.`,
-        timer: 2000,
+        text: "Los cambios se han aplicado correctamente.",
+        timer: 1500,
         showConfirmButton: false,
       });
     } catch (error) {
-      console.error("Error updating inventory mode:", error);
+      console.error("Error updating profile settings:", error);
       Swal.fire("Error", "No se pudo actualizar la configuración", "error");
     } finally {
       setLoading(false);
     }
   };
+
+  const handleSaveMode = (selectedMode) => handleUpdateProfile({ inventory_mode: selectedMode });
 
   // =====================================================
   // BORRADO TOTAL DE INVENTARIO — Flujo de confirmación
@@ -144,7 +152,7 @@ const InventoryConfig = () => {
           {/* Comprehensive Mode */}
           <div 
             className={`mode-card ${mode === "comprehensive" ? "active" : ""}`}
-            onClick={() => handleSave("comprehensive")}
+            onClick={() => handleSaveMode("comprehensive")}
           >
             <div className="mode-card-icon comprehensive">
               <span className="material-symbols-outlined">inventory_2</span>
@@ -173,7 +181,7 @@ const InventoryConfig = () => {
           {/* Simplified Mode */}
           <div 
             className={`mode-card ${mode === "simplified" ? "active" : ""}`}
-            onClick={() => handleSave("simplified")}
+            onClick={() => handleSaveMode("simplified")}
           >
             <div className="mode-card-icon simplified">
               <span className="material-symbols-outlined">shopping_basket</span>
@@ -199,6 +207,54 @@ const InventoryConfig = () => {
             )}
           </div>
         </div>
+
+        {/* ========================================
+            REGLAS DE VENTA Y COMPORTAMIENTO
+        ======================================== */}
+        <section className="inventory-rules-section">
+          <div className="section-card">
+            <h2 className="section-card-title">Reglas de Venta</h2>
+            <p className="section-card-subtitle">Define cómo interactúa el inventario con tus ventas</p>
+            
+            <div className="toggles-list">
+              <div className="toggle-item">
+                <div className="toggle-info">
+                  <h4 className="toggle-title">Descontar Inventario al Vender</h4>
+                  <p className="toggle-description">
+                    Si se desactiva, las ventas no restarán existencias de tus productos. 
+                    Ideal para servicios o negocios que no requieren control de stock rígido.
+                  </p>
+                </div>
+                <label className="switch">
+                  <input 
+                    type="checkbox" 
+                    checked={affectInventory} 
+                    onChange={(e) => handleUpdateProfile({ affect_inventory: e.target.checked })}
+                  />
+                  <span className="slider round"></span>
+                </label>
+              </div>
+
+              <div className="toggle-item">
+                <div className="toggle-info">
+                  <h4 className="toggle-title">Permitir Vender sin Stock</h4>
+                  <p className="toggle-description">
+                    Permite agregar productos al carrito incluso si su existencia es 0 o negativa. 
+                    El sistema no bloqueará la venta por falta de stock.
+                  </p>
+                </div>
+                <label className="switch">
+                  <input 
+                    type="checkbox" 
+                    checked={allowNegativeStock} 
+                    onChange={(e) => handleUpdateProfile({ allow_negative_stock: e.target.checked })}
+                  />
+                  <span className="slider round"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* ========================================
             ZONA DE PELIGRO — Borrado Total

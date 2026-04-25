@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 // 1. HOOK PARA MANEJAR EL CARRITO DE VENTAS
 // Este hook maneja todo lo relacionado con el carrito: agregar, quitar, calcular totales
-export const useCart = (mostrarError) => {
+export const useCart = (mostrarError, allowNegativeStock = false) => {
     // 2. ESTADO DEL CARRITO (lista de productos seleccionados)
     const [carrito, setCarrito] = useState([])
 
@@ -14,7 +14,8 @@ export const useCart = (mostrarError) => {
 
             if (productoExistente) {
                 // Si ya existe, verificar stock antes de incrementar cantidad
-                if (productoExistente.quantity < producto.stock) {
+                // A menos que permitamos stock negativo
+                if (allowNegativeStock || productoExistente.quantity < producto.stock) {
                     return carritoAnterior.map(item =>
                         item.id === producto.id
                             ? { ...item, quantity: item.quantity + 1 }
@@ -26,7 +27,8 @@ export const useCart = (mostrarError) => {
                 }
             } else {
                 // Si no existe, verificar que tenga stock disponible
-                if (producto.stock > 0) {
+                // A menos que permitamos stock negativo
+                if (allowNegativeStock || producto.stock > 0) {
                     return [...carritoAnterior, {
                         id: producto.id || Date.now() + Math.random(),
                         ...producto,
@@ -49,14 +51,13 @@ export const useCart = (mostrarError) => {
             carritoAnterior.map(item => {
                 if (item.id === idProducto) {
                     const cantidadMaxima = item.stock
-                    const cantidadValida = Math.min(nuevaCantidad, cantidadMaxima)
-
-                    // Mostrar error si intenta agregar más del stock disponible
-                    if (nuevaCantidad > cantidadMaxima) {
+                    
+                    if (!allowNegativeStock && nuevaCantidad > cantidadMaxima) {
                         mostrarError?.(`Máximo disponible: ${cantidadMaxima}`)
+                        return { ...item, quantity: cantidadMaxima }
                     }
 
-                    return { ...item, quantity: cantidadValida }
+                    return { ...item, quantity: nuevaCantidad }
                 }
                 return item
             })
