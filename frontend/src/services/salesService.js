@@ -22,11 +22,14 @@ export const salesService = {
 
         // Formatear items para el RPC
         const itemsJson = saleData.items.map(item => ({
-            product_id: isNaN(parseInt(item.id)) ? null : parseInt(item.id),
+            product_id: isNaN(parseInt(item.product_id ?? item.id)) ? null : parseInt(item.product_id ?? item.id),
             product_name: item.name,
             quantity: item.quantity,
             price: item.price,
-            total: item.price * item.quantity
+            total: item.price * item.quantity,
+            unit_sold: item.unit_sold || 'PZA',
+            conversion_factor: parseInt(item.conversion_factor || item.stock_multiplier || 1),
+            base_quantity: parseInt(item.base_quantity || (item.quantity * (item.conversion_factor || item.stock_multiplier || 1)))
         }));
 
         // Formatear pagos para el RPC
@@ -50,6 +53,7 @@ export const salesService = {
             p_amount_usd: saleData.amount_usd || null,
             p_payment_method: saleData.payments && saleData.payments.length > 1 ? 'múltiple' : (saleData.metodoPago || 'efectivo'),
             p_terminal_id: terminalId,
+            p_billing_issuer_id: saleData.billing_issuer_id || null,
             p_items: itemsJson,
             p_payments: paymentsJson,
             p_affect_inventory: saleData.affect_inventory !== undefined ? saleData.affect_inventory : true

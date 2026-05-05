@@ -30,6 +30,7 @@ async function buscarProductoPorCodigo(codigo) {
         where: {
             [Op.or]: [
                 { barcode: codigo },
+                { box_barcode: codigo },
                 { id: codigo }
             ]
         }
@@ -44,7 +45,8 @@ async function buscarProductos(textoBusqueda) {
         where: {
             [Op.or]: [
                 { name: { [Op.like]: `%${textoBusqueda}%` } },
-                { barcode: { [Op.like]: `%${textoBusqueda}%` } }
+                { barcode: { [Op.like]: `%${textoBusqueda}%` } },
+                { box_barcode: { [Op.like]: `%${textoBusqueda}%` } }
             ]
         },
         order: [['name', 'ASC']]
@@ -56,12 +58,17 @@ async function crearProducto(datosProducto) {
     // Limpiar datos: convertir strings vacíos en null para campos opcionales
     const datosLimpios = { ...datosProducto };
     if (datosLimpios.barcode === '') datosLimpios.barcode = null;
+    if (datosLimpios.box_barcode === '') datosLimpios.box_barcode = null;
     if (datosLimpios.image === '') datosLimpios.image = null;
 
     // Verificar si el código de barras ya existe (solo si no es null/vacío)
     if (datosLimpios.barcode) {
         const existe = await Product.findOne({ where: { barcode: datosLimpios.barcode } });
         if (existe) throw new Error('Ya existe un producto con ese código de barras');
+    }
+    if (datosLimpios.box_barcode) {
+        const existeCaja = await Product.findOne({ where: { box_barcode: datosLimpios.box_barcode } });
+        if (existeCaja) throw new Error('Ya existe un producto con ese código de caja');
     }
     const producto = await Product.create(datosLimpios);
     return producto;
@@ -75,6 +82,7 @@ async function actualizarProducto(idProducto, datosActualizados) {
     // Limpiar datos: convertir strings vacíos en null para campos opcionales
     const datosLimpios = { ...datosActualizados };
     if (datosLimpios.barcode === '') datosLimpios.barcode = null;
+    if (datosLimpios.box_barcode === '') datosLimpios.box_barcode = null;
     if (datosLimpios.image === '') datosLimpios.image = null;
 
     // Verificar si el código de barras ya existe en otro producto (solo si no es null/vacío)
@@ -86,6 +94,16 @@ async function actualizarProducto(idProducto, datosActualizados) {
             }
         });
         if (existe) throw new Error('Ya existe un producto con ese código de barras');
+    }
+
+    if (datosLimpios.box_barcode && datosLimpios.box_barcode !== producto.box_barcode) {
+        const existeCaja = await Product.findOne({
+            where: {
+                box_barcode: datosLimpios.box_barcode,
+                id: { [Op.ne]: idProducto }
+            }
+        });
+        if (existeCaja) throw new Error('Ya existe un producto con ese código de caja');
     }
 
     // Actualizar todos los campos proporcionados

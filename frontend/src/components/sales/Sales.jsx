@@ -70,9 +70,13 @@ export const Sales = () => {
     carrito,
     agregarProducto,
     cambiarCantidad,
+    cambiarUnidadVenta,
+    alternarUnidadUltimaLinea,
     quitarProducto,
     vaciarCarrito,
     total,
+    activeCartItemId,
+    setActiveCartItemId,
   } = useCart(mostrarError, user?.allow_negative_stock);
 
   const [modal, setModal] = useState({
@@ -261,6 +265,17 @@ export const Sales = () => {
   const totalVenta = facturar ? totalConImpuesto : total;
   const taxAmount = totalVenta - total;
 
+  const tieneCajaConfigurada = (producto) =>
+    parseInt(producto?.box_units || 0) > 1 &&
+    parseFloat(producto?.box_price || 0) > 0;
+
+  const prepararProductoCarrito = (producto, unidad = "PZA") => ({
+    ...producto,
+    image: producto.image_url || producto.image,
+    unit_price: parseFloat(producto.price || 0),
+    unit_sold: tieneCajaConfigurada(producto) && unidad === "CAJA" ? "CAJA" : "PZA",
+  });
+
   // ESTADOS PARA PAGOS MIXTOS
   const [pagosRealizados, setPagosRealizados] = useState([]);
   const [saldoPendiente, setSaldoPendiente] = useState(0);
@@ -361,7 +376,8 @@ export const Sales = () => {
         .filter(
           (p) =>
             p?.name?.toLowerCase().includes(query) ||
-            p?.barcode?.toLowerCase().includes(query),
+            p?.barcode?.toLowerCase().includes(query) ||
+            p?.box_barcode?.toLowerCase().includes(query),
         )
         .slice(0, 10); // Máximo 10 sugerencias
       setSugerencias(resultados);
@@ -464,11 +480,7 @@ export const Sales = () => {
 
   // Seleccionar producto de las sugerencias
   const seleccionarProducto = (producto) => {
-    // Mapear image_url a image para compatibilidad con el carrito
-    const productoConImagen = {
-      ...producto,
-      image: producto.image_url,
-    };
+    const productoConImagen = prepararProductoCarrito(producto, "PZA");
     agregarProducto(productoConImagen);
     setCodigoEscaneado("");
     setSugerencias([]);
@@ -496,12 +508,18 @@ export const Sales = () => {
     }
 
     // Buscar en productos locales primero
-    const productoLocal = productos.find((p) => p.barcode === codigo);
+    const productoLocal = productos.find(
+      (p) => p.barcode === codigo || p.box_barcode === codigo,
+    );
     if (productoLocal) {
-      const productoConImagen = {
-        ...productoLocal,
-        image: productoLocal.image_url,
-      };
+      const unidadEscaneada =
+        productoLocal.box_barcode === codigo && tieneCajaConfigurada(productoLocal)
+          ? "CAJA"
+          : "PZA";
+      const productoConImagen = prepararProductoCarrito(
+        productoLocal,
+        unidadEscaneada,
+      );
       agregarProducto(productoConImagen);
       return;
     }
@@ -509,7 +527,7 @@ export const Sales = () => {
     try {
       await ejecutarPeticion(async (signal) => {
         const producto = await buscarProductoPorCodigo(codigo, signal);
-        agregarProducto(producto);
+        agregarProducto(prepararProductoCarrito(producto, "PZA"));
       });
     } catch (error) {
       if (error.message && error.message.includes("404")) {
@@ -547,9 +565,21 @@ export const Sales = () => {
     }
 
     try {
+      const productoLocal = productos.find(
+        (p) => p.barcode === codigo || p.box_barcode === codigo,
+      );
+      if (productoLocal) {
+        const unidadEscaneada =
+          productoLocal.box_barcode === codigo && tieneCajaConfigurada(productoLocal)
+            ? "CAJA"
+            : "PZA";
+        agregarProducto(prepararProductoCarrito(productoLocal, unidadEscaneada));
+        return;
+      }
+
       await ejecutarPeticion(async (signal) => {
         const producto = await buscarProductoPorCodigo(codigo, signal);
-        agregarProducto(producto);
+        agregarProducto(prepararProductoCarrito(producto, "PZA"));
         // Producto agregado exitosamente - no necesitamos notificación ya que se ve en el carrito
       });
     } catch (error) {
@@ -592,16 +622,15 @@ export const Sales = () => {
     }
     // Generar ID estable para esta sesión de pago
     setTransactionId((Math.floor(Math.random() * 90000) + 10000).toString());
-    setMontoRecibido("");
+    setMontoRecibido(totalVenta.toFixed(2));
     setMetodoPago("efectivo");
     setPagosRealizados([]);
     setModalReady(false);
     setFacturar(false);
     setMostrarModalPago(true);
-    // Aumentar el tiempo de seguridad a 500ms para evitar capturas accidentales del primer ENTER
     setTimeout(() => {
       setModalReady(true);
-    }, 500);
+    }, 150);
   };
 
   const cerrarModalPago = () => {
@@ -764,10 +793,16 @@ export const Sales = () => {
           .filter((item) => item.quantity > 0)
           .map((item) => ({
             id: item.id,
+            product_id: item.product_id || item.id,
             name: item.name,
             quantity: item.quantity,
             price: item.price,
             stock: item.stock || 0,
+            unit_sold: item.unit_sold || "PZA",
+            conversion_factor: item.conversion_factor || item.stock_multiplier || 1,
+            base_quantity:
+              item.base_quantity ||
+              item.quantity * (item.stock_multiplier || item.conversion_factor || 1),
           })),
         total: totalVenta,
         subtotal: subtotal,
@@ -1017,6 +1052,27 @@ export const Sales = () => {
   // MANEJAR ENTER GLOBAL PARA MODALES Y PAGO
   useEffect(() => {
     const handleGlobalEnter = (e) => {
+      if (e.key === "F12") {
+        if (
+          carrito.length > 0 &&
+          !mostrarModalPago &&
+          !modal.isOpen &&
+          !mostrarModal
+        ) {
+          e.preventDefault();
+          abrirModalPago();
+        }
+        return;
+      }
+
+      if (e.key === "F8") {
+        if (!mostrarModalPago && !modal.isOpen && !mostrarModal) {
+          e.preventDefault();
+          alternarUnidadUltimaLinea();
+        }
+        return;
+      }
+
       if (e.key === "Enter") {
         // 1. Si hay modal de error/aviso abierto, cerrarlo
         if (modal.isOpen) {
@@ -1062,6 +1118,7 @@ export const Sales = () => {
     mostrarModal,
     mostrarModalPago,
     carrito.length,
+    alternarUnidadUltimaLinea,
     abrirModalPago,
     cerrarModal,
     cerrarModalPersonalizado,
@@ -1088,18 +1145,24 @@ export const Sales = () => {
     const productoLocal = productos.find(
       (p) =>
         p.barcode === codigoLimpio ||
+        p.box_barcode === codigoLimpio ||
         p.barcode === codigoLimpio.replace(/^0+/, ""), // Sin ceros iniciales
     );
 
     if (productoLocal) {
-      const productoConImagen = {
-        ...productoLocal,
-        image: productoLocal.image_url,
-      };
+      const unidadEscaneada =
+        productoLocal.box_barcode === codigoLimpio &&
+        tieneCajaConfigurada(productoLocal)
+          ? "CAJA"
+          : "PZA";
+      const productoConImagen = prepararProductoCarrito(
+        productoLocal,
+        unidadEscaneada,
+      );
       agregarProducto(productoConImagen);
       mostrarModalPersonalizado(
         "Producto agregado",
-        `${productoLocal.name} añadido al carrito`,
+        `${productoLocal.name} añadido al carrito (${unidadEscaneada})`,
         "success",
       );
       return;
@@ -1631,7 +1694,13 @@ export const Sales = () => {
           ) : (
             <div className="cart-items-modern">
               {carrito.map((item) => (
-                <div key={item.id} className="cart-item-modern">
+                <div
+                  key={item.id}
+                  className={`cart-item-modern ${
+                    activeCartItemId === item.id ? "active-cart-item" : ""
+                  }`}
+                  onClick={() => setActiveCartItemId(item.id)}
+                >
                   <div className="item-image-modern">
                     {item.image ? (
                       <img src={item.image} alt={item.name} />
@@ -1662,8 +1731,37 @@ export const Sales = () => {
                   <div className="item-info-modern">
                     <h3 className="item-name-modern">{item.name}</h3>
                     <div className="item-price-modern">
-                      {formatearDinero(item.price)}
+                      {formatearDinero(item.price)} / {item.unit_sold || "PZA"}
                     </div>
+                    {tieneCajaConfigurada(item) && (
+                      <div className="sale-unit-toggle">
+                        <button
+                          type="button"
+                          className={item.unit_sold !== "CAJA" ? "active" : ""}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            cambiarUnidadVenta(item.id, "PZA");
+                          }}
+                        >
+                          PZA
+                        </button>
+                        <button
+                          type="button"
+                          className={item.unit_sold === "CAJA" ? "active" : ""}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            cambiarUnidadVenta(item.id, "CAJA");
+                          }}
+                        >
+                          CAJA
+                        </button>
+                      </div>
+                    )}
+                    {item.unit_sold === "CAJA" && (
+                      <div className="item-conversion-modern">
+                        {item.conversion_factor || item.stock_multiplier} pzas
+                      </div>
+                    )}
                   </div>
                   <div className="quantity-controls-modern">
                     <button
@@ -1839,10 +1937,10 @@ export const Sales = () => {
                     <div key={item.id} className="payment-item-row">
                       <div className="payment-item-info">
                         <p className="payment-item-name">
-                          {item.name} (x{item.quantity})
+                          {item.name} ({item.quantity} {item.unit_sold || "PZA"})
                         </p>
                         <p className="payment-item-category">
-                          ${formatearDinero(item.price)} c/u
+                          {formatearDinero(item.price)} c/u
                         </p>
                       </div>
                       <span className="payment-item-price">

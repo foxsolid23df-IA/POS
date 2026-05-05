@@ -206,9 +206,9 @@ function crearVentana() {
                 { label: 'Forzar recarga', role: 'forceReload' },
                 { label: 'Alternar herramientas de desarrollador', role: 'toggleDevTools' },
                 { type: 'separator' },
-                { label: 'Restablecer zoom', role: 'resetZoom' },
-                { label: 'Acercar', role: 'zoomIn' },
-                { label: 'Alejar', role: 'zoomOut' },
+                { label: 'Restablecer zoom', accelerator: 'CmdOrCtrl+0', role: 'resetZoom' },
+                { label: 'Acercar (+)', accelerator: 'CmdOrCtrl+Plus', role: 'zoomIn' },
+                { label: 'Alejar (-)', accelerator: 'CmdOrCtrl+-', role: 'zoomOut' },
                 { type: 'separator' },
                 { label: 'Alternar pantalla completa', role: 'togglefullscreen' }
             ]
@@ -217,7 +217,11 @@ function crearVentana() {
             label: 'Ventana',
             submenu: [
                 { label: 'Minimizar', role: 'minimize' },
-                { label: 'Zoom', role: 'zoom' },
+                { label: 'Maximizar', role: 'zoom' },
+                { type: 'separator' },
+                { label: 'Acercar (+)', accelerator: 'CmdOrCtrl+Plus', role: 'zoomIn' },
+                { label: 'Alejar (-)', accelerator: 'CmdOrCtrl+-', role: 'zoomOut' },
+                { label: 'Restablecer Zoom', accelerator: 'CmdOrCtrl+0', role: 'resetZoom' },
                 { type: 'separator' },
                 { label: 'Cerrar', role: 'close' }
             ]

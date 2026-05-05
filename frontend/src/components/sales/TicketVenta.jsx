@@ -123,7 +123,9 @@ const TicketVenta = forwardRef(({ venta }, ref) => {
       <div className="ticket-items">
         {productosList.map((producto, idx) => (
           <div key={idx} className="ticket-item">
-            <div className="ticket-item-cant">{producto.quantity}</div>
+            <div className="ticket-item-cant">
+              {producto.quantity} {producto.unit_sold || ""}
+            </div>
             <div className="ticket-item-desc">{producto.name}</div>
             <div className="ticket-item-imp">
               {formatearDinero(producto.price * parseFloat(producto.quantity))}

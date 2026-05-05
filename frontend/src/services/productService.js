@@ -122,6 +122,9 @@ export const productService = {
             stock: parseInt(product.stock),
             min_stock: parseInt(product.min_stock || 0),
             barcode: product.barcode || null,
+            box_units: parseInt(product.box_units || 0) || null,
+            box_price: parseFloat(product.box_price || 0) || null,
+            box_barcode: product.box_barcode || null,
             image_url: product.image || null,
             merma: parseInt(product.merma || 0),
             user_id: userData.user.id,
@@ -166,6 +169,9 @@ export const productService = {
             stock: parseInt(updates.stock),
             min_stock: parseInt(updates.min_stock || 0),
             barcode: updates.barcode || null,
+            box_units: parseInt(updates.box_units || 0) || null,
+            box_price: parseFloat(updates.box_price || 0) || null,
+            box_barcode: updates.box_barcode || null,
             image_url: updates.image || null,
             merma: parseInt(updates.merma || 0),
             metadata: updates.metadata || {},
@@ -267,7 +273,7 @@ export const productService = {
         const { data, error } = await supabase
             .from('products')
             .select('*')
-            .eq('barcode', barcode)
+            .or(`barcode.eq.${barcode},box_barcode.eq.${barcode}`)
             .maybeSingle(); // Retorna null si no encuentra, en lugar de error
 
         if (error) throw error;
@@ -322,7 +328,7 @@ export const productService = {
         // 1. Obtener todos los productos actuales para verificar códigos de barras
         const { data: existingProducts, error: fetchError } = await supabase
             .from('products')
-            .select('id, barcode');
+            .select('id, barcode, box_barcode');
 
         if (fetchError) throw fetchError;
 
@@ -331,6 +337,9 @@ export const productService = {
         (existingProducts || []).forEach(p => {
             if (p.barcode) {
                 existingBarcodeMap.set(String(p.barcode), p.id);
+            }
+            if (p.box_barcode) {
+                existingBarcodeMap.set(String(p.box_barcode), p.id);
             }
         });
 
@@ -349,6 +358,9 @@ export const productService = {
                 suggested_price: parseFloat(product.suggested_price || 0),
                 stock: parseInt(product.stock),
                 min_stock: parseInt(product.min_stock || 0),
+                box_units: parseInt(product.box_units || 0) || null,
+                box_price: parseFloat(product.box_price || 0) || null,
+                box_barcode: product.box_barcode || null,
                 merma: parseInt(product.merma || 0),
                 metadata: product.metadata || {},
                 notes: product.notes || null,
@@ -360,11 +372,15 @@ export const productService = {
             };
 
             const barcodeStr = product.barcode ? String(product.barcode) : null;
+            const boxBarcodeStr = product.box_barcode ? String(product.box_barcode) : null;
+            baseData.box_barcode = boxBarcodeStr;
 
-            if (barcodeStr && existingBarcodeMap.has(barcodeStr)) {
+            const existingId = (barcodeStr && existingBarcodeMap.get(barcodeStr)) || (boxBarcodeStr && existingBarcodeMap.get(boxBarcodeStr));
+
+            if (existingId) {
                 // Producto existe: se actualiza
                 productsToUpdate.push({
-                    id: existingBarcodeMap.get(barcodeStr),
+                    id: existingId,
                     ...baseData
                 });
             } else {

@@ -8,6 +8,9 @@ const Product = sequelize.define('Product', {
     stock: { type: DataTypes.INTEGER, allowNull: false },    // Stock disponible
     merma: { type: DataTypes.INTEGER, defaultValue: 0 },     // Cantidad de merma
     barcode: { type: DataTypes.STRING, unique: true },       // Código de barras único
+    box_units: { type: DataTypes.INTEGER, allowNull: true },  // Piezas por caja
+    box_price: { type: DataTypes.FLOAT, allowNull: true },    // Precio por caja
+    box_barcode: { type: DataTypes.STRING, unique: true },    // Código de caja
     image: { type: DataTypes.TEXT }                        // URL o Base64 de imagen (opcional)
 }, {
     timestamps: false,           // No agrega columnas createdAt/updatedAt automáticamente

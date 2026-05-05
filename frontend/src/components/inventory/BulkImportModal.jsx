@@ -73,6 +73,32 @@ const COLUMN_ALIASES = {
     "PrecioMayoreo",
     "mayoreo",
   ],
+  box_units: [
+    "Piezas por Caja",
+    "Pzas Caja",
+    "Factor Caja",
+    "Contenido Caja",
+    "Unidades por Caja",
+    "Box Units",
+    "box_units",
+  ],
+  box_price: [
+    "Precio Caja",
+    "Precio por Caja",
+    "Caja",
+    "Box Price",
+    "box_price",
+  ],
+  box_barcode: [
+    "Codigo Caja",
+    "Código Caja",
+    "Código de Caja",
+    "Codigo de Caja",
+    "SKU Caja",
+    "Barcode Caja",
+    "Box Barcode",
+    "box_barcode",
+  ],
   stock: [
     "Existencia",
     "Existencias",
@@ -209,6 +235,9 @@ const mapRowToProduct = (row) => {
   const costVal = get("cost_price");
   const priceVal = get("price");
   const wholesaleVal = get("wholesale_price");
+  const boxUnitsVal = get("box_units");
+  const boxPriceVal = get("box_price");
+  const boxBarcodeVal = get("box_barcode");
   const stockVal = get("stock");
   const minStockVal = get("min_stock");
   const categoryVal = get("category");
@@ -229,6 +258,9 @@ const mapRowToProduct = (row) => {
     cost_price: parseFloat(costVal || 0),
     price: parseFloat(priceVal || 0),
     wholesale_price: parseFloat(wholesaleVal || 0),
+    box_units: parseInt(boxUnitsVal || 0) || null,
+    box_price: parseFloat(boxPriceVal || 0) || null,
+    box_barcode: boxBarcodeVal !== null ? String(boxBarcodeVal) : null,
     stock: parseInt(stockVal || 0),
     min_stock: parseInt(minStockVal || 0),
     category: categoryVal !== null ? String(categoryVal) : "General",
@@ -271,6 +303,9 @@ const BulkImportModal = ({
         "Precio Compra": 10.0,
         "Precio Venta": 15.0,
         "Precio Mayoreo": 12.5,
+        "Piezas por Caja": 24,
+        "Precio Caja": 300.0,
+        "Código Caja": "PRUEBA01-CAJA",
         "Precio Especial": 0,
         "Precio Sugerido": 0,
         "Und. Mayoreo": "",
@@ -311,6 +346,9 @@ const BulkImportModal = ({
         "Precio Compra": parseFloat(p.cost_price || 0),
         "Precio Venta": parseFloat(p.price || 0),
         "Precio Mayoreo": parseFloat(p.wholesale_price || 0),
+        "Piezas por Caja": parseInt(p.box_units || 0) || "",
+        "Precio Caja": parseFloat(p.box_price || 0) || "",
+        "Código Caja": p.box_barcode || "",
         "Precio Especial": parseFloat(p.special_price || 0),
         "Precio Sugerido": parseFloat(p.suggested_price || 0),
         "Und. Mayoreo": p.wholesale_unit || "",
@@ -335,6 +373,9 @@ const BulkImportModal = ({
       { wch: 14 },
       { wch: 14 },
       { wch: 14 },
+      { wch: 14 },
+      { wch: 14 },
+      { wch: 20 },
       { wch: 14 },
       { wch: 14 },
       { wch: 14 },
@@ -601,6 +642,8 @@ const BulkImportModal = ({
                       <th>Costo</th>
                       <th>Venta</th>
                       <th>Mayoreo</th>
+                      <th>Pzas/Caja</th>
+                      <th>Caja</th>
                       <th>P.Esp</th>
                       <th>P.Sug</th>
                       <th>Stock</th>
@@ -619,6 +662,12 @@ const BulkImportModal = ({
                         <td>${Number(product.cost_price || 0).toFixed(2)}</td>
                         <td>${Number(product.price || 0).toFixed(2)}</td>
                         <td>${Number(product.wholesale_price || 0).toFixed(2)}</td>
+                        <td>{product.box_units || "-"}</td>
+                        <td>
+                          {product.box_price
+                            ? `$${Number(product.box_price || 0).toFixed(2)}`
+                            : "-"}
+                        </td>
                         <td>${Number(product.special_price || 0).toFixed(2)}</td>
                         <td>${Number(product.suggested_price || 0).toFixed(2)}</td>
                         <td>{product.stock}</td>

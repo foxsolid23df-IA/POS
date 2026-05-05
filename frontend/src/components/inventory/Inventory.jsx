@@ -69,6 +69,9 @@ const Inventory = () => {
     name: "",
     barcode: "",
     price: "",
+    box_units: "",
+    box_price: "",
+    box_barcode: "",
     cost_price: "",
     wholesale_price: "",
     stock: "",
@@ -133,6 +136,9 @@ const Inventory = () => {
       name: "",
       barcode: "",
       price: "",
+      box_units: "",
+      box_price: "",
+      box_barcode: "",
       cost_price: "",
       wholesale_price: "",
       stock: "",
@@ -162,6 +168,9 @@ const Inventory = () => {
         name: product.name,
         barcode: product.barcode || "",
         price: product.price,
+        box_units: product.box_units || "",
+        box_price: product.box_price || "",
+        box_barcode: product.box_barcode || "",
         cost_price: product.cost_price || "",
         wholesale_price: product.wholesale_price || "",
         stock: product.stock,
@@ -273,6 +282,9 @@ const Inventory = () => {
         name: formData.name,
         barcode: formData.barcode,
         price: parseFloat(formData.price),
+        box_units: parseInt(formData.box_units || 0) || null,
+        box_price: parseFloat(formData.box_price || 0) || null,
+        box_barcode: formData.box_barcode || "",
         cost_price: parseFloat(formData.cost_price || 0),
         wholesale_price: parseFloat(formData.wholesale_price || 0),
         stock: parseInt(formData.stock),
@@ -919,6 +931,9 @@ const Inventory = () => {
                   <th>SKU</th>
                   {!isSimplified && <th>Costo</th>}
                   <th>Venta</th>
+                  {!isSimplified && <th>Pzas/Caja</th>}
+                  {!isSimplified && <th>Precio Caja</th>}
+                  {!isSimplified && <th>Código Caja</th>}
                   {!isSimplified && <th>Mayoreo</th>}
                   {!isSimplified && <th>P. Especial</th>}
                   {!isSimplified && <th>P. Sugerido</th>}
@@ -1003,6 +1018,19 @@ const Inventory = () => {
                         <td className="price-cell font-medium">
                           ${parseFloat(product.price || 0).toFixed(2)}
                         </td>
+                        {!isSimplified && (
+                          <td className="unit-cell">{product.box_units || "—"}</td>
+                        )}
+                        {!isSimplified && (
+                          <td className="price-cell text-slate-500">
+                            {product.box_price
+                              ? `$${parseFloat(product.box_price || 0).toFixed(2)}`
+                              : "—"}
+                          </td>
+                        )}
+                        {!isSimplified && (
+                          <td className="sku-cell">{product.box_barcode || "—"}</td>
+                        )}
                         {!isSimplified && (
                           <td className="price-cell text-slate-500">
                             $
@@ -1514,6 +1542,58 @@ const Inventory = () => {
                       )}
                     </div>
                   </div>
+
+                  {!isSimplified && (
+                    <div className="new-product-form-group col-span-12">
+                      <label className="new-product-label">Empaque por caja</label>
+                      <div className="grid grid-cols-12 gap-4">
+                        <div className="col-span-12 md:col-span-4">
+                          <label className="text-xs text-gray-500 mb-1 block">
+                            Piezas por caja
+                          </label>
+                          <input
+                            className="new-product-input"
+                            type="number"
+                            name="box_units"
+                            value={formData.box_units}
+                            onChange={handleInputChange}
+                            placeholder="Ej. 24"
+                            min="2"
+                          />
+                        </div>
+                        <div className="col-span-12 md:col-span-4">
+                          <label className="text-xs text-gray-500 mb-1 block">
+                            Precio caja
+                          </label>
+                          <div className="new-product-price-wrapper">
+                            <span className="new-product-price-symbol">$</span>
+                            <input
+                              className="new-product-input new-product-price-input"
+                              type="number"
+                              name="box_price"
+                              value={formData.box_price}
+                              onChange={handleInputChange}
+                              placeholder="0.00"
+                              step="0.01"
+                            />
+                          </div>
+                        </div>
+                        <div className="col-span-12 md:col-span-4">
+                          <label className="text-xs text-gray-500 mb-1 block">
+                            Código caja
+                          </label>
+                          <input
+                            className="new-product-input"
+                            type="text"
+                            name="box_barcode"
+                            value={formData.box_barcode}
+                            onChange={handleInputChange}
+                            placeholder="Código alterno para caja"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Stock Group */}
                   <div className="new-product-form-group col-span-12">
