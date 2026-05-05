@@ -10,9 +10,12 @@ const Product = sequelize.define('Product', {
     barcode: { type: DataTypes.STRING, unique: true },       // Código de barras único
     box_units: { type: DataTypes.INTEGER, allowNull: true },  // Piezas por caja
     box_price: { type: DataTypes.FLOAT, allowNull: true },    // Precio por caja
-    box_barcode: { type: DataTypes.STRING, unique: true },    // Código de caja
+    box_barcode: { type: DataTypes.STRING },                 // Código de caja (unicidad manejada por índice)
     image: { type: DataTypes.TEXT }                        // URL o Base64 de imagen (opcional)
 }, {
+    indexes: [
+        { unique: true, fields: ['box_barcode'] }
+    ],
     timestamps: false,           // No agrega columnas createdAt/updatedAt automáticamente
     freezeTableName: true        // Usa el nombre 'Product' tal cual, sin pluralizar
 });
