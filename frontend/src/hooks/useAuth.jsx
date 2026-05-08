@@ -102,7 +102,17 @@ export const AuthProvider = ({ children }) => {
     let currentUserId = null;
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("[Auth] Evento de autenticación:", event);
+      
+      if (event === "PASSWORD_RECOVERY") {
+        console.log("[Auth] Detectado flujo de recuperación de contraseña. Redirigiendo...");
+        // Usamos un timeout corto para permitir que el router se inicialice correctamente
+        setTimeout(() => {
+          window.location.hash = "#/update-password";
+        }, 100);
+      }
+
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -285,8 +295,10 @@ export const AuthProvider = ({ children }) => {
 
   // Solicitar reseteo de contraseña
   const resetPassword = async (email) => {
+    // Para HashRouter, es mejor redirigir a la raíz y dejar que el listener maneje la ruta
+    // Supabase anexará el token de acceso al hash
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}${window.location.pathname}#/update-password`,
+      redirectTo: `${window.location.origin}/`,
     });
     if (error) throw error;
     return data;

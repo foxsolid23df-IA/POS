@@ -15,9 +15,17 @@ export const UpdatePassword = () => {
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Verificamos si estamos en una sesión de recuperación (la URL tendrá access_token si vino de correo, 
-  // pero Supabase se encarga de iniciar la sesión con él. Así que deberíamos tener sesión pero tal vez
-  // sin el objeto 'user' completamente cargado, o simplemente dejamos que intenten actualizar).
+  // Redirigir si no hay sesión y no estamos cargando
+  // (Aunque usualmente Supabase inicia sesión al usar el link de recuperación)
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session && !loading) {
+        // Podríamos redirigir, pero si acaba de hacer el cambio, success será true
+      }
+    };
+    checkSession();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,12 +47,11 @@ export const UpdatePassword = () => {
     try {
       await updatePassword(password);
       setSuccess(true);
-      setTimeout(() => {
-        navigate("/login");
-      }, 3000);
+      // No redirigir inmediatamente para que vean el éxito
     } catch (err) {
       console.error(err);
       setError(err.message || "Error al actualizar la contraseña");
+      setLoading(false);
     } finally {
       setLoading(false);
     }
@@ -65,24 +72,37 @@ export const UpdatePassword = () => {
 
         <div className="glass-panel">
           <div className="glass-panel-header">
-            <h1>Nueva Contraseña</h1>
-            <p>Ingresa tu nueva contraseña para acceder a tu cuenta.</p>
+            <h1>{success ? "¡Éxito!" : "Nueva Contraseña"}</h1>
+            <p>
+              {success 
+                ? "Tu contraseña ha sido actualizada correctamente." 
+                : "Ingresa tu nueva contraseña para acceder a tu cuenta."}
+            </p>
           </div>
 
           {error && <div className="login-error-msg">{error}</div>}
           
           {success ? (
-            <div style={{ textAlign: 'center', padding: '1rem' }}>
-              <span className="material-symbols-outlined" style={{ fontSize: '48px', color: '#10b981' }}>check_circle</span>
-              <p style={{ marginTop: '1rem', color: '#e2e8f0' }}>¡Contraseña actualizada con éxito!</p>
-              <p style={{ fontSize: '0.9rem', color: '#94a3b8', marginTop: '0.5rem' }}>Serás redirigido al inicio de sesión en unos segundos...</p>
+            <div className="success-content" style={{ textAlign: 'center', padding: '1rem' }}>
+              <div className="success-icon-wrapper" style={{ 
+                width: '80px', 
+                height: '80px', 
+                background: 'rgba(16, 185, 129, 0.1)', 
+                borderRadius: '50%', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                margin: '0 auto 1.5rem auto'
+              }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '40px', color: '#10b981' }}>check_circle</span>
+              </div>
+              <p style={{ color: '#94a3b8', marginBottom: '2rem' }}>Ahora puedes iniciar sesión con tus nuevas credenciales.</p>
               <button 
                 type="button"
                 className="login-submit-btn" 
-                style={{ marginTop: '1.5rem' }}
                 onClick={() => navigate('/login')}
               >
-                Ir a Iniciar Sesión
+                IR AL INICIO DE SESIÓN
               </button>
             </div>
           ) : (
@@ -129,8 +149,14 @@ export const UpdatePassword = () => {
                 type="submit"
                 className="login-submit-btn"
                 disabled={loading}
+                style={{ marginTop: '1rem' }}
               >
-                {loading ? "ACTUALIZANDO..." : "GUARDAR CONTRASEÑA"}
+                {loading ? (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                    <div className="spinner-small"></div>
+                    <span>ACTUALIZANDO...</span>
+                  </div>
+                ) : "GUARDAR CONTRASEÑA"}
               </button>
             </form>
           )}
