@@ -799,6 +799,17 @@
 .sale-unit-toggle button.active {
   background: #2563eb;
   color: #fff;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+}
+
+.sale-unit-toggle button:not(.active):hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.sale-unit-toggle button.active[data-unit="CAJA"] {
+  background: #7c3aed; /* Púrpura para cajas */
+  box-shadow: 0 2px 4px rgba(124, 58, 237, 0.2);
 }
 
 .item-conversion-modern {
@@ -806,6 +817,32 @@
   color: #64748b;
   font-size: 11px;
   font-weight: 700;
+}
+
+.item-pack-btn-modern {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 4px;
+}
+
+.item-pack-btn-modern:hover {
+  background: #f1f5f9;
+  color: #2563eb;
+  border-color: #2563eb;
+}
+
+.item-pack-btn-modern.active {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #3b82f6;
 }
 
 .quantity-controls-modern {

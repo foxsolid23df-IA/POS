@@ -15,11 +15,13 @@ import { useIsMobile } from "../../hooks/useIsMobile";
 import { useScannerMode } from "../../hooks/useScannerMode";
 import { exchangeRateService } from "../../services/exchangeRateService";
 import { cashMovementService } from "../../services/cashMovementService";
+import { packPresetService } from "../../services/packPresetService";
 import { CashMovementModal } from "./CashMovementModal";
 import { CashFundModal } from "../auth/CashFundModal";
 import { supabase } from "../../supabase";
 import { useProducts } from "../../contexts/ProductContext";
 import { useSettings } from "../../contexts/SettingsContext";
+import { SessionReportModal } from "./SessionReportModal";
 import "./Sales.css";
 
 export const Sales = () => {
@@ -77,7 +79,100 @@ export const Sales = () => {
     total,
     activeCartItemId,
     setActiveCartItemId,
+    convertirAPaquete,
+    convertirCarritoAPaquete,
+    validateCartStockWithRPC
   } = useCart(mostrarError, user?.allow_negative_stock);
+
+  // ESTADOS PARA EMPAQUE AL VUELO
+  const [mostrarModalEmpaque, setMostrarModalEmpaque] = useState(false);
+  const [itemEmpaque, setItemEmpaque] = useState(null);
+  const [empaqueForm, setEmpaqueForm] = useState({
+    piezas: "",
+    precio: "",
+  });
+  const [presets, setPresets] = useState([]);
+  const [cargandoPresets, setCargandoPresets] = useState(false);
+  const [guardarComoPreset, setGuardarComoPreset] = useState(false);
+
+  const [mostrarModalPaqueteTodo, setMostrarModalPaqueteTodo] = useState(false);
+  const [paqueteTodoForm, setPaqueteTodoForm] = useState({
+    nombre: "PAQUETE PERSONALIZADO",
+    precio: "",
+  });
+
+  const abrirModalEmpaque = async (item) => {
+    setItemEmpaque(item);
+    setEmpaqueForm({
+      piezas: item.conversion_factor || 1,
+      precio: item.price || 0,
+    });
+    setGuardarComoPreset(false);
+    setMostrarModalEmpaque(true);
+
+    // Cargar presets para este producto
+    setCargandoPresets(true);
+    try {
+      const data = await packPresetService.getPresetsByProductId(item.id);
+      setPresets(data);
+    } catch (error) {
+      console.error("[Sales] Error al cargar presets:", error);
+    } finally {
+      setCargandoPresets(false);
+    }
+  };
+
+  const handleConfirmarEmpaque = async (e) => {
+    e.preventDefault();
+    if (itemEmpaque) {
+      // Si el usuario marcó guardar como preset, lo creamos en segundo plano
+      if (guardarComoPreset) {
+        try {
+          await packPresetService.createPreset({
+            product_id: itemEmpaque.id,
+            units: empaqueForm.piezas,
+            price: empaqueForm.precio,
+            label: `${empaqueForm.piezas} Pzas`
+          });
+        } catch (error) {
+          console.error("[Sales] Error al guardar preset:", error);
+        }
+      }
+
+      convertirAPaquete(
+        itemEmpaque.id,
+        empaqueForm.piezas,
+        empaqueForm.precio,
+      );
+      setMostrarModalEmpaque(false);
+      setItemEmpaque(null);
+    }
+  };
+
+  const handleSelectPreset = (preset) => {
+    setEmpaqueForm({
+      piezas: preset.units,
+      precio: preset.price
+    });
+  };
+
+  const handleDeletePreset = async (e, presetId) => {
+    e.stopPropagation();
+    try {
+      await packPresetService.deletePreset(presetId);
+      setPresets(prev => prev.filter(p => p.id !== presetId));
+    } catch (error) {
+      console.error("[Sales] Error al eliminar preset:", error);
+    }
+  };
+
+  const handleConfirmarPaqueteTodo = (e) => {
+    e.preventDefault();
+    if (carrito.length > 0) {
+      convertirCarritoAPaquete(paqueteTodoForm.nombre, paqueteTodoForm.precio);
+      setMostrarModalPaqueteTodo(false);
+    }
+  };
 
   const [modal, setModal] = useState({
     isOpen: false,
@@ -242,6 +337,15 @@ export const Sales = () => {
   const [facturar, setFacturar] = useState(false);
   const [issuers, setIssuers] = useState([]);
   const [selectedIssuerId, setSelectedIssuerId] = useState("");
+  const [stockDisplayMode, setStockDisplayMode] = useState("mixed"); // 'pieces', 'mixed', 'boxes'
+
+  const toggleStockDisplayMode = () => {
+    setStockDisplayMode((prev) => {
+      if (prev === "mixed") return "pieces";
+      if (prev === "pieces") return "boxes";
+      return "mixed";
+    });
+  };
 
   useEffect(() => {
     if (facturar && issuers.length === 0) {
@@ -276,6 +380,28 @@ export const Sales = () => {
     unit_sold: tieneCajaConfigurada(producto) && unidad === "CAJA" ? "CAJA" : "PZA",
   });
 
+  const formatStockDisplay = (item) => {
+    const stockPzas = item.stock || 0;
+    const factor = item.conversion_factor || item.box_units || 1;
+    
+    if (stockDisplayMode === "pieces") {
+      return `${stockPzas} pzs`;
+    }
+    
+    if (stockDisplayMode === "boxes" && factor > 1) {
+      const boxes = Math.floor(stockPzas / factor);
+      const rem = stockPzas % factor;
+      return rem > 0 ? `${boxes} cjs + ${rem} pzs` : `${boxes} cjs`;
+    }
+    
+    if (stockDisplayMode === "mixed" && factor > 1) {
+      const boxes = Math.floor(stockPzas / factor);
+      return `${stockPzas} pzs (${boxes} cjs)`;
+    }
+    
+    return `${stockPzas} pzs`;
+  };
+
   // ESTADOS PARA PAGOS MIXTOS
   const [pagosRealizados, setPagosRealizados] = useState([]);
   const [saldoPendiente, setSaldoPendiente] = useState(0);
@@ -296,6 +422,7 @@ export const Sales = () => {
 
   const [mostrarModalSalida, setMostrarModalSalida] = useState(false);
   const [salidaForm, setSalidaForm] = useState({ concepto: "", cantidad: "" });
+  const [mostrarModalReporte, setMostrarModalReporte] = useState(false);
 
   // Cargar tipo de cambio al montar
   useEffect(() => {
@@ -775,6 +902,15 @@ export const Sales = () => {
     }
 
     setVendiendo(true);
+    
+    // 1. Validar stock en el servidor antes de proceder
+    const validation = await validateCartStockWithRPC();
+    if (!validation.valid) {
+      setVendiendo(false);
+      // Los errores ya se muestran mediante mostrarError dentro de validateCartStockWithRPC
+      return;
+    }
+
     cerrarModalPago();
 
     try {
@@ -866,7 +1002,7 @@ export const Sales = () => {
       console.error("Error al crear venta:", error);
       mostrarModalPersonalizado(
         "Error al procesar venta",
-        "No se pudo completar la venta. Por favor, intenta nuevamente.",
+        error.message || "No se pudo completar la venta. Por favor, intenta nuevamente.",
         "error",
       );
     }
@@ -1052,62 +1188,135 @@ export const Sales = () => {
   // MANEJAR ENTER GLOBAL PARA MODALES Y PAGO
   useEffect(() => {
     const handleGlobalEnter = (e) => {
-      if (e.key === "F12") {
-        if (
-          carrito.length > 0 &&
-          !mostrarModalPago &&
-          !modal.isOpen &&
-          !mostrarModal
-        ) {
-          e.preventDefault();
-          abrirModalPago();
+      // Modales activos previenen atajos globales
+      if (mostrarModalPago || modal.isOpen || mostrarModal) {
+        if (e.key === "Enter") {
+          if (modal.isOpen) {
+            e.preventDefault();
+            cerrarModalPersonalizado();
+            return;
+          }
+          if (mostrarModal) {
+            e.preventDefault();
+            cerrarModal();
+            return;
+          }
         }
         return;
       }
 
-      if (e.key === "F8") {
-        if (!mostrarModalPago && !modal.isOpen && !mostrarModal) {
+      const activeElement = document.activeElement;
+      const isInput =
+        activeElement.tagName === "INPUT" ||
+        activeElement.tagName === "TEXTAREA";
+
+      // F10: Recargar
+      if (e.key === "F10") {
+        e.preventDefault();
+        window.location.reload();
+        return;
+      }
+
+      // F7: Reporte
+      if (e.key === "F7") {
+        e.preventDefault();
+        setMostrarModalReporte(true);
+        return;
+      }
+
+      // F12: Abrir modal de pago
+      if (e.key === "F12" && carrito.length > 0) {
+        e.preventDefault();
+        abrirModalPago();
+        return;
+      }
+
+      // F2 o Flecha derecha (fuera de input): Alternar Unidad (PZA/CAJA)
+      if (e.key === "F2" || (!isInput && e.key === "ArrowRight")) {
+        if (carrito.length > 0) {
           e.preventDefault();
           alternarUnidadUltimaLinea();
         }
         return;
       }
 
-      if (e.key === "Enter") {
-        // 1. Si hay modal de error/aviso abierto, cerrarlo
-        if (modal.isOpen) {
+      // F3 o Alt + C: Empaque al Vuelo
+      if (e.key === "F3" || (e.altKey && (e.key === "c" || e.key === "C"))) {
+        if (carrito.length > 0) {
           e.preventDefault();
-          cerrarModalPersonalizado();
-          return;
-        }
-
-        // 2. Si hay modal de venta completada (ticket), cerrarlo
-        if (mostrarModal) {
-          e.preventDefault();
-          cerrarModal();
-          return;
-        }
-
-        // 3. Si no hay modales abiertos y el carrito tiene productos, abrir pago
-        // Solo si no estamos ya en el modal de pago (finalizarVenta tiene su propio listener)
-        if (
-          carrito.length > 0 &&
-          !mostrarModalPago &&
-          !modal.isOpen &&
-          !mostrarModal
-        ) {
-          const activeElement = document.activeElement;
-          const isInput =
-            activeElement.tagName === "INPUT" ||
-            activeElement.tagName === "TEXTAREA";
-
-          // Si el foco está en un input, dejar que el listener del input decida (manejarEnter)
-          // Pero si es el cuerpo de la página u otro elemento no-input, abrir pago directamente
-          if (!isInput) {
-            e.preventDefault();
-            abrirModalPago();
+          const lastItem =
+            carrito.find((line) => line.id === activeCartItemId) ||
+            carrito[carrito.length - 1];
+          if (lastItem) {
+            abrirModalEmpaque(lastItem);
           }
         }
+        return;
+      }
+
+      // F4 o p o + o * (fuera de input): Empacar Todo (Bulk Pack)
+      if (
+        e.key === "F4" ||
+        (!isInput && (e.key.toLowerCase() === "p" || e.key === "+" || e.key === "*"))
+      ) {
+        if (carrito.length > 0) {
+          e.preventDefault();
+          setMostrarModalPaqueteTodo(true);
+        }
+        return;
+      }
+
+      // Atajos de teclado que sólo funcionan cuando no se está en un input
+      if (!isInput) {
+        // f: Finalizar venta
+        if (e.key.toLowerCase() === "f" && carrito.length > 0) {
+          e.preventDefault();
+          abrirModalPago();
+          return;
+        }
+
+        // x: Vaciar carrito
+        if (e.key.toLowerCase() === "x" && carrito.length > 0) {
+          e.preventDefault();
+          vaciarCarrito();
+          return;
+        }
+
+        // - o Delete: Quitar producto seleccionado
+        if ((e.key === "-" || e.key === "Delete") && carrito.length > 0) {
+          e.preventDefault();
+          const targetId = activeCartItemId || carrito[carrito.length - 1].id;
+          quitarProducto(targetId);
+          return;
+        }
+
+        // Navegación con flechas arriba/abajo
+        if ((e.key === "ArrowUp" || e.key === "ArrowDown") && carrito.length > 0) {
+          e.preventDefault();
+          const currentIndex = carrito.findIndex(
+            (item) => item.id === activeCartItemId,
+          );
+          let nextIndex;
+
+          if (e.key === "ArrowUp") {
+            if (currentIndex === -1) nextIndex = carrito.length - 1;
+            else nextIndex = Math.max(0, currentIndex - 1);
+          } else {
+            if (currentIndex === -1) nextIndex = 0;
+            else nextIndex = Math.min(carrito.length - 1, currentIndex + 1);
+          }
+
+          if (carrito[nextIndex]) {
+            setActiveCartItemId(carrito[nextIndex].id);
+          }
+          return;
+        }
+      }
+
+      // Enter Global para Abrir Pago
+      if (e.key === "Enter" && !isInput && carrito.length > 0) {
+        e.preventDefault();
+        abrirModalPago();
       }
     };
 
@@ -1117,11 +1326,18 @@ export const Sales = () => {
     modal.isOpen,
     mostrarModal,
     mostrarModalPago,
-    carrito.length,
+    carrito,
+    activeCartItemId,
     alternarUnidadUltimaLinea,
+    cambiarUnidadVenta,
     abrirModalPago,
+    abrirModalEmpaque,
     cerrarModal,
     cerrarModalPersonalizado,
+    setMostrarModalReporte,
+    vaciarCarrito,
+    quitarProducto,
+    setActiveCartItemId,
   ]);
 
   // MANEJAR ESCANEO POR CÁMARA
@@ -1460,6 +1676,15 @@ export const Sales = () => {
                   </span>
                   <span className="hidden sm:inline">Modo Oscuro</span>
                 </button>
+                <button
+                  onClick={() => setMostrarModalReporte(true)}
+                  className="flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-xl shadow-lg hover:bg-indigo-700 transition-all font-bold text-xs"
+                >
+                  <span className="material-symbols-outlined text-[18px]">
+                    analytics
+                  </span>
+                  <span className="hidden sm:inline">Reporte de Caja (F7)</span>
+                </button>
               </div>
             </div>
           </div>
@@ -1533,7 +1758,22 @@ export const Sales = () => {
             style={{ position: "relative", zIndex: 50 }}
           >
             <div className="search-input-wrapper">
-              <div className="search-input-container">
+              <div className="search-shortcut-hints">
+              <div className="shortcut-hint">
+                <span className="key-cap">F2</span>
+                <span className="key-desc">Toggle PZA/CAJA</span>
+              </div>
+              <div className="shortcut-hint">
+                <span className="key-cap">F3</span>
+                <span className="key-desc">Empaque rápido</span>
+              </div>
+              <div className="shortcut-hint">
+                <span className="key-cap">F4</span>
+                <span className="key-desc">Empacar todo</span>
+              </div>
+            </div>
+
+            <div className="search-input-container">
                 <div className="search-icon-wrapper">
                   <span className="material-symbols-outlined">search</span>
                 </div>
@@ -1677,6 +1917,15 @@ export const Sales = () => {
         <div className="cart-sidebar">
           <div className="cart-sidebar-header">
             <h2 className="cart-sidebar-title">Carrito de Compras</h2>
+            <button 
+              className="stock-mode-toggle"
+              onClick={toggleStockDisplayMode}
+              title={`Modo de stock: ${stockDisplayMode === 'mixed' ? 'Mixto' : stockDisplayMode === 'pieces' ? 'Piezas' : 'Cajas'}`}
+            >
+              <span className="material-symbols-outlined">
+                {stockDisplayMode === 'mixed' ? 'dashboard' : stockDisplayMode === 'pieces' ? 'tag' : 'inventory_2'}
+              </span>
+            </button>
           </div>
 
           {carrito.length === 0 ? (
@@ -1730,14 +1979,27 @@ export const Sales = () => {
                   </div>
                   <div className="item-info-modern">
                     <h3 className="item-name-modern">{item.name}</h3>
-                    <div className="item-price-modern">
-                      {formatearDinero(item.price)} / {item.unit_sold || "PZA"}
+                    
+                    <div className="item-meta-row">
+                      <div className={`item-unit-badge ${item.unit_sold === "CAJA" ? "caja" : "pza"}`}>
+                        {item.unit_sold || "PZA"}
+                      </div>
+                      <div className="item-price-modern">
+                        {formatearDinero(item.price)}
+                      </div>
+                      {!item.is_package && !item.is_common && (
+                        <div className="item-stock-tag">
+                          Stock: {formatStockDisplay(item)}
+                        </div>
+                      )}
                     </div>
+
                     {tieneCajaConfigurada(item) && (
                       <div className="sale-unit-toggle">
                         <button
                           type="button"
                           className={item.unit_sold !== "CAJA" ? "active" : ""}
+                          data-unit="PZA"
                           onClick={(e) => {
                             e.stopPropagation();
                             cambiarUnidadVenta(item.id, "PZA");
@@ -1748,6 +2010,7 @@ export const Sales = () => {
                         <button
                           type="button"
                           className={item.unit_sold === "CAJA" ? "active" : ""}
+                          data-unit="CAJA"
                           onClick={(e) => {
                             e.stopPropagation();
                             cambiarUnidadVenta(item.id, "CAJA");
@@ -1757,10 +2020,30 @@ export const Sales = () => {
                         </button>
                       </div>
                     )}
+
                     {item.unit_sold === "CAJA" && (
-                      <div className="item-conversion-modern">
-                        {item.conversion_factor || item.stock_multiplier} pzas
+                      <div className="item-breakdown-modern">
+                        {item.quantity} cajas × {item.conversion_factor || item.stock_multiplier} pzs = {item.quantity * (item.conversion_factor || item.stock_multiplier)} piezas
                       </div>
+                    )}
+
+                    {!item.is_package && !item.is_common && (
+                      <button
+                        type="button"
+                        className={`item-pack-btn-modern ${
+                          item.is_custom_pack ? "active" : ""
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          abrirModalEmpaque(item);
+                        }}
+                        title="Empaque al vuelo (F3)"
+                      >
+                        <span className="material-symbols-outlined">
+                          inventory_2
+                        </span>
+                        <span className="shortcut-hint">F3</span>
+                      </button>
                     )}
                   </div>
                   <div className="quantity-controls-modern">
@@ -1875,15 +2158,27 @@ export const Sales = () => {
                 Abrir Caja para Vender
               </button>
             ) : (
-              <button
-                onClick={abrirModalPago}
-                disabled={vendiendo || carrito.length === 0}
-                className={`btn-process-payment ${
-                  carrito.length === 0 ? "opacity-50 cursor-not-allowed" : ""
-                }`}
-              >
-                Procesar Pago
-              </button>
+              <div className="cart-action-group">
+                  <button
+                    onClick={() => setMostrarModalPaqueteTodo(true)}
+                    disabled={vendiendo || carrito.length === 0}
+                    className="btn-convert-pkg"
+                    title="Convertir todo el carrito a un solo paquete (F4)"
+                  >
+                    <span className="material-symbols-outlined">box</span>
+                    <span>Empacar Todo</span>
+                    <span className="btn-shortcut-tag">F4</span>
+                  </button>
+                <button
+                  onClick={abrirModalPago}
+                  disabled={vendiendo || carrito.length === 0}
+                  className={`btn-process-payment ${
+                    carrito.length === 0 ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                >
+                  Procesar Pago
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -2519,6 +2814,220 @@ export const Sales = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {/* MODAL EMPAQUE AL VUELO (ITEM) */}
+      {mostrarModalEmpaque && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-in zoom-in fade-in duration-200 overflow-hidden flex flex-col max-h-[90vh]">
+            <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
+              <span className="material-symbols-outlined text-blue-500">
+                inventory_2
+              </span>
+              Empaque al Vuelo
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+              {itemEmpaque?.name}
+            </p>
+
+            <div className="overflow-y-auto pr-1 flex-1 space-y-4">
+              {/* Presets Guardados */}
+              {presets.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    Configuraciones Guardadas
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {presets.map((preset) => (
+                      <div
+                        key={preset.id}
+                        onClick={() => handleSelectPreset(preset)}
+                        className={`group relative p-3 rounded-xl border-2 transition-all cursor-pointer flex flex-col ${
+                          Number(empaqueForm.piezas) === Number(preset.units) && Number(empaqueForm.precio) === Number(preset.price)
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                            : 'border-slate-100 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-800'
+                        }`}
+                      >
+                        <span className="text-lg font-bold text-slate-800 dark:text-white">
+                          {preset.units} <span className="text-[10px] font-normal">Pzas</span>
+                        </span>
+                        <span className="text-xs font-mono text-blue-600 dark:text-blue-400">
+                          {formatearDinero(preset.price)}
+                        </span>
+                        <button
+                          onClick={(e) => handleDeletePreset(e, preset.id)}
+                          className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-rose-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">close</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <form onSubmit={handleConfirmarEmpaque} className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+                      Piezas por Caja
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      autoFocus
+                      min="1"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white font-bold"
+                      value={empaqueForm.piezas}
+                      onChange={(e) =>
+                        setEmpaqueForm({ ...empaqueForm, piezas: e.target.value })
+                      }
+                      placeholder="12"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+                      Precio Total (MXN)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      step="0.01"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white font-mono font-bold"
+                      value={empaqueForm.precio}
+                      onChange={(e) =>
+                        setEmpaqueForm({ ...empaqueForm, precio: e.target.value })
+                      }
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+
+                <label className="flex items-center gap-2 cursor-pointer group p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                    guardarComoPreset ? 'bg-blue-500 border-blue-500' : 'border-slate-300 dark:border-slate-600'
+                  }`}>
+                    <input
+                      type="checkbox"
+                      className="hidden"
+                      checked={guardarComoPreset}
+                      onChange={(e) => setGuardarComoPreset(e.target.checked)}
+                    />
+                    {guardarComoPreset && (
+                      <span className="material-symbols-outlined text-[14px] text-white font-bold">check</span>
+                    )}
+                  </div>
+                  <span className="text-sm text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200">
+                    Recordar esta configuración para este producto
+                  </span>
+                </label>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setMostrarModalEmpaque(false)}
+                    className="flex-1 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl transition-colors font-medium"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors font-medium shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-sm">
+                      check
+                    </span>
+                    Confirmar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EMPACAR TODO EL CARRITO */}
+      {mostrarModalPaqueteTodo && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-in zoom-in fade-in duration-200">
+            <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined text-indigo-500">
+                box
+              </span>
+              Empacar Todo el Carrito
+            </h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+              Convierte todos los productos actuales en un solo paquete cerrado.
+            </p>
+            <form onSubmit={handleConfirmarPaqueteTodo} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Nombre del Paquete
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  className="w-full px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white"
+                  value={paqueteTodoForm.nombre}
+                  onChange={(e) =>
+                    setPaqueteTodoForm({
+                      ...paqueteTodoForm,
+                      nombre: e.target.value,
+                    })
+                  }
+                  placeholder="Ej. CANASTA DE REGALO"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Precio Total del Paquete (MXN)
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  step="0.01"
+                  className="w-full px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white font-mono text-lg"
+                  value={paqueteTodoForm.precio}
+                  onChange={(e) =>
+                    setPaqueteTodoForm({
+                      ...paqueteTodoForm,
+                      precio: e.target.value,
+                    })
+                  }
+                  placeholder="0.00"
+                />
+                <p className="mt-1 text-xs text-slate-400">
+                  Total sugerido (suma del carrito):{" "}
+                  {formatearDinero(total)}
+                </p>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setMostrarModalPaqueteTodo(false)}
+                  className="flex-1 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl transition-colors font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-colors font-medium shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-sm">
+                    check
+                  </span>
+                  Crear Paquete
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {mostrarModalReporte && (
+        <SessionReportModal onClose={() => setMostrarModalReporte(false)} />
       )}
     </div>
   );

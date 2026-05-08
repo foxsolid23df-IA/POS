@@ -37,7 +37,15 @@ export const formatearFechaHora = (fecha) => {
     return `${fechaFormateada} - ${horaFormateada}`
 }
 
-// 4. CONTAR PRODUCTOS TOTALES EN UNA LISTA
+// 4. FORMATEAR DINERO (alias en inglés para compatibilidad)
+export const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('es-MX', {
+        style: 'currency',
+        currency: 'MXN'
+    }).format(amount || 0)
+}
+
+// 5. CONTAR PRODUCTOS TOTALES EN UNA LISTA
 export const contarProductos = (productos) => {
     return productos.reduce((total, producto) => {
         return total + producto.quantity

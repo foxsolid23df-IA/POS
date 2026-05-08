@@ -16,11 +16,15 @@ async function crearVenta(datosVenta) {
             errorStock = new Error(`Producto con ID ${producto.productId} no existe`);
             break;
         }
-        if (productoEnDB.stock < producto.quantity) {
+
+        // Usar base_quantity para descontar piezas reales (conversion_factor * quantity)
+        const baseQty = parseFloat(producto.base_quantity || (producto.quantity * (producto.conversion_factor || 1)));
+
+        if (productoEnDB.stock < baseQty) {
             errorStock = new Error(`No hay suficiente stock de ${productoEnDB.name}. Stock disponible: ${productoEnDB.stock}`);
             break;
         }
-        await productoEnDB.update({ stock: productoEnDB.stock - producto.quantity });
+        await productoEnDB.update({ stock: productoEnDB.stock - baseQty });
     }
 
     if (errorStock) throw errorStock;

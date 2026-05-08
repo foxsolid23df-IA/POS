@@ -20,7 +20,13 @@ export const salesService = {
             throw new Error("Terminal no configurada. No se puede realizar la venta.");
         }
 
-        // Formatear items para el RPC
+        // Formatear items para el RPC de validación y proceso
+        const itemsForValidation = saleData.items.map(item => ({
+            product_id: isNaN(parseInt(item.product_id ?? item.id)) ? null : parseInt(item.product_id ?? item.id),
+            requested_base_qty: parseFloat(item.base_quantity || (item.quantity * (item.conversion_factor || item.stock_multiplier || 1))),
+            name: item.name
+        }));
+
         const itemsJson = saleData.items.map(item => ({
             product_id: isNaN(parseInt(item.product_id ?? item.id)) ? null : parseInt(item.product_id ?? item.id),
             product_name: item.name,
@@ -29,8 +35,25 @@ export const salesService = {
             total: item.price * item.quantity,
             unit_sold: item.unit_sold || 'PZA',
             conversion_factor: parseInt(item.conversion_factor || item.stock_multiplier || 1),
-            base_quantity: parseInt(item.base_quantity || (item.quantity * (item.conversion_factor || item.stock_multiplier || 1)))
+            base_quantity: parseFloat(item.base_quantity || (item.quantity * (item.conversion_factor || item.stock_multiplier || 1)))
         }));
+
+        // 1. Validar stock atómicamente vía RPC (si affect_inventory es true)
+        if (saleData.affect_inventory !== false) {
+            const { data: validationErrors, error: valError } = await supabase.rpc('validate_sale_stock', {
+                p_items: itemsForValidation
+            });
+
+            if (valError) throw valError;
+            
+            // Si el RPC devuelve registros, significa que hay errores de stock
+            if (validationErrors && validationErrors.length > 0) {
+                const errorDetails = validationErrors
+                    .map(e => `- ${e.product_name}: Disponible ${e.available_stock}, Faltan ${e.missing_qty}`)
+                    .join('\n');
+                throw new Error(`Stock insuficiente detectado en el servidor:\n${errorDetails}`);
+            }
+        }
 
         // Formatear pagos para el RPC
         const paymentsJson = (saleData.payments || []).map(p => ({

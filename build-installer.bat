@@ -1,11 +1,20 @@
 @echo off
+cd /d "%~dp0"
 chcp 65001 >nul 2>&1
 echo ====================================
 echo   NEXUM POS - Build Installer
 echo ====================================
 echo.
 
+:: Verificar si package.json existe
+if not exist "package.json" (
+    echo ERROR: No se encuentra package.json en la ra?z del proyecto.
+    echo Aseg?rate de ejecutar este script desde la carpeta del proyecto.
+    goto error
+)
+
 :: Leer version desde package.json
+set VERSION=unknown
 for /f "tokens=2 delims=:, " %%a in ('findstr "\"version\"" package.json') do (
     set VERSION=%%~a
     goto :found_version
@@ -14,22 +23,36 @@ for /f "tokens=2 delims=:, " %%a in ('findstr "\"version\"" package.json') do (
 echo Version detectada: %VERSION%
 echo.
 
-echo [1/4] Instalando dependencias principales...
+echo [1/5] Instalando dependencias principales...
 call npm install
-if errorlevel 1 goto error
+if %ERRORLEVEL% NEQ 0 goto error
 
 echo.
-echo [2/4] Instalando dependencias del backend...
+echo [2/5] Instalando dependencias del backend...
+if not exist "backend" (
+    echo ERROR: Carpeta 'backend' no encontrada.
+    goto error
+)
 cd backend
-call npm install --production
-if errorlevel 1 goto error
+call npm install --omit=dev
+if %ERRORLEVEL% NEQ 0 (
+    cd ..
+    goto error
+)
 cd ..
 
 echo.
-echo [3/4] Instalando dependencias del frontend...
+echo [3/5] Instalando dependencias del frontend...
+if not exist "frontend" (
+    echo ERROR: Carpeta 'frontend' no encontrada.
+    goto error
+)
 cd frontend
 call npm install
-if errorlevel 1 goto error
+if %ERRORLEVEL% NEQ 0 (
+    cd ..
+    goto error
+)
 cd ..
 
 echo.
@@ -52,7 +75,7 @@ echo.
 echo [5/5] Construyendo app y creando instalador...
 echo          (este paso puede tardar varios minutos)
 call npm run dist
-if errorlevel 1 goto error
+if %ERRORLEVEL% NEQ 0 goto error
 
 echo.
 echo ====================================
