@@ -74,11 +74,28 @@ export const TerminalSetup = ({ onTerminalConfigured }) => {
       }
     } catch (error) {
       console.error("Error configurando terminal:", error);
-      Swal.fire(
-        "Error",
-        "No se pudo registrar la terminal. Intenta de nuevo.",
-        "error",
-      );
+      
+      if (error.message === 'NAME_ALREADY_EXISTS') {
+        Swal.fire({
+          title: "Nombre en Uso",
+          text: error.details || "Este nombre ya está registrado para otro equipo. Por favor usa un nombre diferente.",
+          icon: "warning",
+          confirmButtonColor: "#3b82f6"
+        });
+      } else if (error.code === '23505') {
+        Swal.fire({
+          title: "Caja Duplicada",
+          text: "Ya existe una caja con este nombre en la base de datos. Por favor elige un nombre único.",
+          icon: "warning",
+          confirmButtonColor: "#3b82f6"
+        });
+      } else {
+        Swal.fire(
+          "Error",
+          "No se pudo registrar la terminal. Intenta de nuevo.",
+          "error",
+        );
+      }
     } finally {
       setIsSubmitting(false);
     }

@@ -8,19 +8,8 @@ export const terminalService = {
     getTerminalName: () => localStorage.getItem(TERMINAL_NAME_KEY),
 
     async registerTerminal(name, location = '', isMain = false) {
-        // Enforcing Single Main Register Rule:
-        if (isMain) {
-            await supabase
-                .from('terminals')
-                .update({ is_main: false })
-                .eq('is_main', true);
-        }
-
-        // NO buscamos por nombre para reutilizar. 
-        // Cada registro en cada PC debe ser una terminal ÚNICA en la DB.
-        // Si el usuario usa el mismo nombre, se crea un nuevo registro con ID único.
-        // Esto evita que dos PCs compartan el mismo ID de terminal y por tanto la misma sesión de caja.
-
+        const trimmedName = name.trim();
+        
         let machineId = null;
         if (window.electronAPI && window.electronAPI.isElectron) {
             try {
@@ -30,10 +19,61 @@ export const terminalService = {
             }
         }
 
+        // 0. Enforcing Single Main Register Rule:
+        if (isMain) {
+            await supabase
+                .from('terminals')
+                .update({ is_main: false })
+                .eq('is_main', true);
+        }
+
+        // 1. Verificar si ya existe una terminal con ese nombre
+        const { data: existingByName, error: fetchError } = await supabase
+            .from('terminals')
+            .select('*')
+            .eq('name', trimmedName)
+            .maybeSingle();
+
+        if (fetchError) throw fetchError;
+
+        if (existingByName) {
+            // Si el Machine ID coincide, podemos reutilizarla (o si no hay machineId en ninguno)
+            const sameMachine = (machineId && existingByName.machine_id === machineId) || 
+                              (!machineId && !existingByName.machine_id);
+
+            if (sameMachine) {
+                console.log('[TerminalService] Reutilizando terminal existente (Misma máquina o sin Machine ID)');
+                
+                // Actualizar info por si cambió ubicación o rol
+                const { data: updated, error: updateError } = await supabase
+                    .from('terminals')
+                    .update({ 
+                        location: location.trim(),
+                        is_main: isMain,
+                        is_active: true // Asegurar que esté activa
+                    })
+                    .eq('id', existingByName.id)
+                    .select()
+                    .single();
+
+                if (updateError) throw updateError;
+
+                localStorage.setItem(TERMINAL_ID_KEY, updated.id);
+                localStorage.setItem(TERMINAL_NAME_KEY, updated.name);
+                return updated;
+            } else {
+                // El nombre está tomado por OTRA máquina
+                const conflictError = new Error('NAME_ALREADY_EXISTS');
+                conflictError.details = `El nombre "${trimmedName}" ya está registrado para otro equipo en la red.`;
+                throw conflictError;
+            }
+        }
+
+        // 2. Si no existe, crear nueva
         const { data, error } = await supabase
             .from('terminals')
             .insert([{
-                name: name.trim(),
+                name: trimmedName,
                 location: location.trim(),
                 is_main: isMain,
                 machine_id: machineId

@@ -13,6 +13,7 @@ import { Inventory } from "../components/inventory/Inventory";
 import { Historial } from "../components/historial/Historial";
 import { Stats } from "../components/stats/Stats";
 import { Login } from "../components/auth/Login";
+import { UpdatePassword } from "../components/auth/UpdatePassword";
 import { LockScreen } from "../components/auth/LockScreen";
 import { ExpiredLicense } from "../components/auth/ExpiredLicense";
 import { CashFundModal } from "../components/auth/CashFundModal";
@@ -196,6 +197,7 @@ export const Routing = () => {
                 <SettingsProvider>
                   <Routes>
                     <Route path="/login" element={<Login />} />
+                    <Route path="/update-password" element={<UpdatePassword />} />
                     <Route
                       path="/register/:invitationCode?"
                       element={<Login />}

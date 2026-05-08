@@ -283,6 +283,24 @@ export const AuthProvider = ({ children }) => {
     setIsLicenseExpired(false);
   };
 
+  // Solicitar reseteo de contraseña
+  const resetPassword = async (email) => {
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}${window.location.pathname}#/update-password`,
+    });
+    if (error) throw error;
+    return data;
+  };
+
+  // Actualizar contraseña (después de usar el link)
+  const updatePassword = async (newPassword) => {
+    const { data, error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+    if (error) throw error;
+    return data;
+  };
+
   // Validar PIN de empleado SIN iniciar sesión (para auditoria o checks previos)
   const validateStaffPin = async (pin) => {
     try {
@@ -433,6 +451,8 @@ export const AuthProvider = ({ children }) => {
     login,
     signUp,
     logout,
+    resetPassword,
+    updatePassword,
     loading,
 
     // PERMISOS basados en el empleado activo

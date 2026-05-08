@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Navigate, useParams } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { invitationService } from "../../services/invitationService";
+import { ForgotPasswordModal } from "./ForgotPasswordModal";
 import logo from "../../assets/icon.png";
 import "./Login.css";
 
@@ -14,6 +15,7 @@ export const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotModal, setShowForgotModal] = useState(false);
 
   // Form Data
   const [formData, setFormData] = useState({
@@ -235,7 +237,7 @@ export const Login = () => {
 
             {!isRegistering && (
               <div className="forgot-password-link">
-                <button type="button" className="text-link">
+                <button type="button" className="text-link" onClick={() => setShowForgotModal(true)}>
                   ¿Olvidaste tu contraseña?
                 </button>
               </div>
@@ -278,6 +280,7 @@ export const Login = () => {
           <button type="button">Soporte</button>
         </div>
       </div>
+      <ForgotPasswordModal isOpen={showForgotModal} onClose={() => setShowForgotModal(false)} />
     </div>
   );
 };
