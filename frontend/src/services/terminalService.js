@@ -164,12 +164,19 @@ export const terminalService = {
         console.log(`[TerminalService] Validando terminal: ${terminalName} (${terminalId})`);
 
         try {
-            // Pequeña espera para asegurar que la sesión de Supabase esté estable
-            await new Promise(resolve => setTimeout(resolve, 500));
+            // 1. Asegurar que la sesión de Supabase esté lista antes de consultar
+            const { data: sessionData } = await supabase.auth.getSession();
+            if (!sessionData?.session) {
+                console.log('[TerminalService] Sesión no lista aún, esperando...');
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
 
+            // 2. Si no hay terminal ID, intentar recuperar
             if (!terminalId) {
-                console.log('[TerminalService] No hay terminal configurada localmente. Intentando auto-recuperar por Machine ID...');
-                if (window.electronAPI && window.electronAPI.isElectron) {
+                console.log('[TerminalService] No hay terminal configurada localmente. Intentando auto-recuperar...');
+                
+                // Primero: intentar por Machine ID (Electron)
+                if (window.electronAPI?.isElectron) {
                     try {
                         const machineId = await window.electronAPI.getMachineId();
                         if (machineId) {
@@ -188,36 +195,90 @@ export const terminalService = {
                             }
                         }
                     } catch (err) {
-                        console.error('[TerminalService] Error en búsqueda por Machine ID:', err);
+                        console.warn('[TerminalService] Error en búsqueda por Machine ID:', err);
                     }
                 }
+
+                // Segundo: intentar por nombre de terminal guardado en sessionStorage (web)
+                const savedTerminalName = sessionStorage.getItem('last_terminal_name');
+                if (savedTerminalName) {
+                    console.log(`[TerminalService] Intentando recuperar por nombre: ${savedTerminalName}`);
+                    try {
+                        const { data: tData, error: tError } = await supabase
+                            .from('terminals')
+                            .select('id, name')
+                            .eq('name', savedTerminalName)
+                            .eq('is_active', true)
+                            .maybeSingle();
+
+                        if (tData && !tError) {
+                            console.log(`[TerminalService] ¡Caja recuperada por nombre! Asociando como: ${tData.name}`);
+                            localStorage.setItem(TERMINAL_ID_KEY, tData.id);
+                            localStorage.setItem(TERMINAL_NAME_KEY, tData.name);
+                            return true;
+                        }
+                    } catch (err) {
+                        console.warn('[TerminalService] Error en búsqueda por nombre:', err);
+                    }
+                }
+
+                console.log('[TerminalService] No se pudo recuperar terminal automáticamente');
                 return false;
             }
 
+            // 3. Validar que el ID guardado existe en la DB
             const { data, error } = await supabase
                 .from('terminals')
                 .select('id, name')
                 .eq('id', terminalId)
-                .maybeSingle(); // Usar maybeSingle para evitar errores si no existe
+                .eq('is_active', true)
+                .maybeSingle();
 
+            // Error de red o similar - NO borrar configuración
             if (error) {
                 console.error('[TerminalService] Error de DB validando terminal:', error);
-                // Si es un error de red o similar, no borrar configuración
-                return true;
+                // Verificar si es error de red (código 0 o similar)
+                if (error.message?.includes('network') || error.message?.includes('fetch') || error.status === 0) {
+                    console.log('[TerminalService] Error de red, manteniendo configuración local');
+                    return true;
+                }
+                return true; // Mantener configuración ante cualquier error
             }
 
+            // La terminal NO existe en la DB o está inactiva
             if (!data) {
-                console.warn(`[TerminalService] La terminal ${terminalId} no existe en la base de datos.`);
-                // Solo borrar si estamos SEGUROS de que no existe (es decir, data es null y no hay error)
+                console.warn(`[TerminalService] La terminal ${terminalId} ya no existe o está inactiva en la DB.`);
+                // Intentar buscar por el nombre guardado por si fue migrada o recreada
+                if (terminalName) {
+                    const { data: tData, error: tError } = await supabase
+                        .from('terminals')
+                        .select('id, name')
+                        .eq('name', terminalName)
+                        .eq('is_active', true)
+                        .maybeSingle();
+                    
+                    if (tData && !tError) {
+                        console.log(`[TerminalService] Terminal reactivada/renombrada. Nueva ID: ${tData.id}`);
+                        localStorage.setItem(TERMINAL_ID_KEY, tData.id);
+                        sessionStorage.setItem('last_terminal_name', tData.name);
+                        return true;
+                    }
+                }
+                
+                // No borrar - dejar que el usuario configure de nuevo
                 this.resetLocalTerminal();
+                sessionStorage.removeItem('last_terminal_name');
                 return false;
             }
 
+            // 4. Todo bien - guardar el nombre para recuperación futura
             console.log(`[TerminalService] Terminal validada con éxito: ${data.name}`);
+            sessionStorage.setItem('last_terminal_name', data.name);
             return true;
         } catch (err) {
             console.error('[TerminalService] Error crítico en validación:', err);
-            return true; // No borrar en caso de error desconocido
+            // No borrar configuración ante errores desconocidos
+            return terminalId ? true : false;
         }
     }
 };

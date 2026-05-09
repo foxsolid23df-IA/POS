@@ -74,6 +74,23 @@ for /f "tokens=*" %%i in ('where node') do (
 echo.
 echo [5/5] Construyendo app y creando instalador...
 echo          (este paso puede tardar varios minutos)
+
+:: Limpiar release anterior para evitar archivos bloqueados
+if exist "release\win-unpacked" (
+    echo    Limpiando build anterior...
+    rmdir /s /q "release\win-unpacked" 2>nul
+    timeout /t 2 /nobreak >nul
+)
+
+:: Copiar .env a build/ para evitar EBUSY (el original puede estar bloqueado)
+if not exist "build" mkdir build
+copy /Y "backend\.env" "build\.env" >nul 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    echo    ADVERTENCIA: No se pudo copiar .env, reintentando...
+    timeout /t 3 /nobreak >nul
+    copy /Y "backend\.env" "build\.env" >nul
+)
+
 call npm run dist
 if %ERRORLEVEL% NEQ 0 goto error
 

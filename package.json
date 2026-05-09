@@ -57,7 +57,8 @@
         "to": "app/backend",
         "filter": [
           "**/*",
-          "!node_modules/**"
+          "!node_modules/**",
+          "!.env"
         ]
       },
       {
@@ -65,7 +66,7 @@
         "to": "app/backend/node_modules"
       },
       {
-        "from": "backend/.env",
+        "from": "build/.env",
         "to": "app/backend/.env"
       }
     ],

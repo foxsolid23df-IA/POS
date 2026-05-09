@@ -70,41 +70,66 @@ const PrivateLayout = ({ children }) => {
   );
   const [isValidating, setIsValidating] = useState(false);
 
+  // Flag persistente en localStorage para evitar re-validaciones innecesarias
+  // Este flag dura entre pestañas y sesiones hasta que se cierre el navegador
+  const terminalValidatedKey = "terminal_validated_global";
+
   // Validar existencia de terminal solo una vez al cargar la app
   useEffect(() => {
     if (!user || isValidating) return;
 
-    // Flag para evitar múltiples ejecuciones durante la misma sesión de carga
-    const terminalValidatedSession =
-      sessionStorage.getItem("terminal_validated");
-    if (terminalValidatedSession === "true") {
-      console.log("[Routing] Terminal ya validada en esta pestaña.");
+    // No validar si estamos en modo visor
+    if (sessionStorage.getItem("visor_mode") === "true") {
+      return;
+    }
+
+    // Verificar si ya foi validado nesta sessão ou sessão anterior
+    const sessionValidated = sessionStorage.getItem("terminal_validated");
+    const globalValidated = localStorage.getItem(terminalValidatedKey);
+    
+    if (sessionValidated === "true" || globalValidated === "true") {
+      console.log("[Routing] Terminal ya validada previamente.");
       return;
     }
 
     const validateTerminal = async () => {
-      // No validar terminales si estamos en modo visor
-      if (sessionStorage.getItem("visor_mode") === "true") {
+      // Re-verificar el estado actual de la terminal antes de validar
+      const currentTerminalId = terminalService.getTerminalId();
+      
+      if (!currentTerminalId) {
+        console.log("[Routing] No hay terminal ID, requiriendo configuración");
+        setIsTerminalConfigured(false);
         return;
       }
 
-      if (isTerminalConfigured) {
-        setIsValidating(true);
-        try {
-          const isValid = await terminalService.validateTerminalExistence();
-          if (!isValid) {
-            setIsTerminalConfigured(false);
-          } else {
-            sessionStorage.setItem("terminal_validated", "true");
-          }
-        } finally {
-          setIsValidating(false);
+      setIsValidating(true);
+      try {
+        const isValid = await terminalService.validateTerminalExistence();
+        if (!isValid) {
+          console.log("[Routing] Validación falló, mostrando TerminalSetup");
+          setIsTerminalConfigured(false);
+          localStorage.removeItem(terminalValidatedKey);
+        } else {
+          console.log("[Routing] Terminal validada exitosamente");
+          sessionStorage.setItem("terminal_validated", "true");
+          localStorage.setItem(terminalValidatedKey, "true");
         }
+      } catch (err) {
+        console.error("[Routing] Error en validación de terminal:", err);
+        // En caso de error, permitir continuar si hay ID local
+        if (currentTerminalId) {
+          sessionStorage.setItem("terminal_validated", "true");
+          localStorage.setItem(terminalValidatedKey, "true");
+        } else {
+          setIsTerminalConfigured(false);
+        }
+      } finally {
+        setIsValidating(false);
       }
     };
 
     validateTerminal();
-  }, [user?.id]); // Solo re-validar si cambia el usuario (login/logout)
+  }, [user?.id]);
 
   // Verificar sesión de caja por separado
   useEffect(() => {
@@ -132,7 +157,12 @@ const PrivateLayout = ({ children }) => {
   if (!isTerminalConfigured) {
     return (
       <TerminalSetup
-        onTerminalConfigured={() => setIsTerminalConfigured(true)}
+        onTerminalConfigured={() => {
+          setIsTerminalConfigured(true);
+          // Guardar flag global para evitar re-validación
+          sessionStorage.setItem("terminal_validated", "true");
+          localStorage.setItem("terminal_validated_global", "true");
+        }}
       />
     );
   }
