@@ -295,10 +295,11 @@ export const AuthProvider = ({ children }) => {
 
   // Solicitar reseteo de contraseña
   const resetPassword = async (email) => {
-    // Para HashRouter, es mejor redirigir a la raíz y dejar que el listener maneje la ruta
-    // Supabase anexará el token de acceso al hash
+    // Usamos VITE_SITE_URL si está definido (para producción), de lo contrario usamos el origen actual (local)
+    const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
+    
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/`,
+      redirectTo: `${siteUrl}/`,
     });
     if (error) throw error;
     return data;
