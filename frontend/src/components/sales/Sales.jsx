@@ -22,6 +22,11 @@ import { supabase } from "../../supabase";
 import { useProducts } from "../../contexts/ProductContext";
 import { useSettings } from "../../contexts/SettingsContext";
 import { SessionReportModal } from "./SessionReportModal";
+import SearchSection from "./SearchSection";
+import CartSidebar from "./CartSidebar";
+import { SalesHeader } from "./SalesHeader";
+import { QuickActions } from "./QuickActions";
+import ProductGrid from "./ProductGrid";
 import "./Sales.css";
 
 export const Sales = () => {
@@ -330,6 +335,34 @@ export const Sales = () => {
   const [sugerencias, setSugerencias] = useState([]);
   const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
   const [indexSugerencia, setIndexSugerencia] = useState(0);
+  const [selectedResultIndex, setSelectedResultIndex] = useState(-1);
+  const [activeCategory, setActiveCategory] = useState(null);
+  
+  const getCategoryIcon = (category) => {
+    const icons = {
+      "Herramientas": "🔧",
+      "Fijaciones": "🔩",
+      "Electricidad": "⚡",
+      "Pintura": "🎨",
+      "Plomería": "🚰",
+      "Madera": "🪵",
+      "Automotriz": "🚗",
+      "Jardín": "🌱",
+      "Iluminación": "💡",
+      "Ferretería": "🔨",
+      "Accesorios": "🧰",
+      "Materiales": "🧱"
+    };
+    return icons[category] || "📦";
+  };
+
+  // Categorías para accesos rápidos
+  const categories = [
+    "Herramientas", "Fijaciones", "Electricidad", "Pintura",
+    "Plomería", "Madera", "Automotriz", "Jardín",
+    "Iluminación", "Ferretería", "Accesorios", "Materiales"
+  ];
+  
   // ID temporal de transacción estable para el modal de pago
   const [transactionId, setTransactionId] = useState("");
   // Estado para evitar que el primer ENTER abra y el segundo cierre instantáneamente
@@ -338,6 +371,9 @@ export const Sales = () => {
   const [issuers, setIssuers] = useState([]);
   const [selectedIssuerId, setSelectedIssuerId] = useState("");
   const [stockDisplayMode, setStockDisplayMode] = useState("mixed"); // 'pieces', 'mixed', 'boxes'
+  const [showTableDetails, setShowTableDetails] = useState(true); // Controla la visibilidad de detalles extra en la tabla
+
+  const toggleTableDetails = () => setShowTableDetails(!showTableDetails);
 
   const toggleStockDisplayMode = () => {
     setStockDisplayMode((prev) => {
@@ -1014,6 +1050,42 @@ export const Sales = () => {
     setCodigoEscaneado(e.target.value);
   };
 
+  // Función para manejar teclado en búsqueda (Search-First)
+  const handleSearchKeyDown = (e) => {
+    const query = codigoEscaneado.toLowerCase().trim();
+    const filteredProducts = productos.filter(
+      (p) =>
+        p?.name?.toLowerCase().includes(query) ||
+        p?.barcode?.toLowerCase().includes(query) ||
+        p?.clave?.toLowerCase().includes(query)
+    ).slice(0, 12);
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedResultIndex((prev) => 
+        prev < filteredProducts.length - 1 ? prev + 1 : 0
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedResultIndex((prev) => 
+        prev > 0 ? prev - 1 : filteredProducts.length - 1
+      );
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (filteredProducts.length > 0 && selectedResultIndex >= 0) {
+        seleccionarProducto(filteredProducts[selectedResultIndex]);
+        setSelectedResultIndex(-1);
+      } else if (codigoEscaneado.trim()) {
+        buscarProductoManual(codigoEscaneado.trim());
+        setCodigoEscaneado("");
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setCodigoEscaneado("");
+      setSelectedResultIndex(-1);
+    }
+  };
+
   // Ref para el monto, permitiendo acceso en el listener sin reiniciar el efecto
   const montoRecibidoRef = useRef(montoRecibido);
   useEffect(() => {
@@ -1616,293 +1688,208 @@ export const Sales = () => {
 
   return (
     <div className="sales-view">
+      <SalesHeader onOpenReportModal={() => setMostrarModalReporte(true)} />
+
+      {isSupervising && (
+        <div className="bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900/40 dark:to-yellow-900/40 border-l-4 border-amber-500 dark:border-amber-400 text-amber-900 dark:text-amber-100 p-4 mb-4 rounded-r-xl shadow-md dark:shadow-lg flex items-center justify-between mx-4 mt-4">
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-amber-600 dark:text-amber-400">
+              admin_panel_settings
+            </span>
+            <div>
+              <h3 className="font-bold text-amber-900 dark:text-amber-50">
+                Modo Supervisión Activo
+              </h3>
+              <p className="text-sm text-amber-800 dark:text-amber-200">
+                La caja está cerrada. Las funciones de venta, cobro y
+                movimientos están deshabilitadas.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BOTONES EXTRA (PRODUCTO COMÚN, ENTRADA, SALIDA) */}
+      <div className="px-4 mt-2">
+        <QuickActions 
+          isSupervising={isSupervising}
+          onOpenComun={() => setMostrarModalComun(true)}
+          onOpenSalida={() => setMostrarModalSalida(true)}
+          onOpenEntrada={() => setMostrarModalEntrada(true)}
+          setMostrarCameraScanner={setMostrarCameraScanner}
+          toggleScannerMode={toggleScannerMode}
+          isScannerAvailable={isAvailable}
+          scannerMode={scannerMode}
+        />
+      </div>
+
       <div className="sales-content-wrapper">
-        <div className="sales-main-area">
-          <div className="sales-area-header">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center w-full gap-4">
-              <div>
-                <h1 className="sales-title">AREA DE COBRO</h1>
-                <p className="sales-subtitle">
-                  Gestiona y procesa tus ventas con precisión
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => {
-                    const url = `${window.location.origin}${window.location.pathname}#/customer-display?u=${user?.id}&s=${cashSession?.id}`;
-                    window.open(url, "_blank", "width=1024,height=768");
-                  }}
-                  className="flex items-center gap-2 px-3 py-2 bg-emerald-500 text-white rounded-xl shadow-sm hover:bg-emerald-600 transition-all font-bold text-xs"
-                >
-                  <span className="material-symbols-outlined text-[18px]">
-                    monitor
-                  </span>
-                  <span className="hidden sm:inline">Pantalla Cliente</span>
-                </button>
-                <button
-                  onClick={() => {
-                    console.log("[Sales] Recarga manual solicitada");
-                    cargarDatos(true);
-                  }}
-                  disabled={loadingProducts}
-                  className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-xl shadow-sm hover:bg-blue-600 transition-all font-bold text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Recargar productos"
-                >
-                  <span
-                    className={`material-symbols-outlined text-[18px] ${
-                      loadingProducts ? "animate-spin" : ""
-                    }`}
-                  >
-                    refresh
-                  </span>
-                  <span className="hidden sm:inline">
-                    {loadingProducts ? "Cargando..." : "Recargar"}
-                  </span>
-                </button>
-                <button
-                  onClick={() => {
-                    document.documentElement.classList.toggle("dark");
-                    localStorage.setItem(
-                      "theme",
-                      document.documentElement.classList.contains("dark")
-                        ? "dark"
-                        : "light",
-                    );
-                  }}
-                  className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm hover:shadow-md transition-all text-slate-600 dark:text-slate-300 font-bold text-xs"
-                >
-                  <span className="material-symbols-outlined text-[18px]">
-                    dark_mode
-                  </span>
-                  <span className="hidden sm:inline">Modo Oscuro</span>
-                </button>
-                <button
-                  onClick={() => setMostrarModalReporte(true)}
-                  className="flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-xl shadow-lg hover:bg-indigo-700 transition-all font-bold text-xs"
-                >
-                  <span className="material-symbols-outlined text-[18px]">
-                    analytics
-                  </span>
-                  <span className="hidden sm:inline">Reporte de Caja (F7)</span>
-                </button>
-              </div>
-            </div>
-          </div>
+        <div className="sales-products-panel">
 
-          {isSupervising && (
-            <div className="bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900/40 dark:to-yellow-900/40 border-l-4 border-amber-500 dark:border-amber-400 text-amber-900 dark:text-amber-100 p-4 mb-4 rounded-r-xl shadow-md dark:shadow-lg flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-amber-600 dark:text-amber-400">
-                  admin_panel_settings
-                </span>
-                <div>
-                  <h3 className="font-bold text-amber-900 dark:text-amber-50">
-                    Modo Supervisión Activo
-                  </h3>
-                  <p className="text-sm text-amber-800 dark:text-amber-200">
-                    La caja está cerrada. Las funciones de venta, cobro y
-                    movimientos están deshabilitadas.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* ── ZONA A: BÚSQUEDA ── */}
+          <div className="search-zone">
+            <SearchSection
+              searchContainerRef={searchContainerRef}
+              campoCodigoRef={campoCodigoRef}
+              scannerInputMode={scannerInputMode}
+              scannerMode={scannerMode}
+              codigoEscaneado={codigoEscaneado}
+              manejarCambioCodigo={manejarCambioCodigo}
+              manejarEnter={manejarEnter}
+              isSupervising={isSupervising}
+            />
 
-          {/* BOTONES EXTRA (PRODUCTO COMÚN, ENTRADA, SALIDA) */}
-          <div className="flex gap-3 mb-4 flex-wrap">
-            <button
-              onClick={() => !isSupervising && setMostrarModalComun(true)}
-              disabled={isSupervising}
-              className={`flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl transition-colors font-medium text-sm flex-1 md:flex-none justify-center border border-slate-200 dark:border-slate-700 shadow-sm ${
-                isSupervising ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-              title="Agregar un producto sin registro"
-            >
-              <span className="material-symbols-outlined text-[18px]">
-                add_box
-              </span>
-              <span>Producto común</span>
-            </button>
-            <button
-              onClick={() => !isSupervising && setMostrarModalSalida(true)}
-              disabled={isSupervising}
-              className={`flex items-center gap-2 px-4 py-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-900/20 dark:hover:bg-rose-900/40 text-rose-600 dark:text-rose-400 rounded-xl transition-colors font-medium text-sm flex-1 md:flex-none justify-center border border-rose-200 dark:border-rose-800 shadow-sm ${
-                isSupervising ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-              title="Registrar salida de dinero (Gasto)"
-            >
-              <span className="material-symbols-outlined text-[18px]">
-                output
-              </span>
-              <span>Salida</span>
-            </button>
-            <button
-              onClick={() => !isSupervising && setMostrarModalEntrada(true)}
-              disabled={isSupervising}
-              className={`flex items-center gap-2 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 rounded-xl transition-colors font-medium text-sm flex-1 md:flex-none justify-center border border-emerald-200 dark:border-emerald-800 shadow-sm ${
-                isSupervising ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-              title="Registrar entrada de dinero manual"
-            >
-              <span className="material-symbols-outlined text-[18px]">
-                input
-              </span>
-              <span>Entrada</span>
-            </button>
-          </div>
-
-          {/* SCANNER Y BÚSQUEDA */}
-          <div
-            ref={searchContainerRef}
-            className="search-section-modern"
-            style={{ position: "relative", zIndex: 50 }}
-          >
-            <div className="search-input-wrapper">
-              <div className="search-shortcut-hints">
-              <div className="shortcut-hint">
-                <span className="key-cap">F2</span>
-                <span className="key-desc">Toggle PZA/CAJA</span>
-              </div>
-              <div className="shortcut-hint">
-                <span className="key-cap">F3</span>
-                <span className="key-desc">Empaque rápido</span>
-              </div>
-              <div className="shortcut-hint">
-                <span className="key-cap">F4</span>
-                <span className="key-desc">Empacar todo</span>
-              </div>
-            </div>
-
-            <div className="search-input-container">
-                <div className="search-icon-wrapper">
-                  <span className="material-symbols-outlined">search</span>
-                </div>
-                <input
-                  ref={campoCodigoRef}
-                  type="text"
-                  enterKeyHint="search"
-                  inputMode={scannerInputMode}
-                  placeholder={
-                    scannerMode
-                      ? "Escáner activo - escanee un código de barras..."
-                      : "Buscar por nombre o código de barras..."
-                  }
-                  value={codigoEscaneado}
-                  onChange={manejarCambioCodigo}
-                  onKeyDown={manejarEnter}
-                  disabled={isSupervising}
-                  className={`barcode-input-modern ${
-                    scannerMode ? "scanner-mode-active" : ""
-                  } ${isSupervising ? "opacity-50 cursor-not-allowed" : ""}`}
-                />
-              </div>
-              <button
-                onClick={() => setMostrarCameraScanner(true)}
-                className="btn-camera-modern"
-                disabled={isSupervising}
-                type="button"
-                title="Escanear código con cámara"
-              >
-                <span className="material-symbols-outlined">photo_camera</span>
-                <span>Cámara</span>
-              </button>
-              {/* Toggle Modo Escáner - disponible para todos los dispositivos */}
-              {isAvailable && (
-                <button
-                  onClick={toggleScannerMode}
-                  className={`btn-camera-modern ${
-                    scannerMode ? "scanner-mode-btn-active" : ""
-                  }`}
-                  type="button"
-                  title={
-                    scannerMode
-                      ? "Desactivar modo escáner (mostrar teclado virtual)"
-                      : "Activar modo escáner de código de barras (bloquear teclado virtual)"
-                  }
-                >
-                  <span className="material-symbols-outlined">
-                    {scannerMode ? "keyboard" : "barcode_reader"}
-                  </span>
-                  <span>{scannerMode ? "Teclado" : "Escáner BT"}</span>
-                </button>
-              )}
-            </div>
-
-            {/* LISTA DE SUGERENCIAS */}
-            {mostrarSugerencias && (
-              <div className="suggestions-dropdown">
-                {sugerencias.map((producto, index) => (
-                  <div
-                    key={producto.id}
-                    className={`suggestion-item ${
-                      index === indexSugerencia ? "active" : ""
-                    }`}
-                    onClick={() => seleccionarProducto(producto)}
-                    onMouseEnter={() => setIndexSugerencia(index)}
-                  >
-                    <div className="suggestion-image">
-                      {producto.image_url ? (
-                        <img src={producto.image_url} alt={producto.name} />
-                      ) : (
-                        <div className="no-img">📦</div>
-                      )}
+            {codigoEscaneado.trim().length > 0 && (
+              <div className="search-results-list">
+                {sugerencias.length > 0 ? (
+                  sugerencias.map((producto, index) => (
+                    <div
+                      key={producto.id}
+                      className={`search-result-item ${
+                        index === indexSugerencia ? "active" : ""
+                      }`}
+                      onClick={() => seleccionarProducto(producto)}
+                      onMouseEnter={() => setIndexSugerencia(index)}
+                    >
+                      <div className="result-info">
+                        <span className="result-name">{producto.name}</span>
+                        <span className="result-sku">{producto.barcode || ''}</span>
+                      </div>
+                      <div className="result-meta">
+                        <span className="result-price">{formatearDinero(producto.price)}</span>
+                        {(producto.stock || 0) > 0 && (
+                          <span className="result-stock">● {producto.stock} pzas</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="suggestion-info">
-                      <span className="suggestion-name">{producto.name}</span>
-                      <span className="suggestion-price">
-                        {formatearDinero(producto.price)}
-                      </span>
-                    </div>
-                    <span className="suggestion-stock">
-                      Stock: {producto.stock}
-                    </span>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="search-no-results">Sin resultados para "{codigoEscaneado}"</p>
+                )}
               </div>
             )}
           </div>
 
-          {/* ESTADO VACÍO O CARGANDO */}
-          {loadingProducts ? (
-            <div className="empty-scan-area">
-              <div className="empty-scan-icon spin">
-                <span className="material-symbols-outlined">sync</span>
-              </div>
-              <h3 className="empty-scan-title">Cargando productos...</h3>
-              <p className="empty-scan-text">Por favor espera un momento.</p>
-            </div>
-          ) : errorProducts ? (
-            <div className="empty-scan-area error">
-              <div className="empty-scan-icon text-red-500">
-                <span className="material-symbols-outlined">error</span>
-              </div>
-              <h3 className="empty-scan-title text-red-500">Error de carga</h3>
-              <p className="empty-scan-text">{errorProducts}</p>
-              <button
-                onClick={() => cargarDatos(true)}
-                className="mt-4 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
-              >
-                Reintentar
-              </button>
-            </div>
-          ) : (
-            !cargando &&
-            !isScanning &&
-            carrito.length === 0 && (
-              <div className="empty-scan-area">
-                <div className="empty-scan-icon">
-                  <span className="material-symbols-outlined">
-                    qr_code_scanner
-                  </span>
+          {/* ── ZONA B: LISTA DE VENTA ACTUAL ── */}
+          <div className="sale-items-zone">
+            {carrito.length === 0 ? (
+              <div className="pos-empty-table">
+                <div className="pos-empty-icon">
+                  <span className="material-symbols-outlined">shopping_cart_checkout</span>
                 </div>
-                <h3 className="empty-scan-title">Listo para escanear</h3>
-                <p className="empty-scan-text">
-                  Usa la búsqueda o el botón de cámara para agregar productos a
-                  la venta.
-                </p>
+                <h3>Venta Vacía</h3>
+                <p>Escanea un código o busca productos para comenzar</p>
               </div>
-            )
+            ) : (
+              <>
+                <div className="sales-area-header">
+                  <h2 className="sales-title">Venta Actual</h2>
+                  <p className="sales-subtitle">Detalle de productos agregados al carrito</p>
+                </div>
+                <div className="pos-professional-table">
+                {/* Header con 8 columnas */}
+                <div className="pos-table-header">
+                  <div className="pos-col pos-col-idx">#</div>
+                  <div className="pos-col pos-col-code">CÓDIGO</div>
+                  <div className="pos-col pos-col-desc">DESCRIPCIÓN DEL PRODUCTO</div>
+                  <div className="pos-col pos-col-price">PRECIO VENTA</div>
+                  <div className="pos-col pos-col-qty">CANT.</div>
+                  <div className="pos-col pos-col-unit">CAJA/PAQ.</div>
+                  <div className="pos-col pos-col-total">IMPORTE</div>
+                  <div className="pos-col pos-col-actions">🗑</div>
+                </div>
+
+                <div className="pos-table-body">
+                  {carrito.map((item, index) => {
+                    const tieneCaja = tieneCajaConfigurada(item);
+                    const esCaja = item.unit_sold === 'CAJA';
+
+                    return (
+                      <div
+                        key={item.id}
+                        className={`pos-row ${activeCartItemId === item.id ? 'active-row' : ''}`}
+                        onClick={() => setActiveCartItemId(item.id)}
+                      >
+                        {/* 1. Index */}
+                        <div className="pos-col pos-col-idx">{index + 1}</div>
+
+                        {/* 2. Código */}
+                        <div className={`pos-col pos-col-code ${!showTableDetails ? 'compact' : ''}`}>
+                          {showTableDetails ? (item.barcode || item.id?.split('::')[0] || '---') : ''}
+                        </div>
+
+                        {/* 3. Descripción */}
+                        <div className="pos-col pos-col-desc">
+                          <div className="pos-desc-container">
+                            <span className="pos-product-name">
+                              {item.name}
+                              {item.is_custom_pack && <span className="pack-badge">PACK</span>}
+                            </span>
+                            {showTableDetails && (
+                              <span className="pos-product-meta">
+                                Stock: {formatStockDisplay(item.stock, item.conversion_factor)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* 4. Precio */}
+                        <div className={`pos-col pos-col-price ${!showTableDetails ? 'compact' : ''}`}>
+                          {formatearDinero(item.price)}
+                        </div>
+
+                        {/* 5. Cantidad */}
+                        <div className="pos-col pos-col-qty">
+                          <div className="qty-picker">
+                            <button onClick={(e) => { e.stopPropagation(); cambiarCantidad(item.id, -1); }}>
+                              <span className="material-symbols-outlined">remove</span>
+                            </button>
+                            <span>{item.quantity}</span>
+                            <button onClick={(e) => { e.stopPropagation(); cambiarCantidad(item.id, 1); }}>
+                              <span className="material-symbols-outlined">add</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* 6. Unidad (Caja/Paq) */}
+                        <div className="pos-col pos-col-unit">
+                          {tieneCaja ? (
+                            <button
+                              className={`unit-toggle ${esCaja ? 'is-box' : ''}`}
+                              onClick={(e) => { e.stopPropagation(); abrirModalEmpaque(item); }}
+                            >
+                              <span className="material-symbols-outlined">
+                                {esCaja ? 'inventory_2' : 'package_2'}
+                              </span>
+                              {esCaja ? 'CAJA' : 'PZA'}
+                            </button>
+                          ) : (
+                            <span className="no-box">---</span>
+                          )}
+                        </div>
+
+                        {/* 7. Total */}
+                        <div className="pos-col pos-col-total">
+                          {formatearDinero(item.price * item.quantity)}
+                        </div>
+
+                        {/* 8. Acciones */}
+                        <div className="pos-col pos-col-actions">
+                          <button
+                            className="pos-delete-btn"
+                            onClick={(e) => { e.stopPropagation(); quitarProducto(item.id); }}
+                          >
+                            <span className="material-symbols-outlined">delete</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
           )}
+          </div>
 
           {/* INDICADOR DE CARGA */}
           {cargando && <div className="notification info">Procesando...</div>}
@@ -1913,275 +1900,30 @@ export const Sales = () => {
           )}
         </div>
 
-        {/* CARRITO LATERAL */}
-        <div className="cart-sidebar">
-          <div className="cart-sidebar-header">
-            <h2 className="cart-sidebar-title">Carrito de Compras</h2>
-            <button 
-              className="stock-mode-toggle"
-              onClick={toggleStockDisplayMode}
-              title={`Modo de stock: ${stockDisplayMode === 'mixed' ? 'Mixto' : stockDisplayMode === 'pieces' ? 'Piezas' : 'Cajas'}`}
-            >
-              <span className="material-symbols-outlined">
-                {stockDisplayMode === 'mixed' ? 'dashboard' : stockDisplayMode === 'pieces' ? 'tag' : 'inventory_2'}
-              </span>
-            </button>
-          </div>
-
-          {carrito.length === 0 ? (
-            <div className="empty-cart-modern">
-              <div className="empty-cart-icon">
-                <span className="material-symbols-outlined">
-                  shopping_cart_off
-                </span>
-              </div>
-              <p className="empty-cart-text">El carrito está vacío</p>
-              <p className="empty-cart-subtext">
-                Agrega productos para comenzar
-              </p>
-            </div>
-          ) : (
-            <div className="cart-items-modern">
-              {carrito.map((item) => (
-                <div
-                  key={item.id}
-                  className={`cart-item-modern ${
-                    activeCartItemId === item.id ? "active-cart-item" : ""
-                  }`}
-                  onClick={() => setActiveCartItemId(item.id)}
-                >
-                  <div className="item-image-modern">
-                    {item.image ? (
-                      <img src={item.image} alt={item.name} />
-                    ) : (
-                      <div className="item-image-placeholder">
-                        <svg
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <rect
-                            x="3"
-                            y="3"
-                            width="18"
-                            height="18"
-                            rx="2"
-                            ry="2"
-                          ></rect>
-                          <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                          <path d="M21 15l-5-5L5 21"></path>
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                  <div className="item-info-modern">
-                    <h3 className="item-name-modern">{item.name}</h3>
-                    
-                    <div className="item-meta-row">
-                      <div className={`item-unit-badge ${item.unit_sold === "CAJA" ? "caja" : "pza"}`}>
-                        {item.unit_sold || "PZA"}
-                      </div>
-                      <div className="item-price-modern">
-                        {formatearDinero(item.price)}
-                      </div>
-                      {!item.is_package && !item.is_common && (
-                        <div className="item-stock-tag">
-                          Stock: {formatStockDisplay(item)}
-                        </div>
-                      )}
-                    </div>
-
-                    {tieneCajaConfigurada(item) && (
-                      <div className="sale-unit-toggle">
-                        <button
-                          type="button"
-                          className={item.unit_sold !== "CAJA" ? "active" : ""}
-                          data-unit="PZA"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            cambiarUnidadVenta(item.id, "PZA");
-                          }}
-                        >
-                          PZA
-                        </button>
-                        <button
-                          type="button"
-                          className={item.unit_sold === "CAJA" ? "active" : ""}
-                          data-unit="CAJA"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            cambiarUnidadVenta(item.id, "CAJA");
-                          }}
-                        >
-                          CAJA
-                        </button>
-                      </div>
-                    )}
-
-                    {item.unit_sold === "CAJA" && (
-                      <div className="item-breakdown-modern">
-                        {item.quantity} cajas × {item.conversion_factor || item.stock_multiplier} pzs = {item.quantity * (item.conversion_factor || item.stock_multiplier)} piezas
-                      </div>
-                    )}
-
-                    {!item.is_package && !item.is_common && (
-                      <button
-                        type="button"
-                        className={`item-pack-btn-modern ${
-                          item.is_custom_pack ? "active" : ""
-                        }`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          abrirModalEmpaque(item);
-                        }}
-                        title="Empaque al vuelo (F3)"
-                      >
-                        <span className="material-symbols-outlined">
-                          inventory_2
-                        </span>
-                        <span className="shortcut-hint">F3</span>
-                      </button>
-                    )}
-                  </div>
-                  <div className="quantity-controls-modern">
-                    <button
-                      className="qty-btn-modern"
-                      onClick={() =>
-                        cambiarCantidad(item.id, item.quantity - 1)
-                      }
-                      disabled={item.quantity <= 1}
-                    >
-                      -
-                    </button>
-                    <input
-                      type="number"
-                      className="quantity-input-modern"
-                      value={item.quantity === 0 ? "" : item.quantity}
-                      onChange={(e) => {
-                        const inputVal = e.target.value;
-                        if (inputVal === "") {
-                          cambiarCantidad(item.id, 0);
-                        } else {
-                          const val = parseInt(inputVal);
-                          if (!isNaN(val) && val >= 0) {
-                            cambiarCantidad(item.id, val);
-                          }
-                        }
-                      }}
-                      onFocus={(e) => e.target.select()}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          e.target.blur();
-                          if (item.quantity > 0) {
-                            setTimeout(() => {
-                              abrirModalPago();
-                            }, 150);
-                          }
-                        }
-                      }}
-                      onBlur={(e) => {
-                        if (item.quantity < 1) {
-                          cambiarCantidad(item.id, 1);
-                        }
-                      }}
-                      min="1"
-                    />
-                    <button
-                      className="qty-btn-modern"
-                      onClick={() =>
-                        cambiarCantidad(item.id, item.quantity + 1)
-                      }
-                    >
-                      +
-                    </button>
-                  </div>
-                  <div className="item-total-modern">
-                    Total: {formatearDinero(item.price * item.quantity)}
-                  </div>
-                  <button
-                    className="remove-btn-modern"
-                    onClick={() => quitarProducto(item.id)}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* TOTAL Y FINALIZAR */}
-          <div className="cart-footer-modern">
-            <div className="cart-summary-modern">
-              <div className="summary-row">
-                <span className="summary-label">Subtotal</span>
-                <span className="summary-value">
-                  {formatearDinero(
-                    user?.tax_enabled !== false &&
-                      (parseFloat(user?.tax_percentage) || 0) > 0
-                      ? total /
-                          (1 + (parseFloat(user?.tax_percentage) || 0) / 100)
-                      : total,
-                  )}
-                </span>
-              </div>
-              {user?.tax_enabled !== false &&
-                (parseFloat(user?.tax_percentage) || 0) > 0 && (
-                  <div className="summary-row">
-                    <span className="summary-label">
-                      Impuestos ({user?.tax_percentage}%)
-                    </span>
-                    <span className="summary-value">
-                      {formatearDinero(
-                        total -
-                          total /
-                            (1 + (parseFloat(user?.tax_percentage) || 0) / 100),
-                      )}
-                    </span>
-                  </div>
-                )}
-              <div className="summary-row summary-total">
-                <span className="summary-label">Total</span>
-                <span className="summary-value">{formatearDinero(total)}</span>
-              </div>
-            </div>
-            {isSupervising ? (
-              <button
-                onClick={() => setMostrarModalFondo(true)}
-                className="btn-process-payment bg-amber-500 hover:bg-amber-600 border-none shadow-amber-200"
-              >
-                <span className="material-symbols-outlined">key</span>
-                Abrir Caja para Vender
-              </button>
-            ) : (
-              <div className="cart-action-group">
-                  <button
-                    onClick={() => setMostrarModalPaqueteTodo(true)}
-                    disabled={vendiendo || carrito.length === 0}
-                    className="btn-convert-pkg"
-                    title="Convertir todo el carrito a un solo paquete (F4)"
-                  >
-                    <span className="material-symbols-outlined">box</span>
-                    <span>Empacar Todo</span>
-                    <span className="btn-shortcut-tag">F4</span>
-                  </button>
-                <button
-                  onClick={abrirModalPago}
-                  disabled={vendiendo || carrito.length === 0}
-                  className={`btn-process-payment ${
-                    carrito.length === 0 ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-                >
-                  Procesar Pago
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
+          {/* CARRITO LATERAL */}
+          <CartSidebar
+            carrito={carrito}
+            activeCartItemId={activeCartItemId}
+            setActiveCartItemId={setActiveCartItemId}
+            stockDisplayMode={stockDisplayMode}
+            toggleStockDisplayMode={toggleStockDisplayMode}
+            showTableDetails={showTableDetails}
+            toggleTableDetails={toggleTableDetails}
+            cambiarCantidad={cambiarCantidad}
+            quitarProducto={quitarProducto}
+            cambiarUnidadVenta={cambiarUnidadVenta}
+            abrirModalEmpaque={abrirModalEmpaque}
+            tieneCajaConfigurada={tieneCajaConfigurada}
+            formatStockDisplay={formatStockDisplay}
+            formatearDinero={formatearDinero}
+            user={user}
+            total={total}
+            isSupervising={isSupervising}
+            vendiendo={vendiendo}
+            setMostrarModalFondo={setMostrarModalFondo}
+            setMostrarModalPaqueteTodo={setMostrarModalPaqueteTodo}
+            abrirModalPago={abrirModalPago}
+          />
       </div>
 
       {/* MODAL FONDO INICIAL */}
@@ -2196,348 +1938,279 @@ export const Sales = () => {
         />
       )}
 
-      {/* MODAL DE PAGO */}
+      {/* MODAL DE PAGO (REDISEÑO COMPACTO) */}
       {mostrarModalPago && (
         <div
-          className="payment-modal-overlay modal-overlay"
+          className="payment-modal-overlay"
           onClick={(e) => {
             if (e.target === e.currentTarget) cerrarModalPago();
           }}
         >
-          <div
-            className="payment-modal-container"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button className="payment-modal-close" onClick={cerrarModalPago}>
-              <span className="material-symbols-outlined">close</span>
-            </button>
+          <div className="payment-modal-container" onClick={(e) => e.stopPropagation()}>
+            {/* MODAL HEADER */}
+            <div className="payment-modal-header">
+              <div className="header-left">
+                <span className="material-symbols-outlined header-icon">payments</span>
+                <h2>Resumen de Venta</h2>
+                <span className="payment-transaction-id"># {transactionId}</span>
+              </div>
+              <button 
+                className="payment-modal-close" 
+                onClick={cerrarModalPago}
+                title="Cerrar (Esc)"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
 
             <div className="payment-modal-content">
-              {/* LADO IZQUIERDO - RESUMEN */}
+              {/* LEFT COLUMN: SALE SUMMARY & REGISTERED PAYMENTS */}
               <div className="payment-summary-section">
                 <div className="payment-summary-header">
                   <h3 className="payment-summary-title">
-                    <span className="material-symbols-outlined">
-                      receipt_long
-                    </span>
-                    Resumen
+                    <span className="material-symbols-outlined">shopping_cart_checkout</span>
+                    PRODUCTOS EN CARRITO
                   </h3>
-                  <span className="payment-transaction-id">
-                    #{transactionId}
-                  </span>
+                  <span className="payment-transaction-id">#{transactionId}</span>
                 </div>
 
-                <div className="payment-items-list">
-                  {carrito.map((item) => (
-                    <div key={item.id} className="payment-item-row">
-                      <div className="payment-item-info">
-                        <p className="payment-item-name">
-                          {item.name} ({item.quantity} {item.unit_sold || "PZA"})
-                        </p>
-                        <p className="payment-item-category">
-                          {formatearDinero(item.price)} c/u
-                        </p>
+                <div className="section-scrollable custom-scrollbar">
+                  <div className="payment-items-list">
+                    {carrito.map((item) => (
+                      <div key={item.id} className="payment-item-row">
+                        <div className="payment-item-info">
+                          <p className="payment-item-name">{item.name}</p>
+                          <p className="payment-item-details">
+                            {item.quantity} {item.unit_sold || 'PZA'} x {formatearDinero(item.price)}
+                          </p>
+                        </div>
+                        <span className="payment-item-price">
+                          {formatearDinero(item.price * item.quantity)}
+                        </span>
                       </div>
-                      <span className="payment-item-price">
-                        {formatearDinero(item.price * item.quantity)}
+                    ))}
+                  </div>
+
+                  {pagosRealizados.length > 0 && (
+                    <div className="payment-registered-block">
+                      <h3 className="payment-block-title">PAGOS REGISTRADOS</h3>
+                      <div className="payment-registered-list">
+                        {pagosRealizados.map((p) => (
+                          <div key={p.id} className="payment-registered-item">
+                            <div className="payment-method-info">
+                              <span className="material-symbols-outlined" style={{ fontSize: '1.2rem', color: '#6366f1' }}>
+                                {p.method === 'efectivo' ? 'payments' : 
+                                 p.method === 'transferencia' ? 'account_balance' : 
+                                 p.method === 'tarjeta' ? 'credit_card' : 'account_balance_wallet'}
+                              </span>
+                              <div>
+                                <span className="method-label capitalize">{p.method}</span>
+                                {p.method === 'dolares' && p.received && (
+                                  <span className="method-extra"> • {p.received} USD</span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="payment-amount-info">
+                              <span className="amount-value">{formatearDinero(p.amount)}</span>
+                              <button 
+                                className="payment-delete-btn"
+                                onClick={() => eliminarPago(p.id)}
+                              >
+                                <span className="material-symbols-outlined">close</span>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* TOTALS DISPLAY (Moved to left column) */}
+                <div className="payment-totals-card">
+                  <div className="total-row">
+                    <span>Subtotal</span>
+                    <span>{formatearDinero(total)}</span>
+                  </div>
+                  <div className="total-row">
+                    <span>IVA ({taxRateValue}%)</span>
+                    <span>{formatearDinero(taxAmount)}</span>
+                  </div>
+                  <div className="total-final-row">
+                    <span className="label">Total a Pagar</span>
+                    <span className="amount">{formatearDinero(totalVenta)}</span>
+                  </div>
+                </div>
+
+                {/* STICKY BALANCE BAR AT BOTTOM OF LEFT COLUMN */}
+                {(() => {
+                  const totalVueltoGuardado = pagosRealizados.reduce((sum, p) => sum + (p.change || 0), 0);
+                  const vueltoActual = calcularCambio();
+                  const vueltoFinal = totalVueltoGuardado + vueltoActual;
+                  
+                  let stateClass = '';
+                  let label = '';
+                  let amount = 0;
+                  let icon = '';
+
+                  if (saldoPendiente > 0.01) {
+                    stateClass = 'pending';
+                    label = 'SALDO PENDIENTE';
+                    amount = saldoPendiente;
+                    icon = 'pending_actions';
+                  } else if (vueltoFinal > 0) {
+                    stateClass = 'change';
+                    label = 'VUELTO';
+                    amount = vueltoFinal;
+                    icon = 'payments';
+                  } else {
+                    stateClass = 'completed';
+                    label = 'SALDO COMPLETADO';
+                    amount = 0;
+                    icon = 'check_circle';
+                  }
+
+                  return (
+                    <div className={`pending-balance-card ${stateClass}`}>
+                      <div className="balance-info">
+                        <span className="balance-label">{label}</span>
+                        <span className="balance-amount">{formatearDinero(amount)}</span>
+                      </div>
+                      <span className="material-symbols-outlined balance-icon">
+                        {icon}
                       </span>
                     </div>
-                  ))}
-                </div>
-
-                {/* PAGOS REGISTRADOS - MOVILIZADO AL LADO IZQUIERDO */}
-                <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/20">
-                  <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">
-                    Pagos Registrados
-                  </h4>
-                  <div className="space-y-2 max-h-[140px] overflow-y-auto pr-2 custom-scrollbar">
-                    {pagosRealizados.length === 0 ? (
-                      <p className="text-xs text-slate-400 italic text-center py-2">
-                        No hay pagos agregados
-                      </p>
-                    ) : (
-                      pagosRealizados.map((p) => (
-                        <div
-                          key={p.id}
-                          className="flex justify-between items-center bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-100 dark:border-slate-800 shadow-sm transition-all hover:border-indigo-200"
-                        >
-                          <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
-                            <span className="capitalize">{p.method}</span>
-                            {p.method === "dolares" && (
-                              <span className="text-[9px] bg-indigo-50 text-indigo-600 px-1 rounded">
-                                ({p.received} USD)
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <div className="flex flex-col items-end">
-                              <span className="font-bold text-slate-800 dark:text-slate-100 text-xs">
-                                ${formatearDinero(p.amount)}
-                              </span>
-                              {p.change > 0 && (
-                                <span className="text-[10px] text-emerald-600 dark:text-emerald-400">
-                                  Cambio: ${formatearDinero(p.change)}
-                                </span>
-                              )}
-                            </div>
-                            <button
-                              onClick={() => eliminarPago(p.id)}
-                              className="text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 p-1 rounded-md transition-all"
-                            >
-                              <span className="material-symbols-outlined text-[16px]">
-                                close
-                              </span>
-                            </button>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                <div className="payment-summary-footer">
-                  {/* SALDO PENDIENTE - REUBICADO */}
-                  <div className="mb-4 flex justify-between items-center p-3 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-200 dark:shadow-none">
-                    <span className="text-xs font-bold uppercase tracking-wider">
-                      Saldo Pendiente:
-                    </span>
-                    <span className="text-xl font-black">
-                      {formatearDinero(Math.max(0, saldoPendiente))}
-                    </span>
-                  </div>
-
-                  <div className="payment-summary-totals">
-                    <div className="payment-summary-row">
-                      <span>Subtotal</span>
-                      <span>{formatearDinero(total)}</span>
-                    </div>
-                    <div className="payment-summary-row">
-                      <span>Impuestos ({taxRateValue}%)</span>
-                      <span>{formatearDinero(taxAmount)}</span>
-                    </div>
-                  </div>
-                  <div className="payment-total-final">
-                    <span className="payment-total-label">Total</span>
-                    <span className="payment-total-amount">
-                      {formatearDinero(totalVenta)}
-                    </span>
-                  </div>
-                </div>
+                  );
+                })()}
               </div>
 
-              {/* LADO DERECHO - MÉTODO DE PAGO */}
+              {/* RIGHT COLUMN: PAYMENT ACTIONS */}
               <div className="payment-method-section">
-                <div className="payment-method-content">
-                  <div className="flex justify-start items-center gap-6 mb-4">
-                    <h3 className="payment-method-title !m-0">
-                      MÉTODO DE PAGO
-                    </h3>
-                    <label
-                      className="flex items-center gap-2 cursor-pointer bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-indigo-300 transition-all select-none"
+                <div className="payment-method-content custom-scrollbar">
+
+
+                  {/* METHOD SELECTOR */}
+                  <div className="payment-actions-header">
+                    <h3 className="payment-method-title">Método de Pago</h3>
+                    
+                    {/* Billing Toggle */}
+                    <div 
+                      className={`billing-toggle ${facturar ? 'active' : ''}`}
                       onClick={() => setFacturar(!facturar)}
                     >
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                        Facturar
-                      </span>
-                      <div
-                        className={`relative w-8 h-4 rounded-full transition-colors ${
-                          facturar ? "bg-indigo-600" : "bg-slate-300"
-                        }`}
-                      >
-                        <div
-                          className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform ${
-                            facturar ? "translate-x-4" : ""
-                          }`}
-                        />
+                      <span className="toggle-label">Facturar</span>
+                      <div className="toggle-switch">
+                        <div className="toggle-dot"></div>
                       </div>
-                    </label>
-                    {facturar && issuers.length > 0 && (
-                      <div className="ml-auto w-1/3 flex border border-indigo-200/60 bg-indigo-50/50 rounded-lg overflow-hidden transition-all duration-300 animate-in fade-in zoom-in-95">
-                        <div className="bg-indigo-100 text-indigo-600 px-2 flex items-center justify-center">
-                          <span className="material-icons-outlined text-[14px]">
-                            storefront
-                          </span>
-                        </div>
-                        <select
-                          value={selectedIssuerId}
-                          onChange={(e) => setSelectedIssuerId(e.target.value)}
-                          className="w-full text-xs font-semibold px-2 py-1.5 bg-transparent text-indigo-800 outline-none cursor-pointer truncate"
-                          title="Seleccionar Emisor"
-                        >
-                          {issuers.map((i) => (
-                            <option key={i.id} value={i.id}>
-                              {i.rfc} - {i.razon_social}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
+                    </div>
                   </div>
 
-                  <div className="payment-method-buttons">
-                    <button
-                      className={`payment-method-btn ${
-                        metodoPago === "efectivo" ? "active" : ""
-                      }`}
-                      onClick={() => {
-                        setMetodoPago("efectivo");
-                        setMontoRecibido("");
-                      }}
-                    >
-                      <span className="material-symbols-outlined">
-                        payments
-                      </span>
-                      <span>Efectivo</span>
-                    </button>
-                    <button
-                      className={`payment-method-btn ${
-                        metodoPago === "tarjeta" ? "active" : ""
-                      }`}
-                      onClick={() => {
-                        setMetodoPago("tarjeta");
-                        setMontoRecibido("");
-                      }}
-                    >
-                      <span className="material-symbols-outlined">
-                        credit_card
-                      </span>
-                      <span>Tarjeta</span>
-                    </button>
-                    <button
-                      className={`payment-method-btn ${
-                        metodoPago === "transferencia" ? "active" : ""
-                      }`}
-                      onClick={() => {
-                        setMetodoPago("transferencia");
-                        setMontoRecibido("");
-                      }}
-                    >
-                      <span className="material-symbols-outlined">
-                        account_balance
-                      </span>
-                      <span>Transferencia</span>
-                    </button>
-
-                    {tipoCambio && (
+                  <div className="payment-methods-grid">
+                    {[
+                      { id: 'efectivo', icon: 'payments', label: 'Efectivo' },
+                      { id: 'tarjeta', icon: 'credit_card', label: 'Tarjeta' },
+                      { id: 'transferencia', icon: 'account_balance', label: 'Transf.' },
+                      { id: 'dolares', icon: 'currency_exchange', label: 'Dólares', visible: !!tipoCambio }
+                    ].filter(m => m.visible !== false).map(method => (
                       <button
-                        className={`payment-method-btn ${
-                          metodoPago === "dolares" ? "active" : ""
-                        }`}
+                        key={method.id}
+                        className={`method-btn ${metodoPago === method.id ? 'active' : ''}`}
                         onClick={() => {
-                          setMetodoPago("dolares");
+                          setMetodoPago(method.id);
                           setMontoRecibido("");
                         }}
                       >
-                        <span className="material-symbols-outlined">
-                          currency_exchange
-                        </span>
-                        <span>Dólares</span>
+                        <span className="material-symbols-outlined">{method.icon}</span>
+                        <span>{method.label}</span>
                       </button>
-                    )}
+                    ))}
                   </div>
 
-                  <div className="payment-amount-section">
-                    <div className="payment-amount-input-section">
-                      <label className="payment-amount-label">
-                        {metodoPago === "dolares"
-                          ? "MONTO RECIBIDO (USD)"
-                          : "MONTO RECIBIDO"}
-                      </label>
-                      <div className="payment-amount-display">
-                        <span className="payment-amount-value">
-                          {metodoPago === "dolares" ? "$" : "$"}
-                          {formatearMontoRecibido()}
-                        </span>
-                        <button
-                          className="px-4 py-2 bg-indigo-600 text-white rounded-xl ml-4 font-bold hover:bg-indigo-700 transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  {/* ISSUER SELECTOR (Only if Facturar is active and it's a card/bank method) */}
+                  {facturar && issuers.length > 0 && (
+                    <div className="issuer-selector-container animate-in slide-in-from-top-2">
+                      <div className="issuer-selector">
+                        <span className="material-symbols-outlined selector-icon">business</span>
+                        <select 
+                          className="issuer-select"
+                          value={selectedIssuerId}
+                          onChange={(e) => setSelectedIssuerId(e.target.value)}
+                        >
+                          {issuers.map((i) => (
+                            <option key={i.id} value={i.id}>{i.razon_social}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* NUMPAD & INPUT */}
+                  <div className="payment-interaction-section">
+                    <div className="payment-input-area">
+                      <span className="input-label">
+                        {metodoPago === "dolares" ? "Monto Recibido (USD)" : "Monto Recibido"}
+                      </span>
+                      <div className="input-display">
+                        <span className="currency-symbol">$</span>
+                        <span className="amount-value">{formatearMontoRecibido()}</span>
+                        <button 
+                          className="add-payment-btn"
                           onClick={agregarPago}
                           disabled={
-                            !montoRecibido ||
-                            parseFloat(montoRecibido) <= 0 ||
-                            (metodoPago === "dolares" && tipoCambio
-                              ? parseFloat(montoRecibido) * tipoCambio >=
-                                saldoPendiente
-                              : parseFloat(montoRecibido) >= saldoPendiente)
+                            !montoRecibido || 
+                            parseFloat(montoRecibido) <= 0 || 
+                            (metodoPago !== "efectivo" && metodoPago !== "dolares" && 
+                             (metodoPago === "dolares" && tipoCambio 
+                               ? parseFloat(montoRecibido) * tipoCambio > saldoPendiente + 0.01 
+                               : parseFloat(montoRecibido) > saldoPendiente + 0.01))
                           }
                         >
-                          Agregar Pago
+                          <span className="material-symbols-outlined">add</span>
+                          Cobrar
                         </button>
                       </div>
 
                       {metodoPago === "dolares" && (
-                        <div className="text-center mt-2 text-sm text-slate-500 font-bold">
-                          Tipo de cambio: ${tipoCambio} MXN
-                          <div className="text-emerald-600 mt-1">
-                            Total a cubrir: ${(total / tipoCambio).toFixed(2)}{" "}
-                            USD
-                          </div>
+                        <div className="exchange-rate-info">
+                          <span className="material-symbols-outlined" style={{fontSize: '0.9rem'}}>info</span>
+                          1 USD = ${tipoCambio} MXN
                         </div>
                       )}
 
-                      {(metodoPago === "efectivo" ||
-                        metodoPago === "dolares" ||
-                        metodoPago === "tarjeta" ||
-                        metodoPago === "transferencia") && (
-                        <div className="payment-keypad">
-                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0, ".", "backspace"].map(
-                            (num) => (
-                              <button
-                                key={num}
-                                className={`payment-key ${
-                                  num === "backspace" ? "backspace" : ""
-                                }`}
-                                onClick={() => manejarTecladoNumerico(num)}
-                              >
-                                {num === "backspace" ? (
-                                  <span className="material-symbols-outlined">
-                                    backspace
-                                  </span>
-                                ) : (
-                                  num
-                                )}
-                              </button>
-                            ),
-                          )}
-                        </div>
-                      )}
+                      <div className="numpad-grid">
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0, ".", "backspace"].map((num) => (
+                          <button
+                            key={num}
+                            className={`numpad-key ${num === 'backspace' ? 'backspace' : ''}`}
+                            onClick={() => manejarTecladoNumerico(num)}
+                          >
+                            {num === "backspace" ? (
+                              <span className="material-symbols-outlined">backspace</span>
+                            ) : num}
+                          </button>
+                        ))}
+                      </div>
                     </div>
 
-                    {(metodoPago === "efectivo" ||
-                      metodoPago === "dolares" ||
-                      metodoPago === "tarjeta" ||
-                      metodoPago === "transferencia") && (
-                      <div className="payment-change-section">
-                        <div className="payment-change-box">
-                          <p className="payment-change-label">CAMBIO</p>
-                          <p className="payment-change-amount">
-                            {formatearDinero(Math.max(0, calcularCambio()))}
-                          </p>
-                        </div>
-                      </div>
-                    )}
+
                   </div>
                 </div>
 
-                <div className="payment-modal-actions">
-                  <button
-                    className="payment-finalize-btn"
-                    onClick={finalizarVenta}
-                    disabled={
-                      !modalReady ||
-                      (saldoPendiente > 0.01 &&
-                        (metodoPago === "dolares" && tipoCambio
-                          ? (parseFloat(montoRecibido) || 0) * tipoCambio <
-                            saldoPendiente
-                          : (parseFloat(montoRecibido) || 0) < saldoPendiente))
-                    }
-                  >
-                    Finalizar Venta
-                  </button>
-                  <button
-                    className="payment-cancel-btn"
+                {/* FINAL ACTIONS FOOTER */}
+                <div className="payment-actions-footer">
+                  <button 
+                    className="btn-cancel-sale"
                     onClick={cerrarModalPago}
                   >
                     Cancelar
+                  </button>
+                  <button 
+                    className="btn-finalize-sale"
+                    disabled={!modalReady || saldoPendiente > 0.01}
+                    onClick={finalizarVenta}
+                  >
+                    <span className="material-symbols-outlined">check_circle</span>
+                    Finalizar Venta
                   </button>
                 </div>
               </div>
@@ -2545,6 +2218,7 @@ export const Sales = () => {
           </div>
         </div>
       )}
+
 
       {/* MODAL VENTA COMPLETADA */}
       {mostrarModal && ventaCompletada && (
@@ -2596,11 +2270,13 @@ export const Sales = () => {
       )}
 
       {/* MODAL SCANNER DE CÁMARA */}
-      <CameraScanner
-        isOpen={mostrarCameraScanner}
-        onClose={() => setMostrarCameraScanner(false)}
-        onScan={manejarEscaneoCamara}
-      />
+      {isAvailable && (
+        <CameraScanner
+          isOpen={mostrarCameraScanner}
+          onClose={() => setMostrarCameraScanner(false)}
+          onScan={manejarEscaneoCamara}
+        />
+      )}
       {/* MODAL PRODUCTO COMÚN */}
       {mostrarModalComun && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">

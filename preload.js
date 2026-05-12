@@ -2,7 +2,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
     // Imprimir HTML del ticket directamente
-    print: (html) => ipcRenderer.send('print-ticket', html),
+    print: (html, options) => ipcRenderer.send('print-ticket', html, options),
     
     // Imprimir silenciosamente a impresora específica
     printSilent: (html, printerName) => ipcRenderer.send('print-ticket-silent', html, printerName),

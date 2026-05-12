@@ -38,3 +38,8 @@ bin/
 release/
 build/
 
+# Agents
+.agents/
+scratch/
+skills-lock.json
+

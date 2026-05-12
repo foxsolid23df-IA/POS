@@ -9,16 +9,20 @@
  * - En WEB/ANDROID: Usa un iframe oculto + window.print() que en Android es
  *   capturado por apps como RawBT para enviar a impresora térmica.
  *
+/**
+ * Imprime un string HTML (en formato de ticket).
+ * 
  * @param {string} htmlContent - El contenido HTML completo con hoja de estilos inline
+ * @param {object} options - Opciones de impresión (paperWidth, etc)
  */
-export const printHtmlTicket = (htmlContent) => {
+export const printHtmlTicket = (htmlContent, options = {}) => {
     try {
         // ═══════════════════════════════════════════════════════════
         // RUTA 1: ELECTRON (app de escritorio .exe)
         // ═══════════════════════════════════════════════════════════
         if (window.electronAPI && window.electronAPI.isElectron) {
             console.log("[PrinterService] ✅ Electron detectado — imprimiendo por IPC nativo");
-            window.electronAPI.print(htmlContent);
+            window.electronAPI.print(htmlContent, options);
             return; // Salir inmediatamente, no crear iframe
         }
 

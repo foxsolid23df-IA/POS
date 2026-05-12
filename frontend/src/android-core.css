@@ -65,7 +65,7 @@ body.is-android {
 }
 
 /* Scroll con momento (inercia fluida al deslizar) */
-body.is-android .sales-main-area,
+body.is-android .sales-products-panel,
 body.is-android .sales-content-wrapper,
 body.is-android .inventory-content,
 body.is-android .suppliers-table-container,
@@ -253,7 +253,7 @@ body.is-android .sales-content-wrapper {
   body.is-android .sales-content-wrapper {
     flex-direction: column;
   }
-  body.is-android .sales-main-area {
+  body.is-android .sales-products-panel {
     flex: 1 1 50vh;
   }
   body.is-android .cart-sidebar {
@@ -295,56 +295,58 @@ body.is-android h1 { font-size: var(--fs-2xl) !important; }
 body.is-android h2 { font-size: var(--fs-xl) !important; }
 body.is-android p { font-size: var(--fs-md) !important; }
 
-/* ===== 7. GLOBAL NATIVE SCROLLING ===== */
-body.is-android, html:has(body.is-android) {
-  height: auto !important;
-  min-height: 100%;
-  overflow-y: auto !important;
-  overscroll-behavior-y: none;
-}
+/* ===== 7. GLOBAL NATIVE SCROLLING (MOBILE ONLY) ===== */
+@media (max-width: 1023px) {
+  body.is-android, html:has(body.is-android) {
+    height: auto !important;
+    min-height: 100%;
+    overflow-y: auto !important;
+    overscroll-behavior-y: none;
+  }
 
-body.is-android #root,
-body.is-android .layout, 
-body.is-android .app-layout {
-  height: auto !important;
-  min-height: 100% !important;
-  overflow: visible !important;
-  display: flex;
-  flex-direction: column;
-}
+  body.is-android #root,
+  body.is-android .layout, 
+  body.is-android .app-layout {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow: visible !important;
+    display: flex;
+    flex-direction: column;
+  }
 
-body.is-android .main-content {
-  height: auto !important;
-  overflow-y: visible !important;
-  min-height: 100dvh;
-}
+  body.is-android .main-content {
+    height: auto !important;
+    overflow-y: visible !important;
+    min-height: 100dvh;
+  }
 
-body.is-android .sales-content-wrapper,
-body.is-android .sales-main-area,
-body.is-android .cart-sidebar,
-body.is-android .inventory-content,
-body.is-android .content-area {
-  height: auto !important;
-  max-height: none !important;
-  overflow-y: visible !important; 
-}
+  body.is-android .sales-content-wrapper,
+  body.is-android .sales-products-panel,
+  body.is-android .cart-sidebar,
+  body.is-android .inventory-content,
+  body.is-android .content-area {
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: visible !important; 
+  }
 
-body.is-android .table-container,
-body.is-android .suppliers-table-wrapper,
-body.is-android .suppliers-table-container,
-body.is-android .preview-table-wrapper {
-  overflow-y: visible !important;
-  max-height: none !important;
-}
+  body.is-android .table-container,
+  body.is-android .suppliers-table-wrapper,
+  body.is-android .suppliers-table-container,
+  body.is-android .preview-table-wrapper {
+    overflow-y: visible !important;
+    max-height: none !important;
+  }
 
-/* Button Touch Targets */
-body.is-android .control-btn,
-body.is-android .save-btn,
-body.is-android .cancel-btn,
-body.is-android .btn-primary,
-body.is-android .dropdown-item,
-body.is-android .confirm-btn {
-  padding-top: 12px !important;
-  padding-bottom: 12px !important;
-  min-height: 48px !important;
+  /* Button Touch Targets */
+  body.is-android .control-btn,
+  body.is-android .save-btn,
+  body.is-android .cancel-btn,
+  body.is-android .btn-primary,
+  body.is-android .dropdown-item,
+  body.is-android .confirm-btn {
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+    min-height: 48px !important;
+  }
 }

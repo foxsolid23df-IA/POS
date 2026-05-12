@@ -39,10 +39,11 @@ export const Sidebar = () => {
     <>
       {/* Mobile Header */}
       <header
-        className="min-[1400px]:hidden fixed top-0 left-0 right-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 z-[1001]"
+        className="mobile-header fixed top-0 left-0 right-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 z-[1001]"
         style={{
           paddingTop: "var(--safe-top, 0px)",
           height: "calc(4rem + var(--safe-top, 0px))",
+          backgroundColor: '#ffffff'
         }}
       >
         <button className="p-2 text-slate-500" onClick={toggleSidebar}>
@@ -77,7 +78,7 @@ export const Sidebar = () => {
       {/* Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-[1000] min-[1400px]:hidden backdrop-blur-sm transition-opacity"
+          className="sidebar-overlay fixed inset-0 bg-black/50 z-[1000] backdrop-blur-sm transition-opacity"
           onClick={toggleSidebar}
         ></div>
       )}
@@ -85,14 +86,15 @@ export const Sidebar = () => {
       {/* Sidebar */}
       <aside
         className={`
-                fixed min-[1400px]:sticky min-[1400px]:top-0 min-[1400px]:h-screen inset-y-0 left-0 z-[1002] w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 
+                sidebar desktop-sidebar sticky top-0 h-screen inset-y-0 left-0 z-[1002] w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900
                 flex flex-col transition-transform duration-300 ease-in-out
                 ${
                   isOpen
                     ? "translate-x-0"
-                    : "-translate-x-full min-[1400px]:translate-x-0"
+                    : "-translate-x-full"
                 }
             `}
+        style={{ backgroundColor: '#ffffff' }}
       >
         {/* Logo Section */}
         <div className="p-6 border-b border-slate-200 dark:border-slate-800">

@@ -1,22 +1,46 @@
 /* ===================================================================
    TABLET & MOBILE RESPONSIVE OVERRIDES
    Samsung Galaxy Tab A11 (1920x1200 physical / ~1280x800 CSS viewport)
-   Forces hamburger menu on ALL screens below 1400px CSS width
+   Breakpoint: show sidebar for ALL screens >= 1024px
    =================================================================== */
 
-/* ========= TABLET RANGE (up to 1399px) ========= */
-@media (max-width: 1399px) {
-
-  /* --- Force sidebar to hamburger mode on ALL tablets --- */
-  .app-layout {
-    flex-direction: column !important;
+/* ========= DESKTOP (1024px+) ========= */
+@media (min-width: 1024px) {
+  .sales-content-wrapper {
+    display: grid !important;
+    grid-template-columns: 60fr 40fr !important;
+    height: calc(100vh - 70px) !important;
+    overflow: hidden !important;
+    flex-direction: row !important;
   }
-
-  .main-content {
-    padding-top: calc(4rem + var(--safe-top, 0px)) !important;
+  .sales-products-panel {
     width: 100% !important;
+    height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    padding-bottom: 2rem !important;
   }
-
+  .cart-sidebar {
+    width: 100% !important;
+    height: 100% !important;
+    max-height: none !important;
+    border-left: 2px solid #e5e7eb !important;
+    border-top: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+  .cart-items-modern {
+    max-height: none !important;
+    overflow-y: auto !important;
+    flex: 1 !important;
+  }
+  .cart-footer-modern {
+    position: static !important;
+    bottom: auto !important;
+    flex-shrink: 0 !important;
+  }
+}
   /* --- Global Typography Scale Down --- */
   h1, .suppliers-title, .inventory-title {
     font-size: 1.75rem !important;
@@ -157,7 +181,7 @@
     overflow: visible !important;
   }
 
-  .sales-main-area {
+  .sales-products-panel {
     width: 100% !important;
     padding: 0.75rem 1rem !important;
     min-height: auto !important;
@@ -609,30 +633,34 @@
 /* ========= WIDE TABLET LANDSCAPE (821px — 1399px) ========= */
 @media (min-width: 821px) and (max-width: 1399px) {
 
-  /* Sales: side-by-side but narrower cart */
+  /* Sales: Layout con carrito ABAJO en tablets - SIN scroll */
   .sales-content-wrapper {
-    flex-direction: row !important;
-    height: calc(100vh - 64px) !important;
-    overflow: hidden !important;
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: calc(100vh - 64px) !important;
+    overflow: visible !important;
   }
 
-  .sales-main-area {
-    flex: 1 !important;
-    overflow-y: scroll !important;
-    overflow-x: hidden !important;
+  .sales-products-panel {
+    flex: none !important;
+    width: 100% !important;
+    overflow: visible !important;
     min-height: unset !important;
   }
 
   .cart-sidebar {
-    width: 300px !important;
-    height: 100% !important;
+    width: 100% !important;
+    height: auto !important;
     max-height: none !important;
-    border-top: none !important;
-    border-left: 1px solid #e5e7eb !important;
+    border-left: none !important;
+    border-top: 1px solid #e5e7eb !important;
+    overflow: visible !important;
   }
 
   .cart-items-modern {
-    max-height: unset !important;
+    max-height: none !important;
+    overflow: visible !important;
+    flex: none !important;
   }
 
   /* 4-col KPIs */
@@ -791,3 +819,4 @@
     border-bottom-color: var(--dm-border) !important;
   }
 }
+

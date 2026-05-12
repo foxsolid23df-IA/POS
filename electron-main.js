@@ -272,8 +272,11 @@ function crearVentana() {
 // ═══════════════════════════════════════════════════════════
 
 // Imprimir ticket — modo silencioso (directo a impresora por defecto)
-ipcMain.on('print-ticket', (event, htmlContent) => {
+ipcMain.on('print-ticket', (event, htmlContent, options = {}) => {
     console.log('[Print] Recibido print-ticket via IPC');
+    
+    const paperWidth = options.paperWidth === '58mm' ? 58000 : 80000;
+    const printerName = options.printerName || null;
 
     const workerWindow = new BrowserWindow({
         show: false,
@@ -286,26 +289,20 @@ ipcMain.on('print-ticket', (event, htmlContent) => {
     workerWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
 
     workerWindow.webContents.on('did-finish-load', () => {
-        // Obtener la lista de impresoras para log
-        const printers = workerWindow.webContents.getPrintersAsync
-            ? null // handled below
-            : workerWindow.webContents.getPrinters?.() || [];
-
-        if (printers && printers.length > 0) {
-            const defaultPrinter = printers.find(p => p.isDefault);
-            console.log(`[Print] Impresora por defecto: ${defaultPrinter?.name || 'ninguna'}`);
-            console.log(`[Print] Total impresoras: ${printers.length}`);
-        }
-
-        // Primero intentar SILENCIOSO (directo a impresora por defecto)
-        workerWindow.webContents.print({
+        const printOptions = {
             silent: true,
             printBackground: true,
             margins: { marginType: 'none' },
-            pageSize: { width: 80000, height: 297000 } // 80mm x ~infinito en micrones
-        }, (success, failureReason) => {
+            pageSize: { width: paperWidth, height: 297000 } // Altura dinámica o grande para rollos
+        };
+
+        if (printerName) {
+            printOptions.deviceName = printerName;
+        }
+
+        workerWindow.webContents.print(printOptions, (success, failureReason) => {
             if (success) {
-                console.log('[Print] ✅ Ticket impreso silenciosamente');
+                console.log(`[Print] ✅ Ticket impreso silenciosamente (${options.paperWidth || '80mm'})`);
             } else {
                 console.warn(`[Print] ⚠️ Impresión silenciosa falló: ${failureReason}`);
                 console.log('[Print] Reintentando con diálogo del sistema...');
@@ -326,10 +323,9 @@ ipcMain.on('print-ticket', (event, htmlContent) => {
         });
     });
 
-    // Timeout de seguridad para no dejar ventanas zombies
+    // Timeout de seguridad
     setTimeout(() => {
         if (!workerWindow.isDestroyed()) {
-            console.warn('[Print] ⚠️ Timeout — cerrando ventana de impresión');
             workerWindow.close();
         }
     }, 15000);

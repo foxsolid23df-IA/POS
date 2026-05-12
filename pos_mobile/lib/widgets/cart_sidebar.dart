@@ -20,7 +20,7 @@ class CartSidebar extends StatelessWidget {
         children: [
           // Header
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: const BoxDecoration(
               color: AppTheme.bgPrimary,
               border: Border(
@@ -72,15 +72,15 @@ class CartSidebar extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.shopping_cart_outlined,
-                          size: 64,
+                          size: 48,
                           color: AppTheme.textMuted,
                         ),
-                        SizedBox(height: 16),
+                        SizedBox(height: 8),
                         Text(
                           'El carrito está vacío',
                           style: TextStyle(
                             color: AppTheme.textMuted,
-                            fontSize: 16,
+                            fontSize: 14,
                           ),
                         ),
                       ],
@@ -107,7 +107,7 @@ class CartSidebar extends StatelessWidget {
               if (pos.cart.isEmpty) return const SizedBox.shrink();
 
               return Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: const BoxDecoration(
                   color: AppTheme.bgPrimary,
                   border: Border(
@@ -122,7 +122,7 @@ class CartSidebar extends StatelessWidget {
                         const Text(
                           'Total',
                           style: TextStyle(
-                            fontSize: 24,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: AppTheme.textMain,
                           ),
@@ -130,17 +130,17 @@ class CartSidebar extends StatelessWidget {
                         Text(
                           '\$${pos.cartTotal.toStringAsFixed(2)}',
                           style: const TextStyle(
-                            fontSize: 28,
+                            fontSize: 24,
                             fontWeight: FontWeight.bold,
                             color: AppTheme.accent,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
                     SizedBox(
                       width: double.infinity,
-                      height: 56,
+                      height: 44,
                       child: ElevatedButton(
                         onPressed: () {
                           showDialog(
@@ -151,23 +151,23 @@ class CartSidebar extends StatelessWidget {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.accent,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
                         child: const Text(
                           'PROCESAR PAGO',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
                     SizedBox(
                       width: double.infinity,
-                      height: 48,
+                      height: 36,
                       child: TextButton(
                         onPressed: () {
                           pos.clearCart();
@@ -190,7 +190,7 @@ class CartSidebar extends StatelessWidget {
 
   Widget _buildCartItem(BuildContext context, CartItem item, POSProvider pos) {
     return Padding(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -201,7 +201,7 @@ class CartSidebar extends StatelessWidget {
                 child: Text(
                   item.product.name,
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.textMain,
                   ),
@@ -210,25 +210,25 @@ class CartSidebar extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.close, color: AppTheme.danger, size: 20),
+                icon: const Icon(Icons.close, color: AppTheme.danger, size: 18),
                 onPressed: () => pos.removeFromCart(item.product),
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
                 padding: EdgeInsets.zero,
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 '\$${item.product.price.toStringAsFixed(2)} ud.',
-                style: const TextStyle(color: AppTheme.textMuted),
+                style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
               ),
               Container(
                 decoration: BoxDecoration(
                   color: AppTheme.bgPrimary,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: AppTheme.glassBorder),
                 ),
                 child: Row(
@@ -236,33 +236,36 @@ class CartSidebar extends StatelessWidget {
                     IconButton(
                       icon: const Icon(
                         Icons.remove,
-                        size: 16,
+                        size: 14,
                         color: AppTheme.textMain,
                       ),
                       onPressed: () => pos.decreaseQuantity(item.product),
                       constraints: const BoxConstraints(
-                        minWidth: 32,
-                        minHeight: 32,
+                        minWidth: 28,
+                        minHeight: 28,
                       ),
                       padding: EdgeInsets.zero,
                     ),
-                    Text(
-                      '${item.quantity}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Text(
+                        '${item.quantity}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                     IconButton(
                       icon: const Icon(
                         Icons.add,
-                        size: 16,
+                        size: 14,
                         color: AppTheme.textMain,
                       ),
                       onPressed: () => pos.addToCart(item.product),
                       constraints: const BoxConstraints(
-                        minWidth: 32,
-                        minHeight: 32,
+                        minWidth: 28,
+                        minHeight: 28,
                       ),
                       padding: EdgeInsets.zero,
                     ),
@@ -271,14 +274,14 @@ class CartSidebar extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Align(
             alignment: Alignment.centerRight,
             child: Text(
               '\$${item.total.toStringAsFixed(2)}',
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 16,
+                fontSize: 14,
                 color: AppTheme.textMain,
               ),
             ),
