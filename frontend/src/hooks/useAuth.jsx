@@ -9,6 +9,7 @@ import {
   purgeSessionData,
   useSessionTimeout,
 } from "../utils/secureStorage";
+import { isAbortError } from "../utils/supabaseErrorHandler";
 
 const AuthContext = createContext();
 
@@ -164,6 +165,7 @@ export const AuthProvider = ({ children }) => {
       console.error("Error in fetchProfile:", error);
       if (!silent) setIsLicenseValidating(false);
     } finally {
+      console.log("[Auth] Carga de perfil finalizada.");
       if (!silent) setLoading(false);
     }
   };
@@ -414,8 +416,10 @@ export const AuthProvider = ({ children }) => {
       }
       return session;
     } catch (error) {
-      if (!isAbortError(error)) {
+      if (typeof isAbortError === 'function' && !isAbortError(error)) {
         console.error("Error verificando sesión de caja:", error);
+      } else if (typeof isAbortError !== 'function') {
+        console.error("Error verificando sesión de caja (isAbortError no definido):", error);
       }
       setNeedsCashFund(true);
       return null;

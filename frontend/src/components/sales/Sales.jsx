@@ -373,7 +373,74 @@ export const Sales = () => {
   const [stockDisplayMode, setStockDisplayMode] = useState("mixed"); // 'pieces', 'mixed', 'boxes'
   const [showTableDetails, setShowTableDetails] = useState(true); // Controla la visibilidad de detalles extra en la tabla
 
-  const toggleTableDetails = () => setShowTableDetails(!showTableDetails);
+  // ESTADOS PARA COLUMNAS PERSONALIZABLES Y REDIMENSIONABLES
+  const [columnasVisibles, setColumnasVisibles] = useState({
+    idx: true,
+    code: true,
+    desc: true,
+    price: true,
+    qty: true,
+    unit: true,
+    total: true,
+    actions: true
+  });
+  const [mostrarConfigColumnas, setMostrarConfigColumnas] = useState(false);
+  const [anchosColumnas, setAnchosColumnas] = useState({
+    idx: 40,
+    code: 110,
+    desc: 300,
+    price: 90,
+    qty: 110,
+    unit: 100,
+    total: 110,
+    actions: 45
+  });
+  
+  const colConfigRef = useRef(null);
+  const resizerRef = useRef({ isResizing: false, column: null, startX: 0, startWidth: 0 });
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (colConfigRef.current && !colConfigRef.current.contains(e.target)) {
+        setMostrarConfigColumnas(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const startResizing = (e, column) => {
+    e.preventDefault();
+    resizerRef.current = {
+      isResizing: true,
+      column,
+      startX: e.pageX,
+      startWidth: anchosColumnas[column]
+    };
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', stopResizing);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!resizerRef.current.isResizing) return;
+    const delta = e.pageX - resizerRef.current.startX;
+    const newWidth = Math.max(columnasVisibles[resizerRef.current.column] ? 40 : 0, resizerRef.current.startWidth + delta);
+    setAnchosColumnas(prev => ({ ...prev, [resizerRef.current.column]: newWidth }));
+  };
+
+  const toggleTableDetails = () => {
+    setShowTableDetails(!showTableDetails);
+  };
+
+  const stopResizing = () => {
+    resizerRef.current.isResizing = false;
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', stopResizing);
+  };
+
+  const toggleColumna = (key) => {
+    setColumnasVisibles(prev => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const toggleStockDisplayMode = () => {
     setStockDisplayMode((prev) => {
@@ -1783,21 +1850,82 @@ export const Sales = () => {
             ) : (
               <>
                 <div className="sales-area-header">
-                  <h2 className="sales-title">Venta Actual</h2>
-                  <p className="sales-subtitle">Detalle de productos agregados al carrito</p>
+                  <div className="header-info">
+                    <h2 className="sales-title">Venta Actual</h2>
+                    <p className="sales-subtitle">Detalle de productos agregados al carrito</p>
+                  </div>
+                  <div className="header-actions" ref={colConfigRef}>
+                    <button 
+                      className="btn-col-config"
+                      onClick={() => setMostrarConfigColumnas(!mostrarConfigColumnas)}
+                      title="Configurar Columnas"
+                    >
+                      <span className="material-symbols-outlined">view_column</span>
+                    </button>
+
+                    {mostrarConfigColumnas && (
+                      <div className="col-config-dropdown">
+                        <h4>Columnas Visibles</h4>
+                        <div className="col-config-list">
+                          {Object.keys(columnasVisibles).map(col => (
+                            <label key={col} className="col-config-item">
+                              <input 
+                                type="checkbox" 
+                                checked={columnasVisibles[col]} 
+                                onChange={() => toggleColumna(col)}
+                              />
+                              <span>{col.toUpperCase()}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="pos-professional-table">
-                {/* Header con 8 columnas */}
-                <div className="pos-table-header">
-                  <div className="pos-col pos-col-idx">#</div>
-                  <div className="pos-col pos-col-code">CÓDIGO</div>
-                  <div className="pos-col pos-col-desc">DESCRIPCIÓN DEL PRODUCTO</div>
-                  <div className="pos-col pos-col-price">PRECIO VENTA</div>
-                  <div className="pos-col pos-col-qty">CANT.</div>
-                  <div className="pos-col pos-col-unit">CAJA/PAQ.</div>
-                  <div className="pos-col pos-col-total">IMPORTE</div>
-                  <div className="pos-col pos-col-actions">🗑</div>
-                </div>
+                {/* Header con columnas dinámicas */}
+                 <div className="pos-table-header">
+                   {columnasVisibles.idx && (
+                     <div className="pos-col pos-col-idx resizable-th" style={{ width: `${anchosColumnas.idx}px` }}>
+                       # <div className="resizer" onMouseDown={(e) => startResizing(e, 'idx')} />
+                     </div>
+                   )}
+                   {columnasVisibles.code && (
+                     <div className="pos-col pos-col-code resizable-th" style={{ width: `${anchosColumnas.code}px` }}>
+                       CÓDIGO <div className="resizer" onMouseDown={(e) => startResizing(e, 'code')} />
+                     </div>
+                   )}
+                   {columnasVisibles.desc && (
+                     <div className="pos-col pos-col-desc resizable-th" style={{ flex: anchosColumnas.desc === 0 ? 1 : 'none', width: anchosColumnas.desc > 0 ? `${anchosColumnas.desc}px` : 'auto' }}>
+                       DESCRIPCIÓN DEL PRODUCTO <div className="resizer" onMouseDown={(e) => startResizing(e, 'desc')} />
+                     </div>
+                   )}
+                   {columnasVisibles.price && (
+                     <div className="pos-col pos-col-price resizable-th" style={{ width: `${anchosColumnas.price}px` }}>
+                       PRECIO <div className="resizer" onMouseDown={(e) => startResizing(e, 'price')} />
+                     </div>
+                   )}
+                   {columnasVisibles.qty && (
+                     <div className="pos-col pos-col-qty resizable-th" style={{ width: `${anchosColumnas.qty}px` }}>
+                       CANT. <div className="resizer" onMouseDown={(e) => startResizing(e, 'qty')} />
+                     </div>
+                   )}
+                   {columnasVisibles.unit && (
+                     <div className="pos-col pos-col-unit resizable-th" style={{ width: `${anchosColumnas.unit}px` }}>
+                       CAJA/PAQ. <div className="resizer" onMouseDown={(e) => startResizing(e, 'unit')} />
+                     </div>
+                   )}
+                   {columnasVisibles.total && (
+                     <div className="pos-col pos-col-total resizable-th" style={{ width: `${anchosColumnas.total}px` }}>
+                       IMPORTE <div className="resizer" onMouseDown={(e) => startResizing(e, 'total')} />
+                     </div>
+                   )}
+                   {columnasVisibles.actions && (
+                     <div className="pos-col pos-col-actions" style={{ width: `${anchosColumnas.actions}px` }}>
+                       🗑
+                     </div>
+                   )}
+                 </div>
 
                 <div className="pos-table-body">
                   {carrito.map((item, index) => {
@@ -1810,78 +1938,91 @@ export const Sales = () => {
                         className={`pos-row ${activeCartItemId === item.id ? 'active-row' : ''}`}
                         onClick={() => setActiveCartItemId(item.id)}
                       >
-                        {/* 1. Index */}
-                        <div className="pos-col pos-col-idx">{index + 1}</div>
+                         {/* 1. Index */}
+                         {columnasVisibles.idx && (
+                           <div className="pos-col pos-col-idx" style={{ width: `${anchosColumnas.idx}px` }}>{index + 1}</div>
+                         )}
 
-                        {/* 2. Código */}
-                        <div className={`pos-col pos-col-code ${!showTableDetails ? 'compact' : ''}`}>
-                          {showTableDetails ? (item.barcode || item.id?.split('::')[0] || '---') : ''}
-                        </div>
+                         {/* 2. Código */}
+                         {columnasVisibles.code && (
+                           <div className={`pos-col pos-col-code ${!showTableDetails ? 'compact' : ''}`} style={{ width: `${anchosColumnas.code}px` }}>
+                             {showTableDetails ? (item.barcode || item.id?.split('::')[0] || '---') : ''}
+                           </div>
+                         )}
 
-                        {/* 3. Descripción */}
-                        <div className="pos-col pos-col-desc">
-                          <div className="pos-desc-container">
-                            <span className="pos-product-name">
-                              {item.name}
-                              {item.is_custom_pack && <span className="pack-badge">PACK</span>}
-                            </span>
-                            {showTableDetails && (
-                              <span className="pos-product-meta">
-                                Stock: {formatStockDisplay(item.stock, item.conversion_factor)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                         {/* 3. Descripción */}
+                         {columnasVisibles.desc && (
+                           <div className="pos-col pos-col-desc" style={{ flex: anchosColumnas.desc === 0 ? 1 : 'none', width: anchosColumnas.desc > 0 ? `${anchosColumnas.desc}px` : 'auto' }}>
+                             <div className="pos-desc-container">
+                               <span className="pos-product-name">
+                                 {item.name}
+                                 {item.is_custom_pack && <span className="pack-badge">PACK</span>}
+                               </span>
+                               {showTableDetails && (
+                                 <span className="pos-product-meta">
+                                   Stock: {formatStockDisplay(item)}
+                                 </span>
+                               )}
+                             </div>
+                           </div>
+                         )}
 
-                        {/* 4. Precio */}
-                        <div className={`pos-col pos-col-price ${!showTableDetails ? 'compact' : ''}`}>
-                          {formatearDinero(item.price)}
-                        </div>
+                         {/* 4. Precio */}
+                         {columnasVisibles.price && (
+                           <div className={`pos-col pos-col-price ${!showTableDetails ? 'compact' : ''}`} style={{ width: `${anchosColumnas.price}px` }}>
+                             {formatearDinero(item.price)}
+                           </div>
+                         )}
 
-                        {/* 5. Cantidad */}
-                        <div className="pos-col pos-col-qty">
-                          <div className="qty-picker">
-                            <button onClick={(e) => { e.stopPropagation(); cambiarCantidad(item.id, -1); }}>
-                              <span className="material-symbols-outlined">remove</span>
-                            </button>
-                            <span>{item.quantity}</span>
-                            <button onClick={(e) => { e.stopPropagation(); cambiarCantidad(item.id, 1); }}>
-                              <span className="material-symbols-outlined">add</span>
-                            </button>
-                          </div>
-                        </div>
+                         {/* 5. Cantidad */}
+                         {columnasVisibles.qty && (
+                           <div className="pos-col pos-col-qty" style={{ width: `${anchosColumnas.qty}px` }}>
+                             <div className="qty-picker">
+                               <button onClick={(e) => { e.stopPropagation(); cambiarCantidad(item.id, -1); }}>
+                                 <span className="material-symbols-outlined">remove</span>
+                               </button>
+                               <span>{item.quantity}</span>
+                               <button onClick={(e) => { e.stopPropagation(); cambiarCantidad(item.id, 1); }}>
+                                 <span className="material-symbols-outlined">add</span>
+                               </button>
+                             </div>
+                           </div>
+                         )}
 
-                        {/* 6. Unidad (Caja/Paq) */}
-                        <div className="pos-col pos-col-unit">
-                          {tieneCaja ? (
-                            <button
-                              className={`unit-toggle ${esCaja ? 'is-box' : ''}`}
-                              onClick={(e) => { e.stopPropagation(); abrirModalEmpaque(item); }}
-                            >
-                              <span className="material-symbols-outlined">
-                                {esCaja ? 'inventory_2' : 'package_2'}
-                              </span>
-                              {esCaja ? 'CAJA' : 'PZA'}
-                            </button>
-                          ) : (
-                            <span className="no-box">---</span>
-                          )}
-                        </div>
+                         {/* 6. Unidad */}
+                         {columnasVisibles.unit && (
+                           <div className="pos-col pos-col-unit" style={{ width: `${anchosColumnas.unit}px` }}>
+                             {tieneCaja ? (
+                               <button
+                                 className={`unit-toggle-btn ${esCaja ? 'active' : ''}`}
+                                 onClick={(e) => { e.stopPropagation(); cambiarUnidadVenta(item.id, esCaja ? 'PZA' : 'CAJA'); }}
+                               >
+                                 {esCaja ? 'CAJA' : 'PZA'}
+                               </button>
+                             ) : (
+                               <span className="unit-label">PZA</span>
+                             )}
+                           </div>
+                         )}
 
-                        {/* 7. Total */}
-                        <div className="pos-col pos-col-total">
-                          {formatearDinero(item.price * item.quantity)}
-                        </div>
+                         {/* 7. Total */}
+                         {columnasVisibles.total && (
+                           <div className="pos-col pos-col-total" style={{ width: `${anchosColumnas.total}px` }}>
+                             {formatearDinero(item.quantity * item.price)}
+                           </div>
+                         )}
 
-                        {/* 8. Acciones */}
-                        <div className="pos-col pos-col-actions">
-                          <button
-                            className="pos-delete-btn"
-                            onClick={(e) => { e.stopPropagation(); quitarProducto(item.id); }}
-                          >
-                            <span className="material-symbols-outlined">delete</span>
-                          </button>
-                        </div>
+                         {/* 8. Acciones */}
+                         {columnasVisibles.actions && (
+                           <div className="pos-col pos-col-actions" style={{ width: `${anchosColumnas.actions}px` }}>
+                             <button
+                               className="btn-remove"
+                               onClick={(e) => { e.stopPropagation(); quitarProducto(item.id); }}
+                             >
+                               <span className="material-symbols-outlined">delete</span>
+                             </button>
+                           </div>
+                         )}
                       </div>
                     );
                   })}
@@ -2708,3 +2849,5 @@ export const Sales = () => {
     </div>
   );
 };
+
+export default Sales;
