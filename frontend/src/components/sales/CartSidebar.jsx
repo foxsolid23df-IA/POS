@@ -42,12 +42,23 @@ const CartSidebar = ({
         </div>
       </div>
 
-      {/* Cuerpo central - Se expande para empujar el footer al fondo */}
+      {/* Cuerpo central - Con scroll limitado */}
       <div className="cart-sidebar-body">
         {carrito.length === 0 ? (
-          <div className="cart-sidebar-empty">
-            <span className="material-symbols-outlined">inbox</span>
-            <p>Carrito vacío</p>
+          <div className="empty-cart-modern-container">
+            <div className="empty-cart-icon-circle">
+              <span className="material-symbols-outlined">inbox</span>
+            </div>
+            <p className="empty-cart-main-text">Carrito vacío</p>
+            <p className="empty-cart-subtext">Escanee productos para comenzar</p>
+            <button
+              onClick={() => setMostrarModalFondo(true)}
+              className="ct-btn-open-register-empty"
+              title="Iniciar sesión de caja (Abrir Caja)"
+            >
+              <span className="material-symbols-outlined">account_balance_wallet</span>
+              Abrir Caja
+            </button>
           </div>
         ) : (
           <div className="cart-sidebar-status">
