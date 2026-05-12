@@ -255,16 +255,28 @@ const CartSidebar = ({
             Empacar Todo
           </button>
           
-          <button
-            onClick={abrirModalPago}
-            disabled={vendiendo || carrito.length === 0}
-            className={`ct-btn-primary payment-pulse ${carrito.length === 0 ? "ct-btn-disabled" : ""}`}
-            title="Proceder al pago (F12)"
-          >
-            <span className="material-symbols-outlined">payments</span>
-            Pagar
-            <kbd>F12</kbd>
-          </button>
+          {isSupervising ? (
+            <button
+              onClick={() => setMostrarModalFondo(true)}
+              className="ct-btn-primary"
+              style={{ backgroundColor: '#f59e0b', borderColor: '#f59e0b' }}
+              title="Abrir caja para iniciar ventas"
+            >
+              <span className="material-symbols-outlined">key</span>
+              Abrir Caja
+            </button>
+          ) : (
+            <button
+              onClick={abrirModalPago}
+              disabled={vendiendo || carrito.length === 0}
+              className={`ct-btn-primary payment-pulse ${carrito.length === 0 ? "ct-btn-disabled" : ""}`}
+              title="Proceder al pago (F12)"
+            >
+              <span className="material-symbols-outlined">payments</span>
+              Pagar
+              <kbd>F12</kbd>
+            </button>
+          )}
         </div>
       </div>
     </div>
