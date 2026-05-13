@@ -2318,6 +2318,39 @@ export const Sales = () => {
                         </div>
                       )}
 
+                      <div className="flex gap-2 mb-3">
+                        <button 
+                          className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl transition-colors font-bold text-sm border border-slate-200 dark:border-slate-700"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const amount = metodoPago === "dolares" && tipoCambio 
+                              ? (saldoPendiente / tipoCambio).toFixed(2) 
+                              : saldoPendiente.toFixed(2);
+                            setMontoRecibido(amount.toString());
+                          }}
+                        >
+                          Exacto
+                        </button>
+                        <button 
+                          className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl transition-colors font-bold text-sm border border-slate-200 dark:border-slate-700"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setMontoRecibido("200");
+                          }}
+                        >
+                          $200
+                        </button>
+                        <button 
+                          className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl transition-colors font-bold text-sm border border-slate-200 dark:border-slate-700"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setMontoRecibido("500");
+                          }}
+                        >
+                          $500
+                        </button>
+                      </div>
+
                       <div className="numpad-grid">
                         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0, ".", "backspace"].map((num) => (
                           <button

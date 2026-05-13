@@ -6784,6 +6784,7 @@ html.dark .quick-action-btn.scanner-btn {
   display: flex;
   flex-direction: column;
   padding: 0.25rem 0.5rem;
+  min-height: 0;
 }
 
 .cart-sidebar-empty {

@@ -30,8 +30,21 @@ const CartSidebar = ({
   const subtotal = total / 1.16;
   const iva = total - subtotal;
 
+  // Estado para controlar los avisos de stock bajo
+  const [showLowStockWarning, setShowLowStockWarning] = useState(() => {
+    const saved = localStorage.getItem('showLowStockWarning');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+
+  // Guardar preferencia de aviso de stock
+  useEffect(() => {
+    localStorage.setItem('showLowStockWarning', JSON.stringify(showLowStockWarning));
+  }, [showLowStockWarning]);
+
   // Monitorear stock bajo para notificaciones
   useEffect(() => {
+    if (!showLowStockWarning) return;
+
     carrito.forEach(item => {
       if (item.stock <= 5 && !toasts.find(t => t.id === item.id)) {
         const newToast = {
@@ -89,10 +102,30 @@ const CartSidebar = ({
           </div>
           <div className="header-text-main">
             <h3>Resumen de Venta</h3>
-            <span className="terminal-id">ID: #TX-{new Date().getTime().toString().slice(-6)}</span>
           </div>
         </div>
-        <div className="cart-sidebar-stats">
+        <div className="cart-sidebar-stats" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button 
+            onClick={() => setShowLowStockWarning(!showLowStockWarning)}
+            title={showLowStockWarning ? "Ocultar avisos de stock bajo" : "Mostrar avisos de stock bajo"}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              cursor: 'pointer', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              padding: '4px',
+              borderRadius: '50%',
+              color: showLowStockWarning ? '#f59e0b' : 'var(--text-muted, #9ca3af)',
+              backgroundColor: showLowStockWarning ? 'rgba(245, 158, 11, 0.1)' : 'transparent',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>
+              {showLowStockWarning ? 'notifications_active' : 'notifications_off'}
+            </span>
+          </button>
           <span className="item-count-badge">
             {carrito.reduce((acc, item) => acc + item.quantity, 0)} piezas
           </span>
@@ -102,17 +135,35 @@ const CartSidebar = ({
       {/* Cuerpo central - Se expande para empujar el footer al fondo */}
       <div className="cart-sidebar-body">
         {carrito.length === 0 ? (
-          <div className="cart-sidebar-empty">
+          <div className="empty-cart-modern-container">
             <motion.div 
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 260, damping: 20 }}
-              className="empty-icon-wrapper"
+              className="empty-cart-icon-circle"
             >
-              <span className="material-symbols-outlined">inbox</span>
+              <span className="material-symbols-outlined">
+                {isSupervising ? 'lock' : 'inbox'}
+              </span>
             </motion.div>
-            <p>Carrito vacío</p>
-            <span className="empty-sub">Escanee productos para comenzar</span>
+            <p className="empty-cart-main-text">
+              {isSupervising ? 'Caja Cerrada' : 'Carrito vacío'}
+            </p>
+            <p className="empty-cart-subtext">
+              {isSupervising ? 'Abra la caja para comenzar a vender' : 'Escanee productos para comenzar'}
+            </p>
+            {isSupervising && (
+              <motion.button
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                onClick={() => setMostrarModalFondo(true)}
+                className="ct-btn-primary"
+                style={{ backgroundColor: '#f59e0b', borderColor: '#f59e0b', marginTop: '1.5rem', padding: '0.75rem 2rem', flexDirection: 'row' }}
+              >
+                <span className="material-symbols-outlined">key</span>
+                Abrir Caja
+              </motion.button>
+            )}
           </div>
         ) : (
           <>
@@ -178,7 +229,7 @@ const CartSidebar = ({
                           <div className="product-name-cell">
                             <span className="p-name">{item.name}</span>
                             {item.is_package && <span className="pack-badge">PACK</span>}
-                            {item.stock <= 5 && <span className="low-stock-dot" title="Stock Bajo"></span>}
+                            {item.stock <= 5 && showLowStockWarning && <span className="low-stock-dot" title="Stock Bajo"></span>}
                           </div>
                         </td>
                         <td className="col-qty">
