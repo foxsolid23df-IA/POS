@@ -742,6 +742,105 @@ const Inventory = () => {
     }
   };
 
+  // Función para exportar reporte de inventario completo
+  const handleExportInventory = () => {
+    try {
+      if (products.length === 0) {
+        Swal.fire(
+          "Atención",
+          "No hay productos en el inventario para exportar",
+          "info",
+        );
+        return;
+      }
+
+      const data = products.map((p) => {
+        const productCategory = p.category || getCategory(p.name).name;
+
+        const row = {
+          Producto: p.name,
+          Categoría: productCategory,
+          SKU: getSKU(p),
+          "Código de Barras": p.barcode || "",
+          Existencia: p.stock,
+          Unidad: p.unit || "PZA",
+          "Precio Venta": parseFloat(p.price || 0),
+        };
+
+        if (!isSimplified) {
+          row["Precio Costo"] = parseFloat(p.cost_price || 0);
+          row["Precio Mayoreo"] = parseFloat(p.wholesale_price || 0);
+          row["Precio Especial"] = parseFloat(p.special_price || 0);
+          row["Precio Sugerido"] = parseFloat(p.suggested_price || 0);
+          row["Pzas por Caja"] = p.box_units || "";
+          row["Precio Caja"] = p.box_price ? parseFloat(p.box_price) : "";
+          row["Código Caja"] = p.box_barcode || "";
+          row["Marca"] = p.brand || "";
+          row["Proveedor"] = p.supplier || "";
+          row["Notas"] = p.notes || "";
+          row["IVA %"] = parseFloat(p.iva || 0);
+          row["Merma"] = parseInt(p.merma || 0);
+        }
+
+        return row;
+      });
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(data);
+
+      // Auto-ajustar anchos de columna (aproximado)
+      const columnWidths = [
+        { wch: 35 }, // Producto
+        { wch: 15 }, // Categoría
+        { wch: 15 }, // SKU
+        { wch: 20 }, // Código de Barras
+        { wch: 12 }, // Existencia
+        { wch: 10 }, // Unidad
+        { wch: 15 }, // Precio Venta
+      ];
+
+      if (!isSimplified) {
+        columnWidths.push(
+          { wch: 15 }, // Precio Costo
+          { wch: 15 }, // Precio Mayoreo
+          { wch: 15 }, // Precio Especial
+          { wch: 15 }, // Precio Sugerido
+          { wch: 12 }, // Pzas por Caja
+          { wch: 15 }, // Precio Caja
+          { wch: 20 }, // Código Caja
+          { wch: 15 }, // Marca
+          { wch: 20 }, // Proveedor
+          { wch: 30 }, // Notas
+          { wch: 10 }, // IVA %
+          { wch: 10 }, // Merma
+        );
+      }
+
+      ws["!cols"] = columnWidths;
+
+      XLSX.utils.book_append_sheet(wb, ws, "Inventario Completo");
+
+      const fileName = `reporte_inventario_${
+        new Date().toISOString().split("T")[0]
+      }.xlsx`;
+      XLSX.writeFile(wb, fileName);
+
+      Swal.fire(
+        "Éxito",
+        "Reporte de inventario exportado correctamente",
+        "success",
+      );
+    } catch (error) {
+      console.error("Error al exportar inventario:", error);
+      Swal.fire(
+        "Error",
+        "No se pudo exportar el reporte de inventario",
+        "error",
+      );
+    }
+  };
+
+
   // Funciones de filtros
   const handleFilterChange = (name, value) => {
     setFilters((prev) => ({
@@ -852,6 +951,10 @@ const Inventory = () => {
             >
               <FiUploadCloud className="btn-icon" />
               Importar Excel
+            </button>
+            <button className="control-btn" onClick={handleExportInventory}>
+              <FiDownload className="btn-icon text-emerald-500" />
+              Reporte Inventario
             </button>
             <button
               className="control-btn"

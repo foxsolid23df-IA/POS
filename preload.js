@@ -13,6 +13,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Obtener Hardware ID de la máquina actual
     getMachineId: () => ipcRenderer.invoke('get-machine-id'),
     
+    // Obtener la URL de la API del backend dinámica
+    getApiUrlSync: () => ipcRenderer.sendSync('get-api-url-sync'),
+
     // Flag para detectar que estamos en Electron
     isElectron: true
 });

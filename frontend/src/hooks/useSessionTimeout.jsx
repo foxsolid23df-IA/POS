@@ -12,28 +12,37 @@ import { touchActivity, isSessionExpired, purgeSessionData } from '../utils/secu
  */
 const SESSION_EVENTS = ['mousemove', 'keydown', 'click', 'touchstart', 'scroll'];
 
-export function useSessionTimeout(onTimeout, timeoutMs = 15 * 60 * 1000) {
+export function useSessionTimeout(onTimeout, onWarning, timeoutMs = 15 * 60 * 1000, warningThresholdMs = 60 * 1000) {
     const timeoutRef = useRef(null);
+    const warningRef = useRef(null);
     const onTimeoutRef = useRef(onTimeout);
+    const onWarningRef = useRef(onWarning);
+    
     onTimeoutRef.current = onTimeout;
+    onWarningRef.current = onWarning;
 
     const scheduleTimeout = useCallback(() => {
         // Registrar actividad
         touchActivity();
 
-        // Limpiar timer anterior
-        if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-        }
+        // Limpiar timers anteriores
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        if (warningRef.current) clearTimeout(warningRef.current);
 
-        // Programar nuevo timer
+        // Programar aviso de advertencia (timeoutMs - warningThresholdMs)
+        const warningTime = Math.max(0, timeoutMs - warningThresholdMs);
+        warningRef.current = setTimeout(() => {
+            onWarningRef.current?.();
+        }, warningTime);
+
+        // Programar cierre de sesión definitivo
         timeoutRef.current = setTimeout(() => {
             if (isSessionExpired(timeoutMs)) {
                 console.warn('[SessionTimeout] Sesion expirada por inactividad');
                 onTimeoutRef.current?.();
             }
         }, timeoutMs);
-    }, [timeoutMs]);
+    }, [timeoutMs, warningThresholdMs]);
 
     useEffect(() => {
         // Verificar si ya esta expirado al montar
@@ -55,11 +64,14 @@ export function useSessionTimeout(onTimeout, timeoutMs = 15 * 60 * 1000) {
         // Cleanup
         return () => {
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            if (warningRef.current) clearTimeout(warningRef.current);
             SESSION_EVENTS.forEach(event => {
                 window.removeEventListener(event, handleActivity);
             });
         };
     }, [scheduleTimeout, onTimeout, timeoutMs]);
+
+    return { resetTimeout: scheduleTimeout };
 }
 
 /**

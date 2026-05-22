@@ -18,17 +18,6 @@ const SearchSection = ({
       style={{ position: "relative", zIndex: 50 }}
     >
       <div className="search-bar-full-row">
-        <div className="shortcut-chips">
-          <span className="chip" title="Cobrar varios productos a la vez">
-            <kbd>F2</kbd> Varios
-          </span>
-          <span className="chip" title="Empacar todo en cajas">
-            <kbd>F4</kbd> Empacar
-          </span>
-          <span className="chip" title="Procesar pago">
-            <kbd>F12</kbd> Cobrar
-          </span>
-        </div>
         <div className="search-input-full">
           <span className="search-lupa">🔍</span>
           <input
@@ -52,6 +41,19 @@ const SearchSection = ({
           />
         </div>
       </div>
+
+      <div className="search-shortcut-hints-inline">
+        <div className="hint-pill">
+          <kbd>F2</kbd> Varios
+        </div>
+        <div className="hint-pill">
+          <kbd>F4</kbd> Empacar
+        </div>
+        <div className="hint-pill">
+          <kbd>F12</kbd> Cobrar
+        </div>
+      </div>
+
       {children}
     </div>
   );

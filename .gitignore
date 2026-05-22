@@ -11,6 +11,9 @@ dist/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.log
+backend-dev.log
+backend-dev-err.log
 
 # Editor
 .vscode/
@@ -19,11 +22,13 @@ yarn-error.log*
 # OS
 .DS_Store
 Thumbs.db
+*.lnk
 
 # Database
 *.db
 *.db-journal
 *.sqlite
+dump.sql
 backend/data/
 
 # Vercel
@@ -37,6 +42,7 @@ backend/data/
 bin/
 release/
 build/
+*.bak
 
 # Agents
 .agents/

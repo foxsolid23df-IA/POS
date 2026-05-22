@@ -89,11 +89,15 @@ export const useCart = (mostrarError, allowNegativeStock = false) => {
     /**
      * Validación centralizada de stock
      */
-    const validateStock = (item, quantity, multiplier) => {
+    const validateStock = (item, quantity, multiplier, force = false) => {
+        if (force || allowNegativeStock) {
+            return true;
+        }
+
         const requestedPieces = quantity * multiplier;
         const availablePieces = item.stock || 0;
         
-        if (allowNegativeStock || requestedPieces <= availablePieces) {
+        if (requestedPieces <= availablePieces) {
             return true;
         }
         
@@ -104,7 +108,7 @@ export const useCart = (mostrarError, allowNegativeStock = false) => {
     };
 
     // 3. FUNCIÓN PARA AGREGAR UN PRODUCTO AL CARRITO
-    const agregarProducto = (producto, requestedUnit = producto?.unit_sold || 'PZA') => {
+    const agregarProducto = (producto, requestedUnit = producto?.unit_sold || 'PZA', force = false) => {
         const productoNormalizado = normalizeCartItem(producto, requestedUnit)
         setCarrito(carritoAnterior => {
             // Buscar si el producto ya está en el carrito
@@ -112,7 +116,7 @@ export const useCart = (mostrarError, allowNegativeStock = false) => {
 
             if (productoExistente) {
                 const nuevaCantidad = productoExistente.quantity + (productoNormalizado.quantity || 1)
-                if (validateStock(productoExistente, nuevaCantidad, productoExistente.stock_multiplier)) {
+                if (validateStock(productoExistente, nuevaCantidad, productoExistente.stock_multiplier, force)) {
                     return carritoAnterior.map(item =>
                         item.id === productoExistente.id
                             ? { ...item, quantity: nuevaCantidad, base_quantity: nuevaCantidad * item.stock_multiplier }
@@ -122,7 +126,7 @@ export const useCart = (mostrarError, allowNegativeStock = false) => {
                 return carritoAnterior;
             } else {
                 const cantidad = productoNormalizado.quantity || 1
-                if (validateStock(productoNormalizado, cantidad, productoNormalizado.stock_multiplier)) {
+                if (validateStock(productoNormalizado, cantidad, productoNormalizado.stock_multiplier, force)) {
                     return [...carritoAnterior, {
                         ...productoNormalizado,
                         quantity: cantidad,
@@ -136,16 +140,16 @@ export const useCart = (mostrarError, allowNegativeStock = false) => {
     }
 
     // 4. FUNCIÓN PARA CAMBIAR LA CANTIDAD DE UN PRODUCTO
-    const cambiarCantidad = (idProducto, nuevaCantidad) => {
-        if (nuevaCantidad < 0) return;
+    const cambiarCantidad = (idProducto, delta, force = false) => {
+        if (delta === 0) return;
 
         setCarrito(carritoAnterior =>
             carritoAnterior.map(item => {
                 if (item.id === idProducto) {
-                    if (validateStock(item, nuevaCantidad, item.stock_multiplier)) {
+                    const nuevaCantidad = Math.max(1, (item.quantity || 1) + delta);
+                    if (validateStock(item, nuevaCantidad, item.stock_multiplier, force)) {
                         return { ...item, quantity: nuevaCantidad, base_quantity: nuevaCantidad * item.stock_multiplier }
                     }
-                    // Si no valida, mantenemos la cantidad anterior o ajustamos al máximo
                     const maxQty = Math.floor((item.stock || 0) / item.stock_multiplier);
                     return { ...item, quantity: maxQty, base_quantity: maxQty * item.stock_multiplier };
                 }

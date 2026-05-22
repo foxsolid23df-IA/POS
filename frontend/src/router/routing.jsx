@@ -12,6 +12,7 @@ import { Sales } from "../components/sales/Sales";
 import { Inventory } from "../components/inventory/Inventory";
 import { Historial } from "../components/historial/Historial";
 import { Stats } from "../components/stats/Stats";
+import { Customers } from "../components/customers/Customers";
 import { Login } from "../components/auth/Login";
 import { UpdatePassword } from "../components/auth/UpdatePassword";
 import { LockScreen } from "../components/auth/LockScreen";
@@ -246,6 +247,14 @@ export const Routing = () => {
                       element={
                         <PrivateLayout>
                           {sessionStorage.getItem("visor_mode") === "true" ? <Navigate to="/estadisticas" replace /> : <Sales />}
+                        </PrivateLayout>
+                      }
+                    />
+                    <Route
+                      path="/clientes"
+                      element={
+                        <PrivateLayout>
+                          <Customers />
                         </PrivateLayout>
                       }
                     />

@@ -84,6 +84,8 @@
     }
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.105.4",
+    "dotenv": "^17.4.2",
     "node-machine-id": "^1.1.12"
   }
 }

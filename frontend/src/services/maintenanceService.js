@@ -1,6 +1,7 @@
 import { supabase } from '../supabase';
+import { config } from '../config';
 
-const ADMIN_API_URL = 'http://localhost:3001/api/admin';
+const ADMIN_API_URL = `${config.api.baseUrl}/api/admin`;
 
 // Obtener la URL de Supabase desde las variables de entorno de Vite
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;

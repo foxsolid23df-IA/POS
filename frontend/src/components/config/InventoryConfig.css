@@ -2,8 +2,40 @@
   padding: 2.5rem;
   max-width: 1000px;
   margin: 0 auto;
-  min-height: calc(100vh - 80px);
+  height: 100%;
+  overflow-y: auto;
   background-color: var(--slate-50);
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar for this container */
+.inventory-config-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.inventory-config-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.inventory-config-container::-webkit-scrollbar-thumb {
+  background: var(--slate-300);
+  border-radius: 10px;
+  border: 2px solid var(--slate-50);
+}
+
+.inventory-config-container::-webkit-scrollbar-thumb:hover {
+  background: var(--slate-400);
+}
+
+html.dark .inventory-config-container::-webkit-scrollbar-thumb {
+  background: var(--slate-700);
+  border-color: #111827;
+}
+
+html.dark .inventory-config-container::-webkit-scrollbar-thumb:hover {
+  background: var(--slate-600);
 }
 
 .inventory-config-header {
@@ -736,10 +768,82 @@ html.dark input:checked + .slider {
   background-color: #3b82f6;
 }
 
-/* Transitions */
 .inventory-config-container,
 .mode-card,
 .danger-zone-card,
 .section-card {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .inventory-config-container {
+    padding: 2rem;
+  }
+  
+  .mode-cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .inventory-config-container {
+    padding: 1.25rem;
+  }
+  
+  .inventory-config-header {
+    margin-bottom: 2.5rem;
+  }
+  
+  .inventory-config-title {
+    font-size: 2rem;
+  }
+  
+  .mode-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .mode-card {
+    padding: 2rem;
+    gap: 1.5rem;
+  }
+  
+  .mode-card-icon {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .mode-card-icon .material-symbols-outlined {
+    font-size: 32px;
+  }
+  
+  .mode-card-title {
+    font-size: 1.5rem;
+  }
+
+  .section-card {
+    padding: 1.5rem;
+  }
+  
+  .toggle-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .toggle-switch {
+    align-self: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  .inventory-config-title {
+    font-size: 1.75rem;
+  }
+  
+  .inventory-config-subtitle {
+    font-size: 1rem;
+  }
 }

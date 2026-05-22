@@ -24,10 +24,13 @@ import { useSettings } from "../../contexts/SettingsContext";
 import { SessionReportModal } from "./SessionReportModal";
 import SearchSection from "./SearchSection";
 import CartSidebar from "./CartSidebar";
+
 import { SalesHeader } from "./SalesHeader";
 import { QuickActions } from "./QuickActions";
 import ProductGrid from "./ProductGrid";
 import "./Sales.css";
+import PaymentModal from "./PaymentModal";
+import ProductAddModal from "./ProductAddModal";
 
 export const Sales = () => {
   // HOOKS PERSONALIZADOS
@@ -243,7 +246,7 @@ export const Sales = () => {
       is_common: true,
     };
 
-    agregarProducto(itemComun);
+    agregarProducto(itemComun, undefined, true);
     setMostrarModalComun(false);
     setComunForm({ descripcion: "", cantidad: 1, precio: "" });
   };
@@ -335,7 +338,6 @@ export const Sales = () => {
   const [sugerencias, setSugerencias] = useState([]);
   const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
   const [indexSugerencia, setIndexSugerencia] = useState(0);
-  const [selectedResultIndex, setSelectedResultIndex] = useState(-1);
   const [activeCategory, setActiveCategory] = useState(null);
   
   const getCategoryIcon = (category) => {
@@ -372,6 +374,8 @@ export const Sales = () => {
   const [selectedIssuerId, setSelectedIssuerId] = useState("");
   const [stockDisplayMode, setStockDisplayMode] = useState("mixed"); // 'pieces', 'mixed', 'boxes'
   const [showTableDetails, setShowTableDetails] = useState(true); // Controla la visibilidad de detalles extra en la tabla
+  const [mostrarModalAddProduct, setMostrarModalAddProduct] = useState(false);
+  const [productoParaModal, setProductoParaModal] = useState(null);
 
   // ESTADOS PARA COLUMNAS PERSONALIZABLES Y REDIMENSIONABLES
   const [columnasVisibles, setColumnasVisibles] = useState({
@@ -468,9 +472,26 @@ export const Sales = () => {
 
   const taxRateValue =
     user?.tax_enabled !== false ? parseFloat(user?.tax_percentage) || 0 : 0;
-  const totalConImpuesto = total * (1 + taxRateValue / 100);
+  
+  // Si el usuario tiene marcado que sus precios ya incluyen IVA, el total con impuesto es el mismo total.
+  // Si no, el total con impuesto es el total original más el porcentaje de impuesto.
+  const totalConImpuesto = user?.tax_included !== false 
+    ? total 
+    : total * (1 + taxRateValue / 100);
+    
   const totalVenta = facturar ? totalConImpuesto : total;
-  const taxAmount = totalVenta - total;
+  
+  // Calculamos el monto de impuesto para el desglose
+  let taxAmount = 0;
+  if (facturar && taxRateValue > 0) {
+    if (user?.tax_included !== false) {
+      // IVA incluido: Extraemos el IVA del total
+      taxAmount = totalVenta - (totalVenta / (1 + taxRateValue / 100));
+    } else {
+      // IVA no incluido: El IVA es la diferencia entre el total con impuesto y el original
+      taxAmount = totalVenta - total;
+    }
+  }
 
   const tieneCajaConfigurada = (producto) =>
     parseInt(producto?.box_units || 0) > 1 &&
@@ -526,6 +547,19 @@ export const Sales = () => {
   const [mostrarModalSalida, setMostrarModalSalida] = useState(false);
   const [salidaForm, setSalidaForm] = useState({ concepto: "", cantidad: "" });
   const [mostrarModalReporte, setMostrarModalReporte] = useState(false);
+
+  // Determinar si hay algún modal abierto para ocultar elementos de fondo
+  const isAnyModalOpen = 
+    mostrarModalAddProduct || 
+    mostrarModalPago || 
+    mostrarModalComun || 
+    mostrarModalEntrada || 
+    mostrarModalSalida || 
+    mostrarModalEmpaque || 
+    mostrarModalFondo || 
+    mostrarModalReporte || 
+    mostrarModalPaqueteTodo || 
+    modal.isOpen;
 
   // Cargar tipo de cambio al montar
   useEffect(() => {
@@ -640,6 +674,8 @@ export const Sales = () => {
     };
   }, []);
 
+
+
   // SINCRONIZACIÓN CON PANTALLA DEL CLIENTE
   useEffect(() => {
     let isMounted = true;
@@ -710,11 +746,29 @@ export const Sales = () => {
 
   // Seleccionar producto de las sugerencias
   const seleccionarProducto = (producto) => {
-    const productoConImagen = prepararProductoCarrito(producto, "PZA");
-    agregarProducto(productoConImagen);
+    setProductoParaModal(producto);
+    setMostrarModalAddProduct(true);
     setCodigoEscaneado("");
     setSugerencias([]);
     setMostrarSugerencias(false);
+  };
+
+  const handleModalAdd = (pzaQty, cajaQty) => {
+    const producto = productoParaModal;
+    if (!producto) return;
+    if (pzaQty > 0) {
+      agregarProducto({ ...producto, quantity: pzaQty, image: producto.image_url || producto.image }, 'PZA', true);
+    }
+    if (cajaQty > 0) {
+      agregarProducto({ ...producto, quantity: cajaQty, image: producto.image_url || producto.image }, 'CAJA', true);
+    }
+    cerrarModalAddProduct();
+  };
+
+  const cerrarModalAddProduct = () => {
+    setMostrarModalAddProduct(false);
+    setProductoParaModal(null);
+    setTimeout(() => campoCodigoRef.current?.focus(), 50);
   };
 
   // HOOK SCANNER
@@ -750,14 +804,14 @@ export const Sales = () => {
         productoLocal,
         unidadEscaneada,
       );
-      agregarProducto(productoConImagen);
+      agregarProducto(productoConImagen, undefined, true);
       return;
     }
 
     try {
       await ejecutarPeticion(async (signal) => {
         const producto = await buscarProductoPorCodigo(codigo, signal);
-        agregarProducto(prepararProductoCarrito(producto, "PZA"));
+        agregarProducto(prepararProductoCarrito(producto, "PZA"), undefined, true);
       });
     } catch (error) {
       if (error.message && error.message.includes("404")) {
@@ -803,13 +857,13 @@ export const Sales = () => {
           productoLocal.box_barcode === codigo && tieneCajaConfigurada(productoLocal)
             ? "CAJA"
             : "PZA";
-        agregarProducto(prepararProductoCarrito(productoLocal, unidadEscaneada));
+        agregarProducto(prepararProductoCarrito(productoLocal, unidadEscaneada), undefined, true);
         return;
       }
 
       await ejecutarPeticion(async (signal) => {
         const producto = await buscarProductoPorCodigo(codigo, signal);
-        agregarProducto(prepararProductoCarrito(producto, "PZA"));
+        agregarProducto(prepararProductoCarrito(producto, "PZA"), undefined, true);
         // Producto agregado exitosamente - no necesitamos notificación ya que se ve en el carrito
       });
     } catch (error) {
@@ -850,27 +904,15 @@ export const Sales = () => {
       );
       return;
     }
-    // Generar ID estable para esta sesión de pago
     setTransactionId((Math.floor(Math.random() * 90000) + 10000).toString());
-    setMontoRecibido(totalVenta.toFixed(2));
-    setMetodoPago("efectivo");
-    setPagosRealizados([]);
-    setModalReady(false);
-    setFacturar(false);
     setMostrarModalPago(true);
-    setTimeout(() => {
-      setModalReady(true);
-    }, 150);
   };
 
   const cerrarModalPago = () => {
     setMostrarModalPago(false);
-    setModalReady(false);
-    setMontoRecibido("");
-    setMetodoPago("efectivo");
-    setPagosRealizados([]);
-    setFacturar(false);
   };
+
+
 
   const agregarPago = () => {
     const montoStr = montoRecibidoRef.current || montoRecibido;
@@ -965,67 +1007,83 @@ export const Sales = () => {
     return montoRecibido || "0.00";
   };
 
-  const finalizarVenta = async () => {
-    let pagosActualizados = [...pagosRealizados];
-    let saldoActual = saldoPendiente;
+  const finalizarVenta = async (datosPago = null) => {
+    let pagosActualizados;
+    let shouldFacturar;
+    let selectedIssuer;
 
-    const montoNum = parseFloat(montoRecibidoRef.current || montoRecibido) || 0;
-    const valorEnPesos =
-      metodoPago === "dolares" && tipoCambio ? montoNum * tipoCambio : montoNum;
+    if (datosPago) {
+      pagosActualizados = datosPago.pagos;
+      shouldFacturar = datosPago.facturar;
+      selectedIssuer = datosPago.issuerId;
+    } else {
+      pagosActualizados = [...pagosRealizados];
+      shouldFacturar = facturar;
+      selectedIssuer = selectedIssuerId;
 
-    // Si el monto ingresado cubre el saldo pendiente y no se ha agregado el pago, lo autoagregamos
-    if (montoNum > 0 && saldoActual > 0.01 && valorEnPesos >= saldoActual) {
-      let montoAbonado = saldoActual;
-      let cambio = valorEnPesos - saldoActual;
+      let saldoActual = saldoPendiente;
+      const montoNum = parseFloat(montoRecibidoRef.current || montoRecibido) || 0;
+      const valorEnPesos =
+        metodoPago === "dolares" && tipoCambio ? montoNum * tipoCambio : montoNum;
 
-      const nuevoPago = {
-        id: Date.now(),
-        method: metodoPago,
-        amount: montoAbonado,
-        received: montoNum,
-        change: cambio,
-        currency: metodoPago === "dolares" ? "USD" : "MXN",
-        exchange_rate: metodoPago === "dolares" ? tipoCambio : null,
-      };
+      if (montoNum > 0 && saldoActual > 0.01 && valorEnPesos >= saldoActual) {
+        let montoAbonado = saldoActual;
+        let cambio = valorEnPesos - saldoActual;
 
-      pagosActualizados.push(nuevoPago);
-      saldoActual = 0;
-    }
+        const nuevoPago = {
+          id: Date.now(),
+          method: metodoPago,
+          amount: montoAbonado,
+          received: montoNum,
+          change: cambio,
+          currency: metodoPago === "dolares" ? "USD" : "MXN",
+          exchange_rate: metodoPago === "dolares" ? tipoCambio : null,
+        };
 
-    // Validar que se ha cubierto el saldo
-    if (saldoActual > 0.01) {
-      mostrarModalPersonalizado(
-        "Saldo insuficiente",
-        `Aún falta por cubrir ${formatearDinero(
-          saldoActual,
-        )} para completar el total.`,
-        "warning",
-      );
-      return;
+        pagosActualizados.push(nuevoPago);
+        saldoActual = 0;
+      }
+
+      if (saldoActual > 0.01) {
+        mostrarModalPersonalizado(
+          "Saldo insuficiente",
+          `Aún falta por cubrir ${formatearDinero(
+            saldoActual,
+          )} para completar el total.`,
+          "warning",
+        );
+        return;
+      }
     }
 
     setVendiendo(true);
     
-    // 1. Validar stock en el servidor antes de proceder
     const validation = await validateCartStockWithRPC();
     if (!validation.valid) {
       setVendiendo(false);
-      // Los errores ya se muestran mediante mostrarError dentro de validateCartStockWithRPC
       return;
     }
 
     cerrarModalPago();
 
     try {
-      // Calcular Impuestos (basado en configurarción del perfil y el toggle de facturar)
-      const taxRateValue =
-        user?.tax_enabled !== false ? parseFloat(user?.tax_percentage) || 0 : 0;
-      const currentTaxRate = facturar ? taxRateValue : 0;
-      const totalVenta = facturar ? total * (1 + taxRateValue / 100) : total;
-      const subtotal = total; // El total del carrito actúa como el subtotal base
-      const taxAmount = totalVenta - subtotal;
+      const currentTaxRate = shouldFacturar ? taxRateValue : 0;
+      const ventaTotal = shouldFacturar ? totalConImpuesto : total;
+      let subtotal = total;
+      let taxAmount = 0;
 
-      // Preparar datos para Supabase
+      if (shouldFacturar && currentTaxRate > 0) {
+        if (user?.tax_included !== false) {
+          // IVA incluido: el total ya tiene el impuesto, calculamos hacia atrás
+          subtotal = ventaTotal / (1 + currentTaxRate / 100);
+          taxAmount = ventaTotal - subtotal;
+        } else {
+          // IVA no incluido: el total es el subtotal, sumamos el impuesto
+          subtotal = total;
+          taxAmount = ventaTotal - subtotal;
+        }
+      }
+
       const ventaData = {
         user_id: user?.id,
         items: carrito
@@ -1043,19 +1101,18 @@ export const Sales = () => {
               item.base_quantity ||
               item.quantity * (item.stock_multiplier || item.conversion_factor || 1),
           })),
-        total: totalVenta,
+        total: ventaTotal,
         subtotal: subtotal,
         tax_amount: taxAmount,
         tax_percentage: currentTaxRate,
         payments: pagosActualizados,
-        // Mantener campos legacy por compatibilidad
         metodoPago:
           pagosActualizados.length === 1
             ? pagosActualizados[0].method
             : "múltiple",
         currency: "MXN",
         exchange_rate: null,
-        billing_issuer_id: facturar ? selectedIssuerId : null,
+        billing_issuer_id: shouldFacturar ? selectedIssuer : null,
         affect_inventory: user?.affect_inventory !== undefined ? user?.affect_inventory : true
       };
 
@@ -1076,17 +1133,19 @@ export const Sales = () => {
         );
       }, 0);
 
-      // Actualizar UI inmediatamente para mostrar el ticket
+      const totalFinal = datosPago
+        ? (datosPago.facturar ? totalConImpuesto : total)
+        : totalVenta;
+
       setVentaCompletada({
         ...ventaCreada,
         productos: [...carrito],
         items: [...carrito],
         payments: [...pagosActualizados],
         metodoPago: ventaData.metodoPago,
-        // Campos legacy para ticket
         montoRecibido: totalReceivedPesos,
         cambio: totalChange,
-        total: totalVenta,
+        total: totalFinal,
         subtotal: subtotal,
         tax_amount: taxAmount,
         tax_percentage: currentTaxRate,
@@ -1112,46 +1171,20 @@ export const Sales = () => {
 
     setVendiendo(false);
   };
+  const handlePaymentComplete = async (datosPago) => {
+    console.log("[Sales] Payment complete data received:", datosPago);
+    try {
+      await finalizarVenta(datosPago);
+    } catch (error) {
+      console.error("[Sales] Error finishing sale from modal:", error);
+    }
+  };
 
   const manejarCambioCodigo = (e) => {
     setCodigoEscaneado(e.target.value);
   };
 
-  // Función para manejar teclado en búsqueda (Search-First)
-  const handleSearchKeyDown = (e) => {
-    const query = codigoEscaneado.toLowerCase().trim();
-    const filteredProducts = productos.filter(
-      (p) =>
-        p?.name?.toLowerCase().includes(query) ||
-        p?.barcode?.toLowerCase().includes(query) ||
-        p?.clave?.toLowerCase().includes(query)
-    ).slice(0, 12);
 
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setSelectedResultIndex((prev) => 
-        prev < filteredProducts.length - 1 ? prev + 1 : 0
-      );
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setSelectedResultIndex((prev) => 
-        prev > 0 ? prev - 1 : filteredProducts.length - 1
-      );
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      if (filteredProducts.length > 0 && selectedResultIndex >= 0) {
-        seleccionarProducto(filteredProducts[selectedResultIndex]);
-        setSelectedResultIndex(-1);
-      } else if (codigoEscaneado.trim()) {
-        buscarProductoManual(codigoEscaneado.trim());
-        setCodigoEscaneado("");
-      }
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      setCodigoEscaneado("");
-      setSelectedResultIndex(-1);
-    }
-  };
 
   // Ref para el monto, permitiendo acceso en el listener sin reiniciar el efecto
   const montoRecibidoRef = useRef(montoRecibido);
@@ -1160,18 +1193,48 @@ export const Sales = () => {
   }, [montoRecibido]);
 
   const manejarEnter = (e) => {
-    if (e.key === "Enter") {
-      // Si hay sugerencias visibles, seleccionar la que está marcada (indexSugerencia)
-      if (mostrarSugerencias && sugerencias.length > 0) {
+    // Si el listener nativo ya lo manejó, salir
+    if (e.defaultPrevented) return;
+
+    // Navegación en sugerencias
+    if (sugerencias.length > 0) {
+      if (e.key === "ArrowDown") {
         e.preventDefault();
-        seleccionarProducto(sugerencias[indexSugerencia]);
+        setIndexSugerencia((prev) => (prev < sugerencias.length - 1 ? prev + 1 : 0));
         return;
       }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setIndexSugerencia((prev) => (prev > 0 ? prev - 1 : sugerencias.length - 1));
+        return;
+      }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (indexSugerencia >= 0 && indexSugerencia < sugerencias.length) {
+          seleccionarProducto(sugerencias[indexSugerencia]);
+          setCodigoEscaneado("");
+          return;
+        }
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setMostrarSugerencias(false);
+        setIndexSugerencia(0);
+        return;
+      }
+    }
 
-      // Si no, búsqueda manual estándar
+    if (e.key === "Enter" && sugerencias.length === 0) {
       if (codigoEscaneado.trim()) {
         e.preventDefault();
-        buscarProductoManual(codigoEscaneado.trim());
+        const productoLocal = productos.find(
+          p => p.barcode === codigoEscaneado.trim() || p.box_barcode === codigoEscaneado.trim()
+        );
+        if (productoLocal) {
+          seleccionarProducto(productoLocal);
+        } else {
+          buscarProductoManual(codigoEscaneado.trim());
+        }
         setCodigoEscaneado("");
       } else if (
         carrito.length > 0 &&
@@ -1179,25 +1242,11 @@ export const Sales = () => {
         !modal.isOpen &&
         !mostrarModal
       ) {
-        // SI EL INPUT ESTÁ VACÍO Y HAY PRODUCTOS, ABRIR PAGO
         e.preventDefault();
         e.target.blur();
-        // Usar un timeout ligeramente mayor para asegurar que el foco se limpie y el estado se estabilice
         setTimeout(() => {
           abrirModalPago();
         }, 150);
-      }
-    } else if (e.key === "ArrowDown") {
-      if (mostrarSugerencias && sugerencias.length > 0) {
-        e.preventDefault();
-        setIndexSugerencia((prev) => (prev + 1) % sugerencias.length);
-      }
-    } else if (e.key === "ArrowUp") {
-      if (mostrarSugerencias && sugerencias.length > 0) {
-        e.preventDefault();
-        setIndexSugerencia(
-          (prev) => (prev - 1 + sugerencias.length) % sugerencias.length,
-        );
       }
     }
   };
@@ -1213,122 +1262,13 @@ export const Sales = () => {
     setVentaCompletada(null);
   };
 
-  // MANEJAR TECLADO FÍSICO EN MODAL DE PAGO
-  useEffect(() => {
-    if (!mostrarModalPago) return;
-    const handleKeyDown = (e) => {
-      if (e.key === "Enter" || e.key === "+") {
-        e.preventDefault();
-        if (!modalReady) return;
-
-        const montoNum = parseFloat(montoRecibido) || 0;
-        const valorEnPesos =
-          metodoPago === "dolares" && tipoCambio
-            ? montoNum * tipoCambio
-            : montoNum;
-
-        // Si el monto cubre el saldo, podemos finalizar directamente
-        if (montoNum > 0 && valorEnPesos >= saldoPendiente) {
-          finalizarVenta();
-          return;
-        }
-
-        // Si el monto ingresado es menor al saldo, lo agregamos como un pago parcial
-        if (montoNum > 0 && valorEnPesos < saldoPendiente) {
-          agregarPago();
-          return;
-        }
-
-        // Si ya no hay monto a agregar y el saldo está cubierto, finalizar
-        if (saldoPendiente <= 0.01) {
-          finalizarVenta();
-        } else {
-          // Si intenta finalizar sin cubrir el saldo o sin monto ingresado
-          mostrarModalPersonalizado(
-            "Saldo insuficiente",
-            `Aún falta por cubrir ${formatearDinero(
-              saldoPendiente,
-            )} para completar el total.`,
-            "warning",
-          );
-        }
-        return;
-      }
-
-      // Escape: Cerrar modal
-      if (e.key === "Escape") {
-        e.preventDefault();
-        cerrarModalPago();
-        return;
-      }
-
-      // Atajos para cambiar método de pago
-      if (e.key === "F1") {
-        e.preventDefault();
-        setMetodoPago("efectivo");
-        setMontoRecibido("");
-        return;
-      }
-      if (e.key === "F2") {
-        e.preventDefault();
-        setMetodoPago("tarjeta");
-        setMontoRecibido("");
-        return;
-      }
-      if (e.key === "F3") {
-        e.preventDefault();
-        setMetodoPago("transferencia");
-        setMontoRecibido("");
-        return;
-      }
-      if (e.key === "F4" && tipoCambio) {
-        e.preventDefault();
-        setMetodoPago("dolares");
-        setMontoRecibido("");
-        return;
-      }
-
-      // Números para cualquier método de pago
-      if (
-        metodoPago === "efectivo" ||
-        metodoPago === "dolares" ||
-        metodoPago === "tarjeta" ||
-        metodoPago === "transferencia"
-      ) {
-        // Aceptar números normales y del teclado numérico
-        if (/^[0-9]$/.test(e.key)) {
-          manejarTecladoNumerico(e.key);
-        } else if (
-          e.key === "." ||
-          e.key === "," ||
-          e.key === "Decimal" ||
-          e.key === "Separator"
-        ) {
-          manejarTecladoNumerico(".");
-        } else if (e.key === "Backspace" || e.key === "Delete") {
-          manejarTecladoNumerico("backspace");
-        }
-      }
-    };
-
-    // Usar capture: false para permitir que otros elementos reciban el evento si es necesario.
-    // El scanner usa capture: true, por eso lo desactivamos arriba con 'enabled'.
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [
-    mostrarModalPago,
-    metodoPago,
-    total,
-    modalReady,
-    tipoCambio,
-    montoRecibido,
-  ]);
+  // Keyboard handling moved to PaymentModal component
 
   // MANEJAR ENTER GLOBAL PARA MODALES Y PAGO
   useEffect(() => {
     const handleGlobalEnter = (e) => {
       // Modales activos previenen atajos globales
-      if (mostrarModalPago || modal.isOpen || mostrarModal) {
+      if (mostrarModalPago || modal.isOpen || mostrarModal || mostrarModalAddProduct) {
         if (e.key === "Enter") {
           if (modal.isOpen) {
             e.preventDefault();
@@ -1465,6 +1405,7 @@ export const Sales = () => {
     modal.isOpen,
     mostrarModal,
     mostrarModalPago,
+    mostrarModalAddProduct,
     carrito,
     activeCartItemId,
     alternarUnidadUltimaLinea,
@@ -1514,7 +1455,7 @@ export const Sales = () => {
         productoLocal,
         unidadEscaneada,
       );
-      agregarProducto(productoConImagen);
+      agregarProducto(productoConImagen, undefined, true);
       mostrarModalPersonalizado(
         "Producto agregado",
         `${productoLocal.name} añadido al carrito (${unidadEscaneada})`,
@@ -1529,7 +1470,7 @@ export const Sales = () => {
         const producto = await productService.getProductByBarcode(codigoLimpio);
         if (producto) {
           const productoConImagen = { ...producto, image: producto.image_url };
-          agregarProducto(productoConImagen);
+          agregarProducto(productoConImagen, undefined, true);
           mostrarModalPersonalizado(
             "Producto agregado",
             `${producto.name} añadido al carrito`,
@@ -1747,7 +1688,7 @@ export const Sales = () => {
 
     html += `<div class="ticket-footer">${
       settings.footer_message || "GRACIAS POR SU COMPRA"
-    }</div>`;
+    }<br>FACTURACIÓN EN:<br>https://facturacion.nexumpos.com</div>`;
     html += "</div>";
 
     return html;
@@ -1777,7 +1718,7 @@ export const Sales = () => {
       )}
 
       {/* BOTONES EXTRA (PRODUCTO COMÚN, ENTRADA, SALIDA) */}
-      <div className="px-4 mt-2">
+      <div className="px-4 mt-2" style={{ visibility: isAnyModalOpen ? 'hidden' : 'visible', pointerEvents: isAnyModalOpen ? 'none' : 'auto' }}>
         <QuickActions 
           isSupervising={isSupervising}
           onOpenComun={() => setMostrarModalComun(true)}
@@ -1794,7 +1735,7 @@ export const Sales = () => {
         <div className="sales-products-panel">
 
           {/* ── ZONA A: BÚSQUEDA ── */}
-          <div className="search-zone">
+          <div className="search-zone" style={{ visibility: isAnyModalOpen ? 'hidden' : 'visible', pointerEvents: isAnyModalOpen ? 'none' : 'auto' }}>
             <SearchSection
               searchContainerRef={searchContainerRef}
               campoCodigoRef={campoCodigoRef}
@@ -1804,37 +1745,37 @@ export const Sales = () => {
               manejarCambioCodigo={manejarCambioCodigo}
               manejarEnter={manejarEnter}
               isSupervising={isSupervising}
-            />
-
-            {codigoEscaneado.trim().length > 0 && (
-              <div className="search-results-list">
-                {sugerencias.length > 0 ? (
-                  sugerencias.map((producto, index) => (
-                    <div
-                      key={producto.id}
-                      className={`search-result-item ${
-                        index === indexSugerencia ? "active" : ""
-                      }`}
-                      onClick={() => seleccionarProducto(producto)}
-                      onMouseEnter={() => setIndexSugerencia(index)}
-                    >
-                      <div className="result-info">
-                        <span className="result-name">{producto.name}</span>
-                        <span className="result-sku">{producto.barcode || ''}</span>
+            >
+              {codigoEscaneado.trim().length > 0 && (
+                <div className="search-results-list">
+                  {sugerencias.length > 0 ? (
+                    sugerencias.map((producto, index) => (
+                      <div
+                        key={producto.id}
+                        className={`search-result-item ${
+                          index === indexSugerencia ? "active" : ""
+                        }`}
+                        onClick={() => seleccionarProducto(producto)}
+                        onMouseEnter={() => setIndexSugerencia(index)}
+                      >
+                        <div className="result-info">
+                          <span className="result-name">{producto.name}</span>
+                          <span className="result-sku">{producto.barcode || ''}</span>
+                        </div>
+                        <div className="result-meta">
+                          <span className="result-price">{formatearDinero(producto.price)}</span>
+                          {(producto.stock || 0) > 0 && (
+                            <span className="result-stock">● {producto.stock} pzas</span>
+                          )}
+                        </div>
                       </div>
-                      <div className="result-meta">
-                        <span className="result-price">{formatearDinero(producto.price)}</span>
-                        {(producto.stock || 0) > 0 && (
-                          <span className="result-stock">● {producto.stock} pzas</span>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="search-no-results">Sin resultados para "{codigoEscaneado}"</p>
-                )}
-              </div>
-            )}
+                    ))
+                  ) : (
+                    <p className="search-no-results">Sin resultados para "{codigoEscaneado}"</p>
+                  )}
+                </div>
+              )}
+            </SearchSection>
           </div>
 
           {/* ── ZONA B: LISTA DE VENTA ACTUAL ── */}
@@ -1978,11 +1919,11 @@ export const Sales = () => {
                          {columnasVisibles.qty && (
                            <div className="pos-col pos-col-qty" style={{ width: `${anchosColumnas.qty}px` }}>
                              <div className="qty-picker">
-                               <button onClick={(e) => { e.stopPropagation(); cambiarCantidad(item.id, -1); }}>
+                               <button onClick={(e) => { e.stopPropagation(); cambiarCantidad(item.id, -1, true); }}>
                                  <span className="material-symbols-outlined">remove</span>
                                </button>
                                <span>{item.quantity}</span>
-                               <button onClick={(e) => { e.stopPropagation(); cambiarCantidad(item.id, 1); }}>
+                               <button onClick={(e) => { e.stopPropagation(); cambiarCantidad(item.id, 1, true); }}>
                                  <span className="material-symbols-outlined">add</span>
                                </button>
                              </div>
@@ -2039,6 +1980,8 @@ export const Sales = () => {
           {isScanning && (
             <div className="notification info">Escaneando código...</div>
           )}
+
+
         </div>
 
           {/* CARRITO LATERAL */}
@@ -2079,319 +2022,32 @@ export const Sales = () => {
         />
       )}
 
-      {/* MODAL DE PAGO (REDISEÑO COMPACTO) */}
-      {mostrarModalPago && (
-        <div
-          className="payment-modal-overlay"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) cerrarModalPago();
-          }}
-        >
-          <div className="payment-modal-container" onClick={(e) => e.stopPropagation()}>
-            {/* MODAL HEADER */}
-            <div className="payment-modal-header">
-              <div className="header-left">
-                <span className="material-symbols-outlined header-icon">payments</span>
-                <h2>Resumen de Venta</h2>
-                <span className="payment-transaction-id"># {transactionId}</span>
-              </div>
-              <button 
-                className="payment-modal-close" 
-                onClick={cerrarModalPago}
-                title="Cerrar (Esc)"
-              >
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-
-            <div className="payment-modal-content">
-              {/* LEFT COLUMN: SALE SUMMARY & REGISTERED PAYMENTS */}
-              <div className="payment-summary-section">
-                <div className="payment-summary-header">
-                  <h3 className="payment-summary-title">
-                    <span className="material-symbols-outlined">shopping_cart_checkout</span>
-                    PRODUCTOS EN CARRITO
-                  </h3>
-                  <span className="payment-transaction-id">#{transactionId}</span>
-                </div>
-
-                <div className="section-scrollable custom-scrollbar">
-                  <div className="payment-items-list">
-                    {carrito.map((item) => (
-                      <div key={item.id} className="payment-item-row">
-                        <div className="payment-item-info">
-                          <p className="payment-item-name">{item.name}</p>
-                          <p className="payment-item-details">
-                            {item.quantity} {item.unit_sold || 'PZA'} x {formatearDinero(item.price)}
-                          </p>
-                        </div>
-                        <span className="payment-item-price">
-                          {formatearDinero(item.price * item.quantity)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {pagosRealizados.length > 0 && (
-                    <div className="payment-registered-block">
-                      <h3 className="payment-block-title">PAGOS REGISTRADOS</h3>
-                      <div className="payment-registered-list">
-                        {pagosRealizados.map((p) => (
-                          <div key={p.id} className="payment-registered-item">
-                            <div className="payment-method-info">
-                              <span className="material-symbols-outlined" style={{ fontSize: '1.2rem', color: '#6366f1' }}>
-                                {p.method === 'efectivo' ? 'payments' : 
-                                 p.method === 'transferencia' ? 'account_balance' : 
-                                 p.method === 'tarjeta' ? 'credit_card' : 'account_balance_wallet'}
-                              </span>
-                              <div>
-                                <span className="method-label capitalize">{p.method}</span>
-                                {p.method === 'dolares' && p.received && (
-                                  <span className="method-extra"> • {p.received} USD</span>
-                                )}
-                              </div>
-                            </div>
-                            <div className="payment-amount-info">
-                              <span className="amount-value">{formatearDinero(p.amount)}</span>
-                              <button 
-                                className="payment-delete-btn"
-                                onClick={() => eliminarPago(p.id)}
-                              >
-                                <span className="material-symbols-outlined">close</span>
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* TOTALS DISPLAY (Moved to left column) */}
-                <div className="payment-totals-card">
-                  <div className="total-row">
-                    <span>Subtotal</span>
-                    <span>{formatearDinero(total)}</span>
-                  </div>
-                  <div className="total-row">
-                    <span>IVA ({taxRateValue}%)</span>
-                    <span>{formatearDinero(taxAmount)}</span>
-                  </div>
-                  <div className="total-final-row">
-                    <span className="label">Total a Pagar</span>
-                    <span className="amount">{formatearDinero(totalVenta)}</span>
-                  </div>
-                </div>
-
-                {/* STICKY BALANCE BAR AT BOTTOM OF LEFT COLUMN */}
-                {(() => {
-                  const totalVueltoGuardado = pagosRealizados.reduce((sum, p) => sum + (p.change || 0), 0);
-                  const vueltoActual = calcularCambio();
-                  const vueltoFinal = totalVueltoGuardado + vueltoActual;
-                  
-                  let stateClass = '';
-                  let label = '';
-                  let amount = 0;
-                  let icon = '';
-
-                  if (saldoPendiente > 0.01) {
-                    stateClass = 'pending';
-                    label = 'SALDO PENDIENTE';
-                    amount = saldoPendiente;
-                    icon = 'pending_actions';
-                  } else if (vueltoFinal > 0) {
-                    stateClass = 'change';
-                    label = 'VUELTO';
-                    amount = vueltoFinal;
-                    icon = 'payments';
-                  } else {
-                    stateClass = 'completed';
-                    label = 'SALDO COMPLETADO';
-                    amount = 0;
-                    icon = 'check_circle';
-                  }
-
-                  return (
-                    <div className={`pending-balance-card ${stateClass}`}>
-                      <div className="balance-info">
-                        <span className="balance-label">{label}</span>
-                        <span className="balance-amount">{formatearDinero(amount)}</span>
-                      </div>
-                      <span className="material-symbols-outlined balance-icon">
-                        {icon}
-                      </span>
-                    </div>
-                  );
-                })()}
-              </div>
-
-              {/* RIGHT COLUMN: PAYMENT ACTIONS */}
-              <div className="payment-method-section">
-                <div className="payment-method-content custom-scrollbar">
-
-
-                  {/* METHOD SELECTOR */}
-                  <div className="payment-actions-header">
-                    <h3 className="payment-method-title">Método de Pago</h3>
-                    
-                    {/* Billing Toggle */}
-                    <div 
-                      className={`billing-toggle ${facturar ? 'active' : ''}`}
-                      onClick={() => setFacturar(!facturar)}
-                    >
-                      <span className="toggle-label">Facturar</span>
-                      <div className="toggle-switch">
-                        <div className="toggle-dot"></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="payment-methods-grid">
-                    {[
-                      { id: 'efectivo', icon: 'payments', label: 'Efectivo' },
-                      { id: 'tarjeta', icon: 'credit_card', label: 'Tarjeta' },
-                      { id: 'transferencia', icon: 'account_balance', label: 'Transf.' },
-                      { id: 'dolares', icon: 'currency_exchange', label: 'Dólares', visible: !!tipoCambio }
-                    ].filter(m => m.visible !== false).map(method => (
-                      <button
-                        key={method.id}
-                        className={`method-btn ${metodoPago === method.id ? 'active' : ''}`}
-                        onClick={() => {
-                          setMetodoPago(method.id);
-                          setMontoRecibido("");
-                        }}
-                      >
-                        <span className="material-symbols-outlined">{method.icon}</span>
-                        <span>{method.label}</span>
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* ISSUER SELECTOR (Only if Facturar is active and it's a card/bank method) */}
-                  {facturar && issuers.length > 0 && (
-                    <div className="issuer-selector-container animate-in slide-in-from-top-2">
-                      <div className="issuer-selector">
-                        <span className="material-symbols-outlined selector-icon">business</span>
-                        <select 
-                          className="issuer-select"
-                          value={selectedIssuerId}
-                          onChange={(e) => setSelectedIssuerId(e.target.value)}
-                        >
-                          {issuers.map((i) => (
-                            <option key={i.id} value={i.id}>{i.razon_social}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* NUMPAD & INPUT */}
-                  <div className="payment-interaction-section">
-                    <div className="payment-input-area">
-                      <span className="input-label">
-                        {metodoPago === "dolares" ? "Monto Recibido (USD)" : "Monto Recibido"}
-                      </span>
-                      <div className="input-display">
-                        <span className="currency-symbol">$</span>
-                        <span className="amount-value">{formatearMontoRecibido()}</span>
-                        <button 
-                          className="add-payment-btn"
-                          onClick={agregarPago}
-                          disabled={
-                            !montoRecibido || 
-                            parseFloat(montoRecibido) <= 0 || 
-                            (metodoPago !== "efectivo" && metodoPago !== "dolares" && 
-                             (metodoPago === "dolares" && tipoCambio 
-                               ? parseFloat(montoRecibido) * tipoCambio > saldoPendiente + 0.01 
-                               : parseFloat(montoRecibido) > saldoPendiente + 0.01))
-                          }
-                        >
-                          <span className="material-symbols-outlined">add</span>
-                          Cobrar
-                        </button>
-                      </div>
-
-                      {metodoPago === "dolares" && (
-                        <div className="exchange-rate-info">
-                          <span className="material-symbols-outlined" style={{fontSize: '0.9rem'}}>info</span>
-                          1 USD = ${tipoCambio} MXN
-                        </div>
-                      )}
-
-                      <div className="flex gap-2 mb-3">
-                        <button 
-                          className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl transition-colors font-bold text-sm border border-slate-200 dark:border-slate-700"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            const amount = metodoPago === "dolares" && tipoCambio 
-                              ? (saldoPendiente / tipoCambio).toFixed(2) 
-                              : saldoPendiente.toFixed(2);
-                            setMontoRecibido(amount.toString());
-                          }}
-                        >
-                          Exacto
-                        </button>
-                        <button 
-                          className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl transition-colors font-bold text-sm border border-slate-200 dark:border-slate-700"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setMontoRecibido("200");
-                          }}
-                        >
-                          $200
-                        </button>
-                        <button 
-                          className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl transition-colors font-bold text-sm border border-slate-200 dark:border-slate-700"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setMontoRecibido("500");
-                          }}
-                        >
-                          $500
-                        </button>
-                      </div>
-
-                      <div className="numpad-grid">
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0, ".", "backspace"].map((num) => (
-                          <button
-                            key={num}
-                            className={`numpad-key ${num === 'backspace' ? 'backspace' : ''}`}
-                            onClick={() => manejarTecladoNumerico(num)}
-                          >
-                            {num === "backspace" ? (
-                              <span className="material-symbols-outlined">backspace</span>
-                            ) : num}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-
-                  </div>
-                </div>
-
-                {/* FINAL ACTIONS FOOTER */}
-                <div className="payment-actions-footer">
-                  <button 
-                    className="btn-cancel-sale"
-                    onClick={cerrarModalPago}
-                  >
-                    Cancelar
-                  </button>
-                  <button 
-                    className="btn-finalize-sale"
-                    disabled={!modalReady || saldoPendiente > 0.01}
-                    onClick={finalizarVenta}
-                  >
-                    <span className="material-symbols-outlined">check_circle</span>
-                    Finalizar Venta
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* MODAL AGREGAR PRODUCTO (PZA / CAJA) */}
+      {mostrarModalAddProduct && productoParaModal && (
+        <ProductAddModal
+          product={productoParaModal}
+          onClose={cerrarModalAddProduct}
+          onAdd={handleModalAdd}
+          formatearDinero={formatearDinero}
+          hasBoxConfig={tieneCajaConfigurada(productoParaModal)}
+          boxUnits={parseInt(productoParaModal.box_units || 0)}
+          boxPrice={parseFloat(productoParaModal.box_price || 0)}
+        />
       )}
+
+      <PaymentModal
+        isOpen={mostrarModalPago}
+        onClose={cerrarModalPago}
+        onComplete={handlePaymentComplete}
+        total={total}
+        taxRate={taxRateValue}
+        tipoCambio={tipoCambio}
+        issuers={issuers}
+        selectedIssuerId={selectedIssuerId}
+        setSelectedIssuerId={setSelectedIssuerId}
+        user={user}
+        transactionId={transactionId}
+      />
 
 
       {/* MODAL VENTA COMPLETADA */}

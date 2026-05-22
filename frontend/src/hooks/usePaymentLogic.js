@@ -51,6 +51,8 @@ export const usePaymentLogic = ({ totalVenta, tipoCambio = 1 }) => {
   };
 
   const calcularCambio = () => {
+    if (saldoPendiente <= 0) return 0;
+
     const monto = parseFloat(montoRecibidoRef.current || montoRecibido) || 0;
 
     if (metodoPago === 'dolares' && tipoCambio) {
@@ -65,8 +67,8 @@ export const usePaymentLogic = ({ totalVenta, tipoCambio = 1 }) => {
     const montoStr = montoRecibidoRef.current || montoRecibido;
     const montoNum = parseFloat(montoStr) || 0;
 
-    if (montoNum <= 0) return false;
-    if (saldoPendiente <= 0) return false; // Ya no hay saldo que cubrir
+    if (montoNum <= 0) return { success: false };
+    if (saldoPendiente <= 0) return { success: false }; // Ya no hay saldo que cubrir
 
     let montoAbonado = montoNum;
     let cambio = 0;
@@ -103,10 +105,19 @@ export const usePaymentLogic = ({ totalVenta, tipoCambio = 1 }) => {
       details: { ...paymentDetails } // guardamos la copia actual
     };
 
-    setPagosRealizados((prev) => [...prev, nuevoPago]);
+    const newPayments = [...pagosRealizados, nuevoPago];
+    setPagosRealizados(newPayments);
     setMontoRecibido('');
     setPaymentDetails({ authCode: '', last4: '', bank: '', reference: '' }); // Reset
-    return true;
+    
+    const newTotalAbonado = newPayments.reduce((sum, p) => sum + p.amount, 0);
+    const fullyCovered = newTotalAbonado >= totalVenta;
+
+    return { 
+      success: true, 
+      updatedPayments: newPayments, 
+      fullyCovered 
+    };
   };
 
   const eliminarPago = (id) => {
@@ -115,7 +126,7 @@ export const usePaymentLogic = ({ totalVenta, tipoCambio = 1 }) => {
 
   const resetearPagos = () => {
     setPagosRealizados([]);
-    setMontoRecibido((totalVenta).toFixed(2));
+    setMontoRecibido('');
     setMetodoPago('efectivo');
     setFacturar(false);
     setPaymentDetails({ authCode: '', last4: '', bank: '', reference: '' });

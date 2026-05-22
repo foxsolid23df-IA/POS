@@ -7,9 +7,11 @@ import {
   secureGet,
   secureRemove,
   purgeSessionData,
-  useSessionTimeout,
+  isSessionExpired,
 } from "../utils/secureStorage";
+import { useSessionTimeout } from "../hooks/useSessionTimeout";
 import { isAbortError } from "../utils/supabaseErrorHandler";
+import { SessionTimeoutModal } from "../components/common/SessionTimeoutModal";
 
 const AuthContext = createContext();
 
@@ -28,6 +30,9 @@ export const AuthProvider = ({ children }) => {
   // Sistema de sesión de caja (fondo de caja)
   const [cashSession, setCashSession] = useState(null);
   const [needsCashFund, setNeedsCashFund] = useState(false);
+
+  // Estado para el modal de advertencia de sesión
+  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
 
   // La pantalla está bloqueada si hay sesión pero no hay empleado activo
   const isLocked = !!session && !activeStaff;
@@ -55,7 +60,25 @@ export const AuthProvider = ({ children }) => {
       });
   };
 
-  useSessionTimeout(handleSessionTimeout, 15 * 60 * 1000);
+  // useSessionTimeout(handleSessionTimeout, 15 * 60 * 1000);
+  const { resetTimeout } = useSessionTimeout(
+    handleSessionTimeout,
+    () => setShowTimeoutWarning(true),
+    12 * 60 * 60 * 1000, // 12 horas
+    15 * 60 * 1000,      // 15 minutos de advertencia
+  );
+
+  useEffect(() => {
+    if (user && isSessionExpired(12 * 60 * 60 * 1000)) {
+      console.warn("[Auth] Sesión expirada al cargar");
+      handleSessionTimeout();
+    }
+  }, [user]);
+
+  const handleExtendSession = () => {
+    setShowTimeoutWarning(false);
+    resetTimeout();
+  };
 
   useEffect(() => {
     // 1. Get initial session
@@ -509,6 +532,13 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={value}>
       {!loading && children}
+      {showTimeoutWarning && (
+        <SessionTimeoutModal
+          onExtend={handleExtendSession}
+          onLogout={handleSessionTimeout}
+          countdownSeconds={60}
+        />
+      )}
     </AuthContext.Provider>
   );
 };

@@ -10,6 +10,7 @@ const TaxConfig = () => {
 
   const [taxPercentage, setTaxPercentage] = useState("");
   const [taxEnabled, setTaxEnabled] = useState(true);
+  const [taxIncluded, setTaxIncluded] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
@@ -21,6 +22,9 @@ const TaxConfig = () => {
       }
       if (user.tax_enabled !== undefined) {
         setTaxEnabled(user.tax_enabled);
+      }
+      if (user.tax_included !== undefined) {
+        setTaxIncluded(user.tax_included);
       }
     }
   }, [user]);
@@ -42,7 +46,8 @@ const TaxConfig = () => {
         .from("profiles")
         .update({ 
           tax_percentage: percentage,
-          tax_enabled: taxEnabled
+          tax_enabled: taxEnabled,
+          tax_included: taxIncluded
         })
         .eq("id", user.id);
 
@@ -109,8 +114,28 @@ const TaxConfig = () => {
               />
             </div>
             <span className="help-text">
-              Este valor se utilizará para calcular el desglose del IVA en cada ticket (IVA Incluido).
+              Este valor se utilizará para calcular el desglose del IVA en cada ticket.
             </span>
+          </div>
+
+          <div className={`form-group ${!taxEnabled ? 'disabled-group' : ''}`}>
+            <div className="toggle-label-container">
+              <label htmlFor="taxIncluded">Los precios de mis productos ya incluyen IVA</label>
+              <p className="help-text">
+                Si está marcado, el total no cambiará al facturar (IVA Incluido). 
+                Si está desmarcado, se sumará el {taxPercentage || '16'}% al total (IVA Desglosado).
+              </p>
+            </div>
+            <label className="switch">
+              <input
+                type="checkbox"
+                id="taxIncluded"
+                checked={taxIncluded}
+                onChange={(e) => setTaxIncluded(e.target.checked)}
+                disabled={!taxEnabled}
+              />
+              <span className="slider round"></span>
+            </label>
           </div>
 
           {error && <div className="error-message">{error}</div>}

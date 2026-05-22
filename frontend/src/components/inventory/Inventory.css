@@ -244,6 +244,29 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 8px;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+}
+
+.control-buttons::-webkit-scrollbar {
+    height: 6px;
+}
+
+.control-buttons::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.control-buttons::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.dark .control-buttons::-webkit-scrollbar-thumb {
+    background: #475569;
 }
 
 .control-btn {
@@ -291,8 +314,18 @@
     
     .control-buttons {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
         width: 100%;
+        padding-bottom: 0;
+        gap: 10px;
+        overflow-x: visible;
+        white-space: normal;
+    }
+    
+    .control-btn {
+        justify-content: center;
+        width: 100%;
+        padding: 12px 10px;
     }
     
     .control-btn {

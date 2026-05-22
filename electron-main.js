@@ -5,15 +5,30 @@ const { app, BrowserWindow, Menu, dialog, ipcMain } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const http = require('http');
+const net = require('net');
 
 let mainWindow;
 let backendProcess;
+let backendPort = 3001;
 
-const PORT = 3001;
+// Función para obtener un puerto libre asignado por el SO
+function obtenerPuertoLibre() {
+    return new Promise((resolve) => {
+        const server = net.createServer();
+        server.unref();
+        server.listen(0, '127.0.0.1', () => {
+            const port = server.address().port;
+            server.close(() => {
+                resolve(port);
+            });
+        });
+    });
+}
+
 const isDev = process.env.NODE_ENV === 'development';
 
 // Función para verificar si el servidor está listo
-function esperarServidor(url, intentos = 30) {
+function esperarServidor(url, intentos = 120) {
     return new Promise((resolve, reject) => {
         const verificar = (intento) => {
             if (intento >= intentos) {
@@ -38,8 +53,16 @@ function esperarServidor(url, intentos = 30) {
 
 // Función para iniciar el servidor backend
 function iniciarBackend() {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
         console.log('🚀 Iniciando servidor backend...');
+
+        try {
+            backendPort = await obtenerPuertoLibre();
+            console.log(`📌 Puerto dinámico asignado para el backend: ${backendPort}`);
+        } catch (err) {
+            console.error('❌ Error al obtener puerto libre, usando 3001 de fallback:', err);
+            backendPort = 3001;
+        }
 
         const backendPath = isDev
             ? path.join(__dirname, 'backend')
@@ -95,13 +118,23 @@ function iniciarBackend() {
             return;
         }
 
+        // Configurar archivo de log para el backend
+        const logFilePath = path.join(userDataPath, 'backend.log');
+        const logStream = fs.createWriteStream(logFilePath, { flags: 'a' });
+        logStream.write(`\n\n--- INICIO BACKEND: ${new Date().toISOString()} ---\n`);
+        logStream.write(`Backend Path: ${backendPath}\n`);
+        logStream.write(`Node Path: ${nodePath}\n`);
+        logStream.write(`DB Path: ${path.join(dbDataDir, 'sistema-pos.db')}\n`);
+
         // Iniciar el servidor backend
         backendProcess = spawn(nodePath, ['index.js'], {
             cwd: backendPath,
             env: {
                 ...process.env,
                 NODE_ENV: 'production',
-                DB_PATH: path.join(dbDataDir, 'sistema-pos.db')
+                DB_PATH: path.join(dbDataDir, 'sistema-pos.db'),
+                HOST: '127.0.0.1',
+                PORT: backendPort.toString()
             },
             stdio: 'pipe',
             windowsHide: true
@@ -113,22 +146,26 @@ function iniciarBackend() {
             const msg = data.toString();
             backendOutput += msg;
             console.log(`[Backend]: ${msg}`);
+            logStream.write(`[STDOUT] ${msg}`);
         });
 
         backendProcess.stderr.on('data', (data) => {
             const msg = data.toString();
             backendOutput += msg;
             console.error(`[Backend Error]: ${msg}`);
+            logStream.write(`[STDERR] ${msg}`);
         });
 
         backendProcess.on('error', (error) => {
             console.error('❌ Error al iniciar backend:', error);
+            logStream.write(`[ERROR] Error al iniciar backend: ${error.stack || error.message}\n`);
             reject(error);
         });
 
         // Detectar si el proceso se cierra inesperadamente durante el arranque
         let resolved = false;
         backendProcess.on('exit', (code) => {
+            logStream.write(`[EXIT] El backend se cerró con código ${code}\n`);
             if (!resolved && code !== 0) {
                 const msg = `El backend se cerró con código ${code}.\n\nSalida:\n${backendOutput.slice(-500)}`;
                 console.error(`❌ ${msg}`);
@@ -138,7 +175,7 @@ function iniciarBackend() {
 
         // Esperar a que el servidor esté listo
         setTimeout(() => {
-            esperarServidor(`http://localhost:${PORT}/api/products`)
+            esperarServidor(`http://127.0.0.1:${backendPort}/api/products`)
                 .then(() => {
                     resolved = true;
                     resolve();
@@ -358,6 +395,11 @@ ipcMain.on('print-ticket-silent', (event, htmlContent, printerName) => {
             workerWindow.close();
         });
     });
+});
+
+// Obtener la URL de la API del backend dinámica
+ipcMain.on('get-api-url-sync', (event) => {
+    event.returnValue = `http://127.0.0.1:${backendPort}`;
 });
 
 // Listar impresoras del sistema

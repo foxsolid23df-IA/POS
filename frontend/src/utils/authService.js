@@ -1,4 +1,6 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+import { config } from '../config';
+
+const API_URL = `${config.api.baseUrl}/api`;
 
 export const authService = {
     async login(pin) {

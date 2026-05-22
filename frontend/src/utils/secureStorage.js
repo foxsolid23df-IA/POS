@@ -131,7 +131,7 @@ export function touchActivity() {
  * @param {number} timeoutMs - Default 15 minutos
  * @returns {boolean}
  */
-export function isSessionExpired(timeoutMs = 15 * 60 * 1000) {
+export function isSessionExpired(timeoutMs = 12 * 60 * 60 * 1000) {
     try {
         const last = localStorage.getItem('_lastActivity');
         if (!last) return false; // Sin registro = no aplicar timeout
@@ -146,10 +146,7 @@ export function isSessionExpired(timeoutMs = 15 * 60 * 1000) {
  */
 export function purgeSessionData() {
     const keys = [
-        'activeStaff', '_lastActivity',
-        'terminal_id', 'terminal_name', 'is_main_terminal',
-        'pos_terminal_id', 'pos_terminal_name', 'pos_is_main_terminal',
-        'scanner_mode', 'theme', 'customCategories'
+        'activeStaff', '_lastActivity'
     ];
     keys.forEach(key => {
         try {

@@ -20,6 +20,7 @@ const TicketVenta = forwardRef(({ venta }, ref) => {
     font_family: "monospace",
     is_bold: false,
     margin: 0,
+    show_logo: true,
   };
 
   const ticketStyles = {
@@ -60,7 +61,7 @@ const TicketVenta = forwardRef(({ venta }, ref) => {
       style={ticketStyles}
     >
       <div className="ticket-header">
-        {settings.logo_url && (
+        {settings.show_logo && settings.logo_url && (
           <div className="ticket-logo-container">
             <img src={settings.logo_url} alt="Logo" className="ticket-logo" />
           </div>
@@ -93,7 +94,18 @@ const TicketVenta = forwardRef(({ venta }, ref) => {
         <div className="ticket-billing-section">
           <div className="ticket-divider-eq">{dividerString}</div>
           <div className="ticket-title" style={{ fontSize: '1.0em', marginBottom: '5px' }}>FACTURACIÓN EN LÍNEA</div>
-          <div className="ticket-info" style={{ marginBottom: '8px' }}>Sitio: {import.meta.env.VITE_BILLING_PORTAL_URL || 'facturacion.pos_ideal.com'}</div>
+          
+          {/* QR CODE GENERATOR */}
+          <div style={{ textAlign: 'center', margin: '10px 0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <img 
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`${(import.meta.env.VITE_BILLING_PORTAL_URL || 'https://pos-autofactura.vercel.app').replace(/\/$/, '')}/?folio=${venta.id}&pin=${venta.pin_facturacion}`)}`}
+              alt="QR Facturación"
+              style={{ width: '120px', height: '120px', backgroundColor: 'white', padding: '5px', border: '1px solid #000' }}
+            />
+            <div style={{ fontSize: '10px', marginTop: '4px', fontWeight: 'bold' }}>ESCANEA PARA FACTURAR</div>
+          </div>
+
+          <div className="ticket-info" style={{ marginBottom: '8px' }}>Sitio: https://pos-autofactura.vercel.app/</div>
           
           <div className="ticket-meta-row" style={{ justifyContent: 'space-between', padding: '0 5px' }}>
             <span className="ticket-meta-label">FOLIO:</span>

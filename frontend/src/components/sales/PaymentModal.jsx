@@ -1,25 +1,40 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { usePaymentLogic } from "../../hooks/usePaymentLogic";
-import { formatCurrency } from "../../utils/formatters"; // Asumiendo que existe o lo ajustaremos
+import { formatearDinero } from "../../utils/formatters";
 
 const PaymentModal = ({
   isOpen,
   onClose,
   onComplete,
-  totalVenta,
+  total,
+  taxRate = 0,
   tipoCambio,
   selectedIssuerId,
   setSelectedIssuerId,
-  user
+  issuers = [],
+  user,
+  transactionId
 }) => {
+  const [facturar, setFacturar] = useState(false);
+
+  const totalVenta = useMemo(() => {
+    if (!facturar) return total;
+    
+    // Si el IVA ya está incluido en los precios, el total no cambia al facturar
+    if (user?.tax_included !== false) {
+      return total;
+    }
+    
+    // Si el IVA NO está incluido, lo sumamos al total original
+    return total * (1 + taxRate / 100);
+  }, [total, taxRate, facturar, user?.tax_included]);
+
   const {
     metodoPago,
     setMetodoPago,
     montoRecibido,
     setMontoRecibido,
     pagosRealizados,
-    facturar,
-    setFacturar,
     paymentDetails,
     updatePaymentDetails,
     totalAbonado,
@@ -32,20 +47,61 @@ const PaymentModal = ({
     isSaleFullyCovered
   } = usePaymentLogic({ totalVenta, tipoCambio });
 
-  // Inicializar al abrir
+  const { subtotal, taxAmount } = useMemo(() => {
+    let sub = totalVenta;
+    let tax = 0;
+
+    if (facturar && taxRate > 0) {
+      if (user?.tax_included !== false) {
+        // IVA incluido: Extraemos el IVA del total
+        tax = totalVenta - (totalVenta / (1 + taxRate / 100));
+        sub = totalVenta - tax;
+      } else {
+        // IVA no incluido: El totalVenta ya tiene el IVA sumado
+        sub = total;
+        tax = totalVenta - total;
+      }
+    }
+
+    return { subtotal: sub, taxAmount: tax };
+  }, [total, totalVenta, facturar, taxRate, user?.tax_included]);
+
   useEffect(() => {
     if (isOpen) {
       resetearPagos();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, totalVenta]);
+  }, [isOpen]);
 
-  // Manejo de atajos de teclado
+  const handleComplete = () => {
+    let finalPayments = pagosRealizados;
+    let covered = isSaleFullyCovered;
+
+    // Si hay un monto ingresado, primero intentamos agregarlo
+    if (montoRecibido && saldoPendiente > 0) {
+      const result = agregarPago();
+      if (result && result.success) {
+        finalPayments = result.updatedPayments;
+        covered = result.fullyCovered;
+      } else {
+        // Si falló agregar el pago (monto inválido), no continuamos
+        return;
+      }
+    }
+
+    // Si después de (posiblemente) agregar el pago, la venta está cubierta, finalizamos
+    if (covered) {
+      onComplete({
+        pagos: finalPayments,
+        facturar,
+        issuerId: facturar ? selectedIssuerId : null
+      });
+    }
+  };
+
   useEffect(() => {
     if (!isOpen) return;
 
     const handleKeyDown = (e) => {
-      // Evitar atajos si se está escribiendo en inputs de texto
       if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
 
       switch (e.key) {
@@ -66,13 +122,8 @@ const PaymentModal = ({
           if (tipoCambio) setMetodoPago("dolares");
           break;
         case "Enter":
-          if (montoRecibido && saldoPendiente > 0) {
-            e.preventDefault();
-            agregarPago();
-          } else if (isSaleFullyCovered) {
-            e.preventDefault();
-            handleComplete();
-          }
+          e.preventDefault();
+          handleComplete();
           break;
         case "Escape":
           e.preventDefault();
@@ -85,7 +136,6 @@ const PaymentModal = ({
           }
           break;
         default:
-          // Permitir números en el teclado si no estamos en un input
           if (e.target.tagName !== 'INPUT' && /^[0-9.]$/.test(e.key)) {
             e.preventDefault();
             manejarTecladoNumerico(e.key);
@@ -96,189 +146,176 @@ const PaymentModal = ({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, metodoPago, montoRecibido, isSaleFullyCovered, saldoPendiente, agregarPago, setMetodoPago, manejarTecladoNumerico, onClose]);
-
-  const handleComplete = () => {
-    // Si hay un saldo capturado sin agregar y falta saldo, intentamos agregarlo
-    if (montoRecibido && saldoPendiente > 0) {
-      const added = agregarPago();
-      // Si se agregó y ya cubre el total, completamos.
-      if (added && saldoPendiente - (parseFloat(montoRecibido) || 0) <= 0.01) {
-         // El estado real no se actualiza inmediatamente, así que pasamos los datos actuales
-      }
-    }
-    
-    // Necesitamos pasar al padre la lista final de pagos y facturar flag.
-    // Como setState es asíncrono, si acabamos de hacer agregarPago(), `pagosRealizados` podría no tener el último.
-    // Por simplicidad, asumiremos que si ya está cubierto (isSaleFullyCovered), se llama.
-    if (isSaleFullyCovered) {
-      onComplete({
-        pagos: pagosRealizados,
-        facturar,
-        issuerId: facturar ? selectedIssuerId : null
-      });
-    }
-  };
+  }, [isOpen, metodoPago, montoRecibido, isSaleFullyCovered, saldoPendiente, agregarPago, setMetodoPago, manejarTecladoNumerico, onClose, tipoCambio, handleComplete]);
 
   if (!isOpen) return null;
 
+  const methods = [
+    { id: "efectivo", icon: "payments", label: "Efectivo", key: "F1" },
+    { id: "tarjeta", icon: "credit_card", label: "Tarjeta", key: "F2" },
+    { id: "transferencia", icon: "account_balance", label: "Transferencia", key: "F3" },
+    { id: "dolares", icon: "currency_exchange", label: "Dólares", key: "F4", hidden: !tipoCambio },
+  ];
+
+  const cambio = saldoPendiente > 0
+    ? calcularCambio()
+    : (pagosRealizados.length > 0 ? pagosRealizados[pagosRealizados.length - 1].change : 0);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-4xl flex flex-col md:flex-row overflow-hidden animate-fade-in-up">
-        
-        {/* LADO IZQUIERDO: Métodos y Detalles */}
-        <div className="flex-1 p-6 flex flex-col border-r border-slate-200 dark:border-slate-700">
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-6">Completar Pago</h2>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            <button
-              onClick={() => setMetodoPago("efectivo")}
-              className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${
-                metodoPago === "efectivo" 
-                  ? "bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-500/20 dark:border-blue-400 dark:text-blue-300" 
-                  : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400"
-              }`}
-            >
-              <i className="fi fi-rr-money text-xl"></i>
-              <span className="font-medium">Efectivo</span>
-              <span className="text-xs opacity-70">[F1]</span>
-            </button>
-            <button
-              onClick={() => setMetodoPago("tarjeta")}
-              className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${
-                metodoPago === "tarjeta" 
-                  ? "bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-500/20 dark:border-blue-400 dark:text-blue-300" 
-                  : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400"
-              }`}
-            >
-              <i className="fi fi-rr-credit-card text-xl"></i>
-              <span className="font-medium">Tarjeta</span>
-              <span className="text-xs opacity-70">[F2]</span>
-            </button>
-            <button
-              onClick={() => setMetodoPago("transferencia")}
-              className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${
-                metodoPago === "transferencia" 
-                  ? "bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-500/20 dark:border-blue-400 dark:text-blue-300" 
-                  : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400"
-              }`}
-            >
-              <i className="fi fi-rr-bank text-xl"></i>
-              <span className="font-medium">Transferencia</span>
-              <span className="text-xs opacity-70">[F3]</span>
-            </button>
-            {tipoCambio > 0 && (
-              <button
-                onClick={() => setMetodoPago("dolares")}
-                className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${
-                  metodoPago === "dolares" 
-                    ? "bg-emerald-50 border-emerald-500 text-emerald-700 dark:bg-emerald-500/20 dark:border-emerald-400 dark:text-emerald-300" 
-                    : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400"
-                }`}
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[1100px] flex flex-col md:flex-row overflow-hidden max-h-[95vh] animate-fade-in-up">
+
+        {/* LEFT COLUMN */}
+        <div className="flex-1 p-8 flex flex-col overflow-y-auto">
+
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-bold text-gray-900">Completar Pago</h2>
+            {transactionId && (
+              <span className="text-sm font-medium text-gray-400 bg-gray-100 px-3 py-1 rounded-lg">
+                #{transactionId}
+              </span>
+            )}
+          </div>
+
+          {/* Method Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+            {methods.filter(m => !m.hidden).map(method => {
+              const isSelected = metodoPago === method.id;
+              return (
+                <button
+                  key={method.id}
+                  onClick={() => setMetodoPago(method.id)}
+                  className={`relative p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${
+                    isSelected
+                      ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm"
+                      : "border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-700"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[1.75rem]">{method.icon}</span>
+                  <span className="font-semibold text-sm leading-tight">{method.label}</span>
+                  <span className={`text-[11px] font-medium ${isSelected ? "text-blue-400" : "text-gray-400"}`}>[{method.key}]</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Conditional forms for card/transfer */}
+          {(metodoPago === 'tarjeta' || metodoPago === 'transferencia') && (
+            <div className="bg-gray-50 rounded-xl p-5 mb-6 border border-gray-200 space-y-4">
+              {metodoPago === 'tarjeta' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1.5">Últimos 4 dígitos</label>
+                    <input
+                      type="text" maxLength="4"
+                      value={paymentDetails.last4}
+                      onChange={(e) => updatePaymentDetails('last4', e.target.value.replace(/\D/g, ''))}
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                      placeholder="Ej. 4242"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1.5">Código de Autorización</label>
+                    <input
+                      type="text"
+                      value={paymentDetails.authCode}
+                      onChange={(e) => updatePaymentDetails('authCode', e.target.value)}
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                      placeholder="Opcional"
+                    />
+                  </div>
+                </div>
+              )}
+              {metodoPago === 'transferencia' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1.5">Banco Origen</label>
+                    <input
+                      type="text"
+                      value={paymentDetails.bank}
+                      onChange={(e) => updatePaymentDetails('bank', e.target.value)}
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                      placeholder="Ej. BBVA, Santander"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1.5">Referencia / Folio</label>
+                    <input
+                      type="text"
+                      value={paymentDetails.reference}
+                      onChange={(e) => updatePaymentDetails('reference', e.target.value)}
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                      placeholder="Obligatorio"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Invoice Toggle */}
+          {user?.tax_enabled !== false && (
+            <div className="flex items-center justify-between py-4 px-5 bg-gray-50 rounded-xl border border-gray-200 mb-6">
+              <div>
+                <h4 className="font-semibold text-gray-800">Generar Factura</h4>
+                <p className="text-sm text-gray-500">Aplicar IVA correspondiente ({taxRate}%)</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={facturar}
+                  onChange={(e) => setFacturar(e.target.checked)}
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
+          )}
+
+          {/* Issuer Selector */}
+          {facturar && issuers.length > 0 && (
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-600 mb-1.5">Emisor de Factura</label>
+              <select
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                value={selectedIssuerId}
+                onChange={(e) => setSelectedIssuerId(e.target.value)}
               >
-                <i className="fi fi-rr-dollar text-xl"></i>
-                <span className="font-medium">Dólares</span>
-                <span className="text-xs opacity-70">[F4]</span>
-              </button>
-            )}
-          </div>
+                {issuers.map((i) => (
+                  <option key={i.id} value={i.id}>{i.razon_social}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
-          {/* Formulario Específico por Método */}
-          <div className="flex-1 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-4">
-            
-            {metodoPago === 'tarjeta' && (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Últimos 4 dígitos</label>
-                  <input 
-                    type="text" 
-                    maxLength="4"
-                    value={paymentDetails.last4}
-                    onChange={(e) => updatePaymentDetails('last4', e.target.value.replace(/\D/g, ''))}
-                    className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-white"
-                    placeholder="Ej. 4242"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Código de Autorización</label>
-                  <input 
-                    type="text" 
-                    value={paymentDetails.authCode}
-                    onChange={(e) => updatePaymentDetails('authCode', e.target.value)}
-                    className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-white"
-                    placeholder="Opcional"
-                  />
-                </div>
-              </div>
-            )}
-
-            {metodoPago === 'transferencia' && (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Banco Origen</label>
-                  <input 
-                    type="text" 
-                    value={paymentDetails.bank}
-                    onChange={(e) => updatePaymentDetails('bank', e.target.value)}
-                    className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-white"
-                    placeholder="Ej. BBVA, Santander"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Referencia / Folio</label>
-                  <input 
-                    type="text" 
-                    value={paymentDetails.reference}
-                    onChange={(e) => updatePaymentDetails('reference', e.target.value)}
-                    className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-800 dark:text-white"
-                    placeholder="Obligatorio"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Opciones extras: Facturar */}
-            {user?.tax_enabled !== false && (
-              <div className="pt-4 border-t border-slate-200 dark:border-slate-700 mt-4 flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium text-slate-800 dark:text-white">Generar Factura</h4>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Aplicar IVA correspondiente</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    className="sr-only peer" 
-                    checked={facturar}
-                    onChange={(e) => setFacturar(e.target.checked)}
-                  />
-                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-            )}
-
-          </div>
-
-          {/* Pagos Realizados (Múltiples/Divididos) */}
+          {/* Registered Payments List */}
           {pagosRealizados.length > 0 && (
-            <div className="mt-4">
-              <h3 className="text-sm font-bold text-slate-600 dark:text-slate-400 mb-2 uppercase tracking-wider">Pagos Agregados</h3>
-              <div className="space-y-2 max-h-32 overflow-y-auto pr-2">
+            <div className="mt-auto">
+              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <span className="material-symbols-outlined text-base">receipt_long</span>
+                Pagos Agregados
+              </h3>
+              <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
                 {pagosRealizados.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between bg-slate-50 dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700">
-                    <div className="flex items-center gap-2">
-                      <i className={`fi ${p.method === 'efectivo' ? 'fi-rr-money' : p.method === 'tarjeta' ? 'fi-rr-credit-card' : p.method === 'dolares' ? 'fi-rr-dollar' : 'fi-rr-bank'} text-slate-400`}></i>
-                      <span className="capitalize text-slate-700 dark:text-slate-300">{p.method}</span>
-                      {p.currency === 'USD' && <span className="text-xs text-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded">USD</span>}
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <span className="font-semibold text-slate-800 dark:text-white">
-                        ${p.amount.toFixed(2)} {p.currency !== 'USD' && 'MXN'}
+                  <div key={p.id} className="flex items-center justify-between bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                    <div className="flex items-center gap-2.5">
+                      <span className="material-symbols-outlined text-gray-400 text-xl">
+                        {p.method === 'efectivo' ? 'payments' : p.method === 'tarjeta' ? 'credit_card' : p.method === 'dolares' ? 'currency_exchange' : 'account_balance'}
                       </span>
-                      <button 
+                      <div>
+                        <span className="capitalize text-sm font-medium text-gray-700">{p.method}</span>
+                        {p.currency === 'USD' && (
+                          <span className="ml-2 text-[11px] text-emerald-600 bg-emerald-50 font-semibold px-1.5 py-0.5 rounded">USD</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold text-gray-800">{formatearDinero(p.amount)}</span>
+                      <button
                         onClick={() => eliminarPago(p.id)}
-                        className="text-red-500 hover:text-red-700 p-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20"
+                        className="text-red-300 hover:text-red-500 p-1 rounded-md hover:bg-red-50 transition-colors"
                       >
-                        <i className="fi fi-rr-trash"></i>
+                        <span className="material-symbols-outlined text-lg">close</span>
                       </button>
                     </div>
                   </div>
@@ -289,115 +326,143 @@ const PaymentModal = ({
 
         </div>
 
-        {/* LADO DERECHO: Calculadora y Resumen */}
-        <div className="w-full md:w-96 bg-slate-50 dark:bg-slate-800/80 p-6 flex flex-col">
-          <div className="mb-6">
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Total a Pagar</p>
-            <div className="text-4xl font-black text-slate-800 dark:text-white">${totalVenta.toFixed(2)}</div>
-            
-            {pagosRealizados.length > 0 && (
-              <div className="mt-2 space-y-1">
-                <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
-                  <span>Abonado:</span>
-                  <span className="font-medium text-emerald-600 dark:text-emerald-400">${totalAbonado.toFixed(2)}</span>
+        {/* RIGHT COLUMN */}
+        <div className="w-full md:w-[400px] lg:w-[420px] bg-gray-50/90 p-8 flex flex-col border-t md:border-t-0 md:border-l border-gray-200">
+
+          {/* Total Display */}
+          <div className="mb-7">
+            {(facturar || taxAmount > 0) && (
+              <div className="space-y-1 mb-4 pb-4 border-b border-gray-200/60">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 font-medium">Subtotal</span>
+                  <span className="text-gray-900 font-bold">{formatearDinero(subtotal)}</span>
                 </div>
-                <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
-                  <span>Restante:</span>
-                  <span className="font-medium text-orange-600 dark:text-orange-400">${saldoPendiente.toFixed(2)}</span>
+                {taxAmount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500 font-medium">IVA ({taxRate}%)</span>
+                    <span className="text-gray-900 font-bold">{formatearDinero(taxAmount)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <p className="text-sm font-medium text-gray-500 mb-1.5 uppercase tracking-wider">Total a Pagar</p>
+            <div className="text-4xl lg:text-5xl font-black text-gray-900 tracking-tight leading-none">
+              {formatearDinero(totalVenta)}
+            </div>
+            {pagosRealizados.length > 0 && (
+              <div className="mt-4 space-y-2 pt-4 border-t border-gray-200">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Abonado:</span>
+                  <span className="font-semibold text-emerald-600">{formatearDinero(totalAbonado)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Restante:</span>
+                  <span className="font-semibold text-orange-500">{formatearDinero(saldoPendiente)}</span>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Input de Monto a Recibir */}
+          {/* Amount Input + Numpad */}
           {saldoPendiente > 0 && (
-            <div className="mb-6">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <span className="text-slate-500 dark:text-slate-400 text-2xl font-bold">$</span>
+            <>
+              <div className="relative mb-5">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                  <span className="text-gray-400 text-2xl font-bold">$</span>
                 </div>
                 <input
                   type="text"
                   value={montoRecibido}
                   onChange={(e) => setMontoRecibido(e.target.value.replace(/[^0-9.]/g, ''))}
-                  className="w-full pl-10 pr-4 py-4 bg-white dark:bg-slate-900 border-2 border-blue-500 text-3xl font-bold text-slate-800 dark:text-white rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 text-right"
+                  className="w-full pl-10 pr-4 py-3.5 bg-white border-2 border-blue-500 text-3xl font-bold text-gray-900 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 text-right transition-shadow"
                   placeholder={saldoPendiente.toFixed(2)}
                 />
               </div>
-              
-              {/* Teclado Numérico */}
-              <div className="grid grid-cols-3 gap-2 mt-4">
+
+              {/* Numpad */}
+              <div className="grid grid-cols-3 gap-2 mb-4">
                 {[7, 8, 9, 4, 5, 6, 1, 2, 3].map((num) => (
                   <button
                     key={num}
                     onClick={() => manejarTecladoNumerico(num.toString())}
-                    className="py-3 bg-white dark:bg-slate-700 rounded-lg shadow-sm font-bold text-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600 active:scale-95 transition-transform"
+                    className="py-3.5 bg-white rounded-xl shadow-sm border border-gray-100 font-bold text-xl text-gray-700 hover:bg-gray-100 active:scale-95 transition-all"
                   >
                     {num}
                   </button>
                 ))}
                 <button
                   onClick={() => manejarTecladoNumerico(".")}
-                  className="py-3 bg-slate-200 dark:bg-slate-600 rounded-lg shadow-sm font-bold text-xl text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-500 active:scale-95 transition-transform"
+                  className="py-3.5 bg-white rounded-xl shadow-sm border border-gray-100 font-bold text-xl text-gray-700 hover:bg-gray-100 active:scale-95 transition-all"
                 >
                   .
                 </button>
                 <button
                   onClick={() => manejarTecladoNumerico("0")}
-                  className="py-3 bg-white dark:bg-slate-700 rounded-lg shadow-sm font-bold text-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600 active:scale-95 transition-transform"
+                  className="py-3.5 bg-white rounded-xl shadow-sm border border-gray-100 font-bold text-xl text-gray-700 hover:bg-gray-100 active:scale-95 transition-all"
                 >
                   0
                 </button>
                 <button
                   onClick={() => manejarTecladoNumerico("backspace")}
-                  className="py-3 bg-slate-200 dark:bg-slate-600 rounded-lg shadow-sm font-bold text-xl text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-500 active:scale-95 transition-transform flex items-center justify-center"
+                  className="py-3.5 bg-white rounded-xl shadow-sm border border-gray-100 font-bold text-xl text-gray-700 hover:bg-gray-100 active:scale-95 transition-all flex items-center justify-center"
                 >
-                  <i className="fi fi-rr-delete"></i>
+                  <span className="material-symbols-outlined">backspace</span>
                 </button>
               </div>
 
+              {/* Add to Payment */}
               <button
                 onClick={agregarPago}
                 disabled={!montoRecibido || parseFloat(montoRecibido) <= 0}
-                className="w-full mt-4 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white py-3 rounded-lg font-bold flex justify-center items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3.5 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed mb-2"
               >
-                <i className="fi fi-rr-plus"></i>
+                <span className="material-symbols-outlined">add</span>
                 Añadir al Pago
               </button>
+
+              {/* Exchange rate info */}
+              {metodoPago === "dolares" && tipoCambio && (
+                <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1 mb-3">
+                  <span className="material-symbols-outlined text-sm">info</span>
+                  1 USD = ${tipoCambio} MXN
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Spacer */}
+          <div className="flex-1 min-h-4" />
+
+          {/* Change Display */}
+          {cambio > 0 && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-4 flex justify-between items-center">
+              <span className="text-emerald-700 font-medium flex items-center gap-2">
+                <span className="material-symbols-outlined text-emerald-500">currency_exchange</span>
+                Cambio a devolver
+              </span>
+              <span className="text-2xl font-bold text-emerald-600">{formatearDinero(cambio)}</span>
             </div>
           )}
 
-          {/* Cambio y Finalizar */}
-          <div className="mt-auto">
-            {calcularCambio() > 0 && (
-              <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4 mb-4 flex justify-between items-center">
-                <span className="text-emerald-700 dark:text-emerald-400 font-medium">Cambio a devolver:</span>
-                <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-300">${calcularCambio().toFixed(2)}</span>
-              </div>
-            )}
-
-            <div className="flex gap-3">
-              <button
-                onClick={onClose}
-                className="flex-1 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleComplete}
-                disabled={!isSaleFullyCovered && (!montoRecibido || parseFloat(montoRecibido) < saldoPendiente)}
-                className={`flex-[2] py-3 rounded-xl font-bold text-white shadow-lg flex items-center justify-center gap-2 transition-all ${
-                  isSaleFullyCovered || (montoRecibido && parseFloat(montoRecibido) >= saldoPendiente)
-                    ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/30 dark:bg-blue-500 dark:hover:bg-blue-600'
-                    : 'bg-slate-400 cursor-not-allowed shadow-none dark:bg-slate-600'
-                }`}
-              >
-                <i className="fi fi-rr-check"></i>
-                Completar Venta
-              </button>
-            </div>
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 py-3.5 bg-white border-2 border-gray-200 text-gray-600 rounded-xl font-bold hover:bg-gray-50 hover:border-gray-300 active:scale-[0.98] transition-all"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleComplete}
+              disabled={!isSaleFullyCovered}
+              className="flex-[2] py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none active:scale-[0.98]"
+            >
+              <span className="material-symbols-outlined">check_circle</span>
+              Completar Venta
+            </button>
           </div>
-          
+
         </div>
       </div>
     </div>
