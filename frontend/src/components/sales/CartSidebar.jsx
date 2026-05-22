@@ -22,7 +22,8 @@ const CartSidebar = ({
   vendiendo,
   setMostrarModalFondo,
   setMostrarModalPaqueteTodo,
-  abrirModalPago
+  abrirModalPago,
+  onCotizar
 }) => {
   const [toasts, setToasts] = useState([]);
   
@@ -236,6 +237,16 @@ const CartSidebar = ({
           >
             <span className="material-symbols-outlined">package_2</span>
             Empacar Todo
+          </button>
+
+          <button
+            onClick={onCotizar}
+            disabled={isSupervising || carrito.length === 0}
+            className={`ct-btn-cotizar ${carrito.length === 0 ? "ct-btn-disabled" : ""}`}
+            title="Generar cotización"
+          >
+            <span className="material-symbols-outlined">request_quote</span>
+            Cotizar
           </button>
           
           {isSupervising ? (

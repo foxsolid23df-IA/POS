@@ -912,7 +912,70 @@ export const Sales = () => {
     setMostrarModalPago(false);
   };
 
+  const generarCotizacion = () => {
+    if (isSupervising) {
+      mostrarModalPersonalizado(
+        "Modo Supervisión",
+        "No puedes generar cotizaciones en modo supervisión.",
+        "warning",
+      );
+      return;
+    }
+    if (carrito.length === 0) {
+      mostrarModalPersonalizado(
+        "Carrito vacío",
+        "No hay productos para cotizar.",
+        "warning",
+      );
+      return;
+    }
 
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    const random = Math.floor(1000 + Math.random() * 9000);
+    const folio = `COT-${yyyy}${mm}${dd}-${random}`;
+
+    const cotizacionTotal = total;
+    const currentTaxRate =
+      user?.tax_enabled !== false
+        ? parseFloat(user?.tax_percentage) || 0
+        : 0;
+    let cotizacionSubtotal = cotizacionTotal;
+    let cotizacionTax = 0;
+
+    if (currentTaxRate > 0) {
+      if (user?.tax_included !== false) {
+        cotizacionSubtotal =
+          cotizacionTotal / (1 + currentTaxRate / 100);
+        cotizacionTax = cotizacionTotal - cotizacionSubtotal;
+      } else {
+        cotizacionSubtotal = cotizacionTotal;
+        cotizacionTax =
+          cotizacionTotal * (currentTaxRate / 100);
+      }
+    }
+
+    const cotizacion = {
+      id: folio,
+      folio,
+      productos: [...carrito],
+      items: [...carrito],
+      total: cotizacionTotal,
+      subtotal: cotizacionSubtotal,
+      tax_amount: cotizacionTax,
+      tax_percentage: currentTaxRate,
+      isCotizacion: true,
+      createdAt: now.toISOString(),
+      cashier_name: user?.full_name || "USUARIO CAJERO",
+      users: { name: user?.full_name || "USUARIO CAJERO" },
+    };
+
+    vaciarCarrito();
+    setVentaCompletada(cotizacion);
+    setMostrarModal(true);
+  };
 
   const agregarPago = () => {
     const montoStr = montoRecibidoRef.current || montoRecibido;
@@ -2007,6 +2070,7 @@ export const Sales = () => {
             setMostrarModalFondo={setMostrarModalFondo}
             setMostrarModalPaqueteTodo={setMostrarModalPaqueteTodo}
             abrirModalPago={abrirModalPago}
+            onCotizar={generarCotizacion}
           />
       </div>
 

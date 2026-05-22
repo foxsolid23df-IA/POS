@@ -5254,6 +5254,50 @@ html.dark .payment-cancel-btn:hover {
   font-size: 1rem;
 }
 
+.ct-btn-cotizar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  color: white;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+  white-space: nowrap;
+}
+
+.dark .ct-btn-cotizar {
+  background: linear-gradient(135deg, #7c3aed, #5b21b6);
+  box-shadow: 0 4px 12px rgba(91, 33, 182, 0.3);
+}
+
+.ct-btn-cotizar:hover:not(:disabled) {
+  background: linear-gradient(135deg, #9333ea, #6d28d9);
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4);
+  transform: translateY(-1px);
+}
+
+.dark .ct-btn-cotizar:hover:not(:disabled) {
+  background: linear-gradient(135deg, #6d28d9, #4c1d95);
+  box-shadow: 0 6px 20px rgba(91, 33, 182, 0.4);
+}
+
+.ct-btn-cotizar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.ct-btn-cotizar .material-symbols-outlined {
+  font-size: 1.1rem;
+}
 
 /* --- Responsive: Cart Table --- */
 @media (max-width: 768px) {

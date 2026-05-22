@@ -9,6 +9,8 @@ const TicketVenta = forwardRef(({ venta }, ref) => {
 
   if (!venta) return null;
 
+  const isCotizacion = venta.isCotizacion === true;
+
   const settings = ticketSettings || {
     business_name: "TICKET DE VENTA",
     address: "",
@@ -22,6 +24,10 @@ const TicketVenta = forwardRef(({ venta }, ref) => {
     margin: 0,
     show_logo: true,
   };
+
+  const footerMessage = isCotizacion
+    ? "ESTE DOCUMENTO ES UNA COTIZACIÓN Y NO CONSTITUYE UN COMPROBANTE DE COMPRA. PRECIOS SUJETOS A CAMBIOS SIN PREVIO AVISO. VÁLIDA POR 7 DÍAS."
+    : (settings.footer_message || "GRACIAS POR SU COMPRA");
 
   const ticketStyles = {
     fontSize: `${settings.font_size || 13}px`,
@@ -67,8 +73,15 @@ const TicketVenta = forwardRef(({ venta }, ref) => {
           </div>
         )}
         <div className="ticket-title">
-          {settings.business_name || "TICKET DE VENTA"}
+          {isCotizacion
+            ? (settings.business_name || "COTIZACIÓN")
+            : (settings.business_name || "TICKET DE VENTA")}
         </div>
+        {isCotizacion && settings.business_name && (
+          <div className="ticket-title" style={{ fontSize: '1.1em', marginTop: '2px' }}>
+            *** COTIZACIÓN ***
+          </div>
+        )}
         {settings.address && (
           <div className="ticket-info">{settings.address}</div>
         )}
@@ -90,7 +103,7 @@ const TicketVenta = forwardRef(({ venta }, ref) => {
         </div>
       </div>
 
-      {venta.pin_facturacion && (
+      {!isCotizacion && venta.pin_facturacion && (
         <div className="ticket-billing-section">
           <div className="ticket-divider-eq">{dividerString}</div>
           <div className="ticket-title" style={{ fontSize: '1.0em', marginBottom: '5px' }}>FACTURACIÓN EN LÍNEA</div>
@@ -208,40 +221,43 @@ const TicketVenta = forwardRef(({ venta }, ref) => {
           </span>
         </div>
 
-        {/* Payments breakdown */}
-        {venta.payments &&
-          venta.payments.length > 0 &&
-          venta.payments.map((pago, idx) => (
-            <div key={idx} className="ticket-summary-row ticket-summary-bold">
-              <span className="ticket-summary-label">
-                {venta.payments.length > 1
-                  ? `PAGO CON (${pago.method?.toUpperCase() || pago.payment_method?.toUpperCase()}):`
-                  : "PAGO CON:"}
-              </span>
-              <span className="ticket-summary-value">
-                {formatearDinero(pago.received || pago.amount)}
-              </span>
-            </div>
-          ))}
-        {(!venta.payments || venta.payments.length === 0) &&
-          venta.montoRecibido >= 0 && (
-            <div className="ticket-summary-row ticket-summary-bold">
-              <span className="ticket-summary-label">PAGO CON:</span>
-              <span className="ticket-summary-value">
-                {formatearDinero(venta.montoRecibido || venta.total)}
-              </span>
-            </div>
-          )}
+        {!isCotizacion && (
+          <>
+            {venta.payments &&
+              venta.payments.length > 0 &&
+              venta.payments.map((pago, idx) => (
+                <div key={idx} className="ticket-summary-row ticket-summary-bold">
+                  <span className="ticket-summary-label">
+                    {venta.payments.length > 1
+                      ? `PAGO CON (${pago.method?.toUpperCase() || pago.payment_method?.toUpperCase()}):`
+                      : "PAGO CON:"}
+                  </span>
+                  <span className="ticket-summary-value">
+                    {formatearDinero(pago.received || pago.amount)}
+                  </span>
+                </div>
+              ))}
+            {(!venta.payments || venta.payments.length === 0) &&
+              venta.montoRecibido >= 0 && (
+                <div className="ticket-summary-row ticket-summary-bold">
+                  <span className="ticket-summary-label">PAGO CON:</span>
+                  <span className="ticket-summary-value">
+                    {formatearDinero(venta.montoRecibido || venta.total)}
+                  </span>
+                </div>
+              )}
 
-        <div className="ticket-summary-row ticket-summary-bold">
-          <span className="ticket-summary-label">SU CAMBIO:</span>
-          <span className="ticket-summary-value">
-            {formatearDinero(cambioTotal)}
-          </span>
-        </div>
+            <div className="ticket-summary-row ticket-summary-bold">
+              <span className="ticket-summary-label">SU CAMBIO:</span>
+              <span className="ticket-summary-value">
+                {formatearDinero(cambioTotal)}
+              </span>
+            </div>
+          </>
+        )}
       </div>
 
-      <div className="ticket-footer">{settings.footer_message}</div>
+      <div className="ticket-footer">{footerMessage}</div>
     </div>
   );
 });
