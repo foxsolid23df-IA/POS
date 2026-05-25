@@ -26,6 +26,8 @@ export const ticketSettingsService = {
                 show_address,
                 show_phone,
                 show_footer,
+                show_billing_section,
+                qr_code_size,
                 cc_show_initial_fund,
                 cc_show_card_sales,
                 cc_show_transfer_sales,
