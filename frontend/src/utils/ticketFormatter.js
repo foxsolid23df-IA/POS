@@ -191,7 +191,7 @@ export const wrapTicketForPrinting = (ticketHtml, settings) => {
   @media print {
     @page { size: ${pw} auto; margin: 0; }
     body { margin: 0; padding: 0; background: none !important; }
-    .ticket-venta { width: 100% !important; margin: 0 !important; box-shadow: none !important; }
+    .ticket-venta { width: ${fw} !important; max-width: ${fw} !important; margin: 0 !important; box-shadow: none !important; }
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
