@@ -43,7 +43,6 @@ export const Sidebar = () => {
         style={{
           paddingTop: "var(--safe-top, 0px)",
           height: "calc(4rem + var(--safe-top, 0px))",
-          backgroundColor: '#ffffff'
         }}
       >
         <button className="p-2 text-slate-500" onClick={toggleSidebar}>
@@ -94,7 +93,6 @@ export const Sidebar = () => {
                     : "-translate-x-full"
                 }
             `}
-        style={{ backgroundColor: '#ffffff' }}
       >
         {/* Logo Section */}
         <div className="p-6 border-b border-slate-200 dark:border-slate-800">
@@ -154,6 +152,24 @@ export const Sidebar = () => {
               <span className="text-sm font-bold">Ventas</span>
             </NavLink>
           )}
+
+          <NavLink
+            to="/ordenes"
+            className={({ isActive }) => `
+                            flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200
+                            ${
+                              isActive
+                                ? "bg-slate-100 dark:bg-white/10 text-primary dark:text-white shadow-sm"
+                                : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-primary dark:hover:text-white"
+                            }
+                        `}
+            onClick={() => setIsOpen(false)}
+          >
+            <span className="material-icons-outlined text-[20px]">
+              receipt_long
+            </span>
+            <span className="text-sm font-bold">Órdenes</span>
+          </NavLink>
 
           <NavLink
             to="/clientes"
@@ -364,8 +380,8 @@ export const Sidebar = () => {
               </span>
               <span>Modo Oscuro</span>
             </div>
-            <div className="w-8 h-4 bg-slate-200 dark:bg-slate-700 rounded-full relative transition-colors">
-              <div className="absolute left-1 top-1 w-2 h-2 bg-white rounded-full transition-transform dark:translate-x-4"></div>
+            <div className="w-11 h-6 bg-slate-200 dark:bg-blue-600 rounded-full relative transition-colors flex-shrink-0">
+              <div className="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-transform dark:translate-x-5 shadow-sm"></div>
             </div>
           </button>
         </div>

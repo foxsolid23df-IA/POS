@@ -30,6 +30,8 @@ export const TicketConfig = () => {
     cc_show_counted_cash: true,
     cc_show_differences: true,
     cc_show_operator_name: true,
+    show_billing_section: true,
+    qr_code_size: "medium",
   });
 
   const [loading, setLoading] = useState(true);
@@ -396,6 +398,47 @@ export const TicketConfig = () => {
                     </span>
                   </label>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="printer-settings-box mt-8 p-6 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 border-b border-slate-200 dark:border-slate-700 pb-2">
+              Facturación en el Ticket
+            </h3>
+            <p className="text-sm text-slate-500 mb-6">
+              Controla la sección de facturación con código QR que aparece al final del ticket.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                  Mostrar sección de facturación
+                </span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="show_billing_section"
+                    checked={settings.show_billing_section}
+                    onChange={handleChange}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500"></div>
+                </label>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                  Tamaño del código QR
+                </span>
+                <select
+                  name="qr_code_size"
+                  value={settings.qr_code_size}
+                  onChange={handleChange}
+                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm dark:text-white outline-none"
+                >
+                  <option value="small">Pequeño</option>
+                  <option value="medium">Mediano</option>
+                  <option value="large">Grande</option>
+                </select>
               </div>
             </div>
           </div>

@@ -14,12 +14,6 @@ export const usePaymentLogic = ({ totalVenta, tipoCambio = 1 }) => {
     reference: ''
   });
 
-  // Para evitar problemas de stale closures en listeners de teclado
-  const montoRecibidoRef = useRef(montoRecibido);
-  useEffect(() => {
-    montoRecibidoRef.current = montoRecibido;
-  }, [montoRecibido]);
-
   // Cálculos derivados
   const totalAbonado = useMemo(() => {
     return pagosRealizados.reduce((sum, p) => sum + p.amount, 0);
@@ -53,7 +47,7 @@ export const usePaymentLogic = ({ totalVenta, tipoCambio = 1 }) => {
   const calcularCambio = () => {
     if (saldoPendiente <= 0) return 0;
 
-    const monto = parseFloat(montoRecibidoRef.current || montoRecibido) || 0;
+    const monto = parseFloat(montoRecibido) || 0;
 
     if (metodoPago === 'dolares' && tipoCambio) {
       const totalEnPesos = monto * tipoCambio;
@@ -64,7 +58,7 @@ export const usePaymentLogic = ({ totalVenta, tipoCambio = 1 }) => {
   };
 
   const agregarPago = () => {
-    const montoStr = montoRecibidoRef.current || montoRecibido;
+    const montoStr = montoRecibido;
     const montoNum = parseFloat(montoStr) || 0;
 
     if (montoNum <= 0) return { success: false };
@@ -143,7 +137,6 @@ export const usePaymentLogic = ({ totalVenta, tipoCambio = 1 }) => {
     setMetodoPago,
     montoRecibido,
     setMontoRecibido,
-    montoRecibidoRef,
     pagosRealizados,
     facturar,
     setFacturar,

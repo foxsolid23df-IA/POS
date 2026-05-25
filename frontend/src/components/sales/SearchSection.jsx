@@ -19,7 +19,7 @@ const SearchSection = ({
     >
       <div className="search-bar-full-row">
         <div className="search-input-full">
-          <span className="search-lupa">🔍</span>
+          <span className="material-symbols-outlined text-slate-400 dark:text-slate-500 flex-shrink-0">search</span>
           <input
             ref={campoCodigoRef}
             type="text"
@@ -39,18 +39,19 @@ const SearchSection = ({
             } ${isSupervising ? "opacity-50 cursor-not-allowed" : ""}`}
             autoFocus
           />
+          <span className="material-symbols-outlined text-slate-400 dark:text-slate-500 flex-shrink-0 cursor-pointer hover:text-slate-600 dark:hover:text-slate-400" title="Atajos de teclado">keyboard_alt</span>
         </div>
       </div>
 
       <div className="search-shortcut-hints-inline">
         <div className="hint-pill">
-          <kbd>F2</kbd> Varios
+          <kbd>F2</kbd> VARIOS
         </div>
         <div className="hint-pill">
-          <kbd>F4</kbd> Empacar
+          <kbd>F4</kbd> EMPACAR
         </div>
         <div className="hint-pill">
-          <kbd>F12</kbd> Cobrar
+          <kbd>F12</kbd> COBRAR
         </div>
       </div>
 

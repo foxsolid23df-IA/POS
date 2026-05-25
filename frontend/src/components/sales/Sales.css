@@ -5780,7 +5780,7 @@ html.dark .category-shortcut-btn:hover {
 
 /* Full-width search input container */
 .search-input-full {
-  width: 50%;
+  width: 100%;
   min-width: 0;
   display: flex;
   align-items: center;
@@ -8205,4 +8205,257 @@ html.dark .quick-action-btn.scanner-btn {
   background: #3b82f6;
   width: 2px;
 }
+
+/* Sales Info Grid & Cards */
+.cart-info-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  width: 100%;
+}
+
+@media (max-width: 1400px) {
+  .cart-info-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.info-card {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  min-width: 0;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-left-width: 3px;
+}
+
+.info-card .card-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.info-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.info-card:hover .card-icon {
+  transform: scale(1.1);
+}
+
+/* Individual card colors - Light Mode */
+.info-card-cliente {
+  border-left-color: #3b82f6;
+}
+.info-card-cliente .card-icon {
+  color: #3b82f6;
+}
+.info-card-cliente:hover {
+  background: rgba(59, 130, 246, 0.05);
+  border-color: #2563eb;
+}
+
+.info-card-vendedor {
+  border-left-color: #8b5cf6;
+}
+.info-card-vendedor .card-icon {
+  color: #8b5cf6;
+}
+.info-card-vendedor:hover {
+  background: rgba(139, 92, 246, 0.05);
+  border-color: #7c3aed;
+}
+
+.info-card-piezas {
+  border-left-color: #f59e0b;
+}
+.info-card-piezas .card-icon {
+  color: #f59e0b;
+}
+.info-card-piezas:hover {
+  background: rgba(245, 158, 11, 0.05);
+  border-color: #d97706;
+}
+
+.info-card-metodo {
+  border-left-color: #10b981;
+}
+.info-card-metodo .card-icon {
+  color: #10b981;
+}
+.info-card-metodo:hover {
+  background: rgba(16, 185, 129, 0.05);
+  border-color: #059669;
+}
+
+.info-card .card-texts {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.info-card .card-label {
+  font-size: 0.65rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  line-height: 1;
+  margin-bottom: 0.15rem;
+}
+
+.info-card .card-value {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+/* Cashier status ping dot */
+.op-avatar.relative {
+  position: relative;
+}
+
+.op-status-dot {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  background-color: #10b981;
+  border: 2px solid white;
+  border-radius: 50%;
+  display: block;
+}
+
+.op-status-dot::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid #10b981;
+  animation: op-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  opacity: 0.8;
+}
+
+@keyframes op-ping {
+  75%, 100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+/* Floating animation for empty state icon */
+.premium-float {
+  animation: float-icon 3s ease-in-out infinite;
+}
+
+@keyframes float-icon {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+/* Glassmorphism sidebar containers */
+.cart-sidebar-table-mode {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+}
+
+/* Premium Primary CTA button Payment Highlight */
+.ct-btn-primary.payment-pulse {
+  background: linear-gradient(135deg, #3b82f6 0%, #4f46e5 100%) !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.ct-btn-primary.payment-pulse:hover:not(:disabled) {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.6) !important;
+  background: linear-gradient(135deg, #2563eb 0%, #4338ca 100%) !important;
+}
+
+.ct-btn-primary.payment-pulse kbd {
+  background: rgba(255, 255, 255, 0.25) !important;
+  color: white !important;
+}
+
+/* Dark Mode Overrides for Cards & Sidebar */
+.dark .cart-sidebar-table-mode {
+  background: rgba(15, 23, 42, 0.8) !important;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3);
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dark .info-card {
+  background: rgba(30, 41, 59, 0.4);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .op-status-dot {
+  border-color: #1e293b;
+}
+
+.dark .info-card-cliente {
+  border-left-color: #3b82f6;
+}
+.dark .info-card-cliente:hover {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: #3b82f6;
+}
+
+.dark .info-card-vendedor {
+  border-left-color: #8b5cf6;
+}
+.dark .info-card-vendedor:hover {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: #8b5cf6;
+}
+
+.dark .info-card-piezas {
+  border-left-color: #f59e0b;
+}
+.dark .info-card-piezas:hover {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: #f59e0b;
+}
+
+.dark .info-card-metodo {
+  border-left-color: #10b981;
+}
+.dark .info-card-metodo:hover {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: #10b981;
+}
+
+.dark .info-card .card-label {
+  color: #94a3b8;
+}
+
+.dark .info-card .card-value {
+  color: #f1f5f9;
+}
+
+
 

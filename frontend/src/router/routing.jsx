@@ -33,6 +33,7 @@ import BillingIssuers from "../components/config/BillingIssuers";
 import InventoryConfig from "../components/config/InventoryConfig";
 import { terminalService } from "../services/terminalService";
 import Maintenance from "../components/admin/Maintenance";
+import { Orders } from "../components/orders/Orders";
 import { ScrollToTop } from "../components/common/ScrollToTop";
 import { ScrollTopButton } from "../components/common/ScrollTopButton";
 import { ProductProvider } from "../contexts/ProductContext";
@@ -247,6 +248,14 @@ export const Routing = () => {
                       element={
                         <PrivateLayout>
                           {sessionStorage.getItem("visor_mode") === "true" ? <Navigate to="/estadisticas" replace /> : <Sales />}
+                        </PrivateLayout>
+                      }
+                    />
+                    <Route
+                      path="/ordenes"
+                      element={
+                        <PrivateLayout>
+                          <Orders />
                         </PrivateLayout>
                       }
                     />

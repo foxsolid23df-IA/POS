@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../hooks/useAuth';
 
 const CartSidebar = ({
   carrito,
@@ -25,11 +26,13 @@ const CartSidebar = ({
   abrirModalPago,
   onCotizar
 }) => {
+  const { activeStaff } = useAuth();
   const [toasts, setToasts] = useState([]);
   
   // Cálculos básicos
   const subtotal = total / 1.16;
   const iva = total - subtotal;
+  const totalPiezas = carrito.reduce((acc, item) => acc + item.quantity, 0);
 
   // Estado para controlar los avisos de stock bajo
   const [showLowStockWarning, setShowLowStockWarning] = useState(() => {
@@ -128,7 +131,7 @@ const CartSidebar = ({
             </span>
           </button>
           <span className="item-count-badge">
-            {carrito.reduce((acc, item) => acc + item.quantity, 0)} piezas
+            {totalPiezas} piezas
           </span>
         </div>
       </div>
@@ -141,7 +144,7 @@ const CartSidebar = ({
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 260, damping: 20 }}
-              className="empty-cart-icon-circle"
+              className="empty-cart-icon-circle premium-float"
             >
               <span className="material-symbols-outlined">
                 {isSupervising ? 'lock' : 'inbox'}
@@ -171,8 +174,9 @@ const CartSidebar = ({
             {/* Panel de Operador y Tendencia */}
             <div className="operator-mini-card">
               <div className="op-info">
-                <div className="op-avatar">
+                <div className="op-avatar relative">
                   {user?.full_name?.charAt(0) || 'O'}
+                  <span className="op-status-dot"></span>
                 </div>
                 <div className="op-details">
                   <span className="op-name">{user?.full_name || 'Operador'}</span>
@@ -200,6 +204,38 @@ const CartSidebar = ({
                   </defs>
                 </svg>
                 <span className="trend-label">Hoy: +15%</span>
+              </div>
+            </div>
+
+            {/* Rejilla de 4 Tarjetas de Información de Venta */}
+            <div className="cart-info-grid">
+              <div className="info-card info-card-cliente">
+                <span className="material-symbols-outlined card-icon">contact_mail</span>
+                <div className="card-texts">
+                  <span className="card-label">Cliente</span>
+                  <span className="card-value">Público General</span>
+                </div>
+              </div>
+              <div className="info-card info-card-vendedor">
+                <span className="material-symbols-outlined card-icon">person</span>
+                <div className="card-texts">
+                  <span className="card-label">Vendedor</span>
+                  <span className="card-value">{activeStaff?.name || user?.full_name?.split(' ')[0] || "Vendedor"}</span>
+                </div>
+              </div>
+              <div className="info-card info-card-piezas">
+                <span className="material-symbols-outlined card-icon">inventory_2</span>
+                <div className="card-texts">
+                  <span className="card-label">Piezas</span>
+                  <span className="card-value">{totalPiezas}</span>
+                </div>
+              </div>
+              <div className="info-card info-card-metodo">
+                <span className="material-symbols-outlined card-icon">payments</span>
+                <div className="card-texts">
+                  <span className="card-label">Método</span>
+                  <span className="card-value">Efectivo</span>
+                </div>
               </div>
             </div>
           </>

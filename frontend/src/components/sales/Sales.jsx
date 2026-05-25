@@ -16,6 +16,7 @@ import { useScannerMode } from "../../hooks/useScannerMode";
 import { exchangeRateService } from "../../services/exchangeRateService";
 import { cashMovementService } from "../../services/cashMovementService";
 import { packPresetService } from "../../services/packPresetService";
+import { generateTicketHtml, wrapTicketForPrinting } from "../../utils/ticketFormatter";
 import { CashMovementModal } from "./CashMovementModal";
 import { CashFundModal } from "../auth/CashFundModal";
 import { supabase } from "../../supabase";
@@ -190,6 +191,7 @@ export const Sales = () => {
   });
 
   // REFERENCIAS
+  const ticketRef = useRef(null);
   const campoCodigoRef = useRef(null);
   const searchContainerRef = useRef(null);
 
@@ -1556,206 +1558,20 @@ export const Sales = () => {
     }
   };
 
-  // Referencia para el ticket
-  const ticketRef = useRef(null);
-
-  // Imprimir el ticket usando el nuevo componente
-  const imprimirTicket = () => {
-    if (!ticketRef.current) return;
-    imprimirTicketTérmico(ticketRef.current.innerHTML, ventaCompletada);
+  // Imprimir el ticket usando el formateador unificado
+  const imprimirTicket = async () => {
+    if (!ventaCompletada) return;
+    try {
+      const { printerService } = await import("../../services/printerService");
+      const html = generateTicketHtml(ventaCompletada, ticketSettings, user);
+      const fullHtml = wrapTicketForPrinting(html, ticketSettings);
+      printerService.printHtmlTicket(fullHtml);
+    } catch (err) {
+      console.error("[Sales] Error al imprimir ticket:", err);
+    }
   };
 
-  // Función mejorada para imprimir tickets térmicos POS usando el servicio (Válido para Android/Web)
-  const imprimirTicketTérmico = (ticketHTML, ventaData) => {
-    import("../../services/printerService").then(({ printerService }) => {
-      const settings = ticketSettings || { paper_width: "58mm", font_size: 13 };
-      const ticketContent = ventaData ? ticketHTML : generarHTMLTicketPago();
 
-      let htmlPrint = `<!DOCTYPE html>
-        <html><head><title>Ticket de Venta</title><meta charset="UTF-8">
-        <style>
-          @media print {
-              @page { size: ${
-                settings.paper_width === "58mm" ? "58mm" : "80mm"
-              } auto; margin: 0; }
-              body { margin: 0; padding: 0; width: 100%; background: none !important; }
-              .ticket-venta { width: 100% !important; margin: 0 !important; }
-          }
-          body {
-              font-family: ${
-                settings.font_family === "Sistema"
-                  ? "system-ui, -apple-system, sans-serif"
-                  : "monospace"
-              };
-              font-size: ${settings.font_size || 13}px;
-              line-height: 1.2;
-              color: black;
-          }
-          .ticket-venta { padding: 0; box-sizing: border-box; }
-          .ticket-header { text-align: center; margin-bottom: 8px; text-transform: uppercase; }
-          .ticket-logo { max-width: 100%; height: auto; margin: 0 auto 5px auto; display: block; }
-          .ticket-title { font-size: 1.3em; font-weight: bold; margin-bottom: 4px; }
-          .ticket-info { font-size: 1em; white-space: pre-line; margin-bottom: 2px; }
-          .ticket-datetime { text-align: right; margin-bottom: 6px; font-size: 1em; }
-          .ticket-meta { margin-bottom: 8px; text-transform: uppercase; font-size: 1em; }
-          .ticket-meta-row { display: flex; justify-content: space-between; }
-          .ticket-meta-label { white-space: pre; }
-          .ticket-meta-value { text-align: right; }
-          .ticket-table-header { display: flex; font-size: 1em; text-transform: uppercase; margin-bottom: 2px; }
-          .ticket-col-cant { width: 14%; text-align: left; }
-          .ticket-col-desc { width: 62%; text-align: left; }
-          .ticket-col-imp { width: 24%; text-align: right; }
-          .ticket-divider-eq { margin: 0; line-height: 1; overflow: hidden; white-space: nowrap; margin-bottom: 4px; font-size: 1em; }
-          .ticket-items { margin-bottom: 10px; font-size: 1em; }
-          .ticket-item { display: flex; text-transform: uppercase; margin-bottom: 4px; align-items: flex-start; }
-          .ticket-item-cant { width: 14%; text-align: left; }
-          .ticket-item-desc { width: 62%; text-align: left; word-break: break-word; }
-          .ticket-item-imp { width: 24%; text-align: right; }
-          .ticket-summary { margin-top: 10px; text-align: right; text-transform: uppercase; font-size: 1em; display: flex; flex-direction: column; align-items: flex-end; }
-          .ticket-summary-articles { width: 100%; text-align: center; margin-bottom: 8px; }
-          .ticket-summary-row { display: flex; justify-content: flex-end; margin-bottom: 2px; width: 100%; }
-          .ticket-summary-label { margin-right: 12px; text-align: right; }
-          .ticket-summary-value { width: 35%; text-align: right; }
-          .ticket-summary-bold { font-weight: bold; font-size: 1.15em; }
-          .ticket-footer { text-align: center; font-size: 1em; margin-top: 15px; white-space: pre-line; text-transform: uppercase; }
-        </style>
-        </head><body>${ticketContent}</body></html>`;
-
-      printerService.printHtmlTicket(htmlPrint);
-    });
-  };
-
-  // Generar HTML del ticket desde el modal de pago (antes de finalizar)
-  const generarHTMLTicketPago = () => {
-    const settings = ticketSettings || {
-      business_name: "TICKET DE VENTA",
-      footer_message: "GRACIAS POR SU COMPRA",
-    };
-
-    const dividerString =
-      settings.paper_width === "80mm"
-        ? "======================================================"
-        : "=================================";
-
-    const folio = transactionId ? transactionId.toString() : "N/A";
-    const userName = user?.name || "USUARIO CAJERO";
-    const totalArticulos = carrito.reduce(
-      (acc, p) => acc + (p.quantity || 1),
-      0,
-    );
-    const cambioActivo = Math.max(0, calcularCambio());
-
-    let html = '<div class="ticket-venta">';
-    html += '<div class="ticket-header">';
-    if (settings.logo_url) {
-      html += `<div class="ticket-logo-container"><img src="${settings.logo_url}" class="ticket-logo" alt="Logo"></div>`;
-    }
-    html += `<div class="ticket-title">${
-      settings.business_name || "TICKET DE VENTA"
-    }</div>`;
-    if (settings.address) {
-      html += `<div class="ticket-info">${settings.address}</div>`;
-    }
-    if (settings.phone) {
-      html += `<div class="ticket-info">${settings.phone}</div>`;
-    }
-    html += "</div>";
-
-    html += `<div class="ticket-datetime">${formatearFechaHora(
-      new Date(),
-    )}</div>`;
-
-    html += '<div class="ticket-meta">';
-    html +=
-      '<div class="ticket-meta-row"><span class="ticket-meta-label">CAJERO:</span>';
-    html += `<span class="ticket-meta-value">${userName}</span></div>`;
-    html +=
-      '<div class="ticket-meta-row"><span class="ticket-meta-label">FOLIO:</span>';
-    html += `<span class="ticket-meta-value">${folio}</span></div>`;
-    html += "</div>";
-
-    html += '<div class="ticket-table-header">';
-    html += '<div class="ticket-col-cant">CANT.</div>';
-    html += '<div class="ticket-col-desc">DESCRIPCION</div>';
-    html += '<div class="ticket-col-imp">IMPORTE</div>';
-    html += "</div>";
-    html += `<div class="ticket-divider-eq">${dividerString}</div>`;
-
-    html += '<div class="ticket-items">';
-    carrito.forEach((item) => {
-      html += '<div class="ticket-item">';
-      html += `<div class="ticket-item-cant">${item.quantity}</div>`;
-      html += `<div class="ticket-item-desc">${item.name}</div>`;
-      html += `<div class="ticket-item-imp">${formatearDinero(
-        item.price * item.quantity,
-      )}</div>`;
-      html += "</div>";
-    });
-    html += "</div>";
-
-    html += '<div class="ticket-summary">';
-    html += `<div class="ticket-summary-articles">NO. DE ARTICULOS: ${totalArticulos}</div>`;
-
-    // SUBTOTAL E IVA (Si está habilitado)
-    const taxEnabled = user?.tax_enabled !== false;
-    const taxRate = taxEnabled ? parseFloat(user?.tax_percentage) || 0 : 0;
-
-    if (taxRate > 0) {
-      const subtotalVal = total / (1 + taxRate / 100);
-      const taxVal = total - subtotalVal;
-
-      html +=
-        '<div class="ticket-summary-row"><span class="ticket-summary-label">SUBTOTAL:</span>';
-      html += `<span class="ticket-summary-value">${formatearDinero(
-        subtotalVal,
-      )}</span></div>`;
-
-      html += `<div class="ticket-summary-row"><span class="ticket-summary-label">IVA (${taxRate}%):</span>`;
-      html += `<span class="ticket-summary-value">${formatearDinero(
-        taxVal,
-      )}</span></div>`;
-    }
-
-    html +=
-      '<div class="ticket-summary-row ticket-summary-bold"><span class="ticket-summary-label">TOTAL:</span>';
-    html += `<span class="ticket-summary-value">${formatearDinero(
-      total,
-    )}</span></div>`;
-
-    if (pagosRealizados && pagosRealizados.length > 0) {
-      pagosRealizados.forEach((p) => {
-        html += '<div class="ticket-summary-row ticket-summary-bold">';
-        html += `<span class="ticket-summary-label">PAGO CON (${p.method.toUpperCase()}):</span>`;
-        html += `<span class="ticket-summary-value">${formatearDinero(
-          p.received || p.amount,
-        )}</span></div>`;
-      });
-    } else {
-      const valMonto =
-        parseFloat(montoRecibidoRef?.current || montoRecibido) || 0;
-      if (valMonto > 0) {
-        html +=
-          '<div class="ticket-summary-row ticket-summary-bold"><span class="ticket-summary-label">PAGO CON:</span>';
-        html += `<span class="ticket-summary-value">${formatearDinero(
-          valMonto,
-        )}</span></div>`;
-      }
-    }
-
-    html +=
-      '<div class="ticket-summary-row ticket-summary-bold"><span class="ticket-summary-label">SU CAMBIO:</span>';
-    html += `<span class="ticket-summary-value">${formatearDinero(
-      cambioActivo,
-    )}</span></div>`;
-    html += "</div>";
-
-    html += `<div class="ticket-footer">${
-      settings.footer_message || "GRACIAS POR SU COMPRA"
-    }<br>FACTURACIÓN EN:<br>https://facturacion.nexumpos.com</div>`;
-    html += "</div>";
-
-    return html;
-  };
 
   return (
     <div className="sales-view">

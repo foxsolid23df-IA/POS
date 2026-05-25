@@ -47,19 +47,24 @@ export const QuickActions = ({
       </button>
       <button
         onClick={() => setMostrarCameraScanner(true)}
-        className={`quick-action-btn camera-btn ${
+        className={`flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl transition-colors font-medium text-sm flex-1 md:flex-none justify-center border border-slate-200 dark:border-slate-700 shadow-sm ${
           isSupervising ? "opacity-50 cursor-not-allowed" : ""
         }`}
         disabled={isSupervising}
         type="button"
         title="Escanear código con cámara"
       >
-        📷 Cámara
+        <span className="material-symbols-outlined text-[18px]">photo_camera</span>
+        <span>Cámara</span>
       </button>
       {isScannerAvailable && (
         <button
           onClick={toggleScannerMode}
-          className={`quick-action-btn scanner-btn ${scannerMode ? 'active' : ''}`}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors font-medium text-sm flex-1 md:flex-none justify-center border shadow-sm ${
+            scannerMode
+              ? "bg-emerald-100 border-emerald-300 dark:bg-emerald-950/40 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300"
+              : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700"
+          }`}
           type="button"
           title={
             scannerMode
@@ -67,7 +72,10 @@ export const QuickActions = ({
               : "Activar modo escáner de código de barras"
           }
         >
-          📡 {scannerMode ? "Teclado" : "Escáner BT"}
+          <span className="material-symbols-outlined text-[18px]">
+            {scannerMode ? "keyboard" : "bluetooth"}
+          </span>
+          <span>{scannerMode ? "Teclado" : "Escáner BT"}</span>
         </button>
       )}
     </div>
