@@ -1,11 +1,21 @@
 import { supabase } from '../supabase';
 
+const getCurrentUserId = async () => {
+  const { data, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  const userId = data?.user?.id;
+  if (!userId) throw new Error('Usuario no autenticado');
+  return userId;
+};
+
 export const creditService = {
 
   getCustomersWithCredit: async () => {
+    const userId = await getCurrentUserId();
     const { data, error } = await supabase
       .from('customers')
       .select('*')
+      .eq('user_id', userId)
       .or('credit_limit.gt.0,credit_balance.gt.0')
       .order('name');
     if (error) throw error;
@@ -13,9 +23,11 @@ export const creditService = {
   },
 
   getCreditSummary: async () => {
+    const userId = await getCurrentUserId();
     const { data: customers, error } = await supabase
       .from('customers')
       .select('id, name, credit_limit, credit_balance, credit_hold, rfc, phone')
+      .eq('user_id', userId)
       .or('credit_limit.gt.0,credit_balance.gt.0')
       .order('name');
     if (error) throw error;
@@ -28,6 +40,7 @@ export const creditService = {
       const { data: sales } = await supabase
         .from('sales')
         .select('id, total, balance, due_date, created_at')
+        .eq('user_id', userId)
         .eq('customer_id', c.id)
         .in('credit_status', ['pendiente', 'parcial'])
         .order('created_at', { ascending: false });
@@ -56,16 +69,19 @@ export const creditService = {
   },
 
   getCustomerCreditDetail: async (customerId) => {
+    const userId = await getCurrentUserId();
     const { data: customer, error: custError } = await supabase
       .from('customers')
       .select('*')
       .eq('id', customerId)
+      .eq('user_id', userId)
       .single();
     if (custError) throw custError;
 
     const { data: sales, error: salesError } = await supabase
       .from('sales')
       .select('*')
+      .eq('user_id', userId)
       .eq('customer_id', customerId)
       .neq('sale_type', 'contado')
       .order('created_at', { ascending: false });
@@ -74,6 +90,7 @@ export const creditService = {
     const { data: payments, error: payError } = await supabase
       .from('credit_payments')
       .select('*')
+      .eq('user_id', userId)
       .eq('customer_id', customerId)
       .order('created_at', { ascending: false });
     if (payError) throw payError;
@@ -82,10 +99,12 @@ export const creditService = {
   },
 
   registerPayment: async ({ customerId, saleId, amount, paymentMethod, reference, notes }) => {
+    const userId = await getCurrentUserId();
     const { data: customer, error: custError } = await supabase
       .from('customers')
       .select('credit_balance')
       .eq('id', customerId)
+      .eq('user_id', userId)
       .single();
     if (custError) throw custError;
 
@@ -94,6 +113,7 @@ export const creditService = {
     const { error: payError } = await supabase
       .from('credit_payments')
       .insert({
+        user_id: userId,
         customer_id: customerId,
         sale_id: saleId || null,
         amount: parseFloat(amount),
@@ -106,7 +126,8 @@ export const creditService = {
     const { error: updateError } = await supabase
       .from('customers')
       .update({ credit_balance: newBalance })
-      .eq('id', customerId);
+      .eq('id', customerId)
+      .eq('user_id', userId);
     if (updateError) throw updateError;
 
     if (saleId) {
@@ -114,6 +135,7 @@ export const creditService = {
         .from('sales')
         .select('paid_amount, balance, total')
         .eq('id', saleId)
+        .eq('user_id', userId)
         .single();
       if (sale) {
         const newPaidAmount = parseFloat(sale.paid_amount || 0) + parseFloat(amount);
@@ -122,7 +144,8 @@ export const creditService = {
         await supabase
           .from('sales')
           .update({ paid_amount: newPaidAmount, balance: newBalanceSale, credit_status: newStatus })
-          .eq('id', saleId);
+          .eq('id', saleId)
+          .eq('user_id', userId);
       }
     }
 
@@ -130,9 +153,11 @@ export const creditService = {
   },
 
   getPendingCreditSales: async (customerId) => {
+    const userId = await getCurrentUserId();
     const { data, error } = await supabase
       .from('sales')
       .select('*')
+      .eq('user_id', userId)
       .eq('customer_id', customerId)
       .in('credit_status', ['pendiente', 'parcial'])
       .order('created_at', { ascending: false });
@@ -141,27 +166,33 @@ export const creditService = {
   },
 
   updateCreditLimit: async (customerId, creditLimit) => {
+    const userId = await getCurrentUserId();
     const { error } = await supabase
       .from('customers')
       .update({ credit_limit: parseFloat(creditLimit) || 0 })
-      .eq('id', customerId);
+      .eq('id', customerId)
+      .eq('user_id', userId);
     if (error) throw error;
     return { success: true };
   },
 
   toggleCreditHold: async (customerId, hold) => {
+    const userId = await getCurrentUserId();
     const { error } = await supabase
       .from('customers')
       .update({ credit_hold: hold })
-      .eq('id', customerId);
+      .eq('id', customerId)
+      .eq('user_id', userId);
     if (error) throw error;
     return { success: true };
   },
 
   getDashboardTotals: async () => {
+    const userId = await getCurrentUserId();
     const { data, error } = await supabase
       .from('customers')
       .select('credit_balance, credit_limit')
+      .eq('user_id', userId)
       .or('credit_limit.gt.0,credit_balance.gt.0');
     if (error) throw error;
 

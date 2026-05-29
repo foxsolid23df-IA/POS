@@ -288,3 +288,52 @@ html.dark .bulk-import-modal::-webkit-scrollbar-thumb {
 html.dark .bulk-import-modal::-webkit-scrollbar-thumb:hover {
     background: #475569;
 }
+
+/* Light mode contrast hardening */
+html:not(.dark) .bulk-import-modal {
+    background: #ffffff;
+    color: #111827;
+    border: 1px solid #e5e7eb;
+}
+
+html:not(.dark) .bulk-import-modal .modal-header h2,
+html:not(.dark) .bulk-import-modal h2,
+html:not(.dark) .bulk-import-modal h3 {
+    color: #111827 !important;
+}
+
+html:not(.dark) .bulk-import-modal p,
+html:not(.dark) .bulk-import-modal label,
+html:not(.dark) .bulk-import-modal .template-section,
+html:not(.dark) .bulk-import-modal .file-types {
+    color: #475569 !important;
+}
+
+html:not(.dark) .bulk-import-modal .drop-zone {
+    background: #eff6ff;
+    border-color: #3b82f6;
+    color: #334155;
+}
+
+html:not(.dark) .bulk-import-modal .drop-zone strong,
+html:not(.dark) .bulk-import-modal .drop-zone-text {
+    color: #334155;
+}
+
+html:not(.dark) .bulk-import-modal .upload-icon,
+html:not(.dark) .bulk-import-modal .drop-zone-icon {
+    color: #475569;
+}
+
+html:not(.dark) .bulk-import-modal .text-btn {
+    color: #2563eb;
+}
+
+html:not(.dark) .bulk-import-modal button:disabled,
+html:not(.dark) .bulk-import-modal .text-btn:disabled {
+    color: #94a3b8 !important;
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    opacity: 1;
+    cursor: not-allowed;
+}

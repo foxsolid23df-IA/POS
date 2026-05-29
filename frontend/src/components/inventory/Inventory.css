@@ -2877,3 +2877,128 @@
     border-color: #2563eb;
 }
 
+/* ===== PROFESSIONAL INVENTORY ACTION BAR ===== */
+.inventory-page .control-buttons {
+    align-items: center;
+    gap: 10px;
+    padding: 2px 2px 8px;
+}
+
+.inventory-page .control-btn {
+    min-height: 42px;
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: 1px solid #d9e2ee;
+    background: #ffffff;
+    color: #1f2937;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.inventory-page .control-btn:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+    color: #0f172a;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.10);
+    transform: translateY(-1px);
+}
+
+.inventory-page .control-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.22);
+}
+
+.inventory-page .control-btn .btn-icon,
+.inventory-page .control-btn > svg,
+.inventory-page .control-btn .material-symbols-outlined {
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #2563eb;
+}
+
+.inventory-page .control-btn.warning {
+    border-color: #fecaca;
+    background: #fff7f7;
+    color: #991b1b;
+}
+
+.inventory-page .control-btn.warning .btn-icon,
+.inventory-page .control-btn.warning > svg,
+.inventory-page .control-btn.warning .material-symbols-outlined {
+    color: #dc2626;
+}
+
+.inventory-page .control-btn.warning:hover {
+    background: #fef2f2;
+    border-color: #f87171;
+    color: #7f1d1d;
+}
+
+.inventory-page .control-btn.has-filters {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.inventory-page .control-btn.has-filters:hover {
+    background: #dbeafe;
+    border-color: #60a5fa;
+    color: #1e40af;
+}
+
+.inventory-page .control-btn.primary {
+    border-color: #111827;
+    background: #111827;
+    color: #ffffff;
+    box-shadow: 0 8px 18px rgba(17, 24, 39, 0.18);
+}
+
+.inventory-page .control-btn.primary .btn-icon,
+.inventory-page .control-btn.primary > svg,
+.inventory-page .control-btn.primary .material-symbols-outlined {
+    color: #ffffff;
+}
+
+.inventory-page .control-btn.primary:hover {
+    background: #020617;
+    border-color: #020617;
+    color: #ffffff;
+}
+
+.dark .inventory-page .control-btn {
+    background: #172033;
+    border-color: #334155;
+    color: #e5e7eb;
+}
+
+.dark .inventory-page .control-btn:hover {
+    background: #1f2a44;
+    border-color: #526179;
+    color: #ffffff;
+}
+
+.dark .inventory-page .control-btn.warning {
+    background: rgba(127, 29, 29, 0.32);
+    border-color: rgba(248, 113, 113, 0.55);
+    color: #fecaca;
+}
+
+.dark .inventory-page .control-btn.has-filters {
+    background: rgba(37, 99, 235, 0.20);
+    border-color: rgba(96, 165, 250, 0.55);
+    color: #bfdbfe;
+}
+
+@media (max-width: 768px) {
+    .inventory-page .control-btn {
+        min-height: 44px;
+        justify-content: center;
+    }
+}
