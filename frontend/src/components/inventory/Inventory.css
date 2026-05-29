@@ -3002,3 +3002,160 @@
         justify-content: center;
     }
 }
+
+/* ===== INVENTORY DARK MODE TABLE HARDENING ===== */
+html.dark .inventory-page,
+html.dark .inventory-page .inventory-content {
+    background: #0b1220;
+    color: #e5e7eb;
+}
+
+html.dark .inventory-page .table-container {
+    background: #0f172a;
+    border-color: #263449;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
+}
+
+html.dark .inventory-page .products-table {
+    background: #0f172a !important;
+    color: #e5e7eb;
+}
+
+html.dark .inventory-page .products-table thead,
+html.dark .inventory-page .products-table th {
+    background: #172033 !important;
+    border-color: #334155 !important;
+    color: #f8fafc !important;
+    text-shadow: none;
+}
+
+html.dark .inventory-page .products-table tbody {
+    background: #0f172a !important;
+}
+
+html.dark .inventory-page .products-table tbody tr,
+html.dark .inventory-page .products-table tbody tr:nth-child(even) {
+    background: #0f172a !important;
+    border-bottom-color: #223047 !important;
+}
+
+html.dark .inventory-page .products-table tbody tr:hover,
+html.dark .inventory-page .products-table tbody tr:nth-child(even):hover {
+    background: #162238 !important;
+}
+
+html.dark .inventory-page .products-table td {
+    background: #0f172a !important;
+    border-color: #223047 !important;
+    color: #dbe5f4 !important;
+}
+
+html.dark .inventory-page .products-table tbody tr:hover td {
+    background: #162238 !important;
+}
+
+html.dark .inventory-page .products-table th.checkbox-col,
+html.dark .inventory-page .products-table th.actions-col {
+    background: #172033 !important;
+    border-color: #334155 !important;
+}
+
+html.dark .inventory-page .products-table td.checkbox-col,
+html.dark .inventory-page .products-table td.actions-col {
+    background: #101a2b !important;
+    border-color: #263449 !important;
+}
+
+html.dark .inventory-page .products-table tbody tr:hover td.checkbox-col,
+html.dark .inventory-page .products-table tbody tr:hover td.actions-col {
+    background: #17233a !important;
+}
+
+html.dark .inventory-page .product-name {
+    color: #f8fafc !important;
+    font-weight: 800;
+    text-shadow: none;
+}
+
+html.dark .inventory-page .product-description,
+html.dark .inventory-page .unit-cell,
+html.dark .inventory-page .iva-cell {
+    color: #9fb0c8 !important;
+}
+
+html.dark .inventory-page .sku-cell,
+html.dark .inventory-page .price-cell,
+html.dark .inventory-page .stock-cell span,
+html.dark .inventory-page .products-table .text-slate-500 {
+    color: #cbd7ea !important;
+}
+
+html.dark .inventory-page .product-image-wrapper {
+    background: #172033 !important;
+    border-color: #334155 !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+}
+
+html.dark .inventory-page .product-icon-placeholder,
+html.dark .inventory-page .product-icon-placeholder .material-symbols-outlined {
+    color: #93a4bd !important;
+}
+
+html.dark .inventory-page .category-badge {
+    background: #263449 !important;
+    border-color: #526179 !important;
+    color: #f8fafc !important;
+    text-shadow: none;
+}
+
+html.dark .inventory-page .category-blue {
+    background: #17325f !important;
+    border-color: #3b82f6 !important;
+    color: #dbeafe !important;
+}
+
+html.dark .inventory-page .category-amber {
+    background: #4a3214 !important;
+    border-color: #f59e0b !important;
+    color: #fde68a !important;
+}
+
+html.dark .inventory-page .category-purple {
+    background: #3b2357 !important;
+    border-color: #a855f7 !important;
+    color: #f3e8ff !important;
+}
+
+html.dark .inventory-page .category-green {
+    background: #153d32 !important;
+    border-color: #10b981 !important;
+    color: #d1fae5 !important;
+}
+
+html.dark .inventory-page .category-gray {
+    background: #263449 !important;
+    border-color: #64748b !important;
+    color: #f8fafc !important;
+}
+
+html.dark .inventory-page .actions-button {
+    background: transparent !important;
+    color: #9fb0c8 !important;
+}
+
+html.dark .inventory-page .actions-button:hover {
+    background: #263449 !important;
+    color: #ffffff !important;
+}
+
+html.dark .inventory-page .table-checkbox {
+    background-color: #101a2b;
+    border-color: #526179;
+}
+
+html.dark .inventory-page .empty-state,
+html.dark .inventory-page .loading-state,
+html.dark .inventory-page .empty-state-cell {
+    background: #0f172a !important;
+    color: #9fb0c8 !important;
+}
