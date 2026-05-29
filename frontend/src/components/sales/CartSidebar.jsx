@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
+import { customerService } from '../../services/customerService';
 
 const CartSidebar = ({
   carrito,
@@ -24,10 +25,21 @@ const CartSidebar = ({
   setMostrarModalFondo,
   setMostrarModalPaqueteTodo,
   abrirModalPago,
-  onCotizar
+  onCotizar,
+  selectedCustomer,
+  onSelectCustomer
 }) => {
   const { activeStaff } = useAuth();
   const [toasts, setToasts] = useState([]);
+  const [showCustomerSearch, setShowCustomerSearch] = useState(false);
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [customerResults, setCustomerResults] = useState([]);
+  const [searchingCustomers, setSearchingCustomers] = useState(false);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [quickAddName, setQuickAddName] = useState('');
+  const [quickAddCreditLimit, setQuickAddCreditLimit] = useState('');
+  const [quickAddSaving, setQuickAddSaving] = useState(false);
+  const customerSearchRef = useRef(null);
   
   // Cálculos básicos
   const subtotal = total / 1.16;
@@ -66,6 +78,31 @@ const CartSidebar = ({
       }
     });
   }, [carrito]);
+
+  // Customer search debounce
+  useEffect(() => {
+    if (!customerSearch.trim()) { setCustomerResults([]); return; }
+    const t = setTimeout(async () => {
+      setSearchingCustomers(true);
+      try {
+        const res = await customerService.search(customerSearch.trim());
+        setCustomerResults(res || []);
+      } catch { setCustomerResults([]); }
+      setSearchingCustomers(false);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [customerSearch]);
+
+  // Cerrar búsqueda al hacer clic fuera
+  useEffect(() => {
+    const h = (e) => {
+      if (customerSearchRef.current && !customerSearchRef.current.contains(e.target)) {
+        setShowCustomerSearch(false);
+      }
+    };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
 
   // Datos ficticios para el mini gráfico de tendencia (en producción vendrían de una API)
   const trendData = [30, 45, 25, 60, 40, 85, 50];
@@ -209,13 +246,129 @@ const CartSidebar = ({
 
             {/* Rejilla de 4 Tarjetas de Información de Venta */}
             <div className="cart-info-grid">
-              <div className="info-card info-card-cliente">
+              <div className="info-card info-card-cliente" style={{ cursor: 'pointer', position: 'relative' }} onClick={() => { if (!showCustomerSearch) setShowCustomerSearch(true); }}>
                 <span className="material-symbols-outlined card-icon">contact_mail</span>
                 <div className="card-texts">
                   <span className="card-label">Cliente</span>
-                  <span className="card-value">Público General</span>
+                  <span className="card-value" style={selectedCustomer ? { color: '#059669', fontWeight: 700 } : {}}>
+                    {selectedCustomer ? selectedCustomer.name : 'Público General'}
+                  </span>
                 </div>
+                {selectedCustomer && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onSelectCustomer(null); }}
+                    className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full bg-gray-200 dark:bg-slate-700 text-gray-500 hover:bg-red-200 hover:text-red-600 transition-colors"
+                    style={{ fontSize: '12px', lineHeight: 1 }}
+                    title="Quitar cliente"
+                  >
+                    ×
+                  </button>
+                )}
+                {showCustomerSearch && (
+                  <div
+                    ref={customerSearchRef}
+                    className="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-2xl p-2 max-h-64 overflow-y-auto"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <input
+                      type="text"
+                      autoFocus
+                      placeholder="Buscar cliente..."
+                      className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500 mb-2"
+                      value={customerSearch}
+                      onChange={(e) => setCustomerSearch(e.target.value)}
+                    />
+                    {searchingCustomers && <p className="text-xs text-gray-400 p-2">Buscando...</p>}
+                    {customerResults.length === 0 && customerSearch.trim() && !searchingCustomers && (
+                      <p className="text-xs text-gray-400 p-2">Sin resultados</p>
+                    )}
+                    {customerResults.map(c => (
+                      <button
+                        key={c.id}
+                        className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
+                        onClick={() => { onSelectCustomer(c); setShowCustomerSearch(false); setCustomerSearch(''); setCustomerResults([]); }}
+                      >
+                        <span className="font-semibold">{c.name}</span>
+                        {c.rfc && <span className="text-xs text-gray-400 ml-2">{c.rfc}</span>}
+                      </button>
+                    ))}
+                    <button
+                      className="w-full text-left px-3 py-2 text-xs font-semibold text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors mt-1"
+                      onClick={() => setShowQuickAdd(true)}
+                    >
+                      + Agregar Cliente Nuevo
+                    </button>
+                  </div>
+                )}
               </div>
+              {showQuickAdd && (
+                <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-2xl p-3" onClick={(e) => e.stopPropagation()}>
+                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-2">Nuevo Cliente</p>
+                  <input
+                    type="text"
+                    autoFocus
+                    placeholder="Nombre *"
+                    className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500 mb-2"
+                    value={quickAddName}
+                    onChange={(e) => setQuickAddName(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="Límite de crédito (opcional)"
+                    className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500 mb-2 font-mono"
+                    value={quickAddCreditLimit}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^0-9.]/g, '');
+                      const parts = raw.split('.');
+                      if (parts.length > 2) return;
+                      if (parts[1] && parts[1].length > 2) return;
+                      setQuickAddCreditLimit(raw);
+                    }}
+                    onFocus={() => setQuickAddCreditLimit(prev => prev ? prev.replace(/[^0-9.]/g, '') : '')}
+                    onBlur={() => {
+                      setQuickAddCreditLimit(prev => {
+                        if (!prev) return prev;
+                        const num = parseFloat(prev.replace(/[^0-9.]/g, ''));
+                        if (isNaN(num)) return prev;
+                        return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                      });
+                    }}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => { setShowQuickAdd(false); setQuickAddName(''); setQuickAddCreditLimit(''); }}
+                      className="flex-1 py-2 text-xs text-gray-500 border border-gray-200 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      disabled={!quickAddName.trim() || quickAddSaving}
+                      onClick={async () => {
+                        if (!quickAddName.trim()) return;
+                        setQuickAddSaving(true);
+                        try {
+                          const newCust = await customerService.create({
+                            name: quickAddName.trim(),
+                            credit_limit: parseFloat(quickAddCreditLimit.replace(/[^0-9.]/g, '')) || 0
+                          });
+                          onSelectCustomer(newCust);
+                          setShowQuickAdd(false);
+                          setShowCustomerSearch(false);
+                          setQuickAddName('');
+                          setQuickAddCreditLimit('');
+                        } catch (err) {
+                          console.error(err);
+                        }
+                        setQuickAddSaving(false);
+                      }}
+                      className="flex-1 py-2 text-xs font-bold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:bg-emerald-400 transition-colors"
+                    >
+                      {quickAddSaving ? 'Guardando...' : 'Guardar'}
+                    </button>
+                  </div>
+                </div>
+              )}
               <div className="info-card info-card-vendedor">
                 <span className="material-symbols-outlined card-icon">person</span>
                 <div className="card-texts">

@@ -12,6 +12,7 @@ const InventoryConfig = () => {
   const [mode, setMode] = useState(user?.inventory_mode || "comprehensive");
   const [affectInventory, setAffectInventory] = useState(user?.affect_inventory ?? true);
   const [allowNegativeStock, setAllowNegativeStock] = useState(user?.allow_negative_stock ?? false);
+  const [businessVertical, setBusinessVertical] = useState(user?.business_vertical || "general");
 
   const handleUpdateProfile = async (updates) => {
     try {
@@ -27,6 +28,7 @@ const InventoryConfig = () => {
       if (updates.inventory_mode) setMode(updates.inventory_mode);
       if (updates.affect_inventory !== undefined) setAffectInventory(updates.affect_inventory);
       if (updates.allow_negative_stock !== undefined) setAllowNegativeStock(updates.allow_negative_stock);
+      if (updates.business_vertical) setBusinessVertical(updates.business_vertical);
 
       await fetchProfile(user.id, true);
       
@@ -46,6 +48,21 @@ const InventoryConfig = () => {
   };
 
   const handleSaveMode = (selectedMode) => handleUpdateProfile({ inventory_mode: selectedMode });
+
+  const handleSaveVertical = (vertical) => {
+    const unitDefaults = {
+      general: ["PZA", "CAJA"],
+      ferreteria: ["PZA", "CAJA", "M", "KG", "L", "PAQ", "TRAMO", "ROLLO", "JGO"],
+      abarrotes: ["PZA", "CAJA", "KG", "L", "PAQ"],
+      refaccionaria: ["PZA", "KIT", "JGO"],
+      papeleria: ["PZA", "CAJA", "PAQ"]
+    };
+
+    handleUpdateProfile({
+      business_vertical: vertical,
+      enabled_units: unitDefaults[vertical] || unitDefaults.general
+    });
+  };
 
   // =====================================================
   // BORRADO TOTAL DE INVENTARIO — Flujo de confirmación
@@ -211,6 +228,41 @@ const InventoryConfig = () => {
         {/* ========================================
             REGLAS DE VENTA Y COMPORTAMIENTO
         ======================================== */}
+        <section className="inventory-rules-section">
+          <div className="section-card">
+            <h2 className="section-card-title">Giro del Negocio</h2>
+            <p className="section-card-subtitle">Define las unidades y empaques base para adaptar el POS</p>
+
+            <div className="toggles-list">
+              {[
+                { id: "general", label: "Tienda General" },
+                { id: "ferreteria", label: "Ferretería" },
+                { id: "abarrotes", label: "Abarrotes" },
+                { id: "refaccionaria", label: "Refaccionaria" },
+                { id: "papeleria", label: "Papelería" }
+              ].map(option => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={`mode-card ${businessVertical === option.id ? "active" : ""}`}
+                  onClick={() => handleSaveVertical(option.id)}
+                  disabled={loading}
+                >
+                  <div className="mode-card-info">
+                    <h3 className="mode-card-title">{option.label}</h3>
+                  </div>
+                  {businessVertical === option.id && (
+                    <div className="mode-selected-badge">
+                      <span className="material-symbols-outlined">check</span>
+                      Seleccionado
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="inventory-rules-section">
           <div className="section-card">
             <h2 className="section-card-title">Reglas de Venta</h2>

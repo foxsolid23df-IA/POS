@@ -6,6 +6,7 @@ import { formatearDinero, validarCodigoBarras } from "../../utils";
 import { buscarProductoPorCodigo } from "../../utils/api";
 import { productService } from "../../services/productService";
 import { salesService } from "../../services/salesService";
+import { quotationService } from "../../services/quotationService";
 import { activeCartService } from "../../services/activeCartService";
 import { useApi } from "../../hooks/useApi";
 import { useCart } from "../../hooks/useCart";
@@ -81,6 +82,7 @@ export const Sales = () => {
     carrito,
     agregarProducto,
     cambiarCantidad,
+    cambiarPrecio,
     cambiarUnidadVenta,
     alternarUnidadUltimaLinea,
     quitarProducto,
@@ -192,7 +194,8 @@ export const Sales = () => {
 
   // REFERENCIAS
   const ticketRef = useRef(null);
-  const campoCodigoRef = useRef(null);
+  const campoSkuRef = useRef(null);
+  const campoNombreRef = useRef(null);
   const searchContainerRef = useRef(null);
 
   // FUNCIONES PARA EL MODAL DE ERRORES
@@ -328,7 +331,8 @@ export const Sales = () => {
   };
 
   // ESTADOS LOCALES ADICIONALES
-  const [codigoEscaneado, setCodigoEscaneado] = useState("");
+  const [codigoSku, setCodigoSku] = useState("");
+  const [codigoNombre, setCodigoNombre] = useState("");
   const [vendiendo, setVendiendo] = useState(false);
   const [mostrarModal, setMostrarModal] = useState(false);
   const [ventaCompletada, setVentaCompletada] = useState(null);
@@ -367,6 +371,9 @@ export const Sales = () => {
     "Iluminación", "Ferretería", "Accesorios", "Materiales"
   ];
   
+  // Cliente seleccionado para crédito
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+
   // ID temporal de transacción estable para el modal de pago
   const [transactionId, setTransactionId] = useState("");
   // Estado para evitar que el primer ENTER abra y el segundo cierre instantáneamente
@@ -378,6 +385,10 @@ export const Sales = () => {
   const [showTableDetails, setShowTableDetails] = useState(true); // Controla la visibilidad de detalles extra en la tabla
   const [mostrarModalAddProduct, setMostrarModalAddProduct] = useState(false);
   const [productoParaModal, setProductoParaModal] = useState(null);
+
+  // ESTADOS PARA EDICIÓN DE PRECIO EN LÍNEA
+  const [editandoPrecioId, setEditandoPrecioId] = useState(null);
+  const [editandoPrecioValor, setEditandoPrecioValor] = useState("");
 
   // ESTADOS PARA COLUMNAS PERSONALIZABLES Y REDIMENSIONABLES
   const [columnasVisibles, setColumnasVisibles] = useState({
@@ -499,12 +510,17 @@ export const Sales = () => {
     parseInt(producto?.box_units || 0) > 1 &&
     parseFloat(producto?.box_price || 0) > 0;
 
-  const prepararProductoCarrito = (producto, unidad = "PZA") => ({
-    ...producto,
-    image: producto.image_url || producto.image,
-    unit_price: parseFloat(producto.price || 0),
-    unit_sold: tieneCajaConfigurada(producto) && unidad === "CAJA" ? "CAJA" : "PZA",
-  });
+  const prepararProductoCarrito = (producto, unidad = "PZA") => {
+    const baseUnit = String(producto?.unit || "PZA").toUpperCase();
+    const unitSold = tieneCajaConfigurada(producto) && unidad === "CAJA" ? "CAJA" : baseUnit;
+
+    return {
+      ...producto,
+      image: producto.image_url || producto.image,
+      unit_price: parseFloat(producto.price || 0),
+      unit_sold: unitSold,
+    };
+  };
 
   const formatStockDisplay = (item) => {
     const stockPzas = item.stock || 0;
@@ -633,28 +649,39 @@ export const Sales = () => {
     return () => clearTimeout(syncTimer);
   }, [carrito, totalVenta, cashSession, user]);
 
-  // BÚSQUEDA POR NOMBRE Y SKU - Filtrar sugerencias cuando cambia el texto
+  // BÚSQUEDA DUAL - SKU por código de barras, Nombre por descripción
   useEffect(() => {
-    const query = codigoEscaneado.toLowerCase().trim();
-    if (query.length >= 2) {
-      // Buscar por nombre o por código de barras (SKU)
-      const resultados = productos
-        .filter(
-          (p) =>
-            p?.name?.toLowerCase().includes(query) ||
-            p?.barcode?.toLowerCase().includes(query) ||
-            p?.box_barcode?.toLowerCase().includes(query),
-        )
-        .slice(0, 10); // Máximo 10 sugerencias
-      setSugerencias(resultados);
-      setMostrarSugerencias(resultados.length > 0);
-      setIndexSugerencia(0); // Resetear índice al cambiar resultados
-    } else {
+    const sku = codigoSku.toLowerCase().trim();
+    const nombre = codigoNombre.toLowerCase().trim();
+
+    if (sku.length < 2 && nombre.length < 2) {
       setSugerencias([]);
       setMostrarSugerencias(false);
       setIndexSugerencia(0);
+      return;
     }
-  }, [codigoEscaneado, productos]);
+
+    const resultados = productos.filter((p) => {
+      let matchSku = false;
+      let matchNombre = false;
+      if (sku.length >= 2) {
+        matchSku =
+          p?.barcode?.toLowerCase().includes(sku) ||
+          p?.box_barcode?.toLowerCase().includes(sku);
+      }
+      if (nombre.length >= 2) {
+        matchNombre = p?.name?.toLowerCase().includes(nombre);
+      }
+      // Si ambos inputs tienen texto, deben coincidir ambos criterios
+      if (sku.length >= 2 && nombre.length >= 2) return matchSku && matchNombre;
+      // Si solo uno tiene texto, ese define
+      return matchSku || matchNombre;
+    }).slice(0, 10);
+
+    setSugerencias(resultados);
+    setMostrarSugerencias(resultados.length > 0);
+    setIndexSugerencia(0);
+  }, [codigoSku, codigoNombre, productos]);
 
   // CERRAR SUGERENCIAS AL HACER CLIC FUERA
   useEffect(() => {
@@ -750,19 +777,31 @@ export const Sales = () => {
   const seleccionarProducto = (producto) => {
     setProductoParaModal(producto);
     setMostrarModalAddProduct(true);
-    setCodigoEscaneado("");
+    setCodigoSku("");
+    setCodigoNombre("");
     setSugerencias([]);
     setMostrarSugerencias(false);
   };
 
-  const handleModalAdd = (pzaQty, cajaQty) => {
+  const handleModalAdd = (pzaQty, cajaQty, customPzaPrice, customCajaPrice) => {
     const producto = productoParaModal;
     if (!producto) return;
     if (pzaQty > 0) {
-      agregarProducto({ ...producto, quantity: pzaQty, image: producto.image_url || producto.image }, 'PZA', true);
+      const p = { ...producto, quantity: pzaQty, image: producto.image_url || producto.image };
+      if (customPzaPrice !== undefined && customPzaPrice !== parseFloat(producto.price || 0)) {
+        p.price = customPzaPrice;
+        p.price_overridden = true;
+      }
+      agregarProducto(p, 'PZA', true);
     }
     if (cajaQty > 0) {
-      agregarProducto({ ...producto, quantity: cajaQty, image: producto.image_url || producto.image }, 'CAJA', true);
+      const p = { ...producto, quantity: cajaQty, image: producto.image_url || producto.image };
+      if (customCajaPrice !== undefined && customCajaPrice !== parseFloat(producto.box_price || 0)) {
+        p.box_price = customCajaPrice;
+        p.price = customCajaPrice;
+        p.price_overridden = true;
+      }
+      agregarProducto(p, 'CAJA', true);
     }
     cerrarModalAddProduct();
   };
@@ -770,7 +809,7 @@ export const Sales = () => {
   const cerrarModalAddProduct = () => {
     setMostrarModalAddProduct(false);
     setProductoParaModal(null);
-    setTimeout(() => campoCodigoRef.current?.focus(), 50);
+    setTimeout(() => campoSkuRef.current?.focus(), 50);
   };
 
   // HOOK SCANNER
@@ -914,7 +953,7 @@ export const Sales = () => {
     setMostrarModalPago(false);
   };
 
-  const generarCotizacion = () => {
+  const generarCotizacion = async () => {
     if (isSupervising) {
       mostrarModalPersonalizado(
         "Modo Supervisión",
@@ -959,24 +998,50 @@ export const Sales = () => {
       }
     }
 
-    const cotizacion = {
-      id: folio,
-      folio,
-      productos: [...carrito],
-      items: [...carrito],
-      total: cotizacionTotal,
-      subtotal: cotizacionSubtotal,
-      tax_amount: cotizacionTax,
-      tax_percentage: currentTaxRate,
-      isCotizacion: true,
-      createdAt: now.toISOString(),
-      cashier_name: user?.full_name || "USUARIO CAJERO",
-      users: { name: user?.full_name || "USUARIO CAJERO" },
-    };
+    try {
+      const expiresAt = new Date(now);
+      expiresAt.setDate(expiresAt.getDate() + 7);
+      const taxAmountToPersist = user?.tax_included !== false ? 0 : cotizacionTax;
 
-    vaciarCarrito();
-    setVentaCompletada(cotizacion);
-    setMostrarModal(true);
+      const savedQuote = await quotationService.createQuotation({
+        customerId: selectedCustomer?.id || null,
+        customerName: selectedCustomer?.name || null,
+        expiresAt: expiresAt.toISOString().slice(0, 10),
+        items: carrito,
+        taxAmount: taxAmountToPersist,
+        notes: "Cotizacion generada desde POS",
+      });
+
+      const cotizacion = {
+        id: savedQuote?.folio || folio,
+        quotation_id: savedQuote?.id,
+        folio: savedQuote?.folio || folio,
+        productos: [...carrito],
+        items: [...carrito],
+        total: savedQuote?.total ?? cotizacionTotal,
+        subtotal: savedQuote?.subtotal ?? cotizacionSubtotal,
+        tax_amount: savedQuote?.tax_amount ?? cotizacionTax,
+        tax_percentage: currentTaxRate,
+        expires_at: savedQuote?.expires_at,
+        status: savedQuote?.status || "sent",
+        isCotizacion: true,
+        createdAt: now.toISOString(),
+        cashier_name: user?.full_name || "USUARIO CAJERO",
+        users: { name: user?.full_name || "USUARIO CAJERO" },
+        customers: selectedCustomer ? { name: selectedCustomer.name } : null,
+      };
+
+      vaciarCarrito();
+      setVentaCompletada(cotizacion);
+      setMostrarModal(true);
+    } catch (error) {
+      console.error("[Sales] Error al guardar cotizacion:", error);
+      mostrarModalPersonalizado(
+        "No se pudo guardar la cotizacion",
+        error.message || "Intenta de nuevo.",
+        "error",
+      );
+    }
   };
 
   const agregarPago = () => {
@@ -1238,6 +1303,15 @@ export const Sales = () => {
   };
   const handlePaymentComplete = async (datosPago) => {
     console.log("[Sales] Payment complete data received:", datosPago);
+    if (datosPago.isCreditSale) {
+      try {
+        await finalizarVentaCredito(datosPago);
+      } catch (error) {
+        console.error("[Sales] Error finishing credit sale:", error);
+        mostrarModalPersonalizado("Error", error.message || "Error al procesar venta a crédito", "error");
+      }
+      return;
+    }
     try {
       await finalizarVenta(datosPago);
     } catch (error) {
@@ -1245,8 +1319,108 @@ export const Sales = () => {
     }
   };
 
-  const manejarCambioCodigo = (e) => {
-    setCodigoEscaneado(e.target.value);
+  const finalizarVentaCredito = async (datosPago) => {
+    const pagosActualizados = datosPago.pagos || [];
+    const shouldFacturar = datosPago.facturar;
+    const selectedIssuer = datosPago.issuerId;
+
+    let saldoActual = totalVenta;
+    let abonoInicial = 0;
+    if (pagosActualizados.length > 0) {
+      abonoInicial = pagosActualizados.reduce((s, p) => s + p.amount, 0);
+      saldoActual = Math.max(0, totalVenta - abonoInicial);
+    }
+
+    setVendiendo(true);
+
+    const validation = await validateCartStockWithRPC();
+    if (!validation.valid) { setVendiendo(false); return; }
+
+    cerrarModalPago();
+
+    try {
+      const currentTaxRate = shouldFacturar ? taxRateValue : 0;
+      const ventaTotal = shouldFacturar ? totalConImpuesto : total;
+      let subtotal = total;
+      let taxAmountFinal = 0;
+
+      if (shouldFacturar && currentTaxRate > 0) {
+        if (user?.tax_included !== false) {
+          subtotal = ventaTotal / (1 + currentTaxRate / 100);
+          taxAmountFinal = ventaTotal - subtotal;
+        } else {
+          subtotal = total;
+          taxAmountFinal = ventaTotal - subtotal;
+        }
+      }
+
+      const ventaData = {
+        user_id: user?.id,
+        items: carrito.filter((item) => item.quantity > 0).map((item) => ({
+          id: item.id,
+          product_id: item.product_id || item.id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          stock: item.stock || 0,
+          unit_sold: item.unit_sold || "PZA",
+          conversion_factor: item.conversion_factor || item.stock_multiplier || 1,
+          base_quantity: item.base_quantity || item.quantity * (item.stock_multiplier || item.conversion_factor || 1),
+        })),
+        total: ventaTotal,
+        subtotal: subtotal,
+        tax_amount: taxAmountFinal,
+        tax_percentage: currentTaxRate,
+        payments: pagosActualizados,
+        metodoPago: pagosActualizados.length === 1 ? pagosActualizados[0].method : "múltiple",
+        currency: "MXN",
+        exchange_rate: null,
+        billing_issuer_id: shouldFacturar ? selectedIssuer : null,
+        affect_inventory: user?.affect_inventory !== undefined ? user?.affect_inventory : true,
+        customer_id: datosPago.customerId,
+        sale_type: 'credit',
+        paid_amount: abonoInicial,
+        balance: saldoActual,
+        due_date: null
+      };
+
+      const ventaCreada = await salesService.createCreditSale(ventaData);
+
+      setSelectedCustomer(null);
+      setVentaCompletada({
+        ...ventaCreada,
+        productos: [...carrito],
+        items: [...carrito],
+        payments: [...pagosActualizados],
+        metodoPago: ventaData.metodoPago,
+        montoRecibido: abonoInicial,
+        cambio: 0,
+        total: ventaTotal,
+        subtotal: subtotal,
+        tax_amount: taxAmountFinal,
+        tax_percentage: currentTaxRate,
+        isCreditSale: true
+      });
+
+      vaciarCarrito();
+      setMostrarModal(true);
+
+      activeCartService.clearCart("completed", cashSession?.id).catch(console.error);
+      cargarDatos({ forceRefresh: true, silent: true }).catch(console.error);
+    } catch (error) {
+      console.error("Error al crear venta a crédito:", error);
+      mostrarModalPersonalizado("Error al procesar venta a crédito", error.message || "No se pudo completar la venta.", "error");
+    }
+
+    setVendiendo(false);
+  };
+
+  const manejarCambioSku = (e) => {
+    setCodigoSku(e.target.value);
+  };
+
+  const manejarCambioNombre = (e) => {
+    setCodigoNombre(e.target.value);
   };
 
 
@@ -1257,68 +1431,81 @@ export const Sales = () => {
     montoRecibidoRef.current = montoRecibido;
   }, [montoRecibido]);
 
-  const manejarEnter = (e) => {
-    // Si el listener nativo ya lo manejó, salir
-    if (e.defaultPrevented) return;
+  // Handler compartido para navegación con flechas en sugerencias
+  const manejarNavegacionSugerencias = (e) => {
+    if (sugerencias.length === 0) return false;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setIndexSugerencia((prev) => (prev < sugerencias.length - 1 ? prev + 1 : 0));
+      return true;
+    }
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setIndexSugerencia((prev) => (prev > 0 ? prev - 1 : sugerencias.length - 1));
+      return true;
+    }
+    if (e.key === "Escape") {
+      e.preventDefault();
+      setMostrarSugerencias(false);
+      setIndexSugerencia(0);
+      return true;
+    }
+    return false;
+  };
 
-    // Navegación en sugerencias
-    if (sugerencias.length > 0) {
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setIndexSugerencia((prev) => (prev < sugerencias.length - 1 ? prev + 1 : 0));
-        return;
-      }
-      if (e.key === "ArrowUp") {
-        e.preventDefault();
-        setIndexSugerencia((prev) => (prev > 0 ? prev - 1 : sugerencias.length - 1));
-        return;
-      }
-      if (e.key === "Enter") {
+  const manejarEnterSku = (e) => {
+    if (e.defaultPrevented) return;
+    if (manejarNavegacionSugerencias(e)) return;
+
+    if (e.key === "Enter") {
+      if (sugerencias.length > 0) {
         e.preventDefault();
         if (indexSugerencia >= 0 && indexSugerencia < sugerencias.length) {
           seleccionarProducto(sugerencias[indexSugerencia]);
-          setCodigoEscaneado("");
           return;
         }
       }
-      if (e.key === "Escape") {
-        e.preventDefault();
-        setMostrarSugerencias(false);
-        setIndexSugerencia(0);
-        return;
-      }
-    }
-
-    if (e.key === "Enter" && sugerencias.length === 0) {
-      if (codigoEscaneado.trim()) {
+      // Sin sugerencias: buscar por código exacto
+      const sku = codigoSku.trim();
+      if (sku) {
         e.preventDefault();
         const productoLocal = productos.find(
-          p => p.barcode === codigoEscaneado.trim() || p.box_barcode === codigoEscaneado.trim()
+          p => p.barcode === sku || p.box_barcode === sku
         );
         if (productoLocal) {
           seleccionarProducto(productoLocal);
         } else {
-          buscarProductoManual(codigoEscaneado.trim());
+          buscarProductoManual(sku);
         }
-        setCodigoEscaneado("");
-      } else if (
-        carrito.length > 0 &&
-        !mostrarModalPago &&
-        !modal.isOpen &&
-        !mostrarModal
-      ) {
+      }
+    }
+  };
+
+  const manejarEnterNombre = (e) => {
+    if (e.defaultPrevented) return;
+    if (manejarNavegacionSugerencias(e)) return;
+
+    if (e.key === "Enter" && sugerencias.length > 0) {
+      e.preventDefault();
+      if (indexSugerencia >= 0 && indexSugerencia < sugerencias.length) {
+        seleccionarProducto(sugerencias[indexSugerencia]);
+        return;
+      }
+    }
+
+    // Enter sin sugerencias y sin texto en ningún input → abrir pago
+    if (e.key === "Enter" && !codigoSku.trim() && !codigoNombre.trim()) {
+      if (carrito.length > 0 && !mostrarModalPago && !modal.isOpen && !mostrarModal) {
         e.preventDefault();
         e.target.blur();
-        setTimeout(() => {
-          abrirModalPago();
-        }, 150);
+        setTimeout(() => abrirModalPago(), 150);
       }
     }
   };
 
   const manejarFocus = () => {
-    if (campoCodigoRef.current) {
-      campoCodigoRef.current.focus();
+    if (campoSkuRef.current) {
+      campoSkuRef.current.focus();
     }
   };
 
@@ -1617,15 +1804,19 @@ export const Sales = () => {
           <div className="search-zone" style={{ visibility: isAnyModalOpen ? 'hidden' : 'visible', pointerEvents: isAnyModalOpen ? 'none' : 'auto' }}>
             <SearchSection
               searchContainerRef={searchContainerRef}
-              campoCodigoRef={campoCodigoRef}
+              campoSkuRef={campoSkuRef}
+              campoNombreRef={campoNombreRef}
               scannerInputMode={scannerInputMode}
               scannerMode={scannerMode}
-              codigoEscaneado={codigoEscaneado}
-              manejarCambioCodigo={manejarCambioCodigo}
-              manejarEnter={manejarEnter}
+              codigoSku={codigoSku}
+              codigoNombre={codigoNombre}
+              manejarCambioSku={manejarCambioSku}
+              manejarCambioNombre={manejarCambioNombre}
+              manejarEnterSku={manejarEnterSku}
+              manejarEnterNombre={manejarEnterNombre}
               isSupervising={isSupervising}
             >
-              {codigoEscaneado.trim().length > 0 && (
+              {(codigoSku.trim().length > 0 || codigoNombre.trim().length > 0) && (
                 <div className="search-results-list">
                   {sugerencias.length > 0 ? (
                     sugerencias.map((producto, index) => (
@@ -1650,7 +1841,13 @@ export const Sales = () => {
                       </div>
                     ))
                   ) : (
-                    <p className="search-no-results">Sin resultados para "{codigoEscaneado}"</p>
+                    <p className="search-no-results">
+                      {codigoSku.trim() && codigoNombre.trim()
+                        ? `Sin resultados para SKU "${codigoSku}" y "${codigoNombre}"`
+                        : codigoSku.trim()
+                          ? `Sin resultados para "${codigoSku}"`
+                          : `Sin resultados para "${codigoNombre}"`}
+                    </p>
                   )}
                 </div>
               )}
@@ -1787,12 +1984,59 @@ export const Sales = () => {
                            </div>
                          )}
 
-                         {/* 4. Precio */}
-                         {columnasVisibles.price && (
-                           <div className={`pos-col pos-col-price ${!showTableDetails ? 'compact' : ''}`} style={{ width: `${anchosColumnas.price}px` }}>
-                             {formatearDinero(item.price)}
-                           </div>
-                         )}
+                          {/* 4. Precio (editable) */}
+                          {columnasVisibles.price && (
+                            <div
+                              className={`pos-col pos-col-price ${!showTableDetails ? 'compact' : ''} ${item.price_overridden ? 'price-overridden' : ''}`}
+                              style={{ width: `${anchosColumnas.price}px` }}
+                              onClick={() => {
+                                if (editandoPrecioId !== item.id) {
+                                  setEditandoPrecioId(item.id);
+                                  setEditandoPrecioValor(item.price);
+                                }
+                              }}
+                              onDoubleClick={(e) => e.stopPropagation()}
+                            >
+                              {editandoPrecioId === item.id ? (
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  className="price-edit-input"
+                                  value={editandoPrecioValor}
+                                  onChange={(e) => setEditandoPrecioValor(e.target.value)}
+                                  onBlur={(e) => {
+                                    const val = parseFloat(editandoPrecioValor);
+                                    if (!isNaN(val) && val >= 0 && val !== item.price) {
+                                      cambiarPrecio(item.id, val);
+                                    }
+                                    setEditandoPrecioId(null);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.stopPropagation();
+                                      const val = parseFloat(editandoPrecioValor);
+                                      if (!isNaN(val) && val >= 0 && val !== item.price) {
+                                        cambiarPrecio(item.id, val);
+                                      }
+                                      setEditandoPrecioId(null);
+                                    }
+                                    if (e.key === 'Escape') {
+                                      e.stopPropagation();
+                                      setEditandoPrecioId(null);
+                                    }
+                                  }}
+                                  autoFocus
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                              ) : (
+                                <span className="price-display">
+                                  {formatearDinero(item.price)}
+                                  <span className="price-edit-icon material-symbols-outlined">edit</span>
+                                </span>
+                              )}
+                            </div>
+                          )}
 
                          {/* 5. Cantidad */}
                          {columnasVisibles.qty && (
@@ -1887,6 +2131,8 @@ export const Sales = () => {
             setMostrarModalPaqueteTodo={setMostrarModalPaqueteTodo}
             abrirModalPago={abrirModalPago}
             onCotizar={generarCotizacion}
+            selectedCustomer={selectedCustomer}
+            onSelectCustomer={setSelectedCustomer}
           />
       </div>
 
@@ -1927,6 +2173,7 @@ export const Sales = () => {
         setSelectedIssuerId={setSelectedIssuerId}
         user={user}
         transactionId={transactionId}
+        selectedCustomer={selectedCustomer}
       />
 
 
@@ -2040,7 +2287,7 @@ export const Sales = () => {
                     required
                     min="0"
                     step="0.01"
-                    className="w-full px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white"
+                    className="w-20 text-right text-xs font-mono bg-transparent border-b-2 outline-none transition-colors text-gray-700 border-gray-300 dark:border-slate-600 focus:border-blue-500 dark:text-slate-200 placeholder:text-gray-400"
                     value={comunForm.precio}
                     onChange={(e) =>
                       setComunForm({ ...comunForm, precio: e.target.value })
@@ -2280,13 +2527,13 @@ export const Sales = () => {
                       required
                       min="0"
                       step="0.01"
-                      className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white font-mono font-bold"
-                      value={empaqueForm.precio}
-                      onChange={(e) =>
-                        setEmpaqueForm({ ...empaqueForm, precio: e.target.value })
-                      }
-                      placeholder="0.00"
-                    />
+                    className="w-20 text-right text-xs font-mono bg-transparent border-b-2 outline-none transition-colors text-gray-700 border-gray-300 dark:border-slate-600 focus:border-blue-500 dark:text-slate-200 placeholder:text-gray-400"
+                    value={empaqueForm.precio}
+                    onChange={(e) =>
+                      setEmpaqueForm({ ...empaqueForm, precio: e.target.value })
+                    }
+                    placeholder="0.00"
+                  />
                   </div>
                 </div>
 
@@ -2375,16 +2622,16 @@ export const Sales = () => {
                   required
                   min="0"
                   step="0.01"
-                  className="w-full px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white font-mono text-lg"
-                  value={paqueteTodoForm.precio}
-                  onChange={(e) =>
-                    setPaqueteTodoForm({
-                      ...paqueteTodoForm,
-                      precio: e.target.value,
-                    })
-                  }
-                  placeholder="0.00"
-                />
+                    className="w-20 text-right text-xs font-mono bg-transparent border-b-2 outline-none transition-colors text-gray-700 border-gray-300 dark:border-slate-600 focus:border-blue-500 dark:text-slate-200 placeholder:text-gray-400"
+                    value={paqueteTodoForm.precio}
+                    onChange={(e) =>
+                      setPaqueteTodoForm({
+                        ...paqueteTodoForm,
+                        precio: e.target.value,
+                      })
+                    }
+                    placeholder="0.00"
+                  />
                 <p className="mt-1 text-xs text-slate-400">
                   Total sugerido (suma del carrito):{" "}
                   {formatearDinero(total)}

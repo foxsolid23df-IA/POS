@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const productController = require('../controllers/productController');
+const { authMiddleware } = require('../middleware/authMiddleware');
 const {
     validateId,
     validateSearchQuery,
@@ -10,6 +11,8 @@ const {
     validateStockEntry,
     validateBarcode
 } = require('../middleware/validation');
+
+router.use(authMiddleware);
 
 // Rutas para productos
 router.get('/', validatePagination, productController.getAllProducts);               // GET /api/products

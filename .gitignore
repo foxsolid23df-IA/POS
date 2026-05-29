@@ -37,6 +37,7 @@ backend/data/
 # Cache
 .cache/
 .vercel
+supabase/.temp/
 
 # Build artifacts
 bin/
@@ -48,4 +49,3 @@ build/
 .agents/
 scratch/
 skills-lock.json
-

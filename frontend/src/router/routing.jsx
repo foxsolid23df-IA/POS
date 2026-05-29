@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { Suspense, lazy, useEffect, useState } from "react";
 import {
   Routes,
   Route,
@@ -8,38 +8,41 @@ import {
   useLocation,
 } from "react-router-dom";
 import { Sidebar } from "../components/sidebar/Sidebar";
-import { Sales } from "../components/sales/Sales";
-import { Inventory } from "../components/inventory/Inventory";
-import { Historial } from "../components/historial/Historial";
-import { Stats } from "../components/stats/Stats";
-import { Customers } from "../components/customers/Customers";
 import { Login } from "../components/auth/Login";
 import { UpdatePassword } from "../components/auth/UpdatePassword";
 import { LockScreen } from "../components/auth/LockScreen";
 import { ExpiredLicense } from "../components/auth/ExpiredLicense";
 import { CashFundModal } from "../components/auth/CashFundModal";
-import { UserManager } from "../components/admin/UserManager";
-import { AttendanceRegistry } from "../components/admin/AttendanceRegistry";
-import Suppliers from "../components/suppliers/Suppliers";
 import { AuthProvider, useAuth } from "../hooks/useAuth";
-import CustomerDisplay from "../components/customer/CustomerDisplay";
-import ExchangeRateSettings from "../components/admin/ExchangeRateSettings";
 import { TerminalSetup } from "../components/config/TerminalSetup";
-import { TicketConfig } from "../components/config/TicketConfig";
 import { ConfiguracionHub } from "../components/config/ConfiguracionHub";
-import TaxConfig from "../components/config/TaxConfig";
-import PaymentMethodsConfig from "../components/config/PaymentMethodsConfig";
-import BillingIssuers from "../components/config/BillingIssuers";
-import InventoryConfig from "../components/config/InventoryConfig";
 import { terminalService } from "../services/terminalService";
-import Maintenance from "../components/admin/Maintenance";
-import { Orders } from "../components/orders/Orders";
 import { ScrollToTop } from "../components/common/ScrollToTop";
 import { ScrollTopButton } from "../components/common/ScrollTopButton";
 import { ProductProvider } from "../contexts/ProductContext";
 import { SettingsProvider } from "../contexts/SettingsContext";
 import { useAndroidBackButton } from "../hooks/useAndroidBackButton";
-import { SuperAdminPortal } from "../pages/SuperAdmin/SuperAdminPortal";
+
+const Sales = lazy(() => import("../components/sales/Sales").then(m => ({ default: m.Sales })));
+const Inventory = lazy(() => import("../components/inventory/Inventory").then(m => ({ default: m.Inventory })));
+const Historial = lazy(() => import("../components/historial/Historial").then(m => ({ default: m.Historial })));
+const Stats = lazy(() => import("../components/stats/Stats").then(m => ({ default: m.Stats })));
+const Customers = lazy(() => import("../components/customers/Customers").then(m => ({ default: m.Customers })));
+const UserManager = lazy(() => import("../components/admin/UserManager").then(m => ({ default: m.UserManager })));
+const AttendanceRegistry = lazy(() => import("../components/admin/AttendanceRegistry").then(m => ({ default: m.AttendanceRegistry })));
+const Suppliers = lazy(() => import("../components/suppliers/Suppliers"));
+const CustomerDisplay = lazy(() => import("../components/customer/CustomerDisplay"));
+const ExchangeRateSettings = lazy(() => import("../components/admin/ExchangeRateSettings"));
+const TicketConfig = lazy(() => import("../components/config/TicketConfig").then(m => ({ default: m.TicketConfig })));
+const TaxConfig = lazy(() => import("../components/config/TaxConfig"));
+const PaymentMethodsConfig = lazy(() => import("../components/config/PaymentMethodsConfig"));
+const BillingIssuers = lazy(() => import("../components/config/BillingIssuers"));
+const InventoryConfig = lazy(() => import("../components/config/InventoryConfig"));
+const Maintenance = lazy(() => import("../components/admin/Maintenance"));
+const Orders = lazy(() => import("../components/orders/Orders").then(m => ({ default: m.Orders })));
+const CreditMenu = lazy(() => import("../components/credit/CreditMenu").then(m => ({ default: m.CreditMenu })));
+const CustomerCreditCard = lazy(() => import("../components/credit/CustomerCreditCard").then(m => ({ default: m.CustomerCreditCard })));
+const SuperAdminPortal = lazy(() => import("../pages/SuperAdmin/SuperAdminPortal").then(m => ({ default: m.SuperAdminPortal })));
 
 // Componente invisible que maneja el botón "Atrás" de Android
 const BackButtonHandler = () => {
@@ -208,11 +211,20 @@ const AdminRoute = ({ children }) => {
   return isAdmin ? children : <Navigate to="/" />;
 };
 
+const PermissionRoute = ({ children, permission, reports = false }) => {
+  const { isAdmin, activeStaff, canAccessReports } = useAuth();
+  if (isAdmin) return children;
+  if (reports && canAccessReports) return children;
+  if (permission && activeStaff?.permissions?.[permission]) return children;
+  return <Navigate to="/" />;
+};
+
 export const Routing = () => {
   return (
     <HashRouter>
       <BackButtonHandler />
       <ScrollToTop />
+      <Suspense fallback={<div className="loading-screen">Cargando módulo...</div>}>
       <Routes>
         {/* Pantalla Cliente: Independiente de AuthProvider y ProductProvider */}
         <Route path="/customer-display" element={<CustomerDisplay />} />
@@ -271,7 +283,29 @@ export const Routing = () => {
                       path="/inventario"
                       element={
                         <PrivateLayout>
-                          <Inventory />
+                          <PermissionRoute permission="inventory">
+                            <Inventory />
+                          </PermissionRoute>
+                        </PrivateLayout>
+                      }
+                    />
+                    <Route
+                      path="/creditos"
+                      element={
+                        <PrivateLayout>
+                          <PermissionRoute reports>
+                            <CreditMenu />
+                          </PermissionRoute>
+                        </PrivateLayout>
+                      }
+                    />
+                    <Route
+                      path="/creditos/:customerId"
+                      element={
+                        <PrivateLayout>
+                          <PermissionRoute reports>
+                            <CustomerCreditCard />
+                          </PermissionRoute>
                         </PrivateLayout>
                       }
                     />
@@ -279,7 +313,9 @@ export const Routing = () => {
                       path="/proveedores"
                       element={
                         <PrivateLayout>
-                          <Suppliers />
+                          <PermissionRoute permission="inventory">
+                            <Suppliers />
+                          </PermissionRoute>
                         </PrivateLayout>
                       }
                     />
@@ -287,7 +323,9 @@ export const Routing = () => {
                       path="/historial"
                       element={
                         <PrivateLayout>
-                          <Historial />
+                          <PermissionRoute reports>
+                            <Historial />
+                          </PermissionRoute>
                         </PrivateLayout>
                       }
                     />
@@ -295,7 +333,9 @@ export const Routing = () => {
                       path="/estadisticas"
                       element={
                         <PrivateLayout>
-                          <Stats />
+                          <PermissionRoute reports>
+                            <Stats />
+                          </PermissionRoute>
                         </PrivateLayout>
                       }
                     />
@@ -435,6 +475,7 @@ export const Routing = () => {
           }
         />
       </Routes>
+      </Suspense>
     </HashRouter>
   );
 };

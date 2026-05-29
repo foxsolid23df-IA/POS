@@ -567,8 +567,6 @@
     margin-top: 10px !important;
     font-size: 0.75rem !important;
   }
-}
-
 /* ========= NARROW TABLET / LARGE PHONE: portrait (up to 820px) ========= */
 @media (max-width: 820px) {
 
@@ -819,4 +817,3 @@
     border-bottom-color: var(--dm-border) !important;
   }
 }
-

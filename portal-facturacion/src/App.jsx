@@ -46,7 +46,7 @@ export default function App() {
 
       if (error) {
         console.error("DB Error fetching ticket:", error);
-        if (error.code === 'PGRST116') {
+        if (error.code === 'PGRST116' || error.code === '22P02') {
           throw new Error('No se encontró ningún ticket con esos datos. Verifica el Folio y PIN.');
         }
         throw new Error(`Error BD: ${error.message}`);

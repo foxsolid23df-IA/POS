@@ -214,8 +214,8 @@ export const productService = {
 
         if (fetchError) throw fetchError;
 
-        const entrant = parseInt(cantidadEntrante) || 0;
-        const merma = parseInt(cantidadMerma) || 0;
+        const entrant = parseFloat(cantidadEntrante) || 0;
+        const merma = parseFloat(cantidadMerma) || 0;
 
         if (entrant < 0 || merma < 0) {
             throw new Error('Las cantidades no pueden ser negativas');

@@ -37,7 +37,17 @@ export const formatearFechaHora = (fecha) => {
     return `${fechaFormateada} - ${horaFormateada}`
 }
 
-// 4. FORMATEAR DINERO (alias en inglés para compatibilidad)
+// 4. FORMATEAR FECHA SOLO (sin hora)
+export const formatearFecha = (fecha) => {
+  if (!fecha) return '---';
+  return new Date(fecha).toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+}
+
+// 5. FORMATEAR DINERO (alias en inglés para compatibilidad)
 export const formatCurrency = (amount) => {
     return new Intl.NumberFormat('es-MX', {
         style: 'currency',

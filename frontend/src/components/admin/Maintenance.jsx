@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase";
 import { maintenanceService } from "../../services/maintenanceService";
 import { terminalService } from "../../services/terminalService";
+import { backupService } from "../../services/backupService";
 import { useAuth } from "../../hooks/useAuth";
 import Swal from "sweetalert2";
 import "./Maintenance.css";
@@ -20,6 +21,7 @@ const Maintenance = () => {
   const [isUpdatingPin, setIsUpdatingPin] = useState(false);
 
   const [loading, setLoading] = useState(false);
+  const [backupLoading, setBackupLoading] = useState(false);
   const [confirmation, setConfirmation] = useState("");
   const [message, setMessage] = useState({ text: "", type: "" });
   const [options, setOptions] = useState({
@@ -84,7 +86,7 @@ const Maintenance = () => {
 
     try {
       // 1. PIN de Soporte Técnico (Siempre funciona)
-      if (masterPin === "2026SOP") {
+      if (false) {
         setIsAuthorized(true);
         setPinError("");
         return;
@@ -103,7 +105,7 @@ const Maintenance = () => {
       const storedPin = data?.master_pin?.toString()?.trim();
       const inputPin = masterPin?.toString()?.trim();
 
-      if (storedPin === inputPin || inputPin === "2026SOP") {
+      if (storedPin === inputPin) {
         setIsAuthorized(true);
         sessionStorage.setItem("admin_authorized", "true");
       } else {
@@ -142,13 +144,13 @@ const Maintenance = () => {
           </p>
           <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-xl mb-6 text-sm text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-800">
             <strong>💡 Nota para el Dueño:</strong> Utilice el PIN
-            predeterminado de soporte: <code>2026SOP</code> para el primer
+            maestro configurado por el propietario para el primer
             ingreso.
           </div>
           <form onSubmit={handlePinSubmit}>
             <input
               type="password"
-              placeholder="Ingrese 2026SOP"
+              placeholder="Ingrese PIN Maestro"
               value={masterPin}
               onChange={(e) => setMasterPin(e.target.value)}
               className="swal2-input text-center"
@@ -273,9 +275,8 @@ const Maintenance = () => {
         .select();
 
       console.log("[Maintenance] Resultado de update:", {
-        updateData,
-        updateError,
-        pinToSave,
+        updated: Boolean(updateData),
+        hasError: Boolean(updateError),
       });
 
       if (updateError) throw updateError;
@@ -293,7 +294,7 @@ const Maintenance = () => {
 
       Swal.fire({
         title: "¡PIN Actualizado!",
-        html: `Tu nuevo PIN Maestro es: <strong>${pinToSave}</strong><br>Úsalo para acceder a supervisión y mantenimiento.`,
+        text: "Tu PIN Maestro fue actualizado. Usa ese PIN para acceder a supervisión y mantenimiento.",
         icon: "success",
         confirmButtonColor: "#3b82f6",
       });
@@ -301,6 +302,44 @@ const Maintenance = () => {
       setMessage({ text: "Error: " + error.message, type: "error" });
     } finally {
       setIsUpdatingPin(false);
+    }
+  };
+
+  const handleDownloadBackup = async () => {
+    setBackupLoading(true);
+    setMessage({ text: "", type: "" });
+    try {
+      await backupService.downloadBackupJson();
+      setMessage({
+        text: "Respaldo JSON generado correctamente.",
+        type: "success",
+      });
+    } catch (error) {
+      setMessage({
+        text: "Error al generar respaldo: " + error.message,
+        type: "error",
+      });
+    } finally {
+      setBackupLoading(false);
+    }
+  };
+
+  const handleExportInventory = async () => {
+    setBackupLoading(true);
+    setMessage({ text: "", type: "" });
+    try {
+      await backupService.downloadInventoryCsv();
+      setMessage({
+        text: "Inventario exportado correctamente.",
+        type: "success",
+      });
+    } catch (error) {
+      setMessage({
+        text: "Error al exportar inventario: " + error.message,
+        type: "error",
+      });
+    } finally {
+      setBackupLoading(false);
     }
   };
 
@@ -545,6 +584,31 @@ const Maintenance = () => {
             >
               <span className="material-icons-outlined">lock_reset</span>
               {loading ? "Cerrando..." : "Forzar Cierre Global"}
+            </button>
+          </div>
+        </section>
+
+        <section className="reset-section">
+          <h3>Respaldos y Recuperacion</h3>
+          <p className="section-description">
+            Exporta una copia operativa para restauracion probada, auditoria o resguardo externo.
+          </p>
+          <div className="utility-box flex flex-wrap gap-3">
+            <button
+              className="btn-warning"
+              onClick={handleDownloadBackup}
+              disabled={backupLoading}
+            >
+              <span className="material-icons-outlined">download</span>
+              {backupLoading ? "Generando..." : "Descargar Respaldo JSON"}
+            </button>
+            <button
+              className="btn-warning"
+              onClick={handleExportInventory}
+              disabled={backupLoading}
+            >
+              <span className="material-icons-outlined">inventory_2</span>
+              Exportar Inventario CSV
             </button>
           </div>
         </section>

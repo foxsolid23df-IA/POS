@@ -1,42 +1,55 @@
 const { Product } = require('../models/Product');
 const { Sale } = require('../models/Sale');
 const { Op } = require('sequelize');
+const sequelize = require('../db/conexion');
 
 // 1. CREAR UNA NUEVA VENTA
 async function crearVenta(datosVenta) {
     const { items, total } = datosVenta;
     if (!items.length) throw new Error('No hay productos en la venta');
 
-    let errorStock = null;
+    return sequelize.transaction(async (transaction) => {
+        const normalizedItems = [];
 
-    // Verificar stock y reducirlo
-    for (const producto of items) {
-        const productoEnDB = await Product.findByPk(producto.productId);
-        if (!productoEnDB) {
-            errorStock = new Error(`Producto con ID ${producto.productId} no existe`);
-            break;
+        for (const producto of items) {
+            const productoEnDB = await Product.findByPk(producto.productId, { transaction });
+            if (!productoEnDB) {
+                throw new Error(`Producto con ID ${producto.productId} no existe`);
+            }
+
+            const quantity = parseFloat(producto.quantity || 0);
+            const conversionFactor = parseFloat(producto.conversion_factor || producto.stock_multiplier || 1);
+            const baseQty = parseFloat(producto.base_quantity || (quantity * conversionFactor));
+
+            if (!Number.isFinite(baseQty) || baseQty <= 0) {
+                throw new Error(`Cantidad invÃ¡lida para ${productoEnDB.name}`);
+            }
+
+            if (productoEnDB.stock < baseQty) {
+                throw new Error(`No hay suficiente stock de ${productoEnDB.name}. Stock disponible: ${productoEnDB.stock}`);
+            }
+
+            await productoEnDB.update(
+                { stock: productoEnDB.stock - baseQty },
+                { transaction }
+            );
+
+            normalizedItems.push({
+                ...producto,
+                base_quantity: baseQty,
+                conversion_factor: conversionFactor
+            });
         }
 
-        // Usar base_quantity para descontar piezas reales (conversion_factor * quantity)
-        const baseQty = parseFloat(producto.base_quantity || (producto.quantity * (producto.conversion_factor || 1)));
+        const now = new Date().toISOString();
+        const venta = await Sale.create({
+            total,
+            items: JSON.stringify(normalizedItems),
+            createdAt: now
+        }, { transaction });
 
-        if (productoEnDB.stock < baseQty) {
-            errorStock = new Error(`No hay suficiente stock de ${productoEnDB.name}. Stock disponible: ${productoEnDB.stock}`);
-            break;
-        }
-        await productoEnDB.update({ stock: productoEnDB.stock - baseQty });
-    }
-
-    if (errorStock) throw errorStock;
-
-    const now = new Date().toISOString();
-    const venta = await Sale.create({
-        total,
-        items: JSON.stringify(items),
-        createdAt: now
+        return { id: venta.id, total, items: normalizedItems, createdAt: now };
     });
-
-    return { id: venta.id, total, items, createdAt: now };
 }
 
 // 2. OBTENER TODAS LAS VENTAS (más recientes primero) con paginación

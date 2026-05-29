@@ -3,7 +3,7 @@
 -- 1. Create sale_payments table if it doesn't exist
 create table if not exists public.sale_payments (
     id uuid default gen_random_uuid() primary key,
-    sale_id uuid references public.sales(id) on delete cascade,
+    sale_id bigint references public.sales(id) on delete cascade,
     payment_method text not null,
     amount numeric not null,
     amount_received numeric not null,

@@ -1,4 +1,4 @@
--- Add show_billing_section and qr_code_size columns to ticket_settings table
+    -- Add show_billing_section and qr_code_size columns to ticket_settings table
 ALTER TABLE ticket_settings 
 ADD COLUMN IF NOT EXISTS show_billing_section BOOLEAN DEFAULT TRUE,
 ADD COLUMN IF NOT EXISTS qr_code_size TEXT DEFAULT 'medium';

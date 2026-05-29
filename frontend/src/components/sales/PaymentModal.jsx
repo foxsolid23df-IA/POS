@@ -1,6 +1,8 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { usePaymentLogic } from "../../hooks/usePaymentLogic";
 import { formatearDinero } from "../../utils/formatters";
+import { creditService } from "../../services/creditService";
+import { customerService } from "../../services/customerService";
 
 const PaymentModal = ({
   isOpen,
@@ -13,9 +15,25 @@ const PaymentModal = ({
   setSelectedIssuerId,
   issuers = [],
   user,
-  transactionId
+  transactionId,
+  selectedCustomer: propSelectedCustomer,
+  onSelectCustomer
 }) => {
   const [facturar, setFacturar] = useState(false);
+  const [isCredit, setIsCredit] = useState(false);
+  const [creditCustomer, setCreditCustomer] = useState(null);
+  const [localCustomer, setLocalCustomer] = useState(null);
+  const [showCustomerSearch, setShowCustomerSearch] = useState(false);
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [customerResults, setCustomerResults] = useState([]);
+  const [searchingCustomers, setSearchingCustomers] = useState(false);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [quickAddName, setQuickAddName] = useState('');
+  const [quickAddCreditLimit, setQuickAddCreditLimit] = useState('');
+  const [quickAddSaving, setQuickAddSaving] = useState(false);
+  const customerSearchRef = useRef(null);
+
+  const selectedCustomer = propSelectedCustomer || localCustomer;
 
   const totalVenta = useMemo(() => {
     if (!facturar) return total;
@@ -69,8 +87,63 @@ const PaymentModal = ({
   useEffect(() => {
     if (isOpen) {
       resetearPagos();
+      setIsCredit(false);
+      setLocalCustomer(null);
+      setCustomerSearch('');
+      setCustomerResults([]);
+      const cust = propSelectedCustomer;
+      if (cust) {
+        creditService.getCustomerCreditDetail(cust.id).then(d => setCreditCustomer(d)).catch(() => {});
+      } else {
+        setCreditCustomer(null);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, propSelectedCustomer]);
+
+  // Customer search debounce
+  useEffect(() => {
+    if (!customerSearch.trim() || !showCustomerSearch) { setCustomerResults([]); return; }
+    const t = setTimeout(async () => {
+      setSearchingCustomers(true);
+      try {
+        const res = await customerService.search(customerSearch.trim());
+        setCustomerResults(res || []);
+      } catch { setCustomerResults([]); }
+      setSearchingCustomers(false);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [customerSearch, showCustomerSearch]);
+
+  // Cerrar búsqueda al hacer clic fuera
+  useEffect(() => {
+    const h = (e) => {
+      if (customerSearchRef.current && !customerSearchRef.current.contains(e.target)) {
+        setShowCustomerSearch(false);
+      }
+    };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
+
+  useEffect(() => {
+    const cust = selectedCustomer;
+    if (cust) {
+      creditService.getCustomerCreditDetail(cust.id).then(d => setCreditCustomer(d)).catch(() => {});
+    }
+  }, [selectedCustomer?.id]);
+
+  // Sync metodoPago with credit mode
+  useEffect(() => {
+    if (metodoPago === 'credito') {
+      if (selectedCustomer) {
+        setIsCredit(true);
+      } else {
+        setShowCustomerSearch(true);
+      }
+    } else if (metodoPago !== 'credito' && isCredit && !showCustomerSearch) {
+      setIsCredit(false);
+    }
+  }, [metodoPago, selectedCustomer]);
 
   const handleComplete = () => {
     let finalPayments = pagosRealizados;
@@ -83,12 +156,24 @@ const PaymentModal = ({
         finalPayments = result.updatedPayments;
         covered = result.fullyCovered;
       } else {
-        // Si falló agregar el pago (monto inválido), no continuamos
         return;
       }
     }
 
-    // Si después de (posiblemente) agregar el pago, la venta está cubierta, finalizamos
+    // Modo crédito: permitir completar aunque no esté cubierto
+    if (isCredit && creditCustomer) {
+      onComplete({
+        pagos: finalPayments,
+        facturar,
+        issuerId: facturar ? selectedIssuerId : null,
+        isCreditSale: true,
+        customerId: creditCustomer.id,
+        creditBalance: parseFloat(creditCustomer.credit_balance || 0),
+        creditLimit: parseFloat(creditCustomer.credit_limit || 0)
+      });
+      return;
+    }
+
     if (covered) {
       onComplete({
         pagos: finalPayments,
@@ -155,6 +240,7 @@ const PaymentModal = ({
     { id: "tarjeta", icon: "credit_card", label: "Tarjeta", key: "F2" },
     { id: "transferencia", icon: "account_balance", label: "Transferencia", key: "F3" },
     { id: "dolares", icon: "currency_exchange", label: "Dólares", key: "F4", hidden: !tipoCambio },
+    { id: "credito", icon: "credit_score", label: "Crédito", key: "F5" },
   ];
 
   const cambio = saldoPendiente > 0
@@ -198,6 +284,147 @@ const PaymentModal = ({
               );
             })}
           </div>
+
+          {/* Customer Search for Credit */}
+          {showCustomerSearch && (
+            <div className="mb-6 p-4 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-lg" ref={customerSearchRef}>
+              <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-2">
+                <span className="material-symbols-outlined text-emerald-600">person_search</span>
+                Seleccionar Cliente para Crédito
+              </p>
+              <input
+                type="text"
+                autoFocus
+                placeholder="Buscar cliente por nombre, RFC o teléfono..."
+                className="w-full px-4 py-2.5 border border-gray-300 dark:border-slate-600 rounded-lg bg-gray-50 dark:bg-slate-700 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500 mb-2"
+                value={customerSearch}
+                onChange={(e) => setCustomerSearch(e.target.value)}
+              />
+              {searchingCustomers && <p className="text-xs text-gray-400 p-2">Buscando...</p>}
+              {customerResults.length === 0 && customerSearch.trim() && !searchingCustomers && (
+                <p className="text-xs text-gray-400 p-2">Sin resultados</p>
+              )}
+              <div className="max-h-40 overflow-y-auto space-y-1">
+                {customerResults.map(c => (
+                  <button
+                    key={c.id}
+                    className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors flex justify-between items-center"
+                    onClick={() => {
+                      setLocalCustomer(c);
+                      setShowCustomerSearch(false);
+                      setCustomerSearch('');
+                      setCustomerResults([]);
+                      setIsCredit(true);
+                    }}
+                  >
+                    <div>
+                      <span className="font-semibold">{c.name}</span>
+                      {c.rfc && <span className="text-xs text-gray-400 ml-2">{c.rfc}</span>}
+                    </div>
+                    {parseFloat(c.credit_limit || 0) > 0 && (
+                      <span className="text-xs font-mono text-emerald-600">
+                        ${parseFloat(c.credit_limit).toFixed(2)}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-2 mt-2">
+                <button
+                  onClick={() => { setShowCustomerSearch(false); setMetodoPago('efectivo'); }}
+                  className="text-xs text-gray-500 hover:text-gray-700 underline"
+                >
+                  Cancelar
+                </button>
+                <span className="text-xs text-gray-300">|</span>
+                <button
+                  onClick={() => setShowQuickAdd(true)}
+                  className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 underline"
+                >
+                  + Agregar Cliente
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Quick Add Customer */}
+          {showQuickAdd && (
+            <div className="mb-6 p-4 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-lg">
+              <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2">
+                <span className="material-symbols-outlined text-emerald-600">person_add</span>
+                Nuevo Cliente para Crédito
+              </p>
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  autoFocus
+                  placeholder="Nombre del cliente *"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-gray-50 dark:bg-slate-700 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500"
+                  value={quickAddName}
+                  onChange={(e) => setQuickAddName(e.target.value)}
+                />
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="Límite de crédito (opcional)"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-gray-50 dark:bg-slate-700 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
+                  value={quickAddCreditLimit}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/[^0-9.]/g, '');
+                    const parts = raw.split('.');
+                    if (parts.length > 2) return;
+                    if (parts[1] && parts[1].length > 2) return;
+                    setQuickAddCreditLimit(raw);
+                  }}
+                  onFocus={() => setQuickAddCreditLimit(prev => prev ? prev.replace(/[^0-9.]/g, '') : '')}
+                  onBlur={() => {
+                    setQuickAddCreditLimit(prev => {
+                      if (!prev) return prev;
+                      const num = parseFloat(prev.replace(/[^0-9.]/g, ''));
+                      if (isNaN(num)) return prev;
+                      return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    });
+                  }}
+                />
+              </div>
+              <div className="flex gap-2 mt-3">
+                <button
+                  onClick={() => { setShowQuickAdd(false); setQuickAddName(''); setQuickAddCreditLimit(''); }}
+                  className="flex-1 py-2 text-xs text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  disabled={!quickAddName.trim() || quickAddSaving}
+                  onClick={async () => {
+                    if (!quickAddName.trim()) return;
+                    setQuickAddSaving(true);
+                    try {
+                      const newCust = await customerService.create({
+                        name: quickAddName.trim(),
+                        credit_limit: parseFloat(quickAddCreditLimit.replace(/[^0-9.]/g, '')) || 0,
+                        payment_terms: 30,
+                        credit_notes: '',
+                        credit_hold: false
+                      });
+                      setLocalCustomer(newCust);
+                      setShowQuickAdd(false);
+                      setShowCustomerSearch(false);
+                      setQuickAddName('');
+                      setQuickAddCreditLimit('');
+                      setIsCredit(true);
+                    } catch (err) {
+                      console.error('Error creating customer:', err);
+                    }
+                    setQuickAddSaving(false);
+                  }}
+                  className="flex-1 py-2 text-xs font-bold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:bg-emerald-400 transition-colors"
+                >
+                  {quickAddSaving ? 'Guardando...' : 'Guardar y Seleccionar'}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Conditional forms for card/transfer */}
           {(metodoPago === 'tarjeta' || metodoPago === 'transferencia') && (
@@ -254,6 +481,36 @@ const PaymentModal = ({
           )}
 
           {/* Invoice Toggle */}
+          {/* Credit Active Banner */}
+          {isCredit && selectedCustomer && (
+            <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-amber-600">credit_score</span>
+                  <span className="font-bold text-amber-800 dark:text-amber-200 text-sm">Venta a Crédito</span>
+                </div>
+                <button
+                  onClick={() => { setIsCredit(false); setMetodoPago('efectivo'); }}
+                  className="text-xs text-amber-600 underline hover:no-underline"
+                >
+                  Cancelar
+                </button>
+              </div>
+              <div className="flex items-center justify-between text-xs text-amber-700 dark:text-amber-300">
+                <div>
+                  Cliente: <strong>{selectedCustomer.name}</strong>
+                  {creditCustomer && (
+                    <> · Límite: <strong>{formatearDinero(creditCustomer.credit_limit)}</strong>
+                    · Disponible: <strong>{formatearDinero(Math.max(0, parseFloat(creditCustomer.credit_limit || 0) - parseFloat(creditCustomer.credit_balance || 0)))}</strong></>
+                  )}
+                </div>
+              </div>
+              <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                Saldo a financiar: <strong>{formatearDinero(saldoPendiente)}</strong>. Capture el abono inicial si aplica.
+              </p>
+            </div>
+          )}
+
           {user?.tax_enabled !== false && (
             <div className="flex items-center justify-between py-4 px-5 bg-gray-50 rounded-xl border border-gray-200 mb-6">
               <div>
@@ -455,11 +712,11 @@ const PaymentModal = ({
             </button>
             <button
               onClick={handleComplete}
-              disabled={!isSaleFullyCovered}
-              className="flex-[2] py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none active:scale-[0.98]"
+              disabled={!isSaleFullyCovered && !isCredit}
+              className="flex-[2] py-3.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none active:scale-[0.98]"
             >
               <span className="material-symbols-outlined">check_circle</span>
-              Completar Venta
+              {isCredit ? 'Completar Venta a Crédito' : 'Completar Venta'}
             </button>
           </div>
 

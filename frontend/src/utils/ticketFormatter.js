@@ -2,6 +2,10 @@ import { formatearDinero, formatearFechaHora } from "./formatters";
 
 const defaults = {
   business_name: "TICKET DE VENTA",
+  owner_name: "",
+  rfc: "",
+  curp: "",
+  email: "",
   address: "",
   phone: "",
   logo_url: "",
@@ -12,6 +16,14 @@ const defaults = {
   is_bold: false,
   margin: 0,
   show_logo: true,
+  show_business_name: true,
+  show_owner_name: true,
+  show_rfc: true,
+  show_curp: true,
+  show_email: true,
+  show_address: true,
+  show_phone: true,
+  show_footer: true,
   show_billing_section: true,
   qr_code_size: "medium",
 };
@@ -19,6 +31,20 @@ const defaults = {
 const QR_SIZES = { small: 90, medium: 130, large: 170 };
 
 const getSettings = (s) => ({ ...defaults, ...(s || {}) });
+
+const escapeHtml = (value) => String(value ?? "")
+  .replace(/&/g, "&amp;")
+  .replace(/</g, "&lt;")
+  .replace(/>/g, "&gt;")
+  .replace(/"/g, "&quot;")
+  .replace(/'/g, "&#39;");
+
+const safeImageSrc = (value) => {
+  const src = String(value || "").trim();
+  if (!src) return "";
+  if (/^(https?:|data:image\/|blob:)/i.test(src)) return escapeHtml(src);
+  return "";
+};
 
 const calcSubtotalTax = (sale) => {
   const totalVal = parseFloat(sale.total) || 0;
@@ -87,22 +113,47 @@ export const generateTicketHtml = (sale, settings, user, options = {}) => {
 
   // ── HEADER ──
   html += `<div class="tv-header">`;
-  if (s.show_logo && s.logo_url) {
-    html += `<div class="tv-logo-wrap"><img src="${s.logo_url}" class="tv-logo" alt="Logo"></div>`;
+  const logoSrc = safeImageSrc(s.logo_url);
+  if (s.show_logo && logoSrc) {
+    html += `<div class="tv-logo-wrap"><img src="${logoSrc}" class="tv-logo" alt="Logo"></div>`;
   }
-  html += `<div class="tv-business-name">${isCotizacion ? (s.business_name || "COTIZACIÓN") : s.business_name}</div>`;
+  if (s.show_business_name !== false && s.business_name) {
+    html += `<div class="tv-business-name">${escapeHtml(isCotizacion ? (s.business_name || "COTIZACIÓN") : s.business_name)}</div>`;
+  }
   if (isCotizacion && s.business_name) {
     html += `<div class="tv-cotizacion-badge">*** COTIZACIÓN ***</div>`;
   }
-  if (s.address) html += `<div class="tv-info">${s.address}</div>`;
-  if (s.phone) html += `<div class="tv-info">${s.phone}</div>`;
+  if (s.show_owner_name !== false && s.owner_name) {
+    html += `<div class="tv-info tv-owner-name">${escapeHtml(s.owner_name)}</div>`;
+  }
+  if (s.show_rfc !== false && s.rfc) {
+    const hasRfcPrefix = /^[Rr]\.?[Ff]\.?[Cc]\.?\b/.test(s.rfc.trim());
+    const rfcLabel = hasRfcPrefix ? "" : "R.F.C. ";
+    html += `<div class="tv-info tv-rfc">${escapeHtml(rfcLabel + s.rfc)}</div>`;
+  }
+  if (s.show_curp !== false && s.curp) {
+    const hasCurpPrefix = /^[Cc]\.?[Uu]\.?[Rr]\.?[Pp]\.?\b/.test(s.curp.trim());
+    const curpLabel = hasCurpPrefix ? "" : "C.U.R.P. ";
+    html += `<div class="tv-info tv-curp">${escapeHtml(curpLabel + s.curp)}</div>`;
+  }
+  if (s.show_address !== false && s.address) {
+    html += `<div class="tv-info">${escapeHtml(s.address)}</div>`;
+  }
+  if (s.show_phone !== false && s.phone) {
+    const hasPhonePrefix = /^[Tt]el\b/.test(s.phone.trim());
+    const phoneLabel = hasPhonePrefix ? "" : "Tel.";
+    html += `<div class="tv-info">${escapeHtml(phoneLabel + s.phone)}</div>`;
+  }
+  if (s.show_email !== false && s.email) {
+    html += `<div class="tv-info tv-email">${escapeHtml(s.email)}</div>`;
+  }
   html += `</div>`;
 
   // ── META ──
   html += `<div class="tv-meta">`;
-  html += `<div class="tv-meta-row"><span class="tv-meta-lbl">FOLIO:</span><span class="tv-meta-val">${folio}</span></div>`;
-  html += `<div class="tv-meta-row"><span class="tv-meta-lbl">FECHA:</span><span class="tv-meta-val">${formatearFechaHora(isPreSale ? new Date() : (sale?.createdAt || sale?.created_at || new Date()))}</span></div>`;
-  html += `<div class="tv-meta-row"><span class="tv-meta-lbl">CAJERO:</span><span class="tv-meta-val">${userName}</span></div>`;
+  html += `<div class="tv-meta-row"><span class="tv-meta-lbl">FOLIO:</span><span class="tv-meta-val">${escapeHtml(folio)}</span></div>`;
+  html += `<div class="tv-meta-row"><span class="tv-meta-lbl">FECHA:</span><span class="tv-meta-val">${escapeHtml(formatearFechaHora(isPreSale ? new Date() : (sale?.createdAt || sale?.created_at || new Date())))}</span></div>`;
+  html += `<div class="tv-meta-row"><span class="tv-meta-lbl">CAJERO:</span><span class="tv-meta-val">${escapeHtml(userName)}</span></div>`;
   html += `</div>`;
 
   // ── ITEMS TABLE ──
@@ -112,8 +163,8 @@ export const generateTicketHtml = (sale, settings, user, options = {}) => {
   html += `<div class="tv-items">`;
   productosList.forEach((p) => {
     html += `<div class="tv-item">`;
-    html += `<span class="tv-item-cant">${p.quantity}${p.unit_sold ? " " + p.unit_sold : ""}</span>`;
-    html += `<span class="tv-item-desc">${p.name || p.product_name || ""}</span>`;
+    html += `<span class="tv-item-cant">${escapeHtml(`${p.quantity}${p.unit_sold ? " " + p.unit_sold : ""}`)}</span>`;
+    html += `<span class="tv-item-desc">${escapeHtml(p.name || p.product_name || "")}</span>`;
     html += `<span class="tv-item-total">${formatearDinero(parseFloat(p.price) * parseFloat(p.quantity))}</span>`;
     html += `</div>`;
   });
@@ -138,7 +189,7 @@ export const generateTicketHtml = (sale, settings, user, options = {}) => {
         const lbl = payments.length > 1
           ? `PAGO (${(p.method || p.payment_method || "").toUpperCase()})`
           : "PAGO";
-        html += `<div class="tv-summary-row"><span class="tv-summary-lbl">${lbl}</span><span class="tv-summary-val">${formatearDinero(p.received || p.amount)}</span></div>`;
+        html += `<div class="tv-summary-row"><span class="tv-summary-lbl">${escapeHtml(lbl)}</span><span class="tv-summary-val">${formatearDinero(p.received || p.amount)}</span></div>`;
       });
     } else if (!isPreSale) {
       html += `<div class="tv-summary-row"><span class="tv-summary-lbl">PAGO</span><span class="tv-summary-val">${formatearDinero(montoRecibido)}</span></div>`;
@@ -150,7 +201,9 @@ export const generateTicketHtml = (sale, settings, user, options = {}) => {
 
   // ── FOOTER ──
   html += `<div class="tv-divider"></div>`;
-  html += `<div class="tv-footer">${footerMsg}</div>`;
+  if (s.show_footer !== false) {
+    html += `<div class="tv-footer">${escapeHtml(footerMsg)}</div>`;
+  }
 
   // ── BILLING SECTION ──
   const showBilling = !isPreSale && !isCotizacion && sale?.pin_facturacion && s.show_billing_section !== false;
@@ -164,13 +217,13 @@ export const generateTicketHtml = (sale, settings, user, options = {}) => {
     html += `<div class="tv-billing-box">`;
     html += `<div class="tv-billing-title">¿FACTURAR ESTA COMPRA?</div>`;
     html += `<div class="tv-billing-qr-wrap"><img src="https://api.qrserver.com/v1/create-qr-code/?size=${qrPx}x${qrPx}&data=${encodeURIComponent(qrData)}" alt="QR" class="tv-billing-qr"></div>`;
-    html += `<div class="tv-billing-row"><span class="tv-billing-lbl">FOLIO</span><span class="tv-billing-val">${folio}</span></div>`;
-    html += `<div class="tv-billing-row"><span class="tv-billing-lbl">PIN</span><span class="tv-billing-val">${sale.pin_facturacion}</span></div>`;
+    html += `<div class="tv-billing-row"><span class="tv-billing-lbl">FOLIO</span><span class="tv-billing-val">${escapeHtml(folio)}</span></div>`;
+    html += `<div class="tv-billing-row"><span class="tv-billing-lbl">PIN</span><span class="tv-billing-val">${escapeHtml(sale.pin_facturacion)}</span></div>`;
     html += `<div class="tv-billing-hint">Escanea o ingresa al portal</div>`;
-    html += `<div class="tv-billing-url">${displayUrl}</div>`;
+    html += `<div class="tv-billing-url">${escapeHtml(displayUrl)}</div>`;
     html += `</div>`;
     if (sale.ticket_uuid) {
-      html += `<div class="tv-ticket-uuid">ID: ${sale.ticket_uuid}</div>`;
+      html += `<div class="tv-ticket-uuid">ID: ${escapeHtml(sale.ticket_uuid)}</div>`;
     }
   }
 

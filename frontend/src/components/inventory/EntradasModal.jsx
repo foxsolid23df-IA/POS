@@ -9,6 +9,7 @@ import {
 import Swal from "sweetalert2";
 import "./EntradasModal.css";
 import { productService } from "../../services/productService";
+import { purchaseService } from "../../services/purchaseService";
 import { useProducts } from "../../contexts/ProductContext";
 
 const EntradasModal = ({ show, onClose, onSuccess }) => {
@@ -18,6 +19,14 @@ const EntradasModal = ({ show, onClose, onSuccess }) => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [cantidadEntrante, setCantidadEntrante] = useState("");
   const [cantidadMerma, setCantidadMerma] = useState("");
+  const [supplierName, setSupplierName] = useState("");
+  const [invoiceNumber, setInvoiceNumber] = useState("");
+  const [purchaseUnit, setPurchaseUnit] = useState("PZA");
+  const [conversionFactor, setConversionFactor] = useState("1");
+  const [unitCost, setUnitCost] = useState("");
+  const [salePrice, setSalePrice] = useState("");
+  const [marginPercent, setMarginPercent] = useState("");
+  const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Búsqueda local de productos al escribir
@@ -47,6 +56,14 @@ const EntradasModal = ({ show, onClose, onSuccess }) => {
       setSelectedProduct(null);
       setCantidadEntrante("");
       setCantidadMerma("");
+      setSupplierName("");
+      setInvoiceNumber("");
+      setPurchaseUnit("PZA");
+      setConversionFactor("1");
+      setUnitCost("");
+      setSalePrice("");
+      setMarginPercent("");
+      setNotes("");
     }
   }, [show]);
 
@@ -70,8 +87,9 @@ const EntradasModal = ({ show, onClose, onSuccess }) => {
       return;
     }
 
-    const entrante = parseInt(cantidadEntrante) || 0;
-    const merma = parseInt(cantidadMerma) || 0;
+    const entrante = parseFloat(cantidadEntrante) || 0;
+    const merma = parseFloat(cantidadMerma) || 0;
+    const factor = Math.max(parseFloat(conversionFactor) || 1, 1);
 
     if (entrante === 0 && merma === 0) {
       Swal.fire(
@@ -84,16 +102,32 @@ const EntradasModal = ({ show, onClose, onSuccess }) => {
 
     try {
       setIsSubmitting(true);
-      await productService.registrarEntrada(
-        selectedProduct.id,
-        entrante,
-        merma,
-      );
+      if (entrante > 0) {
+        await purchaseService.registerPurchase({
+          supplierName: supplierName || selectedProduct.supplier || "Proveedor no especificado",
+          invoiceNumber,
+          notes,
+          items: [{
+            ...selectedProduct,
+            product_id: selectedProduct.id,
+            quantity: entrante,
+            unit: purchaseUnit,
+            conversion_factor: factor,
+            unit_cost: unitCost,
+            sale_price: salePrice,
+            margin_percent: marginPercent,
+          }],
+        });
+      }
+
+      if (merma > 0) {
+        await productService.registrarEntrada(selectedProduct.id, 0, merma);
+      }
 
       Swal.fire({
         icon: "success",
         title: "Entrada registrada",
-        text: "El inventario se ha actualizado correctamente.",
+        text: "La entrada quedo registrada con inventario, costo y auditoria.",
         timer: 2000,
         showConfirmButton: false,
       });
@@ -118,10 +152,10 @@ const EntradasModal = ({ show, onClose, onSuccess }) => {
     <div className="entradas-modal-overlay">
       <div className="entradas-modal-container">
         <div className="entradas-modal-header">
-          <h2>Registrar Entradas y Merma</h2>
+          <h2>Registrar Compra, Entrada y Merma</h2>
           <p>
-            Busque un producto para registrar la entrada del proveedor o piezas
-            de intercambio.
+            Busque un producto para registrar entrada de proveedor, costo,
+            factura o piezas de intercambio.
           </p>
           <button
             className="entradas-close-btn"
@@ -224,17 +258,18 @@ const EntradasModal = ({ show, onClose, onSuccess }) => {
 
               <div className="entradas-inputs-row">
                 <div className="form-group success-input">
-                  <label>Cantidad que ingresa a la tienda</label>
+                  <label>Cantidad comprada</label>
                   <div className="input-with-hint">
                     <input
                       type="number"
                       min="0"
+                      step="0.01"
                       placeholder="Ej: 10"
                       value={cantidadEntrante}
                       onChange={(e) => setCantidadEntrante(e.target.value)}
                       disabled={isSubmitting}
                     />
-                    <small>Sumará al total de existencia</small>
+                    <small>Se convierte a existencia base segun unidad</small>
                   </div>
                 </div>
 
@@ -244,12 +279,149 @@ const EntradasModal = ({ show, onClose, onSuccess }) => {
                     <input
                       type="number"
                       min="0"
+                      step="0.01"
                       placeholder="Ej: 2"
                       value={cantidadMerma}
                       onChange={(e) => setCantidadMerma(e.target.value)}
                       disabled={isSubmitting}
                     />
                     <small>Piezas devueltas al proveedor o dadas de baja</small>
+                  </div>
+                </div>
+              </div>
+
+              <div className="entradas-inputs-row">
+                <div className="form-group">
+                  <label>Proveedor</label>
+                  <div className="input-with-hint">
+                    <input
+                      type="text"
+                      placeholder="Ej: Aceros del Norte"
+                      value={supplierName}
+                      onChange={(e) => setSupplierName(e.target.value)}
+                      disabled={isSubmitting}
+                    />
+                    <small>Queda en historial de compras</small>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Factura / Remision</label>
+                  <div className="input-with-hint">
+                    <input
+                      type="text"
+                      placeholder="Ej: F-1028"
+                      value={invoiceNumber}
+                      onChange={(e) => setInvoiceNumber(e.target.value)}
+                      disabled={isSubmitting}
+                    />
+                    <small>Opcional</small>
+                  </div>
+                </div>
+              </div>
+
+              <div className="entradas-inputs-row">
+                <div className="form-group">
+                  <label>Unidad de entrada</label>
+                  <div className="input-with-hint">
+                    <select
+                      value={purchaseUnit}
+                      onChange={(e) => setPurchaseUnit(e.target.value)}
+                      disabled={isSubmitting}
+                    >
+                      <option value="PZA">PZA</option>
+                      <option value="CAJA">CAJA</option>
+                      <option value="M">M</option>
+                      <option value="KG">KG</option>
+                      <option value="L">L</option>
+                      <option value="PAQ">PAQ</option>
+                      <option value="TRAMO">TRAMO</option>
+                      <option value="ROLLO">ROLLO</option>
+                      <option value="JGO">JGO</option>
+                    </select>
+                    <small>Ferreteria: caja, metro, kilo, litro, tramo</small>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Equivalencia base</label>
+                  <div className="input-with-hint">
+                    <input
+                      type="number"
+                      min="1"
+                      step="0.01"
+                      placeholder="Ej: 12"
+                      value={conversionFactor}
+                      onChange={(e) => setConversionFactor(e.target.value)}
+                      disabled={isSubmitting}
+                    />
+                    <small>Ej: 1 caja = 12 piezas</small>
+                  </div>
+                </div>
+              </div>
+
+              <div className="entradas-inputs-row">
+                <div className="form-group">
+                  <label>Costo unitario</label>
+                  <div className="input-with-hint">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="Ej: 45.50"
+                      value={unitCost}
+                      onChange={(e) => setUnitCost(e.target.value)}
+                      disabled={isSubmitting}
+                    />
+                    <small>Costo por unidad de entrada</small>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Precio venta sugerido</label>
+                  <div className="input-with-hint">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="Opcional"
+                      value={salePrice}
+                      onChange={(e) => setSalePrice(e.target.value)}
+                      disabled={isSubmitting}
+                    />
+                    <small>Actualiza precio si lo capturas</small>
+                  </div>
+                </div>
+              </div>
+
+              <div className="entradas-inputs-row">
+                <div className="form-group">
+                  <label>Margen %</label>
+                  <div className="input-with-hint">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="Ej: 30"
+                      value={marginPercent}
+                      onChange={(e) => setMarginPercent(e.target.value)}
+                      disabled={isSubmitting}
+                    />
+                    <small>Referencia para analisis de utilidad</small>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Notas</label>
+                  <div className="input-with-hint">
+                    <input
+                      type="text"
+                      placeholder="Lote, ubicacion, observaciones"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      disabled={isSubmitting}
+                    />
+                    <small>Opcional</small>
                   </div>
                 </div>
               </div>

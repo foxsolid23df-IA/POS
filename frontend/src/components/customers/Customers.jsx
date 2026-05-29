@@ -81,16 +81,35 @@ export const Customers = () => {
                 <th>Nombre</th>
                 <th>RFC</th>
                 <th>Teléfono</th>
+                <th>Límite Crédito</th>
+                <th>Saldo</th>
+                <th>Estado</th>
                 <th>Fecha Registro</th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {filteredCustomers.map(customer => (
-                <tr key={customer.id}>
+              {filteredCustomers.map(customer => {
+                const creditLimit = parseFloat(customer.credit_limit || 0);
+                const creditBalance = parseFloat(customer.credit_balance || 0);
+                const pct = creditLimit > 0 ? (creditBalance / creditLimit) * 100 : 0;
+                const isBlocked = customer.credit_hold;
+                let statusClass = 'badge-ok';
+                let statusText = '---';
+                if (creditLimit > 0) {
+                  if (isBlocked) { statusClass = 'badge-blocked'; statusText = 'BLOQUEADO'; }
+                  else if (pct >= 100) { statusClass = 'badge-danger'; statusText = 'VENCIDO'; }
+                  else if (pct >= 75) { statusClass = 'badge-warning'; statusText = 'ALTO'; }
+                  else { statusClass = 'badge-ok'; statusText = 'AL CORRIENTE'; }
+                }
+                return (
+                <tr key={customer.id} className={isBlocked ? 'opacity-60' : ''}>
                   <td className="font-bold">{customer.name}</td>
                   <td>{customer.rfc || '---'}</td>
                   <td>{customer.phone || '---'}</td>
+                  <td className="font-mono font-semibold">{creditLimit > 0 ? `$${creditLimit.toFixed(2)}` : '---'}</td>
+                  <td className={`font-mono font-semibold ${creditBalance > 0 ? 'text-amber-600' : ''}`}>{creditBalance > 0 ? `$${creditBalance.toFixed(2)}` : '$0.00'}</td>
+                  <td><span className={`credit-status-badge ${statusClass}`}>{statusText}</span></td>
                   <td>{new Date(customer.created_at).toLocaleDateString()}</td>
                   <td className="actions">
                     <button
@@ -117,7 +136,8 @@ export const Customers = () => {
                     </button>
                   </td>
                 </tr>
-              ))}
+              );
+            })}
             </tbody>
           </table>
         ) : (

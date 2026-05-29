@@ -23,15 +23,8 @@ if (missingSecrets.length > 0) {
 ║  Luego copia los valores generados a backend/.env         ║
 ╚═══════════════════════════════════════════════════════════╝
 `;
-    // No salimos en modo producción para permitir que la app de Electron inicie
-    // con valores por defecto si no hay un .env presente.
-    console.warn(errorMsg);
-    console.warn('⚠️  ADVERTENCIA: Usando secretos por defecto (INSEGURO)');
-    console.warn('   Ejecuta: node scripts/generate-secrets.js');
-    
-    // Fallback para no romper el flujo
-    process.env.JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_do_not_use_in_production';
-    process.env.MASTER_PIN = process.env.MASTER_PIN || 'dev_pin_do_not_use';
+    console.error(errorMsg);
+    process.exit(1);
 }
 
 const express = require('express');
@@ -171,6 +164,10 @@ app.use('/api/sales', saleRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes); // <--- Nueva ruta
 
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // ── Middleware global de manejo de errores ─────────────────────
 // DEBE ir después de todas las rutas
 const errorHandler = require('./middleware/errorHandler');
@@ -192,7 +189,7 @@ if (!fs.existsSync(dataDir)) {
 
 async function startServer() {
     try {
-        await sequelize.sync({ alter: true }); // Sincroniza modelos con la base de datos (altera tablas si es necesario)
+        await sequelize.sync(process.env.NODE_ENV === 'production' ? {} : { alter: true });
 
         // Crear administrador inicial si no existe
         const adminExists = await User.findOne({ where: { profile: 'admin' } });

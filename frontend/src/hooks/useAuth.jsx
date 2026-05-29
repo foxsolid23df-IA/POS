@@ -390,8 +390,7 @@ export const AuthProvider = ({ children }) => {
       .single();
 
     console.log("[Auth] Verificando PIN Maestro para user:", user.id);
-    console.log("[Auth] PIN Guardado en DB:", data?.master_pin);
-    console.log("[Auth] PIN Ingresado por user:", pin);
+    console.log("[Auth] PIN Maestro encontrado:", Boolean(data?.master_pin));
 
     const storedPin = String(data?.master_pin || "").trim();
     const inputPin = String(pin || "").trim();
@@ -403,11 +402,8 @@ export const AuthProvider = ({ children }) => {
       match: storedPin === inputPin,
     });
 
-    // Permitir el PIN nuevo O el PIN de soporte fallback
-    if (
-      (storedPin !== "" && storedPin === inputPin) ||
-      inputPin === "2026SOP"
-    ) {
+    // Validar exclusivamente contra el PIN maestro configurado para la tienda.
+    if (storedPin !== "" && storedPin === inputPin) {
       console.log("[Auth] Acceso Maestro concedido.");
     } else {
       console.warn(

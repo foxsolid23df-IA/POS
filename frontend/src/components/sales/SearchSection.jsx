@@ -2,12 +2,16 @@ import React from "react";
 
 const SearchSection = ({
   searchContainerRef,
-  campoCodigoRef,
+  campoSkuRef,
+  campoNombreRef,
   scannerInputMode,
   scannerMode,
-  codigoEscaneado,
-  manejarCambioCodigo,
-  manejarEnter,
+  codigoSku,
+  codigoNombre,
+  manejarCambioSku,
+  manejarCambioNombre,
+  manejarEnterSku,
+  manejarEnterNombre,
   isSupervising,
   children
 }) => {
@@ -18,28 +22,41 @@ const SearchSection = ({
       style={{ position: "relative", zIndex: 50 }}
     >
       <div className="search-bar-full-row">
-        <div className="search-input-full">
-          <span className="material-symbols-outlined text-slate-400 dark:text-slate-500 flex-shrink-0">search</span>
-          <input
-            ref={campoCodigoRef}
-            type="text"
-            enterKeyHint="search"
-            inputMode={scannerInputMode}
-            placeholder={
-              scannerMode
-                ? "Escáner activo - escanee un código de barras..."
-                : "Buscar producto o escanea código de barras..."
-            }
-            value={codigoEscaneado}
-            onChange={manejarCambioCodigo}
-            onKeyDown={manejarEnter}
-            disabled={isSupervising}
-            className={`barcode-input-modern ${
-              scannerMode ? "scanner-mode-active" : ""
-            } ${isSupervising ? "opacity-50 cursor-not-allowed" : ""}`}
-            autoFocus
-          />
-          <span className="material-symbols-outlined text-slate-400 dark:text-slate-500 flex-shrink-0 cursor-pointer hover:text-slate-600 dark:hover:text-slate-400" title="Atajos de teclado">keyboard_alt</span>
+        <div className="search-input-full search-input-dual">
+          <div className="search-input-half search-input-sku">
+            <input
+              ref={campoSkuRef}
+              type="text"
+              enterKeyHint="search"
+              inputMode={scannerInputMode}
+              placeholder={scannerMode ? "Escáner activo..." : "Clave / SKU..."}
+              value={codigoSku}
+              onChange={manejarCambioSku}
+              onKeyDown={manejarEnterSku}
+              disabled={isSupervising}
+              className={`barcode-input-modern barcode-input-half ${
+                scannerMode ? "scanner-mode-active" : ""
+              } ${isSupervising ? "opacity-50 cursor-not-allowed" : ""}`}
+              autoFocus
+            />
+          </div>
+          <div className="search-input-divider" />
+          <div className="search-input-half search-input-name">
+            <span className="material-symbols-outlined search-input-icon">description</span>
+            <input
+              ref={campoNombreRef}
+              type="text"
+              enterKeyHint="search"
+              placeholder="Nombre del producto..."
+              value={codigoNombre}
+              onChange={manejarCambioNombre}
+              onKeyDown={manejarEnterNombre}
+              disabled={isSupervising}
+              className={`barcode-input-modern barcode-input-half ${
+                isSupervising ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            />
+          </div>
         </div>
       </div>
 

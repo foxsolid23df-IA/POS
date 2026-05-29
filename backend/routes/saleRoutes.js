@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const saleController = require('../controllers/saleController');
+const { authMiddleware } = require('../middleware/authMiddleware');
 const {
     validateId,
     validatePagination,
@@ -9,6 +10,8 @@ const {
 } = require('../middleware/validation');
 
 // Rutas para ventas - Las rutas más específicas van primero
+router.use(authMiddleware);
+
 router.get('/stats/top-products', saleController.getTopProducts);           // GET /api/sales/stats/top-products
 router.get('/stats/date-range', validateDateRange, saleController.getStatsByDateRange);  // GET /api/sales/stats/date-range
 router.get('/stats', saleController.getSalesStats);                         // GET /api/sales/stats

@@ -70,7 +70,6 @@ export const salesService = {
             p_total: saleData.total,
             p_subtotal: saleData.subtotal || 0,
             p_tax_amount: saleData.tax_amount || 0,
-            p_user_id: userId,
             p_currency: saleData.currency || 'MXN',
             p_exchange_rate: saleData.exchange_rate || null,
             p_amount_usd: saleData.amount_usd || null,
@@ -84,6 +83,57 @@ export const salesService = {
 
         if (rpcError) throw rpcError;
 
+        return sale;
+    },
+
+    // Crear una venta a crédito usando el RPC especializado
+    createCreditSale: async (saleData) => {
+        let userId = saleData.user_id;
+        if (!userId) {
+            const { data: userData } = await supabase.auth.getUser();
+            userId = userData?.user?.id;
+        }
+
+        const terminalId = terminalService.getTerminalId();
+        if (!terminalId) throw new Error("Terminal no configurada.");
+
+        const itemsJson = saleData.items.map(item => ({
+            product_id: isNaN(parseInt(item.product_id ?? item.id)) ? null : parseInt(item.product_id ?? item.id),
+            product_name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            total: item.price * item.quantity,
+            unit_sold: item.unit_sold || 'PZA',
+            conversion_factor: parseInt(item.conversion_factor || item.stock_multiplier || 1),
+            base_quantity: parseFloat(item.base_quantity || (item.quantity * (item.conversion_factor || item.stock_multiplier || 1)))
+        }));
+
+        const paymentsJson = (saleData.payments || []).map(p => ({
+            payment_method: p.method,
+            amount: p.amount,
+            amount_received: p.received || p.amount,
+            change_amount: p.change || 0,
+            currency: p.currency || 'MXN',
+            exchange_rate: p.exchange_rate || null
+        }));
+
+        const { data: sale, error: rpcError } = await supabase.rpc('process_credit_sale', {
+            p_total: saleData.total,
+            p_subtotal: saleData.subtotal || 0,
+            p_tax_amount: saleData.tax_amount || 0,
+            p_currency: saleData.currency || 'MXN',
+            p_payment_method: saleData.payments && saleData.payments.length === 1 ? saleData.payments[0].method : 'credito',
+            p_terminal_id: terminalId,
+            p_items: itemsJson,
+            p_payments: paymentsJson,
+            p_affect_inventory: saleData.affect_inventory !== undefined ? saleData.affect_inventory : true,
+            p_customer_id: saleData.customer_id || null,
+            p_paid_amount: parseFloat(saleData.paid_amount || 0),
+            p_balance: parseFloat(saleData.balance || 0),
+            p_due_date: saleData.due_date || null
+        });
+
+        if (rpcError) throw rpcError;
         return sale;
     },
 
@@ -134,6 +184,7 @@ export const salesService = {
             .from('sales')
             .select(`
                 *,
+                customers (name),
                 sale_items (*),
                 invoices (*)
             `)

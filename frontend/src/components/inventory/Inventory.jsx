@@ -1764,11 +1764,13 @@ const Inventory = () => {
                             >
                               <option value="PZA">PZA (Pieza)</option>
                               <option value="KG">KG (Kilogramo)</option>
-                              <option value="LT">LT (Litro)</option>
-                              <option value="MT">MT (Metro)</option>
+                              <option value="L">L (Litro)</option>
+                              <option value="M">M (Metro)</option>
                               <option value="CAJA">CAJA</option>
                               <option value="PAQ">PAQ (Paquete)</option>
+                              <option value="TRAMO">TRAMO</option>
                               <option value="ROLLO">ROLLO</option>
+                              <option value="JGO">JGO (Juego)</option>
                               <option value="BOLSA">BOLSA</option>
                             </select>
                             <div className="new-product-select-arrow">

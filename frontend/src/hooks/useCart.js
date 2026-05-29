@@ -14,9 +14,12 @@ const hasBoxConfig = (item) => getBoxUnits(item) > 0 && parseFloat(item?.box_pri
 const getConversionInfo = (producto, unidad, customPiezas = null, customPrecio = null) => {
     const isCustom = producto.is_custom_pack || customPiezas !== null || customPrecio !== null;
     const configurado = hasBoxConfig(producto);
+    const requestedUnit = String(unidad || 'PZA').toUpperCase();
     
     // Determinar la unidad final
-    const unitSold = (isCustom || configurado || unidad === 'CAJA') && unidad !== 'PZA' ? 'CAJA' : 'PZA';
+    const unitSold = requestedUnit === 'CAJA' && (isCustom || configurado || unidad === 'CAJA')
+        ? 'CAJA'
+        : requestedUnit;
     
     // Determinar piezas por unidad
     let piezas = 1;
@@ -211,6 +214,17 @@ export const useCart = (mostrarError, allowNegativeStock = false) => {
         setActiveCartItemId(null)
     }
 
+    // 6.3 CAMBIAR PRECIO DE UN ITEM (override)
+    const cambiarPrecio = (idProducto, nuevoPrecio) => {
+        setCarrito(carritoAnterior =>
+            carritoAnterior.map(item =>
+                item.id === idProducto
+                    ? { ...item, price: Math.max(0, parseFloat(nuevoPrecio) || 0), price_overridden: true }
+                    : item
+            )
+        )
+    }
+
     // 6.5 APLICAR DESCUENTO A UN ITEM
     const applyDiscount = (idProducto, amount) => {
         setCarrito(carritoAnterior =>
@@ -344,6 +358,7 @@ export const useCart = (mostrarError, allowNegativeStock = false) => {
         subtotal,
         itemDiscounts,
         globalDiscount,
+        cambiarPrecio,
         applyDiscount,
         applyGlobalDiscount,
         totalProductos,    // Cantidad total de productos

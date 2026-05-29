@@ -175,7 +175,7 @@ function iniciarBackend() {
 
         // Esperar a que el servidor esté listo
         setTimeout(() => {
-            esperarServidor(`http://127.0.0.1:${backendPort}/api/products`)
+            esperarServidor(`http://127.0.0.1:${backendPort}/api/health`)
                 .then(() => {
                     resolved = true;
                     resolve();

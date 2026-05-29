@@ -12,6 +12,10 @@ export const TicketConfig = () => {
     const { user } = useAuth();
   const [settings, setSettings] = useState({
     business_name: "",
+    owner_name: "",
+    rfc: "",
+    curp: "",
+    email: "",
     address: "",
     phone: "",
     logo_url: "",
@@ -21,6 +25,14 @@ export const TicketConfig = () => {
     margin: 0,
     font_family: "Sistema",
     is_bold: false,
+    show_business_name: true,
+    show_owner_name: true,
+    show_rfc: true,
+    show_curp: true,
+    show_email: true,
+    show_address: true,
+    show_phone: true,
+    show_footer: true,
     cc_show_initial_fund: true,
     cc_show_card_sales: true,
     cc_show_transfer_sales: true,
@@ -149,15 +161,45 @@ export const TicketConfig = () => {
                 <body>
                     <div class="header">
                         ${
-                          settings.logo_url
+                          settings.show_logo && settings.logo_url
                             ? `<img src="${settings.logo_url}" class="logo" />`
                             : ""
                         }
-                        <div class="name">${
-                          settings.business_name || "Nombre del Negocio"
-                        }</div>
-                        <div>${settings.address || "Dirección del Local"}</div>
-                        <div>${settings.phone || "Teléfono"}</div>
+                        ${
+                          settings.show_business_name !== false && settings.business_name
+                            ? `<div class="name">${settings.business_name}</div>`
+                            : ""
+                        }
+                        ${
+                          settings.show_owner_name !== false && settings.owner_name
+                            ? `<div>${settings.owner_name}</div>`
+                            : ""
+                        }
+                        ${
+                          settings.show_rfc !== false && settings.rfc
+                            ? `<div>${/^[Rr]\.?[Ff]\.?[Cc]\.?\b/.test(settings.rfc.trim()) ? "" : "R.F.C. "}${settings.rfc}</div>`
+                            : ""
+                        }
+                        ${
+                          settings.show_curp !== false && settings.curp
+                            ? `<div>${/^[Cc]\.?[Uu]\.?[Rr]\.?[Pp]\.?\b/.test(settings.curp.trim()) ? "" : "C.U.R.P. "}${settings.curp}</div>`
+                            : ""
+                        }
+                        ${
+                          settings.show_address !== false && settings.address
+                            ? `<div style="white-space: pre-line;">${settings.address}</div>`
+                            : ""
+                        }
+                        ${
+                          settings.show_phone !== false && settings.phone
+                            ? `<div>${/^[Tt]el\b/.test(settings.phone.trim()) ? "" : "Tel."}${settings.phone}</div>`
+                            : ""
+                        }
+                        ${
+                          settings.show_email !== false && settings.email
+                            ? `<div>${settings.email}</div>`
+                            : ""
+                        }
                     </div>
                     <div class="content">
                         <div>Producto de Prueba x 1 ... $10.00</div>
@@ -202,43 +244,215 @@ export const TicketConfig = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="ticket-config-form mt-8">
+          {/* PANEL DE ENCABEZADO DESGLOSADO */}
+          <div className="printer-settings-box mb-8 p-6 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2 pb-2 border-b border-slate-200 dark:border-slate-700">
+                Datos del Encabezado del Ticket
+              </h3>
+              <p className="text-xs text-slate-500 mb-6">
+                Desglosa y personaliza la información de tu negocio en la parte superior del ticket. Activa o desactiva la visibilidad de cada dato de forma independiente.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* Nombre Comercial / Negocio */}
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between gap-3">
+                  <div className="form-group mb-0">
+                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Nombre Comercial / Negocio</label>
+                    <input
+                      type="text"
+                      name="business_name"
+                      value={settings.business_name || ""}
+                      onChange={handleChange}
+                      placeholder="Ej: DISTRIBUIDORA DE ADHESIVOS 'ROYAL TAPE'"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm dark:text-white"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700/50 pt-2">
+                    <span className="text-xs font-semibold text-slate-500">Mostrar en ticket</span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="show_business_name"
+                        checked={settings.show_business_name !== false}
+                        onChange={handleChange}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500"></div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Propietario / Razón Social Fiscal */}
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between gap-3">
+                  <div className="form-group mb-0">
+                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Propietario / Razón Social Fiscal</label>
+                    <input
+                      type="text"
+                      name="owner_name"
+                      value={settings.owner_name || ""}
+                      onChange={handleChange}
+                      placeholder="Ej: VICTOR GERARDO MIRANDA VEGA"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm dark:text-white"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700/50 pt-2">
+                    <span className="text-xs font-semibold text-slate-500">Mostrar en ticket</span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="show_owner_name"
+                        checked={settings.show_owner_name !== false}
+                        onChange={handleChange}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500"></div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* R.F.C. */}
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between gap-3">
+                  <div className="form-group mb-0">
+                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400">R.F.C.</label>
+                    <input
+                      type="text"
+                      name="rfc"
+                      value={settings.rfc || ""}
+                      onChange={handleChange}
+                      placeholder="Ej: MIVV570323EX5"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm dark:text-white"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700/50 pt-2">
+                    <span className="text-xs font-semibold text-slate-500">Mostrar en ticket</span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="show_rfc"
+                        checked={settings.show_rfc !== false}
+                        onChange={handleChange}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500"></div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* C.U.R.P. */}
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between gap-3">
+                  <div className="form-group mb-0">
+                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400">C.U.R.P.</label>
+                    <input
+                      type="text"
+                      name="curp"
+                      value={settings.curp || ""}
+                      onChange={handleChange}
+                      placeholder="Ej: MIVV570323HDFRGC08"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm dark:text-white"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700/50 pt-2">
+                    <span className="text-xs font-semibold text-slate-500">Mostrar en ticket</span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="show_curp"
+                        checked={settings.show_curp !== false}
+                        onChange={handleChange}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500"></div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Teléfono / Contacto */}
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between gap-3">
+                  <div className="form-group mb-0">
+                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Teléfono de Contacto</label>
+                    <input
+                      type="text"
+                      name="phone"
+                      value={settings.phone || ""}
+                      onChange={handleChange}
+                      placeholder="Ej: 10549550-10549551"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm dark:text-white"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700/50 pt-2">
+                    <span className="text-xs font-semibold text-slate-500">Mostrar en ticket</span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="show_phone"
+                        checked={settings.show_phone !== false}
+                        onChange={handleChange}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500"></div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Correo Electrónico */}
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between gap-3">
+                  <div className="form-group mb-0">
+                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Correo Electrónico</label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={settings.email || ""}
+                      onChange={handleChange}
+                      placeholder="Ej: royaltape@hotmail.com"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm dark:text-white"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700/50 pt-2">
+                    <span className="text-xs font-semibold text-slate-500">Mostrar en ticket</span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="show_email"
+                        checked={settings.show_email !== false}
+                        onChange={handleChange}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500"></div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Dirección */}
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm col-span-1 md:col-span-2 flex flex-col justify-between gap-3">
+                  <div className="form-group mb-0">
+                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Dirección Completa / Horarios</label>
+                    <textarea
+                      name="address"
+                      value={settings.address || ""}
+                      onChange={handleChange}
+                      placeholder="Ej: Roldan No. 100 Loc B, Col. Centro, Deleg. Cuauhtémoc C.P. 06010 México D.F."
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm dark:text-white"
+                      rows="3"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700/50 pt-2">
+                    <span className="text-xs font-semibold text-slate-500">Mostrar en ticket</span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="show_address"
+                        checked={settings.show_address !== false}
+                        onChange={handleChange}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500"></div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
           <div className="form-grid">
-            <div className="form-group">
-              <label>Nombre del Negocio</label>
-              <input
-                type="text"
-                name="business_name"
-                value={settings.business_name}
-                onChange={handleChange}
-                placeholder="Ej: El Cañotal Express"
-                className="dark:bg-slate-800 dark:text-white"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Dirección</label>
-              <textarea
-                name="address"
-                value={settings.address}
-                onChange={handleChange}
-                placeholder="Horarios, ubicación, etc."
-                className="dark:bg-slate-800 dark:text-white"
-                rows="3"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Teléfono / Contacto</label>
-              <input
-                type="text"
-                name="phone"
-                value={settings.phone}
-                onChange={handleChange}
-                placeholder="+52 998..."
-                className="dark:bg-slate-800 dark:text-white"
-              />
-            </div>
-
             <div className="form-group">
               <label>Logo del Negocio</label>
               <div className="file-input-wrapper">

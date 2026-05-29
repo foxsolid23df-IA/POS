@@ -158,6 +158,20 @@
 }
 
 /* Dark mode support */
+.credit-status-badge {
+  display: inline-flex;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.credit-status-badge.badge-ok { background: #dcfce7; color: #16a34a; }
+.credit-status-badge.badge-warning { background: #fed7aa; color: #ea580c; }
+.credit-status-badge.badge-danger { background: #fecaca; color: #dc2626; }
+.credit-status-badge.badge-blocked { background: #e2e8f0; color: #64748b; }
+
 @media (prefers-color-scheme: dark) {
   .customers-container {
     background: #0f172a;

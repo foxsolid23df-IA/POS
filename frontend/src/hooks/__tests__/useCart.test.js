@@ -120,6 +120,19 @@ describe('useCart Hook', () => {
     expect(result.current.total).toBe(0);
   });
 
+  it('debe conservar unidades reales de ferreteria como metro o kilo', () => {
+    const { result } = renderHook(() => useCart(mockMostrarError, false));
+    const cable = { id: 'cable-1', name: 'Cable THW', price: 12.5, stock: 100, unit: 'M' };
+
+    act(() => {
+      result.current.agregarProducto(cable, 'M');
+    });
+
+    expect(result.current.carrito[0].unit_sold).toBe('M');
+    expect(result.current.carrito[0].conversion_factor).toBe(1);
+    expect(result.current.total).toBe(12.5);
+  });
+
   it('debe convertir un item a paquete personalizado usando convertirAPaquete', () => {
     const { result } = renderHook(() => useCart(mockMostrarError));
     

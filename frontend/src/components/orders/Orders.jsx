@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { salesService } from "../../services/salesService";
+import { returnService } from "../../services/returnService";
 import { printerService } from "../../services/printerService";
 import { useAuth } from "../../hooks/useAuth";
 import { useSettings } from "../../contexts/SettingsContext";
@@ -39,12 +40,21 @@ const DATE_PRESETS = {
   }},
 };
 
+const CREDIT_STATUS_LABELS = {
+  pendiente: { label: 'Pendiente', class: 'pending' },
+  parcial:   { label: 'Parcial',   class: 'partial' },
+  pagado:    { label: 'Pagado',    class: 'paid' },
+  vencido:   { label: 'Vencido',   class: 'overdue' },
+};
+
 const getPaymentMethod = (sale) => {
+  if (sale.sale_type === 'credit') return "credito";
   const method = (sale.metodoPago || sale.payment_method || "").toLowerCase();
   if (method === "múltiple" || method === "multiple") return "múltiple";
   if (method === "efectivo" || method === "cash") return "efectivo";
-  if (method === "tarjeta" || method === "card" || method === "credito" || method === "debito") return "tarjeta";
+  if (method === "tarjeta" || method === "card" || method === "debito") return "tarjeta";
   if (method === "transferencia" || method === "transfer") return "transferencia";
+  if (method === "credito") return "credito";
   return "otro";
 };
 
@@ -53,6 +63,7 @@ const getPaymentChipClass = (method) => {
     case "efectivo": return "cash";
     case "tarjeta": return "card";
     case "transferencia": return "transfer";
+    case "credito": return "credit";
     default: return "otro";
   }
 };
@@ -72,6 +83,7 @@ export const Orders = () => {
   const [activePaymentFilter, setActivePaymentFilter] = useState(null);
 
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [returningOrderId, setReturningOrderId] = useState(null);
   const [page, setPage] = useState(0);
 
   const filteredOrders = useMemo(() => {
@@ -169,6 +181,8 @@ export const Orders = () => {
     const totalVentas = filteredOrders.length;
     let totalEfectivo = 0;
     let totalTarjetaTransferencia = 0;
+    let totalCredito = 0;
+    let saldoPendiente = 0;
 
     filteredOrders.forEach((o) => {
       const amount = parseFloat(o.total) || 0;
@@ -177,10 +191,13 @@ export const Orders = () => {
         totalEfectivo += amount;
       } else if (method === "tarjeta" || method === "transferencia") {
         totalTarjetaTransferencia += amount;
+      } else if (method === "credito") {
+        totalCredito += amount;
+        saldoPendiente += parseFloat(o.balance) || 0;
       }
     });
 
-    return { totalVentas, totalEfectivo, totalTarjetaTransferencia };
+    return { totalVentas, totalEfectivo, totalTarjetaTransferencia, totalCredito, saldoPendiente };
   }, [filteredOrders]);
 
   const handleReprint = useCallback(async (order) => {
@@ -192,6 +209,50 @@ export const Orders = () => {
       console.error("[Orders] Error al reimprimir ticket:", err);
     }
   }, [ticketSettings, user]);
+
+  const handleCancelSale = useCallback(async (order) => {
+    if (!order?.id || returningOrderId) return;
+
+    if (order.sale_status === "cancelled" || order.sale_status === "returned") {
+      window.alert("Esta venta ya fue cancelada o devuelta.");
+      return;
+    }
+
+    const reason = window.prompt("Motivo de cancelacion/devolucion:");
+    if (!reason?.trim()) return;
+
+    const restock = window.confirm("Regresar productos al inventario?");
+    const refundInput = window.prompt(
+      "Monto a devolver/registrar en caja (deja vacio para usar el total pagado):",
+      String(order.paid_amount || order.total || "")
+    );
+
+    try {
+      setReturningOrderId(order.id);
+      await returnService.cancelSaleWithRestock({
+        saleId: order.id,
+        reason,
+        refundAmount: refundInput === null || refundInput === "" ? null : refundInput,
+        restock,
+      });
+
+      const updatedOrder = {
+        ...order,
+        sale_status: "cancelled",
+        cancellation_reason: reason,
+        refunded_amount: refundInput === null || refundInput === "" ? (order.paid_amount || order.total || 0) : parseFloat(refundInput),
+      };
+
+      setOrders((prev) => prev.map((item) => item.id === order.id ? updatedOrder : item));
+      setSelectedOrder(updatedOrder);
+      window.alert("Venta cancelada/devolucion registrada correctamente.");
+    } catch (err) {
+      console.error("[Orders] Error al cancelar/devolver venta:", err);
+      window.alert(err.message || "No se pudo cancelar la venta.");
+    } finally {
+      setReturningOrderId(null);
+    }
+  }, [returningOrderId]);
 
   const formatFolio = (id) => `#${id}`;
 
@@ -232,6 +293,7 @@ export const Orders = () => {
     const method = getPaymentMethod(order);
     const methodChipClass = getPaymentChipClass(method);
     const totalVal = parseFloat(order.total) || 0;
+    const isCancelled = order.sale_status === "cancelled" || order.sale_status === "returned";
 
     const subtotalStored = parseFloat(order.subtotal);
     const taxAmountStored = parseFloat(order.tax_amount);
@@ -254,6 +316,11 @@ export const Orders = () => {
             <div className="order-modal-title-group">
               <span className="order-modal-eyebrow">Detalle de Orden</span>
               <h3 className="order-modal-title">Orden {formatFolio(order.id)}</h3>
+              {isCancelled && (
+                <span className="credit-status-badge overdue" style={{ width: "fit-content", marginTop: "0.35rem" }}>
+                  Cancelada
+                </span>
+              )}
             </div>
             <button className="order-modal-close" onClick={() => setSelectedOrder(null)}>
               <span className="material-icons-outlined text-[18px]">close</span>
@@ -261,26 +328,43 @@ export const Orders = () => {
           </div>
 
           <div className="order-modal-body">
-            <div className="modal-summary-grid">
-              <div className="modal-summary-card accent">
-                <span className="modal-summary-label">Total</span>
-                <span className="modal-summary-value">{formatearDinero(totalVal)}</span>
+              <div className="modal-summary-grid">
+                <div className="modal-summary-card accent">
+                  <span className="modal-summary-label">Total</span>
+                  <span className="modal-summary-value">{formatearDinero(totalVal)}</span>
+                </div>
+                <div className="modal-summary-card">
+                  <span className="modal-summary-label">Método de Pago</span>
+                  <span className={`payment-badge ${methodChipClass}`} style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                    {method === "múltiple" ? "Múltiple" : method === "credito" ? "Crédito" : method.charAt(0).toUpperCase() + method.slice(1)}
+                  </span>
+                  {order.sale_type === 'credit' && order.credit_status && (
+                    <span className={`credit-status-badge ${CREDIT_STATUS_LABELS[order.credit_status]?.class || ''}`} style={{ marginTop: '0.35rem', fontSize: '0.65rem' }}>
+                      {CREDIT_STATUS_LABELS[order.credit_status]?.label || order.credit_status}
+                    </span>
+                  )}
+                </div>
+                <div className="modal-summary-card">
+                  <span className="modal-summary-label">Subtotal</span>
+                  <span className="modal-summary-value">{formatearDinero(displaySubtotal)}</span>
+                </div>
+                <div className="modal-summary-card">
+                  <span className="modal-summary-label">{displayTax > 0 ? `IVA (${taxRate || 16}%)` : "Impuestos"}</span>
+                  <span className="modal-summary-value">{formatearDinero(displayTax)}</span>
+                </div>
+                {order.sale_type === 'credit' && (
+                  <>
+                    <div className="modal-summary-card">
+                      <span className="modal-summary-label">Abonado</span>
+                      <span className="modal-summary-value">{formatearDinero(order.paid_amount || 0)}</span>
+                    </div>
+                    <div className="modal-summary-card accent-orange">
+                      <span className="modal-summary-label">Saldo Pendiente</span>
+                      <span className="modal-summary-value">{formatearDinero(order.balance || 0)}</span>
+                    </div>
+                  </>
+                )}
               </div>
-              <div className="modal-summary-card">
-                <span className="modal-summary-label">Método de Pago</span>
-                <span className={`payment-badge ${methodChipClass}`} style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
-                  {method === "múltiple" ? "Múltiple" : method.charAt(0).toUpperCase() + method.slice(1)}
-                </span>
-              </div>
-              <div className="modal-summary-card">
-                <span className="modal-summary-label">Subtotal</span>
-                <span className="modal-summary-value">{formatearDinero(displaySubtotal)}</span>
-              </div>
-              <div className="modal-summary-card">
-                <span className="modal-summary-label">{displayTax > 0 ? `IVA (${taxRate || 16}%)` : "Impuestos"}</span>
-                <span className="modal-summary-value">{formatearDinero(displayTax)}</span>
-              </div>
-            </div>
 
             <div className="modal-folio-bar">
               <div className="folio-info-group">
@@ -298,8 +382,25 @@ export const Orders = () => {
                     <span className="folio-item-value pin">{order.pin_facturacion}</span>
                   </div>
                 )}
+                {order.sale_type === 'credit' && (
+                  <div className="folio-item">
+                    <span className="folio-item-label">Cliente</span>
+                    <span className="folio-item-value">{order.customers?.name || order.customer_id || '—'}</span>
+                  </div>
+                )}
               </div>
             </div>
+
+            {isCancelled && order.cancellation_reason && (
+              <div className="modal-folio-bar">
+                <div className="folio-info-group">
+                  <div className="folio-item">
+                    <span className="folio-item-label">Motivo</span>
+                    <span className="folio-item-value">{order.cancellation_reason}</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="modal-products-header">
               <span className="modal-products-title">Productos ({items.length})</span>
@@ -347,6 +448,16 @@ export const Orders = () => {
               <span className="material-icons-outlined">print</span>
               Reimprimir Ticket
             </button>
+            {!isCancelled && (
+              <button
+                className="modal-btn secondary"
+                onClick={() => handleCancelSale(order)}
+                disabled={returningOrderId === order.id}
+              >
+                <span className="material-icons-outlined">assignment_return</span>
+                {returningOrderId === order.id ? "Registrando..." : "Cancelar / Devolver"}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -393,6 +504,13 @@ export const Orders = () => {
             <div className="metric-card accent-violet">
               <span className="metric-card-label">Tarjeta / Transfer</span>
               <span className="metric-card-value">{formatearDinero(metrics.totalTarjetaTransferencia)}</span>
+            </div>
+            <div className="metric-card accent-credit">
+              <span className="metric-card-label">Crédito</span>
+              <span className="metric-card-value">{formatearDinero(metrics.totalCredito)}</span>
+              {metrics.saldoPendiente > 0 && (
+                <span className="metric-card-sub">Saldo: {formatearDinero(metrics.saldoPendiente)}</span>
+              )}
             </div>
           </div>
         </div>
@@ -451,6 +569,12 @@ export const Orders = () => {
               >
                 Transferencia
               </button>
+              <button
+                className={`payment-chip credit ${activePaymentFilter === "credito" ? "active" : ""}`}
+                onClick={() => { setActivePaymentFilter(activePaymentFilter === "credito" ? null : "credito"); setPage(0); }}
+              >
+                Crédito
+              </button>
             </div>
 
             <div className="date-range-group">
@@ -494,6 +618,7 @@ export const Orders = () => {
                 <span>Productos</span>
                 <span>Pago</span>
                 <span>Total</span>
+                <span className="credit-col-head">Crédito</span>
               </div>
 
               <div className="orders-list">
@@ -534,10 +659,21 @@ export const Orders = () => {
                       </div>
 
                       <span className={`payment-badge ${getPaymentChipClass(method)}`}>
-                        {method === "múltiple" ? "Múltiple" : method}
+                        {method === "múltiple" ? "Múltiple" : method === "credito" ? "Crédito" : method}
                       </span>
 
                       <span className="order-total">{formatearDinero(totalVal)}</span>
+
+                      {order.sale_type === 'credit' && order.credit_status ? (
+                        <span className={`credit-status-badge ${CREDIT_STATUS_LABELS[order.credit_status]?.class || ''}`}>
+                          {CREDIT_STATUS_LABELS[order.credit_status]?.label || order.credit_status}
+                          {parseFloat(order.balance) > 0 && (
+                            <span className="credit-balance-sub">{formatearDinero(order.balance)}</span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="credit-col-empty">—</span>
+                      )}
                     </div>
                   );
                 })}

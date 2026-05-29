@@ -4,19 +4,24 @@ const ProductAddModal = ({ product, onClose, onAdd, formatearDinero, hasBoxConfi
   const [pzaQty, setPzaQty] = useState(1);
   const [cajaQty, setCajaQty] = useState(0);
   const [focusSection, setFocusSection] = useState('pza');
+  const [pzaPrice, setPzaPrice] = useState(() => parseFloat(product.price || 0));
+  const [cajaPrice, setCajaPrice] = useState(() => boxPrice ? parseFloat(boxPrice) : 0);
   
   const pzaInputRef = useRef(null);
   const cajaInputRef = useRef(null);
   const addBtnRef = useRef(null);
 
-  const pPrice = parseFloat(product.price || 0);
-  const cPrice = boxPrice ? parseFloat(boxPrice) : 0;
+  const defaultPPrice = parseFloat(product.price || 0);
+  const defaultCPrice = boxPrice ? parseFloat(boxPrice) : 0;
   
   const pQtyNum = parseFloat(pzaQty) || 0;
   const cQtyNum = parseFloat(cajaQty) || 0;
   
-  const pzaSubtotal = pQtyNum * pPrice;
-  const cajaSubtotal = cQtyNum * cPrice;
+  const pzaPriceOverridden = pzaPrice !== defaultPPrice;
+  const cajaPriceOverridden = cajaPrice !== defaultCPrice;
+  
+  const pzaSubtotal = pQtyNum * pzaPrice;
+  const cajaSubtotal = cQtyNum * cajaPrice;
   const totalAmount = pzaSubtotal + cajaSubtotal;
   
   const stock = parseFloat(product.stock || 0);
@@ -99,7 +104,7 @@ const ProductAddModal = ({ product, onClose, onAdd, formatearDinero, hasBoxConfi
 
       if (pQtyNum > 0 || cQtyNum > 0) {
         e.preventDefault();
-        onAdd(pQtyNum, cQtyNum);
+        onAdd(pQtyNum, cQtyNum, pzaPrice, cajaPrice);
       }
     }
   };
@@ -140,7 +145,32 @@ const ProductAddModal = ({ product, onClose, onAdd, formatearDinero, hasBoxConfi
           >
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Piezas</span>
-              <span className="text-xs text-gray-400">{formatearDinero(pPrice)} c/u</span>
+              <div className="flex items-center gap-2">
+                <div className={`flex items-center bg-white dark:bg-slate-900 border rounded-lg transition-all shadow-sm ${
+                  pzaPriceOverridden
+                    ? 'border-orange-400 focus-within:ring-2 focus-within:ring-orange-500/30 focus-within:border-orange-500'
+                    : 'border-gray-300 dark:border-slate-600 focus-within:ring-2 focus-within:ring-blue-500/30 focus-within:border-blue-500'
+                }`}>
+                  <span className={`pl-2.5 text-sm font-bold ${pzaPriceOverridden ? 'text-orange-500' : 'text-gray-400'}`}>$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    className={`w-20 py-1.5 pr-2.5 text-right text-sm font-bold outline-none border-none focus:ring-0 bg-transparent ${
+                      pzaPriceOverridden
+                        ? 'text-orange-600 dark:text-orange-400'
+                        : 'text-gray-700 dark:text-gray-200'
+                    }`}
+                    value={pzaPrice}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val) && val >= 0) setPzaPrice(val);
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">c/u</span>
+              </div>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -188,7 +218,32 @@ const ProductAddModal = ({ product, onClose, onAdd, formatearDinero, hasBoxConfi
                   <span className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Cajas</span>
                   <p className="text-xs text-gray-400 mt-0.5">1 caja = {bUnits} piezas</p>
                 </div>
-                <span className="text-xs text-gray-400">{formatearDinero(cPrice)} / caja</span>
+                <div className="flex items-center gap-2">
+                  <div className={`flex items-center bg-white dark:bg-slate-900 border rounded-lg transition-all shadow-sm ${
+                    cajaPriceOverridden
+                      ? 'border-orange-400 focus-within:ring-2 focus-within:ring-orange-500/30 focus-within:border-orange-500'
+                      : 'border-gray-300 dark:border-slate-600 focus-within:ring-2 focus-within:ring-emerald-500/30 focus-within:border-emerald-500'
+                  }`}>
+                    <span className={`pl-2.5 text-sm font-bold ${cajaPriceOverridden ? 'text-orange-500' : 'text-gray-400'}`}>$</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      className={`w-20 py-1.5 pr-2.5 text-right text-sm font-bold outline-none border-none focus:ring-0 bg-transparent ${
+                        cajaPriceOverridden
+                          ? 'text-orange-600 dark:text-orange-400'
+                          : 'text-gray-700 dark:text-gray-200'
+                      }`}
+                      value={cajaPrice}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        if (!isNaN(val) && val >= 0) setCajaPrice(val);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">/ caja</span>
+                </div>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -250,7 +305,7 @@ const ProductAddModal = ({ product, onClose, onAdd, formatearDinero, hasBoxConfi
           <button
             ref={addBtnRef}
             type="button"
-            onClick={() => onAdd(parseFloat(pzaQty) || 0, parseFloat(cajaQty) || 0)}
+            onClick={() => onAdd(parseFloat(pzaQty) || 0, parseFloat(cajaQty) || 0, pzaPrice, cajaPrice)}
             disabled={(parseFloat(pzaQty) || 0) === 0 && (parseFloat(cajaQty) || 0) === 0}
             onFocus={() => setFocusSection('actions')}
             className={`flex-[2] py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-500/25 disabled:shadow-none ${
