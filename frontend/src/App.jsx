@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Routing } from "./router/routing";
 import { Capacitor } from "@capacitor/core";
+import InstallPwaPrompt from "./components/common/InstallPwaPrompt";
 import "./App.css";
 import "./tablet-responsive.css";
 import "./android-core.css"; // Core Android UI/UX adaptations
@@ -18,6 +19,7 @@ function App() {
   return (
     <div className="layout">
       <Routing />
+      <InstallPwaPrompt />
     </div>
   );
 }
