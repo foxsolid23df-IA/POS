@@ -1,5 +1,6 @@
 import { supabase } from '../supabase';
 import { cashSessionService } from './cashSessionService';
+import { terminalService } from './terminalService';
 
 export const cashMovementService = {
     /**
@@ -10,7 +11,7 @@ export const cashMovementService = {
      * @param {string} staffName - nombre del empleado que hace el movimiento
      * @returns {Promise<Object>} el movimiento registrado
      */
-    async registerMovement(type, amount, concept, staffName) {
+    async registerMovement(type, amount, concept, staffName, cashboxMode = 'terminal') {
         if (type !== 'entrada' && type !== 'salida') {
             throw new Error('Tipo de movimiento inválido. Debe ser "entrada" o "salida".');
         }
@@ -20,7 +21,7 @@ export const cashMovementService = {
             throw new Error('El monto debe ser numérico y mayor a 0.');
         }
 
-        const session = await cashSessionService.getActiveSession();
+        const session = await cashSessionService.getActiveSession(cashboxMode);
         if (!session) {
             throw new Error('No hay una sesión de caja activa en esta terminal para registrar el movimiento.');
         }
@@ -29,6 +30,7 @@ export const cashMovementService = {
             .from('cash_movements')
             .insert([{
                 session_id: session.id,
+                terminal_id: terminalService.getTerminalId(),
                 movement_type: type,
                 amount: numericAmount,
                 concept: concept,

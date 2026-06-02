@@ -7,6 +7,7 @@ import "./CustomerDisplay.css";
 const CustomerDisplay = () => {
   const [searchParams] = useSearchParams();
   const userId = searchParams.get("u");
+  const terminalId = searchParams.get("t");
   const sessionId = searchParams.get("s"); // Obtener ID de sesión
   const [cart, setCart] = useState(null);
   const [status, setStatus] = useState("active"); // active, processing, completed
@@ -30,7 +31,7 @@ const CustomerDisplay = () => {
       try {
         // ÚNICO INTENTO: ID específico de sesión
         // Eliminamos cualquier fallback genérico por userId para evitar mezclar información de otras cajas
-        const data = await activeCartService.getActiveCart(userId, sessionId);
+        const data = await activeCartService.getActiveCart(userId, sessionId, terminalId);
 
         if (data) {
           console.log("Datos cargados para sesión:", sessionId);
@@ -62,6 +63,7 @@ const CustomerDisplay = () => {
           setStatus(newCart.status);
         }
       },
+      terminalId,
     );
 
     // 3. Polling de respaldo (solo si no hay tiempo real o para reconexión)
@@ -71,7 +73,7 @@ const CustomerDisplay = () => {
       if (subSpecific) subSpecific.unsubscribe();
       clearInterval(pollingInterval);
     };
-  }, [userId, sessionId]);
+  }, [userId, sessionId, terminalId]);
 
   // Temporizador para regresar a pantalla de bienvenida después de completar venta
   useEffect(() => {

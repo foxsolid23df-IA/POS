@@ -4,7 +4,7 @@ import { cashMovementService } from "../../services/cashMovementService";
 import Swal from "sweetalert2";
 
 export const CashMovementModal = ({ onClose, onSuccess }) => {
-  const { activeStaff } = useAuth();
+  const { activeStaff, user } = useAuth();
   const [type, setType] = useState("salida");
   const [amount, setAmount] = useState("");
   const [concept, setConcept] = useState("");
@@ -31,6 +31,7 @@ export const CashMovementModal = ({ onClose, onSuccess }) => {
         parseFloat(amount),
         concept,
         activeStaff?.name,
+        user?.cashbox_mode || "terminal",
       );
 
       Swal.fire({

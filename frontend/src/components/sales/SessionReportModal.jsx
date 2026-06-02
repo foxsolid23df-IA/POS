@@ -3,9 +3,11 @@ import { cashSessionService } from "../../services/cashSessionService";
 import { cashMovementService } from "../../services/cashMovementService";
 import { salesService } from "../../services/salesService";
 import { formatCurrency } from "../../utils/formatters";
+import { useAuth } from "../../hooks/useAuth";
 import Swal from "sweetalert2";
 
 export const SessionReportModal = ({ onClose }) => {
+  const { user, cashSession } = useAuth();
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState(null);
   const [totals, setTotals] = useState({
@@ -20,7 +22,9 @@ export const SessionReportModal = ({ onClose }) => {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const activeSession = await cashSessionService.getActiveSession();
+      const activeSession =
+        cashSession ||
+        (await cashSessionService.getActiveSession(user?.cashbox_mode || "terminal"));
       if (!activeSession) {
         Swal.fire("Info", "No hay una sesión de caja activa", "info");
         onClose();
@@ -33,7 +37,10 @@ export const SessionReportModal = ({ onClose }) => {
       
       // Obtener ventas de la sesión
       // NOTA: Idealmente filtraríamos por terminal y desde opened_at
-      const sales = await salesService.getSalesSince(activeSession.opened_at, activeSession.terminal_id);
+      const sales = await salesService.getSalesSince(
+        activeSession.opened_at,
+        activeSession.session_scope === "shared_cashbox" ? null : activeSession.terminal_id,
+      );
       
       let vPza = 0;
       let vCaja = 0;
@@ -69,7 +76,7 @@ export const SessionReportModal = ({ onClose }) => {
     } finally {
       setLoading(false);
     }
-  }, [onClose]);
+  }, [cashSession, onClose, user?.cashbox_mode]);
 
   useEffect(() => {
     loadData();

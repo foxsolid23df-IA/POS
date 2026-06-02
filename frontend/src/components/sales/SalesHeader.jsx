@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { useProducts } from "../../contexts/ProductContext";
+import { terminalService } from "../../services/terminalService";
 
 export const SalesHeader = ({ onOpenReportModal }) => {
   const { user, cashSession, activeStaff, closeCashSession } = useAuth();
@@ -57,7 +58,8 @@ export const SalesHeader = ({ onOpenReportModal }) => {
         <div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto scrollbar-hide flex-shrink-0">
           <button
             onClick={() => {
-              const url = `${window.location.origin}${window.location.pathname}#/customer-display?u=${user?.id}&s=${cashSession?.id}`;
+              const terminalId = terminalService.getTerminalId();
+              const url = `${window.location.origin}${window.location.pathname}#/customer-display?u=${user?.id}&s=${cashSession?.id}&t=${terminalId || ""}`;
               window.open(url, "_blank", "width=1024,height=768");
             }}
             className="header-action-btn monitor flex-shrink-0"

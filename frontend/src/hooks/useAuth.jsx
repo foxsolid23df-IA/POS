@@ -183,7 +183,7 @@ export const AuthProvider = ({ children }) => {
       await checkLicenseStatus(userId, silent);
 
       // Verificar sesión de caja inmediatamente después de obtener el perfil
-      await checkCashSession();
+      await checkCashSession(data);
     } catch (error) {
       console.error("Error in fetchProfile:", error);
       if (!silent) setIsLicenseValidating(false);
@@ -423,9 +423,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Verificar si hay sesión de caja activa
-  const checkCashSession = async () => {
+  const checkCashSession = async (profileOverride = profile) => {
     try {
-      const session = await cashSessionService.getActiveSession();
+      const cashboxMode = profileOverride?.cashbox_mode || "terminal";
+      const session = await cashSessionService.getActiveSession(cashboxMode);
       if (session) {
         setCashSession(session);
         setNeedsCashFund(false);
@@ -449,11 +450,13 @@ export const AuthProvider = ({ children }) => {
   const openCashSession = async (openingFund) => {
     const staffName = activeStaff?.name || profile?.full_name || "Propietario";
     const staffId = activeStaff?.id || null;
+    const cashboxMode = profile?.cashbox_mode || "terminal";
 
     const session = await cashSessionService.openSession(
       staffName,
       openingFund,
       staffId,
+      cashboxMode,
     );
     setCashSession(session);
     setNeedsCashFund(false);

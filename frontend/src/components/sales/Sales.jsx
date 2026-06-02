@@ -276,6 +276,8 @@ export const Sales = () => {
         "entrada",
         amount,
         entradaForm.concepto,
+        undefined,
+        user?.cashbox_mode || "terminal",
       );
       mostrarModalPersonalizado(
         "Éxito",
@@ -313,6 +315,8 @@ export const Sales = () => {
         "salida",
         amount,
         salidaForm.concepto,
+        undefined,
+        user?.cashbox_mode || "terminal",
       );
       mostrarModalPersonalizado(
         "Éxito",
@@ -762,7 +766,7 @@ export const Sales = () => {
     return () => {
       isMounted = false;
     };
-  }, [metodoPago, montoRecibido, mostrarModalPago, user, totalVenta]);
+  }, [metodoPago, montoRecibido, mostrarModalPago, user, totalVenta, cashSession]);
 
   // Efecto para calcular el saldo pendiente
   useEffect(() => {

@@ -48,48 +48,27 @@ export const CashCut = ({ onClose }) => {
 
   useEffect(() => {
     loadSummary();
-  }, []);
+  }, [cutType, user?.cashbox_mode]);
 
   const loadSummary = async () => {
     try {
       setLoading(true);
-      const data = await cashCutService.getCurrentShiftSummary(cutType);
+      const data = await cashCutService.getCurrentShiftSummary(
+        cutType,
+        user?.cashbox_mode || "terminal",
+      );
 
       // Calculate Expectatives
       const sales = data.sales || [];
 
       // 1. Calculate Expected USD
-      const usdSales = sales.filter(
-        (s) => s.currency === "USD" || s.payment_method === "dolares",
-      );
-      const totalUSD = usdSales.reduce(
-        (acc, curr) => acc + (parseFloat(curr.amount_usd) || 0),
-        0,
-      );
+      const totalUSD = data.usdExpected || 0;
 
       // 2. Calculate Expected MXN
       // Start with opening fund
       let expectedMXN = parseFloat(cashSession?.opening_fund) || 0;
 
-      // Add Cash Sales (MXN)
-      const cashSales = sales.filter((s) => s.payment_method === "efectivo");
-      expectedMXN += cashSales.reduce(
-        (acc, curr) => acc + (parseFloat(curr.total) || 0),
-        0,
-      );
-
-      // Handle USD Sales (Add Sale Value in MXN, Subtract Change given in MXN)
-      // Effectively: Net Change to MXN Drawer = SaleTotal - (USDAmount * ExchangeRate)
-      // Example: Sale 100, Pay 10USD (200MXN). Change 100. Desk gets +10USD, -100MXN.
-      // 100 - 200 = -100. Correct.
-      const usdSalesMixed = sales.filter((s) => s.payment_method === "dolares");
-      expectedMXN += usdSalesMixed.reduce((acc, curr) => {
-        const saleTotal = parseFloat(curr.total) || 0;
-        const usdVal =
-          (parseFloat(curr.amount_usd) || 0) *
-          (parseFloat(curr.exchange_rate) || 0);
-        return acc + (saleTotal - usdVal);
-      }, 0);
+      expectedMXN += data.cashMxnExpected || 0;
 
       // 3. Subtract/Add Manual Cash Movements (Entradas/Salidas)
       const entradasTotal = data.entradasTotal || 0;
@@ -106,6 +85,8 @@ export const CashCut = ({ onClose }) => {
         cardTotal: data.cardTotal || 0,
         transferTotal: data.transferTotal || 0,
         cashTotal: data.cashTotal || 0,
+        paymentTotals: data.paymentTotals || {},
+        terminalBreakdown: data.terminalBreakdown || [],
       });
       setSalesDetails(sales);
 
@@ -296,6 +277,8 @@ export const CashCut = ({ onClose }) => {
         differenceUSD: diffUSD,
         cardTotal: summary.cardTotal,
         transferTotal: summary.transferTotal,
+        paymentTotals: summary.paymentTotals || {},
+        terminalBreakdown: summary.terminalBreakdown || [],
         entradas_total: summary.entradasTotal,
         salidas_total: summary.salidasTotal,
         notes,
@@ -340,6 +323,11 @@ export const CashCut = ({ onClose }) => {
         ticketResult.salidas_total || summary?.salidasTotal || 0;
       const totalSalesAmount = ticketResult.salesTotal || 0;
       const totalSalesCount = ticketResult.salesCount || 0;
+      const terminalBreakdown =
+        ticketResult.terminalBreakdown ||
+        ticketResult.terminal_breakdown ||
+        summary?.terminalBreakdown ||
+        [];
       const operatorName =
         ticketResult.staffName || activeStaff?.name || "Operador";
 
@@ -427,7 +415,19 @@ export const CashCut = ({ onClose }) => {
                 showSalesCount ? `(${totalSalesCount})` : ""
               }:</span>
               <span class="value">${formatMoney(totalSalesAmount)}</span>
-            </div>
+            </div>`;
+
+      if (terminalBreakdown.length > 1) {
+        htmlPrint += `<div class="separator"></div>`;
+        terminalBreakdown.forEach((terminal) => {
+          htmlPrint += `<div class="row">
+              <span class="label">${terminal.terminal_name} (${terminal.sales_count})</span>
+              <span class="value">${formatMoney(terminal.sales_total)}</span>
+            </div>`;
+        });
+      }
+
+      htmlPrint += `
           </div>
           
           <div class="section">`;
@@ -867,6 +867,39 @@ export const CashCut = ({ onClose }) => {
                 </div>
               </div>
             </div>
+
+            {summary?.terminalBreakdown?.length > 1 && (
+              <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="material-symbols-rounded text-slate-500">
+                    point_of_sale
+                  </span>
+                  <h3 className="text-sm font-black text-slate-700 dark:text-slate-200 uppercase tracking-widest">
+                    Desglose por Terminal
+                  </h3>
+                </div>
+                <div className="space-y-2">
+                  {summary.terminalBreakdown.map((terminal) => (
+                    <div
+                      key={terminal.terminal_id || terminal.terminal_name}
+                      className="flex items-center justify-between rounded-xl bg-slate-50 dark:bg-slate-900/40 px-4 py-3"
+                    >
+                      <div>
+                        <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                          {terminal.terminal_name}
+                        </p>
+                        <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">
+                          {terminal.sales_count} venta(s)
+                        </p>
+                      </div>
+                      <p className="text-sm font-black text-slate-900 dark:text-white">
+                        {formatMoney(terminal.sales_total)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Totales Secundarios (Tarjeta, Transferencia, USD) */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

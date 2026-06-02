@@ -79,6 +79,16 @@ export const ConfiguracionHub = () => {
       bgColor: "bg-indigo-500/10",
     },
     {
+      id: "cashbox",
+      title: "Configuracion de Caja",
+      description: "Elegir entre caja por terminal o una caja compartida para varias PCs",
+      icon: "point_of_sale",
+      path: "/config-caja",
+      adminOnly: true,
+      color: "text-emerald-600",
+      bgColor: "bg-emerald-600/10",
+    },
+    {
       id: "inventory_config",
       title: "Preferencias de Inventario",
       description: "Cambiar nivel de detalle (Costo, Mayoreo, Stock Mínimo)",

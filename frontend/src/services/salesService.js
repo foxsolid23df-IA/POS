@@ -161,7 +161,9 @@ export const salesService = {
             .from('sales')
             .select(`
                 *,
-                sale_items (*)
+                sale_items (*),
+                sale_payments (*),
+                terminals (name)
             `)
             .gte('created_at', startTime)
             .order('created_at', { ascending: false });

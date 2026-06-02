@@ -36,6 +36,7 @@ const ExchangeRateSettings = lazy(() => import("../components/admin/ExchangeRate
 const TicketConfig = lazy(() => import("../components/config/TicketConfig").then(m => ({ default: m.TicketConfig })));
 const TaxConfig = lazy(() => import("../components/config/TaxConfig"));
 const PaymentMethodsConfig = lazy(() => import("../components/config/PaymentMethodsConfig"));
+const CashboxConfig = lazy(() => import("../components/config/CashboxConfig"));
 const BillingIssuers = lazy(() => import("../components/config/BillingIssuers"));
 const InventoryConfig = lazy(() => import("../components/config/InventoryConfig"));
 const Maintenance = lazy(() => import("../components/admin/Maintenance"));
@@ -409,6 +410,17 @@ export const Routing = () => {
                         <PrivateLayout>
                           <AdminRoute>
                             <PaymentMethodsConfig />
+                          </AdminRoute>
+                        </PrivateLayout>
+                      }
+                    />
+
+                    <Route
+                      path="/config-caja"
+                      element={
+                        <PrivateLayout>
+                          <AdminRoute>
+                            <CashboxConfig />
                           </AdminRoute>
                         </PrivateLayout>
                       }

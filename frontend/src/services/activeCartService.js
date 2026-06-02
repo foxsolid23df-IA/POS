@@ -1,5 +1,6 @@
 import { supabase } from '../supabase';
 import { safeSupabaseOperation, handleAuthError, createServiceLogger } from '../utils/supabaseErrorHandler';
+import { terminalService } from './terminalService';
 
 const logger = createServiceLogger('activeCartService');
 
@@ -18,18 +19,24 @@ export const activeCartService = {
                 logger.warn('No sessionId provided, skipping DB update.');
                 return null;
             }
+            const terminalId = terminalService.getTerminalId();
+            if (!terminalId) {
+                logger.warn('No terminalId available, skipping DB update.');
+                return null;
+            }
 
             const { data, error } = await supabase
                 .from('active_carts')
                 .upsert({
                     user_id: user.id,
                     session_id: sessionId,
+                    terminal_id: terminalId,
                     cart_data: cartData,
                     total: total,
                     status: 'active',
                     updated_at: new Date().toISOString()
                 }, {
-                    onConflict: 'session_id' 
+                    onConflict: 'session_id,terminal_id'
                 })
                 .select()
                 .single();
@@ -65,6 +72,10 @@ export const activeCartService = {
 
             if (paymentInfo.sessionId) {
                 query = query.eq('session_id', paymentInfo.sessionId);
+            }
+            const terminalId = terminalService.getTerminalId();
+            if (terminalId) {
+                query = query.eq('terminal_id', terminalId);
             }
 
             const { data, error } = await query.select().maybeSingle();
@@ -106,6 +117,10 @@ export const activeCartService = {
             } else {
                 logger.warn('clearCart called without sessionId. This might clear ALL carts for this user.');
             }
+            const terminalId = terminalService.getTerminalId();
+            if (terminalId) {
+                query = query.eq('terminal_id', terminalId);
+            }
                 
             const { error } = await query;
 
@@ -120,7 +135,7 @@ export const activeCartService = {
     },
 
     // Obtener el carrito actual (para la carga inicial de la pantalla)
-    getActiveCart: async (userId, sessionId = null) => {
+    getActiveCart: async (userId, sessionId = null, terminalId = terminalService.getTerminalId()) => {
         return safeSupabaseOperation(async () => {
             let query = supabase
                 .from('active_carts')
@@ -129,6 +144,9 @@ export const activeCartService = {
             
             if (sessionId) {
                 query = query.eq('session_id', sessionId);
+            }
+            if (terminalId) {
+                query = query.eq('terminal_id', terminalId);
             }
 
             // Usamos limit(1) y single/maybeSingle para evitar errores si por alguna razón hay duplicados
@@ -169,8 +187,8 @@ export const activeCartService = {
     },
 
     // Suscribirse a cambios en tiempo real
-    subscribeToCart: (userId, sessionId, callback) => {
-        console.log('Suscrito a cambios del carrito para:', { userId, sessionId });
+    subscribeToCart: (userId, sessionId, callback, terminalId = terminalService.getTerminalId()) => {
+        console.log('Suscrito a cambios del carrito para:', { userId, sessionId, terminalId });
         
         // Supabase Realtime solo soporta UN filtro por columna en la suscripción directa.
         // Dado que session_id es único, filtramos por él si existe.
@@ -188,7 +206,9 @@ export const activeCartService = {
                 },
                 (payload) => {
                     console.log('Cambio detectado en tiempo real:', payload);
-                    callback(payload.new);
+                    if (!sessionId || !terminalId || payload.new?.terminal_id === terminalId) {
+                        callback(payload.new);
+                    }
                 }
             )
             .subscribe((status) => {
