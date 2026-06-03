@@ -2,6 +2,9 @@ import { supabase } from '../supabase';
 import { cashSessionService } from './cashSessionService';
 import { terminalService } from './terminalService';
 
+const isMissingColumnError = (error, columnName) =>
+    error?.code === '42703' && (!columnName || error?.message?.includes(columnName));
+
 export const cashMovementService = {
     /**
      * Registra un movimiento de caja (entrada o salida) asociado a la sesión actual
@@ -26,20 +29,38 @@ export const cashMovementService = {
             throw new Error('No hay una sesión de caja activa en esta terminal para registrar el movimiento.');
         }
 
+        const payload = {
+            session_id: session.id,
+            terminal_id: terminalService.getTerminalId(),
+            movement_type: type,
+            amount: numericAmount,
+            concept: concept,
+            staff_name: staffName || session.staff_name || 'Cajero', // Usar fallback
+        };
+
         const { data, error } = await supabase
             .from('cash_movements')
-            .insert([{
-                session_id: session.id,
-                terminal_id: terminalService.getTerminalId(),
-                movement_type: type,
-                amount: numericAmount,
-                concept: concept,
-                staff_name: staffName || session.staff_name || 'Cajero', // Usar fallback
-            }])
+            .insert([payload])
             .select()
             .single();
 
         if (error) {
+            if (isMissingColumnError(error, 'terminal_id')) {
+                const { terminal_id, ...legacyPayload } = payload;
+                const { data: legacyData, error: legacyError } = await supabase
+                    .from('cash_movements')
+                    .insert([legacyPayload])
+                    .select()
+                    .single();
+
+                if (legacyError) {
+                    console.error('Error al registrar movimiento de caja legacy:', legacyError);
+                    throw legacyError;
+                }
+
+                return legacyData;
+            }
+
             console.error('Error al registrar movimiento de caja:', error);
             throw error;
         }

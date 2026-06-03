@@ -3,6 +3,10 @@ import { safeSupabaseOperation, handleAuthError, createServiceLogger } from '../
 import { terminalService } from './terminalService';
 
 const logger = createServiceLogger('activeCartService');
+const isMissingColumnError = (error, columnName) =>
+    error?.code === '42703' && (!columnName || error?.message?.includes(columnName));
+const isMissingConstraintError = (error) =>
+    error?.code === '42P10' || error?.message?.includes('no unique or exclusion constraint');
 
 export const activeCartService = {
     // Actualizar el carrito activo
@@ -40,6 +44,26 @@ export const activeCartService = {
                 })
                 .select()
                 .single();
+
+            if (isMissingColumnError(error, 'terminal_id') || isMissingConstraintError(error)) {
+                const { data: legacyData, error: legacyError } = await supabase
+                    .from('active_carts')
+                    .upsert({
+                        user_id: user.id,
+                        session_id: sessionId,
+                        cart_data: cartData,
+                        total: total,
+                        status: 'active',
+                        updated_at: new Date().toISOString()
+                    }, {
+                        onConflict: 'session_id'
+                    })
+                    .select()
+                    .single();
+
+                if (legacyError) throw legacyError;
+                return legacyData;
+            }
 
             if (error) throw error;
             return data;
@@ -79,7 +103,27 @@ export const activeCartService = {
             }
 
             const { data, error } = await query.select().maybeSingle();
-                
+            if (isMissingColumnError(error, 'terminal_id')) {
+                let legacyQuery = supabase
+                    .from('active_carts')
+                    .update({
+                        payment_method: paymentInfo.method,
+                        amount_received: paymentInfo.received,
+                        change_amount: paymentInfo.change,
+                        status: paymentInfo.status || 'processing',
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('user_id', user.id);
+
+                if (paymentInfo.sessionId) {
+                    legacyQuery = legacyQuery.eq('session_id', paymentInfo.sessionId);
+                }
+
+                const { data: legacyData, error: legacyError } = await legacyQuery.select().maybeSingle();
+                if (legacyError) throw legacyError;
+                return legacyData;
+            }
+
             if (error) throw error;
             return data;
         }, {
@@ -124,6 +168,29 @@ export const activeCartService = {
                 
             const { error } = await query;
 
+            if (isMissingColumnError(error, 'terminal_id')) {
+                let legacyQuery = supabase
+                    .from('active_carts')
+                    .update({
+                        cart_data: [],
+                        total: 0,
+                        payment_method: null,
+                        amount_received: null,
+                        change_amount: null,
+                        status: status,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('user_id', user.id);
+
+                if (sessionId) {
+                    legacyQuery = legacyQuery.eq('session_id', sessionId);
+                }
+
+                const { error: legacyError } = await legacyQuery;
+                if (legacyError) throw legacyError;
+                return true;
+            }
+
             if (error) throw error;
             return true;
         }, {
@@ -153,6 +220,24 @@ export const activeCartService = {
             const { data, error } = await query
                 .limit(1)
                 .maybeSingle();
+
+            if (isMissingColumnError(error, 'terminal_id')) {
+                let legacyQuery = supabase
+                    .from('active_carts')
+                    .select('*')
+                    .eq('user_id', userId);
+
+                if (sessionId) {
+                    legacyQuery = legacyQuery.eq('session_id', sessionId);
+                }
+
+                const { data: legacyData, error: legacyError } = await legacyQuery
+                    .limit(1)
+                    .maybeSingle();
+
+                if (legacyError) throw legacyError;
+                return legacyData;
+            }
 
             if (error) throw error;
             return data;

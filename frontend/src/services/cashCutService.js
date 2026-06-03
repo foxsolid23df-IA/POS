@@ -2,6 +2,11 @@ import { supabase } from '../supabase';
 import { salesService } from './salesService';
 import { terminalService } from './terminalService';
 
+const isMissingColumnError = (error, columnName) =>
+    error?.code === '42703' && (!columnName || error?.message?.includes(columnName));
+const isMissingRelationshipError = (error) =>
+    error?.code === 'PGRST200' || error?.message?.includes('relationship');
+
 const getTodayStartIso = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -142,32 +147,46 @@ export const cashCutService = {
     createCashCut: async (cutData, userId) => {
         if (!userId) throw new Error('Usuario no autenticado');
 
+        const payload = {
+            staff_name: cutData.staffName,
+            staff_role: cutData.staffRole,
+            cut_type: cutData.cutType,
+            start_time: cutData.startTime,
+            end_time: new Date().toISOString(),
+            sales_count: cutData.salesCount,
+            sales_total: cutData.salesTotal,
+            expected_cash: cutData.expectedCash,
+            actual_cash: cutData.actualCash || null,
+            difference: cutData.difference,
+            expected_usd: cutData.expectedUSD || 0,
+            actual_usd: cutData.actualUSD || 0,
+            difference_usd: cutData.differenceUSD || 0,
+            card_total: cutData.cardTotal || 0,
+            transfer_total: cutData.transferTotal || 0,
+            payment_totals: cutData.paymentTotals || {},
+            terminal_breakdown: cutData.terminalBreakdown || [],
+            notes: cutData.notes || null,
+            user_id: userId,
+            terminal_id: terminalService.getTerminalId()
+        };
+
         const { data, error } = await supabase
             .from('cash_cuts')
-            .insert([{
-                staff_name: cutData.staffName,
-                staff_role: cutData.staffRole,
-                cut_type: cutData.cutType,
-                start_time: cutData.startTime,
-                end_time: new Date().toISOString(),
-                sales_count: cutData.salesCount,
-                sales_total: cutData.salesTotal,
-                expected_cash: cutData.expectedCash,
-                actual_cash: cutData.actualCash || null,
-                difference: cutData.difference,
-                expected_usd: cutData.expectedUSD || 0,
-                actual_usd: cutData.actualUSD || 0,
-                difference_usd: cutData.differenceUSD || 0,
-                card_total: cutData.cardTotal || 0,
-                transfer_total: cutData.transferTotal || 0,
-                payment_totals: cutData.paymentTotals || {},
-                terminal_breakdown: cutData.terminalBreakdown || [],
-                notes: cutData.notes || null,
-                user_id: userId,
-                terminal_id: terminalService.getTerminalId()
-            }])
+            .insert([payload])
             .select()
             .single();
+
+        if (isMissingColumnError(error, 'payment_totals') || isMissingColumnError(error, 'terminal_breakdown')) {
+            const { payment_totals, terminal_breakdown, ...legacyPayload } = payload;
+            const { data: legacyData, error: legacyError } = await supabase
+                .from('cash_cuts')
+                .insert([legacyPayload])
+                .select()
+                .single();
+
+            if (legacyError) throw legacyError;
+            return legacyData;
+        }
 
         if (error) throw error;
         return data;
@@ -183,6 +202,21 @@ export const cashCutService = {
             .eq('status', 'open')
             .eq('session_scope', 'terminal')
             .neq('terminal_id', currentTerminalId);
+
+        if (isMissingColumnError(error, 'session_scope')) {
+            const { data: legacyData, error: legacyError } = await supabase
+                .from('cash_sessions')
+                .select('*, terminals (name)')
+                .eq('status', 'open')
+                .neq('terminal_id', currentTerminalId);
+
+            if (legacyError) {
+                console.error('Error verificando sesiones bloqueantes legacy:', legacyError);
+                throw legacyError;
+            }
+
+            return legacyData || [];
+        }
 
         if (error) {
             console.error('Error verificando sesiones bloqueantes:', error);
@@ -223,6 +257,10 @@ export const cashCutService = {
                         .order('opened_at', { ascending: false })
                         .limit(1)
                         .single();
+
+                    if (isMissingColumnError(sessionError, 'session_scope')) {
+                        throw new Error('La base de datos aun no tiene la migracion de caja compartida. Aplica la migracion 20260602_shared_cashbox.sql en Supabase.');
+                    }
 
                     if (sessionError && sessionError.code !== 'PGRST116') throw sessionError;
 
@@ -276,7 +314,22 @@ export const cashCutService = {
                 movementsQuery = movementsQuery.eq('session_id', sessionId);
             }
 
-            const { data: movementsData, error: movementsError } = await movementsQuery;
+            let { data: movementsData, error: movementsError } = await movementsQuery;
+            if (isMissingColumnError(movementsError, 'terminal_id') || isMissingRelationshipError(movementsError)) {
+                let legacyMovementsQuery = supabase
+                    .from('cash_movements')
+                    .select('*')
+                    .gte('created_at', startTime);
+
+                if (sessionId) {
+                    legacyMovementsQuery = legacyMovementsQuery.eq('session_id', sessionId);
+                }
+
+                const legacyResult = await legacyMovementsQuery;
+                movementsData = legacyResult.data;
+                movementsError = legacyResult.error;
+            }
+
             if (movementsError) throw movementsError;
 
             const movements = movementsData || [];

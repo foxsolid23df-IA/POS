@@ -174,7 +174,26 @@ export const salesService = {
             console.warn('getSalesSince: terminalId provisto no es un UUID válido:', terminalId);
         }
 
-        const { data, error } = await query;
+        let { data, error } = await query;
+
+        if (error?.code === 'PGRST200' || error?.code === '42P01' || error?.message?.includes('relationship')) {
+            query = supabase
+                .from('sales')
+                .select(`
+                    *,
+                    sale_items (*)
+                `)
+                .gte('created_at', startTime)
+                .order('created_at', { ascending: false });
+
+            if (terminalId && uuidRegex.test(terminalId)) {
+                query = query.eq('terminal_id', terminalId);
+            }
+
+            const fallbackResult = await query;
+            data = fallbackResult.data;
+            error = fallbackResult.error;
+        }
 
         if (error) throw error;
         return data || [];
