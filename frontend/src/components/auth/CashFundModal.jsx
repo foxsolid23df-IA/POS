@@ -70,7 +70,9 @@ export const CashFundModal = ({ staffName, staffId, onSessionCreated }) => {
       console.error("Error abriendo caja:", error);
       Swal.fire({
         title: "Error",
-        text: "No se pudo abrir la caja. Intenta nuevamente.",
+        text:
+          error?.message ||
+          "No se pudo abrir la caja. Intenta nuevamente.",
         icon: "error",
       });
     } finally {

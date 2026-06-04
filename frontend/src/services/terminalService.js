@@ -119,6 +119,8 @@ export const terminalService = {
     resetLocalTerminal() {
         localStorage.removeItem(TERMINAL_ID_KEY);
         localStorage.removeItem(TERMINAL_NAME_KEY);
+        localStorage.removeItem('terminal_validated_global');
+        sessionStorage.removeItem('terminal_validated');
     },
 
     async checkIfMainTerminal() {

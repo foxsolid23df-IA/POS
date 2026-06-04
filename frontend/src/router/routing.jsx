@@ -78,8 +78,6 @@ const PrivateLayout = ({ children }) => {
 
   // Flag persistente en localStorage para evitar re-validaciones innecesarias
   // Este flag dura entre pestañas y sesiones hasta que se cierre el navegador
-  const terminalValidatedKey = "terminal_validated_global";
-
   // Validar existencia de terminal solo una vez al cargar la app
   useEffect(() => {
     if (!user || isValidating) return;
@@ -91,9 +89,8 @@ const PrivateLayout = ({ children }) => {
 
     // Verificar si ya foi validado nesta sessão ou sessão anterior
     const sessionValidated = sessionStorage.getItem("terminal_validated");
-    const globalValidated = localStorage.getItem(terminalValidatedKey);
     
-    if (sessionValidated === "true" || globalValidated === "true") {
+    if (sessionValidated === "true") {
       console.log("[Routing] Terminal ya validada previamente.");
       return;
     }
@@ -114,18 +111,15 @@ const PrivateLayout = ({ children }) => {
         if (!isValid) {
           console.log("[Routing] Validación falló, mostrando TerminalSetup");
           setIsTerminalConfigured(false);
-          localStorage.removeItem(terminalValidatedKey);
         } else {
           console.log("[Routing] Terminal validada exitosamente");
           sessionStorage.setItem("terminal_validated", "true");
-          localStorage.setItem(terminalValidatedKey, "true");
         }
       } catch (err) {
         console.error("[Routing] Error en validación de terminal:", err);
         // En caso de error, permitir continuar si hay ID local
         if (currentTerminalId) {
           sessionStorage.setItem("terminal_validated", "true");
-          localStorage.setItem(terminalValidatedKey, "true");
         } else {
           setIsTerminalConfigured(false);
         }
@@ -167,7 +161,6 @@ const PrivateLayout = ({ children }) => {
           setIsTerminalConfigured(true);
           // Guardar flag global para evitar re-validación
           sessionStorage.setItem("terminal_validated", "true");
-          localStorage.setItem("terminal_validated_global", "true");
         }}
       />
     );

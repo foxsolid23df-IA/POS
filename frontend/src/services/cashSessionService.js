@@ -62,6 +62,11 @@ export const cashSessionService = {
     },
 
     async openSession(staffName, openingFund, staffId = null, cashboxMode = 'terminal') {
+        const isTerminalValid = await terminalService.validateTerminalExistence();
+        if (!isTerminalValid) {
+            throw new Error('La terminal de esta computadora ya no esta registrada. Configura la terminal nuevamente para abrir caja.');
+        }
+
         const terminalId = terminalService.getTerminalId();
         if (!terminalId) throw new Error('Terminal no configurada');
 
@@ -111,6 +116,12 @@ export const cashSessionService = {
                 const existingSession = await this.getActiveSession('shared_cashbox');
                 if (existingSession) return existingSession;
             }
+
+            if (error.code === '23503' && error.message?.includes('cash_sessions_terminal_id_fkey')) {
+                terminalService.resetLocalTerminal();
+                throw new Error('La terminal local ya no existe en el sistema. Configura esta terminal nuevamente antes de abrir caja.');
+            }
+
             console.error('Error abriendo sesion de caja:', error);
             throw error;
         }
