@@ -1271,7 +1271,7 @@ export const Sales = () => {
         ? (datosPago.facturar ? totalConImpuesto : total)
         : totalVenta;
 
-      setVentaCompletada({
+      const ventaFinalizada = {
         ...ventaCreada,
         productos: [...carrito],
         items: [...carrito],
@@ -1283,11 +1283,12 @@ export const Sales = () => {
         subtotal: subtotal,
         tax_amount: taxAmount,
         tax_percentage: currentTaxRate,
-      });
+      };
 
-      // Vaciar carrito y mostrar modal de éxito YA
+      await imprimirTicketVenta(ventaFinalizada);
+
+      // Vaciar carrito y dejar listo el POS para la siguiente venta
       vaciarCarrito();
-      setMostrarModal(true);
 
       // Tareas de fondo (Sync y recarga de inventario) - No bloquean el ticket
       activeCartService
@@ -1391,7 +1392,7 @@ export const Sales = () => {
       const ventaCreada = await salesService.createCreditSale(ventaData);
 
       setSelectedCustomer(null);
-      setVentaCompletada({
+      const ventaFinalizada = {
         ...ventaCreada,
         productos: [...carrito],
         items: [...carrito],
@@ -1404,10 +1405,11 @@ export const Sales = () => {
         tax_amount: taxAmountFinal,
         tax_percentage: currentTaxRate,
         isCreditSale: true
-      });
+      };
+
+      await imprimirTicketVenta(ventaFinalizada);
 
       vaciarCarrito();
-      setMostrarModal(true);
 
       activeCartService.clearCart("completed", cashSession?.id).catch(console.error);
       cargarDatos({ forceRefresh: true, silent: true }).catch(console.error);
@@ -1749,17 +1751,21 @@ export const Sales = () => {
     }
   };
 
-  // Imprimir el ticket usando el formateador unificado
-  const imprimirTicket = async () => {
-    if (!ventaCompletada) return;
+  const imprimirTicketVenta = async (venta) => {
+    if (!venta) return;
     try {
       const { printerService } = await import("../../services/printerService");
-      const html = generateTicketHtml(ventaCompletada, ticketSettings, user);
+      const html = generateTicketHtml(venta, ticketSettings, user);
       const fullHtml = wrapTicketForPrinting(html, ticketSettings);
       printerService.printHtmlTicket(fullHtml);
     } catch (err) {
       console.error("[Sales] Error al imprimir ticket:", err);
     }
+  };
+
+  // Imprimir el ticket usando el formateador unificado
+  const imprimirTicket = async () => {
+    await imprimirTicketVenta(ventaCompletada);
   };
 
 
