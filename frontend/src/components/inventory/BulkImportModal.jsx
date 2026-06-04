@@ -16,6 +16,15 @@ import "./BulkImportModal.css";
 // Each DB field maps to an array of possible Excel header names.
 // Matching is case-insensitive and accent-insensitive.
 const COLUMN_ALIASES = {
+  sku: [
+    "SKU",
+    "Sku",
+    "Codigo",
+    "Codigo de Barras",
+    "Code",
+    "codigo",
+    "sku",
+  ],
   barcode: [
     "Codigo",
     "SKU",
@@ -108,6 +117,13 @@ const COLUMN_ALIASES = {
     "Qty",
     "existencia",
     "stock",
+  ],
+  branch_stock: [
+    "suc1",
+    "Suc1",
+    "Sucursal 1",
+    "Stock Sucursal",
+    "Existencia Sucursal",
   ],
   min_stock: [
     "Inv. Minimo",
@@ -226,11 +242,106 @@ const getValueFromRow = (row, aliases) => {
   return null;
 };
 
+const cleanText = (value) => {
+  if (value === undefined || value === null) return null;
+  const cleaned = String(value).trim();
+  return cleaned === "" ? null : cleaned;
+};
+
+const toNumber = (value, fallback = 0) => {
+  if (value === undefined || value === null || value === "") return fallback;
+  const normalized = String(value)
+    .trim()
+    .replace(/\$/g, "")
+    .replace(/\s+/g, "")
+    .replace(/,/g, ".");
+  const parsed = parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const toInteger = (value, fallback = 0) => {
+  const parsed = toNumber(value, fallback);
+  return Number.isFinite(parsed) ? Math.trunc(parsed) : fallback;
+};
+
+const normalizeUnit = (value) => {
+  const unit = cleanText(value)?.toUpperCase() || "PZA";
+  if (["PIEZA", "PIEZAS", "PZAS"].includes(unit)) return "PZA";
+  return unit;
+};
+
+const extractBoxUnits = (...values) => {
+  const text = values
+    .map((value) => cleanText(value))
+    .filter(Boolean)
+    .join(" ")
+    .toUpperCase();
+
+  if (!text) return null;
+
+  const patterns = [
+    /\b(?:CAJA|CAJAC|CJA|PAQUETE|PAQ)\s*\.?\s*C\s*\/?\s*(\d{1,4})\b/,
+    /\b(?:CAJA|CJA|PAQUETE|PAQ)\s*(?:CON|DE)\s*(\d{1,4})\b/,
+    /\bC\s*\/\s*(\d{1,4})\b/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    const units = match ? parseInt(match[1], 10) : 0;
+    if (Number.isFinite(units) && units > 1) return units;
+  }
+
+  return null;
+};
+
+const getStockValue = (branchStockVal, stockVal) => {
+  const branchStock = toInteger(branchStockVal, Number.NaN);
+  if (Number.isFinite(branchStock)) return Math.max(0, branchStock);
+
+  const stock = toInteger(stockVal, 0);
+  return Math.max(0, stock);
+};
+
+const getBoxPriceValue = (boxPriceVal, boxUnits, price, wholesalePrice) => {
+  const explicitBoxPrice = toNumber(boxPriceVal, 0);
+  if (explicitBoxPrice > 0) return explicitBoxPrice;
+  if (!boxUnits || boxUnits <= 1) return null;
+
+  const unitPrice = price > 0 ? price : wholesalePrice;
+  return unitPrice > 0 ? Number((unitPrice * boxUnits).toFixed(2)) : null;
+};
+
+const toSianInventoryRow = (product, { category = "General", sku } = {}) => ({
+  SKU: sku || product.metadata?.sku || product.barcode || "",
+  barcode: product.barcode || "",
+  Descripcion: product.name || "",
+  notas: product.notes || (product.box_units ? `CAJA C/${product.box_units}` : ""),
+  unidad: product.unit || "PZA",
+  iva: toNumber(product.iva, 0),
+  precio_compra: toNumber(product.cost_price, 0),
+  precio_men: toNumber(product.price, 0),
+  precio_may: toNumber(product.wholesale_price, 0),
+  precio_esp: toNumber(product.special_price, 0),
+  precio_sugerido: toNumber(product.suggested_price, 0),
+  umay: product.wholesale_unit || 1,
+  existencia: toInteger(product.stock, 0),
+  suc1: toInteger(product.stock, 0),
+  Categoria: category,
+  Marca: product.brand || "",
+  Proveedor: product.supplier || "",
+});
+
 // Map a single Excel row to a product object
 const mapRowToProduct = (row) => {
   const get = (field) => getValueFromRow(row, COLUMN_ALIASES[field]);
 
-  const barcodeVal = get("barcode");
+  const skuVal = get("sku");
+  const barcodeVal = getValueFromRow(row, [
+    "barcode",
+    "Barcode",
+    "Codigo de Barras",
+    "CÃ³digo de Barras",
+  ]);
   const nameVal = get("name");
   const costVal = get("cost_price");
   const priceVal = get("price");
@@ -239,6 +350,7 @@ const mapRowToProduct = (row) => {
   const boxPriceVal = get("box_price");
   const boxBarcodeVal = get("box_barcode");
   const stockVal = get("stock");
+  const branchStockVal = get("branch_stock");
   const minStockVal = get("min_stock");
   const categoryVal = get("category");
 
@@ -251,28 +363,45 @@ const mapRowToProduct = (row) => {
   const wholesaleUnitVal = get("wholesale_unit");
   const brandVal = get("brand");
   const supplierVal = get("supplier");
+  const sku = cleanText(skuVal);
+  const barcode = cleanText(barcodeVal) || sku;
+  const price = toNumber(priceVal, 0);
+  const wholesalePrice = toNumber(wholesaleVal, 0);
+  const explicitBoxUnits = toInteger(boxUnitsVal, 0);
+  const inferredBoxUnits =
+    explicitBoxUnits > 1 ? explicitBoxUnits : extractBoxUnits(notesVal, wholesaleUnitVal);
+  const fallbackBoxUnits =
+    inferredBoxUnits || (toInteger(wholesaleUnitVal, 0) > 1 ? toInteger(wholesaleUnitVal, 0) : null);
+  const boxPrice = getBoxPriceValue(boxPriceVal, fallbackBoxUnits, price, wholesalePrice);
+  const boxBarcode =
+    cleanText(boxBarcodeVal) ||
+    (fallbackBoxUnits && barcode ? `${barcode}-CAJA` : null);
 
   return {
-    barcode: barcodeVal !== null ? String(barcodeVal) : null,
-    name: nameVal !== null ? String(nameVal) : "Producto Sin Nombre",
-    cost_price: parseFloat(costVal || 0),
-    price: parseFloat(priceVal || 0),
-    wholesale_price: parseFloat(wholesaleVal || 0),
-    box_units: parseInt(boxUnitsVal || 0) || null,
-    box_price: parseFloat(boxPriceVal || 0) || null,
-    box_barcode: boxBarcodeVal !== null ? String(boxBarcodeVal) : null,
-    stock: parseInt(stockVal || 0),
-    min_stock: parseInt(minStockVal || 0),
-    category: categoryVal !== null ? String(categoryVal) : "General",
+    barcode,
+    name: cleanText(nameVal) || "Producto Sin Nombre",
+    cost_price: toNumber(costVal, 0),
+    price,
+    wholesale_price: wholesalePrice,
+    box_units: fallbackBoxUnits,
+    box_price: boxPrice,
+    box_barcode: boxBarcode,
+    stock: getStockValue(branchStockVal, stockVal),
+    min_stock: toInteger(minStockVal, 0),
+    category: cleanText(categoryVal) || "General",
     // Advanced fields
-    notes: notesVal !== null ? String(notesVal) : "",
-    unit: unitVal !== null ? String(unitVal).toUpperCase() : "PZA",
-    iva: parseFloat(ivaVal || 0),
-    special_price: parseFloat(specialPriceVal || 0),
-    suggested_price: parseFloat(suggestedPriceVal || 0),
-    wholesale_unit: wholesaleUnitVal !== null ? String(wholesaleUnitVal) : "",
-    brand: brandVal !== null ? String(brandVal) : "",
-    supplier: supplierVal !== null ? String(supplierVal) : "",
+    notes: cleanText(notesVal) || "",
+    unit: normalizeUnit(unitVal),
+    iva: toNumber(ivaVal, 0),
+    special_price: toNumber(specialPriceVal, 0),
+    suggested_price: toNumber(suggestedPriceVal, 0),
+    wholesale_unit: cleanText(wholesaleUnitVal) || "",
+    brand: cleanText(brandVal) || "",
+    supplier: cleanText(supplierVal) || "",
+    metadata: {
+      sku,
+      stock_source: branchStockVal !== null ? "suc1" : "existencia",
+    },
   };
 };
 
@@ -293,7 +422,7 @@ const BulkImportModal = ({
 
   // Download template
   const handleDownloadTemplate = () => {
-    const ws = XLSX.utils.json_to_sheet([
+    const templateRows = [
       {
         SKU: "PRUEBA01",
         Producto: "Producto de Ejemplo",
@@ -315,6 +444,13 @@ const BulkImportModal = ({
         Marca: "",
         Proveedor: "",
       },
+    ];
+    const exampleProduct = mapRowToProduct(templateRows[0]);
+    const ws = XLSX.utils.json_to_sheet([
+      toSianInventoryRow(exampleProduct, {
+        category: exampleProduct.category,
+        sku: exampleProduct.metadata?.sku,
+      }),
     ]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Plantilla");
@@ -337,27 +473,7 @@ const BulkImportModal = ({
         ? p.category || getCategory(p.name).name
         : p.category || "General";
       const sku = getSKU ? getSKU(p) : p.barcode || p.id;
-      return {
-        SKU: sku,
-        Producto: p.name,
-        Notas: p.notes || "",
-        Unidad: p.unit || "PZA",
-        IVA: parseFloat(p.iva || 0),
-        "Precio Compra": parseFloat(p.cost_price || 0),
-        "Precio Venta": parseFloat(p.price || 0),
-        "Precio Mayoreo": parseFloat(p.wholesale_price || 0),
-        "Piezas por Caja": parseInt(p.box_units || 0) || "",
-        "Precio Caja": parseFloat(p.box_price || 0) || "",
-        "Código Caja": p.box_barcode || "",
-        "Precio Especial": parseFloat(p.special_price || 0),
-        "Precio Sugerido": parseFloat(p.suggested_price || 0),
-        "Und. Mayoreo": p.wholesale_unit || "",
-        Existencia: parseInt(p.stock || 0),
-        "Inv. Minimo": parseInt(p.min_stock || 0),
-        Categoria: productCategory,
-        Marca: p.brand || "",
-        Proveedor: p.supplier || "",
-      };
+      return toSianInventoryRow(p, { category: productCategory, sku });
     });
 
     const wb = XLSX.utils.book_new();
@@ -657,7 +773,7 @@ const BulkImportModal = ({
                   <tbody>
                     {mappedPreview.slice(0, 10).map((product, index) => (
                       <tr key={index}>
-                        <td>{product.barcode || "-"}</td>
+                        <td>{product.metadata?.sku || product.barcode || "-"}</td>
                         <td>{product.name}</td>
                         <td>${Number(product.cost_price || 0).toFixed(2)}</td>
                         <td>${Number(product.price || 0).toFixed(2)}</td>
