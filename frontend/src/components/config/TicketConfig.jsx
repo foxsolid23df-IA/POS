@@ -123,6 +123,8 @@ export const TicketConfig = () => {
 
   const handleTestPrint = () => {
     import("../../services/printerService").then(({ printerService }) => {
+      const printableWidth = settings.paper_width === "58mm" ? "196px" : "272px";
+      const ticketPadding = settings.paper_width === "58mm" ? "3px" : "3px 4px";
       const ticketHtml = `<!DOCTYPE html>
             <html>
                 <head>
@@ -142,14 +144,12 @@ export const TicketConfig = () => {
                             font-weight: ${
                               settings.is_bold ? "bold" : "normal"
                             };
-                            width: ${
-                              settings.paper_width === "58mm"
-                                ? "180px"
-                                : "280px"
-                            };
-                            margin: ${settings.margin}px auto;
-                            padding: 10px;
+                            width: ${printableWidth};
+                            max-width: ${printableWidth};
+                            margin: ${settings.margin}px 0;
+                            padding: ${ticketPadding};
                             color: black;
+                            box-sizing: border-box;
                         }
                         .header { text-align: center; margin-bottom: 10px; }
                         .logo { max-width: 100%; height: auto; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto; }
