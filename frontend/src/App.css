@@ -172,3 +172,14 @@ html.dark .main-content {
 .animate-fade-in-up {
   animation: fadeInUp 0.25s ease-out;
 }
+
+/* ===== GLOBAL MODAL LAYERING CORRECTION ===== */
+/* Force all modal overlays to render on top of the navigation sidebar (z-index > 1002) */
+body .modal-overlay,
+body .payment-modal-overlay,
+body .entradas-modal-overlay,
+body .new-product-modal-overlay,
+body .superadmin-modal-overlay {
+  z-index: 9999 !important;
+}
+
