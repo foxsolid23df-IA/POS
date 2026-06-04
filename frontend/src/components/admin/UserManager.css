@@ -115,13 +115,42 @@
 
 /* FORMS & BUTTONS */
 .btn-primary {
-    background: var(--accent);
-    color: #000;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #fff;
     border: none;
     padding: 0.8rem 1.5rem;
-    border-radius: 10px;
-    font-weight: 700;
+    border-radius: 12px;
+    font-weight: 800;
     cursor: pointer;
+    box-shadow: 0 10px 24px -12px rgba(37, 99, 235, 0.8);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #1d4ed8, #1e40af);
+    box-shadow: 0 14px 28px -14px rgba(37, 99, 235, 0.9);
+    transform: translateY(-1px);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-secondary {
+    background: #ffffff;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    padding: 0.8rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+    color: #0f172a;
 }
 
 /* Actions Cell - Separated Buttons */
@@ -140,83 +169,267 @@
 }
 
 .btn-edit {
-    background: rgba(59, 130, 246, 0.1);
-    color: #3b82f6;
-    border: 1px solid rgba(59, 130, 246, 0.2);
-    padding: 8px 16px;
-    border-radius: 8px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    padding: 9px 14px;
+    border-radius: 10px;
     cursor: pointer;
-    font-weight: 600;
+    font-weight: 800;
     display: flex;
     align-items: center;
+    justify-content: center;
+    min-width: 96px;
     transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
 .btn-edit:hover {
-    background: #3b82f6;
+    background: #2563eb;
     color: white;
-    border-color: #3b82f6;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    border-color: #2563eb;
+    box-shadow: 0 10px 18px -12px rgba(37, 99, 235, 0.8);
+    transform: translateY(-1px);
 }
 
 .btn-delete {
-    background: rgba(239, 68, 68, 0.1);
-    color: var(--danger);
-    border: 1px solid rgba(239, 68, 68, 0.2);
-    padding: 8px 16px;
-    border-radius: 8px;
+    background: #fff1f2;
+    color: #be123c;
+    border: 1px solid #fecdd3;
+    padding: 9px 14px;
+    border-radius: 10px;
     cursor: pointer;
-    font-weight: 600;
+    font-weight: 800;
     display: flex;
     align-items: center;
+    justify-content: center;
+    min-width: 104px;
     transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
 .btn-delete:hover {
     background: #ef4444;
     color: white;
     border-color: #ef4444;
-    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    box-shadow: 0 10px 18px -12px rgba(239, 68, 68, 0.8);
+    transform: translateY(-1px);
 }
 
-/* MODAL GLASS */
-.modal-overlay {
+/* MODAL */
+.user-manager-container .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(15, 23, 42, 0.6);
-    backdrop-filter: blur(8px);
+    background: rgba(15, 23, 42, 0.72);
+    backdrop-filter: blur(10px);
     display: flex;
     justify-content: center;
     align-items: center;
+    padding: 1.5rem;
     z-index: 1000;
 }
 
-.modal-content {
-    background: var(--dm-card-bg);
-    border: 1px solid var(--dm-border);
-    border-radius: 20px;
-    padding: 2.5rem;
-    width: 90%;
-    max-width: 600px;
+.user-manager-container .modal-content {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 18px !important;
+    padding: 2rem !important;
+    width: min(1120px, 96vw) !important;
+    max-width: 1120px !important;
     max-height: 90vh;
     overflow-y: auto;
-    color: var(--dm-text-primary) !important;
+    color: #0f172a !important;
+    box-shadow: 0 28px 80px -28px rgba(15, 23, 42, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.72) inset;
+    scrollbar-gutter: stable;
 }
 
-.modal-content h3 {
-    color: var(--dm-text-primary) !important;
+.user-manager-container .modal-content h3 {
+    color: #0f172a !important;
     margin-top: 0;
-    margin-bottom: 2rem;
-    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 1.9rem;
     font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.user-manager-container .modal-content form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.user-manager-container .modal-content .form-group {
+    margin-bottom: 0;
+}
+
+.user-manager-container .modal-content .form-group label {
+    color: #334155 !important;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.45rem;
+}
+
+.user-manager-container .modal-content .form-group input,
+.user-manager-container .modal-content .form-group select {
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 12px;
+    color: #0f172a !important;
+    font-size: 0.98rem;
+    font-weight: 700;
+    min-height: 52px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.user-manager-container .modal-content .form-group input::placeholder {
+    color: #94a3b8;
+}
+
+.user-manager-container .modal-content .form-group input:focus,
+.user-manager-container .modal-content .form-group select:focus {
+    background: #ffffff !important;
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14), 0 8px 22px -18px rgba(37, 99, 235, 0.8) !important;
+}
+
+.user-manager-container .permissions-section {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 16px;
+    padding: 1.25rem !important;
+    margin-top: 0.25rem !important;
+}
+
+.user-manager-container .permissions-section h4 {
+    color: #0f172a !important;
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.user-manager-container .permission-toggle {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    min-height: 44px;
+    padding: 0.75rem 0.85rem;
+}
+
+.user-manager-container .permission-toggle input {
+    width: 16px;
+    height: 16px;
+    accent-color: #2563eb;
 }
 
 .permission-toggle label {
     font-weight: 600 !important;
-    color: var(--dm-text-primary) !important;
+    color: #334155 !important;
     text-transform: none !important;
     letter-spacing: normal !important;
+}
+
+.user-manager-container .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.dark .user-manager-container .modal-content {
+    background: #111827 !important;
+    border-color: #334155 !important;
+    color: #f8fafc !important;
+    box-shadow: 0 28px 80px -28px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(148, 163, 184, 0.08) inset;
+}
+
+.dark .user-manager-container .modal-content h3 {
+    color: #f8fafc !important;
+    border-bottom-color: #334155;
+}
+
+.dark .user-manager-container .modal-content .form-group label,
+.dark .user-manager-container .permission-toggle label,
+.dark .user-manager-container .permissions-section h4 {
+    color: #e2e8f0 !important;
+}
+
+.dark .user-manager-container .modal-content .form-group input,
+.dark .user-manager-container .modal-content .form-group select {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+    color: #f8fafc !important;
+}
+
+.dark .user-manager-container .modal-content .form-group input:focus,
+.dark .user-manager-container .modal-content .form-group select:focus {
+    background: #111827 !important;
+    border-color: #60a5fa !important;
+}
+
+.dark .user-manager-container .permissions-section,
+.dark .user-manager-container .permission-toggle {
+    background: #0f172a;
+    border-color: #334155 !important;
+}
+
+.dark .btn-secondary {
+    background: #1e293b;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+
+.dark .btn-secondary:hover {
+    background: #334155;
+    color: #f8fafc;
+}
+
+.dark .btn-edit {
+    background: rgba(37, 99, 235, 0.16);
+    border-color: rgba(96, 165, 250, 0.32);
+    color: #93c5fd;
+}
+
+.dark .btn-delete {
+    background: rgba(225, 29, 72, 0.14);
+    border-color: rgba(251, 113, 133, 0.28);
+    color: #fda4af;
+}
+
+@media (max-width: 760px) {
+    .user-manager-container .modal-overlay {
+        align-items: flex-start;
+        padding: 1rem;
+    }
+
+    .user-manager-container .modal-content {
+        padding: 1.25rem !important;
+        width: 100% !important;
+        max-height: 94vh;
+    }
+
+    .user-manager-container .modal-content h3 {
+        font-size: 1.5rem;
+    }
+
+    .user-manager-container .form-group-row {
+        flex-direction: column;
+    }
+
+    .user-manager-container .permissions-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .user-manager-container .modal-actions {
+        flex-direction: column-reverse;
+    }
+
+    .user-manager-container .modal-actions button {
+        width: 100%;
+    }
 }

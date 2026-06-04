@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase";
 import { useAuth } from "../../hooks/useAuth";
 import BillingPortalModal from "./BillingPortalModal";
@@ -17,6 +18,7 @@ const REGIMENES_FISCALES = [
 ];
 
 export default function BillingIssuers() {
+  const navigate = useNavigate();
   const { token } = useAuth();
   const [issuers, setIssuers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -207,6 +209,16 @@ export default function BillingIssuers() {
             <p className="text-slate-500 dark:text-slate-400 mt-2 font-['Inter']">
               Administración de RFCs y Certificados de Sellos Digitales (CSD)
             </p>
+            <button
+              type="button"
+              onClick={() => navigate("/configuracion")}
+              className="mt-4 flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition-all text-slate-600 dark:text-slate-300 font-bold text-xs w-fit"
+            >
+              <span className="material-icons-outlined text-[18px]">
+                arrow_back
+              </span>
+              <span>Regresar a Configuración</span>
+            </button>
           </div>
           <button
             onClick={() => setShowModal(true)}

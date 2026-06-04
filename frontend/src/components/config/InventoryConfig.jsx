@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../supabase";
 import { productService } from "../../services/productService";
@@ -6,6 +7,7 @@ import Swal from "sweetalert2";
 import "./InventoryConfig.css";
 
 const InventoryConfig = () => {
+  const navigate = useNavigate();
   const { user, fetchProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [wiping, setWiping] = useState(false);
@@ -162,6 +164,14 @@ const InventoryConfig = () => {
         <p className="inventory-config-subtitle">
           Selecciona el nivel de detalle que deseas manejar en tus productos
         </p>
+        <button
+          type="button"
+          className="inventory-config-back-button"
+          onClick={() => navigate("/configuracion")}
+        >
+          <span className="material-symbols-outlined">arrow_back</span>
+          <span>Regresar a Configuración</span>
+        </button>
       </header>
 
       <div className="inventory-config-content">

@@ -57,6 +57,32 @@ html.dark .inventory-config-container::-webkit-scrollbar-thumb:hover {
   line-height: 1.6;
 }
 
+.inventory-config-back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1.25rem auto 0;
+  padding: 0.65rem 1rem;
+  background: white;
+  border: 1px solid var(--slate-200);
+  border-radius: 0.75rem;
+  color: var(--slate-600);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  transition: all 0.2s ease;
+}
+
+.inventory-config-back-button:hover {
+  background: var(--slate-100);
+  color: var(--slate-800);
+}
+
+.inventory-config-back-button .material-symbols-outlined {
+  font-size: 18px;
+}
+
 .mode-cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
@@ -615,6 +641,17 @@ html.dark .inventory-config-title {
 
 html.dark .inventory-config-subtitle {
   color: #94a3b8;
+}
+
+html.dark .inventory-config-back-button {
+  background: #1e293b;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+html.dark .inventory-config-back-button:hover {
+  background: #334155;
+  color: #f8fafc;
 }
 
 /* Mode Cards */
