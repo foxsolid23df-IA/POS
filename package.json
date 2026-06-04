@@ -13,7 +13,10 @@
     "build:frontend": "cd frontend && npm run build && cd ..",
     "prepare:backend": "node scripts/prepare-backend.js",
     "dist": "npm run build:all && electron-builder --win --x64",
-    "build": "npm run build:frontend"
+    "build": "npm run build:frontend",
+    "test:frontend": "cd frontend && npm test -- --run",
+    "test:e2e": "cd frontend && npm run test:e2e",
+    "verify": "npm run test:frontend && npm run build:frontend && npm run test:e2e"
   },
   "keywords": [
     "pos",

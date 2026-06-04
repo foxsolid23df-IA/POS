@@ -49,3 +49,5 @@ build/
 .agents/
 scratch/
 skills-lock.json
+
+testsprite_tests\tmp\config.json

@@ -25,5 +25,9 @@ Thumbs.db
 *.log
 npm-debug.log*
 
+# Test artifacts
+playwright-report/
+test-results/
+
 .vercel
 .env*.local

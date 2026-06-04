@@ -11,6 +11,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest",
+    "test:e2e": "playwright test",
     "android:sync": "npm run build && npx cap sync android",
     "android:open": "npm run android:sync && npx cap open android",
     "android:debug": "powershell -ExecutionPolicy Bypass -File ./generar_apk.ps1",
@@ -36,6 +37,7 @@
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^8.1.0",
+    "@playwright/test": "^1.60.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "aria-query": "^5.3.2",

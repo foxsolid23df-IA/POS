@@ -274,7 +274,7 @@ returns table (
 )
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 begin
   if p_pin is null or length(trim(p_pin)) < 4 or length(trim(p_pin)) > 6 then
@@ -307,7 +307,7 @@ create or replace function public.set_staff_pin(p_staff_id bigint, p_pin text)
 returns void
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 begin
   if p_pin is null or p_pin !~ '^[0-9]{4,6}$' then
