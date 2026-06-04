@@ -183,3 +183,7 @@ body .superadmin-modal-overlay {
   z-index: 9999 !important;
 }
 
+/* SweetAlert2 must sit above app modals, especially forms that validate in place. */
+body .swal2-container {
+  z-index: 10050 !important;
+}
