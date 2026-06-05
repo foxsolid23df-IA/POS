@@ -11,6 +11,10 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    env:
+      VITE_SUPABASE_URL: https://example.supabase.co
+      VITE_SUPABASE_ANON_KEY: ci-test-anon-key
+      VITE_APP_MODE: pos
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

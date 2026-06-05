@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   from: vi.fn(),
   getTerminalId: vi.fn(),
+  validateTerminalExistence: vi.fn(),
   queries: [],
 }));
 
@@ -15,6 +16,7 @@ vi.mock('../../supabase', () => ({
 vi.mock('../terminalService', () => ({
   terminalService: {
     getTerminalId: mocks.getTerminalId,
+    validateTerminalExistence: mocks.validateTerminalExistence,
   },
 }));
 
@@ -78,6 +80,7 @@ describe('cashSessionService shared cashbox', () => {
     vi.clearAllMocks();
     mocks.queries.length = 0;
     mocks.getTerminalId.mockReturnValue('11111111-1111-4111-8111-111111111111');
+    mocks.validateTerminalExistence.mockResolvedValue(true);
   });
 
   it('reutiliza una sesion compartida abierta en lugar de crear otra', async () => {

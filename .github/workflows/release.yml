@@ -14,6 +14,9 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || secrets.VITE_SUPABASE_URL || 'https://qqvjhitxehlqyvawnept.supabase.co' }}
+      VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY || secrets.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxdmpoaXR4ZWhscXl2YXduZXB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg2MDczNDksImV4cCI6MjA4NDE4MzM0OX0.fqzRsPb883Bn9Ob1ktZziyZtA4MUcTgtfaon6VoszqA' }}
+      VITE_APP_MODE: pos
 
     steps:
       - name: Checkout code
