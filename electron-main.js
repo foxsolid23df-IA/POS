@@ -6,6 +6,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const http = require('http');
 const net = require('net');
+const crypto = require('crypto');
 const log = require('electron-log');
 const { autoUpdater } = require('electron-updater');
 
@@ -28,6 +29,44 @@ function obtenerPuertoLibre() {
 }
 
 const isDev = process.env.NODE_ENV === 'development';
+
+function generateHexSecret(bytes) {
+    return crypto.randomBytes(bytes).toString('hex');
+}
+
+function ensureBackendRuntimeSecrets(userDataPath) {
+    const fs = require('fs');
+    const secretsPath = path.join(userDataPath, 'backend-runtime-secrets.json');
+    const requiredSecrets = ['JWT_SECRET', 'MASTER_PIN'];
+
+    let secrets = {};
+    if (fs.existsSync(secretsPath)) {
+        try {
+            secrets = JSON.parse(fs.readFileSync(secretsPath, 'utf8'));
+        } catch (error) {
+            console.warn('[Backend Env] No se pudieron leer secretos locales, se regeneraran.', error.message);
+        }
+    }
+
+    let changed = false;
+    if (!secrets.JWT_SECRET) {
+        secrets.JWT_SECRET = generateHexSecret(64);
+        changed = true;
+    }
+    if (!secrets.MASTER_PIN) {
+        secrets.MASTER_PIN = generateHexSecret(16);
+        changed = true;
+    }
+
+    if (changed) {
+        fs.writeFileSync(secretsPath, JSON.stringify(secrets, null, 2), 'utf8');
+    }
+
+    return requiredSecrets.reduce((env, key) => {
+        if (!process.env[key]) env[key] = secrets[key];
+        return env;
+    }, {});
+}
 
 const updateState = {
     checking: false,
@@ -193,6 +232,7 @@ function iniciarBackend() {
         // En producción, Program Files es de solo lectura,
         // así que usamos AppData del usuario
         const userDataPath = app.getPath('userData');
+        const backendRuntimeSecrets = ensureBackendRuntimeSecrets(userDataPath);
         const dbDataDir = isDev
             ? path.join(__dirname, 'backend', 'data')
             : path.join(userDataPath, 'data');
@@ -234,6 +274,7 @@ function iniciarBackend() {
             cwd: backendPath,
             env: {
                 ...process.env,
+                ...backendRuntimeSecrets,
                 NODE_ENV: 'production',
                 DB_PATH: path.join(dbDataDir, 'sistema-pos.db'),
                 HOST: '127.0.0.1',
@@ -383,7 +424,7 @@ function crearVentana() {
                         dialog.showMessageBox(mainWindow, {
                             type: 'info',
                             title: 'Acerca de NEXUM POS',
-                            message: 'NEXUM POS v1.1.2',
+                            message: `NEXUM POS v${app.getVersion()}`,
                             detail: 'Sistema punto de venta profesional.\nTodos los derechos reservados © 2026',
                             buttons: ['Aceptar']
                         });

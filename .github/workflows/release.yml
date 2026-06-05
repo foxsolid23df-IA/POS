@@ -56,7 +56,34 @@ jobs:
           BACKEND_ENV: ${{ secrets.BACKEND_ENV }}
         run: |
           New-Item -ItemType Directory -Force -Path build | Out-Null
-          Set-Content -Path build\.env -Value $env:BACKEND_ENV -Encoding UTF8
+          function New-HexSecret([int]$bytes) {
+            $buffer = New-Object byte[] $bytes
+            [System.Security.Cryptography.RandomNumberGenerator]::Fill($buffer)
+            return ($buffer | ForEach-Object { $_.ToString("x2") }) -join ""
+          }
+
+          $envContent = $env:BACKEND_ENV
+          if ([string]::IsNullOrWhiteSpace($envContent)) {
+            $jwtSecret = New-HexSecret 64
+            $masterPin = New-HexSecret 16
+            $envContent = @(
+              "PORT=3001",
+              "HOST=127.0.0.1",
+              "NODE_ENV=production",
+              "FRONTEND_URL=http://localhost:3001,http://localhost:5173",
+              "JWT_SECRET=$jwtSecret",
+              "MASTER_PIN=$masterPin"
+            ) -join "`n"
+          }
+
+          if ($envContent -notmatch "(?m)^JWT_SECRET=") {
+            $envContent += "`nJWT_SECRET=$(New-HexSecret 64)"
+          }
+          if ($envContent -notmatch "(?m)^MASTER_PIN=") {
+            $envContent += "`nMASTER_PIN=$(New-HexSecret 16)"
+          }
+
+          Set-Content -Path build\.env -Value $envContent -Encoding UTF8
 
       - name: Build app
         run: npm run build:all
