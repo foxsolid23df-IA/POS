@@ -5,12 +5,14 @@ import { maintenanceService } from "../../services/maintenanceService";
 import { terminalService } from "../../services/terminalService";
 import { backupService } from "../../services/backupService";
 import { useAuth } from "../../hooks/useAuth";
+import { isWebAdminMode } from "../../utils/appMode";
 import Swal from "sweetalert2";
 import "./Maintenance.css";
 
 const Maintenance = () => {
   const navigate = useNavigate();
   const { user, fetchProfile } = useAuth();
+  const webAdminMode = isWebAdminMode();
   const [isAuthorized, setIsAuthorized] = useState(() => {
     return sessionStorage.getItem("admin_authorized") === "true";
   });
@@ -69,7 +71,7 @@ const Maintenance = () => {
 
   React.useEffect(() => {
     if (isAuthorized) {
-      fetchTerminals();
+      if (!webAdminMode) fetchTerminals();
       fetchHealth();
       fetchLogs(masterPin);
 
@@ -77,7 +79,7 @@ const Maintenance = () => {
       const interval = setInterval(() => fetchHealth(), 30000);
       return () => clearInterval(interval);
     }
-  }, [isAuthorized]);
+  }, [isAuthorized, webAdminMode]);
 
   const handlePinSubmit = async (e) => {
     e.preventDefault();
@@ -418,6 +420,7 @@ const Maintenance = () => {
         </button>
       </div>
 
+      {!webAdminMode && (
       <div className="maintenance-card warning">
         <div className="warning-icon">⚠️</div>
         <div className="warning-content">
@@ -428,6 +431,7 @@ const Maintenance = () => {
           </p>
         </div>
       </div>
+      )}
 
       <div className="maintenance-content">
         <section className="pin-master-card">
@@ -481,6 +485,13 @@ const Maintenance = () => {
           </form>
         </section>
 
+        {webAdminMode && message.text && (
+          <div className={`status-message ${message.type}`}>
+            {message.text}
+          </div>
+        )}
+
+        {!webAdminMode && (
         <section className="reset-section">
           <h3>Opciones de Reset</h3>
           <div className="options-grid">
@@ -558,7 +569,9 @@ const Maintenance = () => {
             </div>
           )}
         </section>
+        )}
 
+        {!webAdminMode && (
         <section className="reset-section">
           <h3>Sesiones de Caja</h3>
           <p className="section-description">
@@ -587,6 +600,7 @@ const Maintenance = () => {
             </button>
           </div>
         </section>
+        )}
 
         <section className="reset-section">
           <h3>Respaldos y Recuperacion</h3>
@@ -650,6 +664,7 @@ const Maintenance = () => {
           </div>
         </section>
 
+        {!webAdminMode && (
         <section className="maintenance-section">
           <h3>Dispositivos Registrados</h3>
           <div className="terminals-list">
@@ -701,8 +716,10 @@ const Maintenance = () => {
             )}
           </div>
         </section>
+        )}
       </div>
 
+      {!webAdminMode && (
       <section className="reset-section nuclear">
         <h3 className="text-danger">☢️ Reset de Fábrica</h3>
         <div className="confirmation-box nuclear">
@@ -726,6 +743,7 @@ const Maintenance = () => {
           </button>
         </div>
       </section>
+      )}
     </div>
   );
 };

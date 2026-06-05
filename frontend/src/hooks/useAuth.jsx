@@ -12,10 +12,12 @@ import {
 import { useSessionTimeout } from "../hooks/useSessionTimeout";
 import { isAbortError } from "../utils/supabaseErrorHandler";
 import { SessionTimeoutModal } from "../components/common/SessionTimeoutModal";
+import { isWebAdminMode } from "../utils/appMode";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+  const webAdminMode = isWebAdminMode();
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -87,6 +89,7 @@ export const AuthProvider = ({ children }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchProfile(session.user.id);
+        if (webAdminMode) return;
         // Intentar restaurar sesion de empleado activa (con integridad verificada)
         secureGet("activeStaff", 24 * 60 * 60 * 1000)
           .then((savedStaff) => {
@@ -182,6 +185,26 @@ export const AuthProvider = ({ children }) => {
       // Check license status before assuming the app is ready
       await checkLicenseStatus(userId, silent);
 
+      if (webAdminMode) {
+        setCashSession(null);
+        setNeedsCashFund(false);
+
+        if (data?.role === "admin") {
+          const adminStaff = {
+            name: data.full_name || "Administrador",
+            role: "admin",
+            isOwner: true,
+            webAdmin: true,
+          };
+          setActiveStaff(adminStaff);
+          secureSet("activeStaff", adminStaff);
+        } else {
+          setActiveStaff(null);
+          secureRemove("activeStaff");
+        }
+        return;
+      }
+
       // Verificar sesión de caja inmediatamente después de obtener el perfil
       await checkCashSession(data);
     } catch (error) {
@@ -234,6 +257,8 @@ export const AuthProvider = ({ children }) => {
       password,
     });
     if (error) throw error;
+    if (webAdminMode) return data;
+
     // Al iniciar sesion, el dueno es el operador activo
     const ownerStaff = { name: "Propietario", role: "admin", isOwner: true };
     setActiveStaff(ownerStaff);
@@ -424,6 +449,12 @@ export const AuthProvider = ({ children }) => {
 
   // Verificar si hay sesión de caja activa
   const checkCashSession = async (profileOverride = profile) => {
+    if (webAdminMode) {
+      setCashSession(null);
+      setNeedsCashFund(false);
+      return null;
+    }
+
     try {
       const cashboxMode = profileOverride?.cashbox_mode || "terminal";
       const session = await cashSessionService.getActiveSession(cashboxMode);
@@ -448,6 +479,10 @@ export const AuthProvider = ({ children }) => {
 
   // Abrir sesión de caja con fondo inicial
   const openCashSession = async (openingFund) => {
+    if (webAdminMode) {
+      throw new Error("Caja no disponible en modo web admin.");
+    }
+
     const staffName = activeStaff?.name || profile?.full_name || "Propietario";
     const staffId = activeStaff?.id || null;
     const cashboxMode = profile?.cashbox_mode || "terminal";
@@ -465,6 +500,7 @@ export const AuthProvider = ({ children }) => {
 
   // Cerrar sesión de caja actual
   const closeCashSession = async () => {
+    if (webAdminMode) return;
     if (!cashSession) return;
     await cashSessionService.closeSession(cashSession.id);
     setCashSession(null);
@@ -520,6 +556,7 @@ export const AuthProvider = ({ children }) => {
     // Info de la licencia
     isLicenseExpired,
     isLicenseValidating,
+    isWebAdminMode: webAdminMode,
 
     // Info de la tienda
     storeName: profile?.store_name,

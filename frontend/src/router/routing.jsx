@@ -22,6 +22,7 @@ import { ScrollTopButton } from "../components/common/ScrollTopButton";
 import { ProductProvider } from "../contexts/ProductContext";
 import { SettingsProvider } from "../contexts/SettingsContext";
 import { useAndroidBackButton } from "../hooks/useAndroidBackButton";
+import { isWebAdminMode } from "../utils/appMode";
 
 const Sales = lazy(() => import("../components/sales/Sales").then(m => ({ default: m.Sales })));
 const Inventory = lazy(() => import("../components/inventory/Inventory").then(m => ({ default: m.Inventory })));
@@ -39,6 +40,7 @@ const PaymentMethodsConfig = lazy(() => import("../components/config/PaymentMeth
 const CashboxConfig = lazy(() => import("../components/config/CashboxConfig"));
 const BillingIssuers = lazy(() => import("../components/config/BillingIssuers"));
 const InventoryConfig = lazy(() => import("../components/config/InventoryConfig"));
+const AppUpdates = lazy(() => import("../components/config/AppUpdates"));
 const Maintenance = lazy(() => import("../components/admin/Maintenance"));
 const Orders = lazy(() => import("../components/orders/Orders").then(m => ({ default: m.Orders })));
 const CreditMenu = lazy(() => import("../components/credit/CreditMenu").then(m => ({ default: m.CreditMenu })));
@@ -51,7 +53,46 @@ const BackButtonHandler = () => {
   return null;
 };
 
-const PrivateLayout = ({ children }) => {
+const AccessRestricted = () => {
+  const { logout } = useAuth();
+
+  return (
+    <div className="loading-screen" style={{ gap: "1rem", padding: "2rem", textAlign: "center" }}>
+      <span className="material-icons-outlined" style={{ fontSize: "3rem", color: "#ef4444" }}>
+        admin_panel_settings
+      </span>
+      <h1 style={{ margin: 0 }}>Acceso restringido</h1>
+      <p style={{ maxWidth: "32rem", margin: 0 }}>
+        Esta version web solo esta disponible para cuentas administradoras.
+      </p>
+      <button type="button" className="btn-primary" onClick={logout}>
+        Cerrar sesion
+      </button>
+    </div>
+  );
+};
+
+const WebAdminLayout = ({ children }) => {
+  const { user, loading, isLicenseExpired, isLicenseValidating } = useAuth();
+
+  if (loading || isLicenseValidating)
+    return <div className="loading-screen">Verificando acceso...</div>;
+  if (!user) return <Navigate to="/login" />;
+  if (isLicenseExpired) return <ExpiredLicense />;
+  if (user.role !== "admin") return <AccessRestricted />;
+
+  return (
+    <div className="app-layout">
+      <Sidebar />
+      <main className="main-content">
+        {children}
+        <ScrollTopButton />
+      </main>
+    </div>
+  );
+};
+
+const DesktopPOSLayout = ({ children }) => {
   const {
     user,
     loading,
@@ -200,6 +241,13 @@ const PrivateLayout = ({ children }) => {
   );
 };
 
+const PrivateLayout = ({ children }) =>
+  isWebAdminMode() ? (
+    <WebAdminLayout>{children}</WebAdminLayout>
+  ) : (
+    <DesktopPOSLayout>{children}</DesktopPOSLayout>
+  );
+
 const AdminRoute = ({ children }) => {
   const { isAdmin } = useAuth();
   return isAdmin ? children : <Navigate to="/" />;
@@ -245,7 +293,7 @@ export const Routing = () => {
                       path="/"
                       element={
                         <PrivateLayout>
-                          {sessionStorage.getItem("visor_mode") === "true" ? <Navigate to="/estadisticas" replace /> : <Sales />}
+                          {isWebAdminMode() || sessionStorage.getItem("visor_mode") === "true" ? <Navigate to="/estadisticas" replace /> : <Sales />}
                         </PrivateLayout>
                       }
                     />
@@ -253,7 +301,7 @@ export const Routing = () => {
                       path="/ventas"
                       element={
                         <PrivateLayout>
-                          {sessionStorage.getItem("visor_mode") === "true" ? <Navigate to="/estadisticas" replace /> : <Sales />}
+                          {isWebAdminMode() || sessionStorage.getItem("visor_mode") === "true" ? <Navigate to="/estadisticas" replace /> : <Sales />}
                         </PrivateLayout>
                       }
                     />
@@ -412,9 +460,13 @@ export const Routing = () => {
                       path="/config-caja"
                       element={
                         <PrivateLayout>
-                          <AdminRoute>
-                            <CashboxConfig />
-                          </AdminRoute>
+                          {isWebAdminMode() ? (
+                            <Navigate to="/configuracion" replace />
+                          ) : (
+                            <AdminRoute>
+                              <CashboxConfig />
+                            </AdminRoute>
+                          )}
                         </PrivateLayout>
                       }
                     />
@@ -437,6 +489,21 @@ export const Routing = () => {
                           <AdminRoute>
                             <InventoryConfig />
                           </AdminRoute>
+                        </PrivateLayout>
+                      }
+                    />
+
+                    <Route
+                      path="/config-actualizaciones"
+                      element={
+                        <PrivateLayout>
+                          {isWebAdminMode() ? (
+                            <Navigate to="/configuracion" replace />
+                          ) : (
+                            <AdminRoute>
+                              <AppUpdates />
+                            </AdminRoute>
+                          )}
                         </PrivateLayout>
                       }
                     />

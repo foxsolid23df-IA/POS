@@ -3,12 +3,14 @@ import { Navigate, useParams } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { invitationService } from "../../services/invitationService";
 import { ForgotPasswordModal } from "./ForgotPasswordModal";
+import { isWebAdminMode } from "../../utils/appMode";
 import logo from "../../assets/icon.png";
 import "./Login.css";
 
 export const Login = () => {
   const { login, signUp, user } = useAuth();
   const { invitationCode } = useParams(); // Para rutas como /register/ADMIN2024
+  const webAdminMode = isWebAdminMode();
 
   // UI State
   const [isRegistering, setIsRegistering] = useState(false);
@@ -31,6 +33,7 @@ export const Login = () => {
 
   // Si hay código de invitación en la URL, activar modo registro y pre-llenar el código
   useEffect(() => {
+    if (webAdminMode) return;
     if (invitationCode) {
       setIsRegistering(true);
       setFormData((prev) => ({
@@ -38,10 +41,10 @@ export const Login = () => {
         invitationCode: invitationCode.toUpperCase(),
       }));
     }
-  }, [invitationCode]);
+  }, [invitationCode, webAdminMode]);
 
   if (user) {
-    return <Navigate to="/" />;
+    return <Navigate to={webAdminMode ? "/estadisticas" : "/"} />;
   }
 
   const handleChange = (e) => {
@@ -58,7 +61,9 @@ export const Login = () => {
     setError("");
 
     try {
-      if (isRegistering) {
+      if (webAdminMode) {
+        await login(formData.email, formData.password);
+      } else if (isRegistering) {
         // Validar código de invitación contra la base de datos
         if (!formData.invitationCode) {
           setError(
@@ -116,7 +121,9 @@ export const Login = () => {
           <div className="glass-panel-header">
             <h1>{isRegistering ? "Crear Cuenta" : "Bienvenido"}</h1>
             <p>
-              {isRegistering
+              {webAdminMode
+                ? "Administra tu negocio desde el navegador"
+                : isRegistering
                 ? "Registra tu negocio en NEXUM POS"
                 : "Gestiona tu negocio profesionalmente"}
             </p>
@@ -125,7 +132,7 @@ export const Login = () => {
           {error && <div className="login-error-msg">{error}</div>}
 
           <form onSubmit={handleSubmit} className="login-form">
-            {isRegistering && (
+            {!webAdminMode && isRegistering && (
               <>
                 <div className="form-group">
                   <label>Código de Invitación *</label>
@@ -256,7 +263,7 @@ export const Login = () => {
             </button>
           </form>
 
-          {isRegistering && (
+          {!webAdminMode && isRegistering && (
             <div className="login-footer-text">
               <p>
                 ¿Ya tienes cuenta?

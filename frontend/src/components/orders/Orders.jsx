@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import Swal from "sweetalert2";
 import { salesService } from "../../services/salesService";
 import { returnService } from "../../services/returnService";
 import { printerService } from "../../services/printerService";
@@ -6,6 +7,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { useSettings } from "../../contexts/SettingsContext";
 import { formatearDinero, formatearFechaHora } from "../../utils";
 import { generateTicketHtml, wrapTicketForPrinting } from "../../utils/ticketFormatter";
+import { isWebAdminMode } from "../../utils/appMode";
 import "./Orders.css";
 
 const ROWS_PER_PAGE = 25;
@@ -17,6 +19,8 @@ const toLocalDateStr = (date) => {
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 };
+
+const formatFolio = (id) => `#${id}`;
 
 const DATE_PRESETS = {
   today: { label: "Hoy", getRange: () => {
@@ -71,6 +75,7 @@ const getPaymentChipClass = (method) => {
 export const Orders = () => {
   const { user } = useAuth();
   const { ticketSettings } = useSettings();
+  const webAdminMode = isWebAdminMode();
 
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -213,26 +218,86 @@ export const Orders = () => {
   const handleCancelSale = useCallback(async (order) => {
     if (!order?.id || returningOrderId) return;
 
-    if (order.sale_status === "cancelled" || order.sale_status === "returned") {
-      window.alert("Esta venta ya fue cancelada o devuelta.");
+    if (webAdminMode) {
+      await Swal.fire(
+        "Solo lectura en web admin",
+        "Cancelar o devolver ventas registra movimientos de caja y solo esta disponible en el POS local.",
+        "info",
+      );
       return;
     }
 
-    const reason = window.prompt("Motivo de cancelacion/devolucion:");
-    if (!reason?.trim()) return;
+    if (order.sale_status === "cancelled" || order.sale_status === "returned") {
+      await Swal.fire("Venta ya procesada", "Esta venta ya fue cancelada o devuelta.", "info");
+      return;
+    }
 
-    const restock = window.confirm("Regresar productos al inventario?");
-    const refundInput = window.prompt(
-      "Monto a devolver/registrar en caja (deja vacio para usar el total pagado):",
-      String(order.paid_amount || order.total || "")
-    );
+    const defaultRefundAmount = parseFloat(order.paid_amount ?? order.total ?? 0) || 0;
+    const result = await Swal.fire({
+      title: `Cancelar / Devolver ${formatFolio(order.id)}`,
+      html: `
+        <div style="text-align:left; display:flex; flex-direction:column; gap:0.85rem;">
+          <label style="display:flex; flex-direction:column; gap:0.35rem; font-size:0.85rem; font-weight:700; color:#334155;">
+            Motivo
+            <textarea id="orders-return-reason" class="swal2-textarea" rows="3" placeholder="Ej. Cliente regreso material" style="margin:0; width:100%; min-height:5.25rem; resize:vertical;"></textarea>
+          </label>
+          <label style="display:flex; flex-direction:column; gap:0.35rem; font-size:0.85rem; font-weight:700; color:#334155;">
+            Monto a devolver / registrar en caja
+            <input id="orders-return-refund" class="swal2-input" type="number" min="0" step="0.01" value="${defaultRefundAmount}" placeholder="Total pagado" style="margin:0; width:100%;">
+          </label>
+          <label style="display:flex; align-items:center; gap:0.55rem; font-size:0.85rem; color:#334155;">
+            <input id="orders-return-restock" type="checkbox" checked style="width:1rem; height:1rem;">
+            Regresar productos al inventario
+          </label>
+        </div>
+      `,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Registrar cancelacion",
+      cancelButtonText: "Volver",
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#64748b",
+      reverseButtons: true,
+      focusConfirm: false,
+      didOpen: () => {
+        document.getElementById("orders-return-reason")?.focus();
+      },
+      preConfirm: () => {
+        const reason = document.getElementById("orders-return-reason")?.value?.trim() || "";
+        const refundValue = document.getElementById("orders-return-refund")?.value ?? "";
+        const restock = Boolean(document.getElementById("orders-return-restock")?.checked);
+
+        if (!reason) {
+          Swal.showValidationMessage("Ingresa el motivo de la cancelacion/devolucion.");
+          return false;
+        }
+
+        if (refundValue !== "") {
+          const parsedRefund = Number(refundValue);
+          if (!Number.isFinite(parsedRefund) || parsedRefund < 0) {
+            Swal.showValidationMessage("Ingresa un monto valido mayor o igual a 0.");
+            return false;
+          }
+        }
+
+        return {
+          reason,
+          refundAmount: refundValue === "" ? null : Number(refundValue),
+          restock,
+        };
+      },
+    });
+
+    if (!result.isConfirmed || !result.value) return;
+
+    const { reason, refundAmount, restock } = result.value;
 
     try {
       setReturningOrderId(order.id);
       await returnService.cancelSaleWithRestock({
         saleId: order.id,
         reason,
-        refundAmount: refundInput === null || refundInput === "" ? null : refundInput,
+        refundAmount,
         restock,
       });
 
@@ -240,21 +305,19 @@ export const Orders = () => {
         ...order,
         sale_status: "cancelled",
         cancellation_reason: reason,
-        refunded_amount: refundInput === null || refundInput === "" ? (order.paid_amount || order.total || 0) : parseFloat(refundInput),
+        refunded_amount: refundAmount === null ? defaultRefundAmount : refundAmount,
       };
 
       setOrders((prev) => prev.map((item) => item.id === order.id ? updatedOrder : item));
       setSelectedOrder(updatedOrder);
-      window.alert("Venta cancelada/devolucion registrada correctamente.");
+      await Swal.fire("Listo", "Venta cancelada/devolucion registrada correctamente.", "success");
     } catch (err) {
       console.error("[Orders] Error al cancelar/devolver venta:", err);
-      window.alert(err.message || "No se pudo cancelar la venta.");
+      await Swal.fire("Error", err.message || "No se pudo cancelar la venta.", "error");
     } finally {
       setReturningOrderId(null);
     }
-  }, [returningOrderId]);
-
-  const formatFolio = (id) => `#${id}`;
+  }, [returningOrderId, webAdminMode]);
 
   const renderSkeleton = () => (
     <div className="orders-skeleton">
@@ -444,19 +507,27 @@ export const Orders = () => {
               <span className="material-icons-outlined">close</span>
               Cerrar
             </button>
-            <button className="modal-btn print" onClick={() => handleReprint(order)}>
-              <span className="material-icons-outlined">print</span>
-              Reimprimir Ticket
-            </button>
-            {!isCancelled && (
-              <button
-                className="modal-btn secondary"
-                onClick={() => handleCancelSale(order)}
-                disabled={returningOrderId === order.id}
-              >
-                <span className="material-icons-outlined">assignment_return</span>
-                {returningOrderId === order.id ? "Registrando..." : "Cancelar / Devolver"}
-              </button>
+            {webAdminMode ? (
+              <span className="text-xs font-bold text-slate-500">
+                Modo web admin: orden solo lectura.
+              </span>
+            ) : (
+              <>
+                <button className="modal-btn print" onClick={() => handleReprint(order)}>
+                  <span className="material-icons-outlined">print</span>
+                  Reimprimir Ticket
+                </button>
+                {!isCancelled && (
+                  <button
+                    className="modal-btn secondary"
+                    onClick={() => handleCancelSale(order)}
+                    disabled={returningOrderId === order.id}
+                  >
+                    <span className="material-icons-outlined">assignment_return</span>
+                    {returningOrderId === order.id ? "Registrando..." : "Cancelar / Devolver"}
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>

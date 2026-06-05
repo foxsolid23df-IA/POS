@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { terminalService } from "../../services/terminalService";
 import { CashCut } from "../cashcut/CashCut";
+import { isWebAdminMode } from "../../utils/appMode";
 import logo from "../../assets/logo.png";
 import "./Sidebar.css";
 
@@ -19,11 +20,15 @@ export const Sidebar = () => {
 
   const [showCashCut, setShowCashCut] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const webAdminMode = isWebAdminMode();
+  const isVisorMode = sessionStorage.getItem("visor_mode") === "true";
 
   // Determinar el nombre a mostrar
   const displayName = activeStaff?.name || "Usuario";
   const displayRole = activeStaff?.isOwner
-    ? "PROPIETARIO"
+    ? webAdminMode
+      ? "WEB ADMIN"
+      : "PROPIETARIO"
     : activeRole?.toUpperCase() || "VENDEDOR";
 
   const toggleSidebar = () => setIsOpen(!isOpen);
@@ -66,11 +71,13 @@ export const Sidebar = () => {
                 : "dark_mode"}
             </span>
           </button>
-          <button className="p-2 text-slate-500" onClick={lockScreen}>
-            <span className="material-icons-outlined text-[24px]">
-              account_circle
-            </span>
-          </button>
+          {!webAdminMode && (
+            <button className="p-2 text-slate-500" onClick={lockScreen}>
+              <span className="material-icons-outlined text-[24px]">
+                account_circle
+              </span>
+            </button>
+          )}
         </div>
       </header>
 
@@ -109,7 +116,7 @@ export const Sidebar = () => {
                 NEXUM POS
               </span>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                POS System
+                {webAdminMode ? "Web Admin" : "POS System"}
               </span>
             </div>
           </div>
@@ -132,7 +139,7 @@ export const Sidebar = () => {
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto custom-scrollbar">
-          {!(sessionStorage.getItem("visor_mode") === "true") && (
+          {!webAdminMode && !isVisorMode && (
             <NavLink
               to="/"
               className={({ isActive }) => `
@@ -318,7 +325,7 @@ export const Sidebar = () => {
           )}
 
           <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800">
-            {!(sessionStorage.getItem("visor_mode") === "true") && (
+            {!webAdminMode && !isVisorMode && (
               <button
                 onClick={() => {
                   setShowCashCut(true);
@@ -333,19 +340,21 @@ export const Sidebar = () => {
               </button>
             )}
 
-            <button
-              onClick={() => {
-                lockScreen();
-                setIsOpen(false);
-              }}
-              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-blue-600 dark:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors"
-            >
-              <span className="material-icons-outlined text-[20px]">lock</span>
-              <span className="text-sm font-bold">Bloquear</span>
-            </button>
+            {!webAdminMode && (
+              <button
+                onClick={() => {
+                  lockScreen();
+                  setIsOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-blue-600 dark:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors"
+              >
+                <span className="material-icons-outlined text-[20px]">lock</span>
+                <span className="text-sm font-bold">Bloquear</span>
+              </button>
+            )}
 
             <div className="space-y-1">
-              {(isAdmin || activeStaff?.permissions?.reset_cash) && (
+              {!webAdminMode && (isAdmin || activeStaff?.permissions?.reset_cash) && (
                 <button
                   onClick={() => {
                     if (
@@ -406,7 +415,7 @@ export const Sidebar = () => {
       </aside>
 
       {/* Modal de Corte de Caja */}
-      {showCashCut && <CashCut onClose={() => setShowCashCut(false)} />}
+      {!webAdminMode && showCashCut && <CashCut onClose={() => setShowCashCut(false)} />}
     </>
   );
 };

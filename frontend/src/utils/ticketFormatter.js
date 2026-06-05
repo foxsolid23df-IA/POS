@@ -338,8 +338,11 @@ export const generateTicketHtml = (sale, settings, user, options = {}) => {
 export const wrapTicketForPrinting = (ticketHtml, settings) => {
   const s = getSettings(settings);
   const pw = s.paper_width === "80mm" ? "80mm" : "58mm";
-  const fw = s.paper_width === "80mm" ? "272px" : "196px";
+  const fw = s.paper_width === "80mm" ? "260px" : "188px";
   const ticketPadding = s.paper_width === "80mm" ? "3px 4px" : "3px";
+  const userMargin = parseInt(s.margin, 10) || 0;
+  const leftOffset = `${(s.paper_width === "80mm" ? 10 : 7) + userMargin}px`;
+  const topOffset = `${userMargin}px`;
   const ff = s.font_family === "Sistema" ? "system-ui, -apple-system, sans-serif" : "Courier New, Courier, monospace";
   const fs = s.font_size || 13;
 
@@ -352,7 +355,7 @@ export const wrapTicketForPrinting = (ticketHtml, settings) => {
     .ticket-venta {
       width: ${fw} !important;
       max-width: ${fw} !important;
-      margin: 0 !important;
+      margin: ${topOffset} 0 0 ${leftOffset} !important;
       padding: ${ticketPadding} !important;
       box-shadow: none !important;
     }
@@ -368,7 +371,7 @@ export const wrapTicketForPrinting = (ticketHtml, settings) => {
   .ticket-venta {
     width: ${fw};
     max-width: ${fw};
-    margin: ${s.margin || 0}px 0;
+    margin: ${topOffset} 0 0 ${leftOffset};
     padding: ${ticketPadding};
     font-weight: ${s.is_bold ? "bold" : "normal"};
   }

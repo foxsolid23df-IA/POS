@@ -37,14 +37,20 @@
     "directories": {
       "output": "release"
     },
+    "publish": [
+      {
+        "provider": "github",
+        "releaseType": "release"
+      }
+    ],
     "files": [
+      "package.json",
       "electron-main.js",
       "preload.js",
       "icon.ico",
       "icon.png",
       "frontend/dist/**/*",
       "!backend/**",
-      "!node_modules",
       "!scripts",
       "!*.md",
       "!*.sql",
@@ -89,6 +95,8 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",
     "dotenv": "^17.4.2",
+    "electron-log": "^5.4.4",
+    "electron-updater": "^6.8.3",
     "node-machine-id": "^1.1.12"
   }
 }

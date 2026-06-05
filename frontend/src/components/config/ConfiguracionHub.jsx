@@ -1,11 +1,13 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { isWebAdminMode } from "../../utils/appMode";
 import "./ConfiguracionHub.css";
 
 export const ConfiguracionHub = () => {
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
+  const webAdminMode = isWebAdminMode();
 
   const configOptions = [
     {
@@ -37,6 +39,17 @@ export const ConfiguracionHub = () => {
       adminOnly: true,
       color: "text-purple-500",
       bgColor: "bg-purple-500/10",
+    },
+    {
+      id: "actualizaciones",
+      title: "Actualizaciones",
+      description: "Buscar, descargar e instalar nuevas versiones del .exe",
+      icon: "system_update_alt",
+      path: "/config-actualizaciones",
+      adminOnly: true,
+      webHidden: true,
+      color: "text-blue-600",
+      bgColor: "bg-blue-600/10",
     },
     {
       id: "dolares",
@@ -85,6 +98,7 @@ export const ConfiguracionHub = () => {
       icon: "point_of_sale",
       path: "/config-caja",
       adminOnly: true,
+      webHidden: true,
       color: "text-emerald-600",
       bgColor: "bg-emerald-600/10",
     },
@@ -112,7 +126,7 @@ export const ConfiguracionHub = () => {
 
   // Filtramos las opciones según el rol del usuario
   const visibleOptions = configOptions.filter((opt) =>
-    opt.adminOnly ? isAdmin : true
+    (opt.adminOnly ? isAdmin : true) && !(webAdminMode && opt.webHidden)
   );
 
   return (

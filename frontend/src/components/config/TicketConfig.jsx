@@ -123,8 +123,11 @@ export const TicketConfig = () => {
 
   const handleTestPrint = () => {
     import("../../services/printerService").then(({ printerService }) => {
-      const printableWidth = settings.paper_width === "58mm" ? "196px" : "272px";
+      const printableWidth = settings.paper_width === "58mm" ? "188px" : "260px";
       const ticketPadding = settings.paper_width === "58mm" ? "3px" : "3px 4px";
+      const userMargin = parseInt(settings.margin, 10) || 0;
+      const leftOffset = `${(settings.paper_width === "58mm" ? 7 : 10) + userMargin}px`;
+      const topOffset = `${userMargin}px`;
       const ticketHtml = `<!DOCTYPE html>
             <html>
                 <head>
@@ -146,7 +149,7 @@ export const TicketConfig = () => {
                             };
                             width: ${printableWidth};
                             max-width: ${printableWidth};
-                            margin: ${settings.margin}px 0;
+                            margin: ${topOffset} 0 0 ${leftOffset};
                             padding: ${ticketPadding};
                             color: black;
                             box-sizing: border-box;

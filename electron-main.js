@@ -6,6 +6,8 @@ const path = require('path');
 const { spawn } = require('child_process');
 const http = require('http');
 const net = require('net');
+const log = require('electron-log');
+const { autoUpdater } = require('electron-updater');
 
 let mainWindow;
 let backendProcess;
@@ -26,6 +28,107 @@ function obtenerPuertoLibre() {
 }
 
 const isDev = process.env.NODE_ENV === 'development';
+
+const updateState = {
+    checking: false,
+    downloading: false,
+    downloaded: false,
+    updateInfo: null,
+    lastStatus: null
+};
+
+function normalizeUpdateError(error) {
+    return {
+        message: error?.message || 'No se pudo completar la operacion de actualizacion.',
+        code: error?.code || null
+    };
+}
+
+function sendUpdateStatus(type, payload = {}) {
+    const status = {
+        type,
+        currentVersion: app.getVersion(),
+        timestamp: new Date().toISOString(),
+        ...payload
+    };
+
+    updateState.lastStatus = status;
+
+    BrowserWindow.getAllWindows().forEach((win) => {
+        if (!win.isDestroyed()) {
+            win.webContents.send('updates:status', status);
+        }
+    });
+
+    return status;
+}
+
+function getUpdaterAvailability() {
+    if (isDev || !app.isPackaged) {
+        return {
+            available: false,
+            reason: 'Las actualizaciones solo estan disponibles en la aplicacion instalada.'
+        };
+    }
+
+    if (process.platform !== 'win32') {
+        return {
+            available: false,
+            reason: 'Las actualizaciones automaticas estan configuradas solo para Windows.'
+        };
+    }
+
+    return { available: true };
+}
+
+function configureAutoUpdater() {
+    autoUpdater.logger = log;
+    autoUpdater.autoDownload = false;
+    autoUpdater.allowPrerelease = false;
+
+    log.transports.file.level = 'info';
+
+    autoUpdater.on('checking-for-update', () => {
+        updateState.checking = true;
+        sendUpdateStatus('checking');
+    });
+
+    autoUpdater.on('update-available', (info) => {
+        updateState.checking = false;
+        updateState.downloaded = false;
+        updateState.downloading = false;
+        updateState.updateInfo = info;
+        sendUpdateStatus('available', { updateInfo: info });
+    });
+
+    autoUpdater.on('update-not-available', (info) => {
+        updateState.checking = false;
+        updateState.downloaded = false;
+        updateState.downloading = false;
+        updateState.updateInfo = null;
+        sendUpdateStatus('not-available', { updateInfo: info });
+    });
+
+    autoUpdater.on('download-progress', (progress) => {
+        updateState.downloading = true;
+        sendUpdateStatus('downloading', { progress });
+    });
+
+    autoUpdater.on('update-downloaded', (info) => {
+        updateState.downloading = false;
+        updateState.downloaded = true;
+        updateState.updateInfo = info;
+        sendUpdateStatus('downloaded', { updateInfo: info });
+    });
+
+    autoUpdater.on('error', (error) => {
+        updateState.checking = false;
+        updateState.downloading = false;
+        sendUpdateStatus('error', { error: normalizeUpdateError(error) });
+    });
+}
+
+configureAutoUpdater();
 
 // Función para verificar si el servidor está listo
 function esperarServidor(url, intentos = 120) {
@@ -430,6 +533,99 @@ ipcMain.handle('get-machine-id', async () => {
         console.error('[MachineID] Error obteniendo Machine ID:', err);
         return null;
     }
+});
+
+// Manejadores de actualizacion de la app
+ipcMain.handle('updates:get-current-version', async () => {
+    return {
+        ok: true,
+        version: app.getVersion(),
+        isPackaged: app.isPackaged,
+        platform: process.platform,
+        updaterAvailable: getUpdaterAvailability().available,
+        lastStatus: updateState.lastStatus
+    };
+});
+
+ipcMain.handle('updates:check', async () => {
+    const availability = getUpdaterAvailability();
+    if (!availability.available) {
+        const status = sendUpdateStatus('disabled', { reason: availability.reason });
+        return { ok: false, ...availability, currentVersion: app.getVersion(), status };
+    }
+
+    if (updateState.checking) {
+        return { ok: true, checking: true, currentVersion: app.getVersion() };
+    }
+
+    try {
+        updateState.checking = true;
+        const result = await autoUpdater.checkForUpdates();
+        return {
+            ok: true,
+            currentVersion: app.getVersion(),
+            updateInfo: result?.updateInfo || null
+        };
+    } catch (error) {
+        const normalized = normalizeUpdateError(error);
+        sendUpdateStatus('error', { error: normalized });
+        return { ok: false, error: normalized, currentVersion: app.getVersion() };
+    } finally {
+        updateState.checking = false;
+    }
+});
+
+ipcMain.handle('updates:download', async () => {
+    const availability = getUpdaterAvailability();
+    if (!availability.available) {
+        const status = sendUpdateStatus('disabled', { reason: availability.reason });
+        return { ok: false, ...availability, currentVersion: app.getVersion(), status };
+    }
+
+    if (!updateState.updateInfo) {
+        return {
+            ok: false,
+            error: { message: 'Primero busca una actualizacion disponible.', code: 'NO_UPDATE_INFO' },
+            currentVersion: app.getVersion()
+        };
+    }
+
+    if (updateState.downloading) {
+        return { ok: true, downloading: true, currentVersion: app.getVersion() };
+    }
+
+    try {
+        updateState.downloading = true;
+        sendUpdateStatus('download-started', { updateInfo: updateState.updateInfo });
+        await autoUpdater.downloadUpdate();
+        return { ok: true, currentVersion: app.getVersion() };
+    } catch (error) {
+        const normalized = normalizeUpdateError(error);
+        sendUpdateStatus('error', { error: normalized });
+        return { ok: false, error: normalized, currentVersion: app.getVersion() };
+    } finally {
+        updateState.downloading = false;
+    }
+});
+
+ipcMain.handle('updates:install', async () => {
+    const availability = getUpdaterAvailability();
+    if (!availability.available) {
+        const status = sendUpdateStatus('disabled', { reason: availability.reason });
+        return { ok: false, ...availability, currentVersion: app.getVersion(), status };
+    }
+
+    if (!updateState.downloaded) {
+        return {
+            ok: false,
+            error: { message: 'La actualizacion todavia no se ha descargado.', code: 'UPDATE_NOT_DOWNLOADED' },
+            currentVersion: app.getVersion()
+        };
+    }
+
+    sendUpdateStatus('installing', { updateInfo: updateState.updateInfo });
+    setImmediate(() => autoUpdater.quitAndInstall(false, true));
+    return { ok: true, currentVersion: app.getVersion() };
 });
 
 // Cuando Electron esté listo
