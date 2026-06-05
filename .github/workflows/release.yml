@@ -58,8 +58,14 @@ jobs:
           New-Item -ItemType Directory -Force -Path build | Out-Null
           function New-HexSecret([int]$bytes) {
             $buffer = New-Object byte[] $bytes
-            [System.Security.Cryptography.RandomNumberGenerator]::Fill($buffer)
-            return ($buffer | ForEach-Object { $_.ToString("x2") }) -join ""
+            $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+            try {
+              $rng.GetBytes($buffer)
+              return ($buffer | ForEach-Object { $_.ToString("x2") }) -join ""
+            }
+            finally {
+              $rng.Dispose()
+            }
           }
 
           $envContent = $env:BACKEND_ENV
