@@ -1,5 +1,6 @@
 // ===== COMPONENTE PUNTO DE VENTA OPTIMIZADO =====
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import Swal from "sweetalert2";
 import TicketVenta from "./TicketVenta";
 import CameraScanner from "../common/CameraScanner";
 import { formatearDinero, validarCodigoBarras } from "../../utils";
@@ -33,6 +34,8 @@ import ProductGrid from "./ProductGrid";
 import "./Sales.css";
 import PaymentModal from "./PaymentModal";
 import ProductAddModal from "./ProductAddModal";
+
+const REPLACEMENT_TICKET_STORAGE_KEY = "nexum:replacement-ticket";
 
 export const Sales = () => {
   // HOOKS PERSONALIZADOS
@@ -87,6 +90,7 @@ export const Sales = () => {
     alternarUnidadUltimaLinea,
     quitarProducto,
     vaciarCarrito,
+    reemplazarCarrito,
     total,
     activeCartItemId,
     setActiveCartItemId,
@@ -197,6 +201,28 @@ export const Sales = () => {
   const campoSkuRef = useRef(null);
   const campoNombreRef = useRef(null);
   const searchContainerRef = useRef(null);
+  const replacementLoadingRef = useRef(false);
+  const wasAnyModalOpenRef = useRef(false);
+
+  const focusSkuInput = useCallback((delay = 50) => {
+    if (isSupervising) return;
+
+    window.setTimeout(() => {
+      const input = campoSkuRef.current;
+      if (!input || input.disabled) return;
+
+      const hasOpenModal = document.querySelector(
+        ".modal-overlay, .swal2-container, [role='dialog'], .fixed.inset-0",
+      );
+
+      if (hasOpenModal) return;
+
+      input.focus();
+      if (input.value) {
+        input.select();
+      }
+    }, delay);
+  }, [isSupervising]);
 
   // FUNCIONES PARA EL MODAL DE ERRORES
   const mostrarModalPersonalizado = (title, message, type = "info") => {
@@ -349,6 +375,7 @@ export const Sales = () => {
   const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
   const [indexSugerencia, setIndexSugerencia] = useState(0);
   const [activeCategory, setActiveCategory] = useState(null);
+  const [replacementSale, setReplacementSale] = useState(null);
   
   const getCategoryIcon = (category) => {
     const icons = {
@@ -570,6 +597,190 @@ export const Sales = () => {
   const [salidaForm, setSalidaForm] = useState({ concepto: "", cantidad: "" });
   const [mostrarModalReporte, setMostrarModalReporte] = useState(false);
 
+  const clearReplacementTicket = useCallback(() => {
+    sessionStorage.removeItem(REPLACEMENT_TICKET_STORAGE_KEY);
+    setReplacementSale(null);
+  }, []);
+
+  const buildReplacementCartItems = useCallback((sale) => {
+    const sourceItems = sale?.sale_items || sale?.items || sale?.productos || [];
+    const missingItems = [];
+
+    const cartItems = sourceItems
+      .map((item, index) => {
+        const quantity = parseFloat(item.quantity || 0);
+        if (!quantity || quantity <= 0) return null;
+
+        const unitSold = String(item.unit_sold || "PZA").toUpperCase();
+        const rawFactor =
+          item.conversion_factor ||
+          item.stock_multiplier ||
+          (item.base_quantity && quantity ? parseFloat(item.base_quantity) / quantity : 1);
+        const factor = parseFloat(rawFactor || 1) || 1;
+        const price = parseFloat(item.price || 0);
+        const baseQuantity = parseFloat(item.base_quantity || quantity * factor);
+        const originalProductId = item.product_id || null;
+        const currentProduct = originalProductId
+          ? productos.find((product) => String(product.id) === String(originalProductId))
+          : null;
+
+        if (currentProduct) {
+          const expectedPrice = unitSold === "CAJA"
+            ? parseFloat(currentProduct.box_price || 0)
+            : parseFloat(currentProduct.price || 0);
+          const cartId = `${currentProduct.id}::${unitSold}`;
+
+          return {
+            ...currentProduct,
+            id: cartId,
+            cart_id: cartId,
+            product_id: currentProduct.id,
+            name: item.product_name || item.name || currentProduct.name,
+            image: currentProduct.image_url || currentProduct.image,
+            quantity,
+            price,
+            unit_price: parseFloat(currentProduct.price || price || 0),
+            discount: parseFloat(item.discount || 0),
+            unit_sold: unitSold,
+            conversion_factor: factor,
+            stock_multiplier: factor,
+            base_quantity: baseQuantity,
+            box_units: unitSold === "CAJA" ? factor : currentProduct.box_units,
+            box_price: unitSold === "CAJA" ? price : currentProduct.box_price,
+            price_overridden: Math.abs(price - expectedPrice) > 0.009,
+            copied_from_sale_id: sale.id,
+          };
+        }
+
+        const manualId = `replacement-${sale.id}-${item.id || index}`;
+        missingItems.push(item.product_name || item.name || `Producto ${index + 1}`);
+
+        return {
+          id: manualId,
+          cart_id: manualId,
+          product_id: null,
+          original_product_id: originalProductId,
+          name: item.product_name || item.name || "Producto",
+          quantity,
+          price,
+          unit_price: price,
+          discount: parseFloat(item.discount || 0),
+          unit_sold: unitSold,
+          conversion_factor: factor,
+          stock_multiplier: factor,
+          base_quantity: baseQuantity,
+          stock: 999999,
+          is_common: true,
+          is_replacement_missing_product: true,
+          copied_from_sale_id: sale.id,
+        };
+      })
+      .filter(Boolean);
+
+    return { cartItems, missingItems };
+  }, [productos]);
+
+  useEffect(() => {
+    if (loadingProducts) return;
+
+    const rawPayload = sessionStorage.getItem(REPLACEMENT_TICKET_STORAGE_KEY);
+    if (!rawPayload) return;
+
+    let payload;
+    try {
+      payload = JSON.parse(rawPayload);
+    } catch (error) {
+      console.error("[Sales] Ticket de reemplazo invalido:", error);
+      sessionStorage.removeItem(REPLACEMENT_TICKET_STORAGE_KEY);
+      return;
+    }
+
+    const sale = payload?.sale;
+    if (!sale?.id) {
+      sessionStorage.removeItem(REPLACEMENT_TICKET_STORAGE_KEY);
+      return;
+    }
+
+    if (payload.loaded) {
+      setReplacementSale((current) => (
+        String(current?.id) === String(sale.id) ? current : sale
+      ));
+      return;
+    }
+
+    if (replacementLoadingRef.current) return;
+
+    let cancelled = false;
+
+    const loadReplacementTicket = async () => {
+      replacementLoadingRef.current = true;
+
+      try {
+        if (carrito.length > 0) {
+          const result = await Swal.fire({
+            title: "Reemplazar venta actual?",
+            text: `Se copiara el ticket #${sale.id} al carrito. Los productos actuales se quitaran.`,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: "Reemplazar carrito",
+            cancelButtonText: "Cancelar",
+          });
+
+          if (!result.isConfirmed) {
+            sessionStorage.removeItem(REPLACEMENT_TICKET_STORAGE_KEY);
+            return;
+          }
+        }
+
+        const { cartItems, missingItems } = buildReplacementCartItems(sale);
+        if (cancelled) return;
+
+        if (!cartItems.length) {
+          sessionStorage.removeItem(REPLACEMENT_TICKET_STORAGE_KEY);
+          mostrarModalPersonalizado(
+            "Ticket sin partidas",
+            "No se encontraron productos para copiar al carrito.",
+            "warning",
+          );
+          return;
+        }
+
+        reemplazarCarrito(cartItems);
+        setPagosRealizados([]);
+        setMontoRecibido("");
+        setFacturar(false);
+        setSelectedCustomer(null);
+        setReplacementSale(sale);
+        sessionStorage.setItem(
+          REPLACEMENT_TICKET_STORAGE_KEY,
+          JSON.stringify({ ...payload, sale, loaded: true }),
+        );
+
+        if (missingItems.length > 0) {
+          mostrarModalPersonalizado(
+            "Productos cargados como manuales",
+            `No se encontro el producto actual para: ${missingItems.slice(0, 5).join(", ")}. Se copiaron como partidas manuales.`,
+            "warning",
+          );
+        }
+      } finally {
+        replacementLoadingRef.current = false;
+      }
+    };
+
+    loadReplacementTicket();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    loadingProducts,
+    carrito.length,
+    buildReplacementCartItems,
+    reemplazarCarrito,
+    mostrarModalPersonalizado,
+  ]);
+
   // Determinar si hay algún modal abierto para ocultar elementos de fondo
   const isAnyModalOpen = 
     mostrarModalAddProduct || 
@@ -580,8 +791,16 @@ export const Sales = () => {
     mostrarModalEmpaque || 
     mostrarModalFondo || 
     mostrarModalReporte || 
-    mostrarModalPaqueteTodo || 
+    mostrarModalPaqueteTodo ||
     modal.isOpen;
+
+  useEffect(() => {
+    if (wasAnyModalOpenRef.current && !isAnyModalOpen) {
+      focusSkuInput(75);
+    }
+
+    wasAnyModalOpenRef.current = isAnyModalOpen;
+  }, [isAnyModalOpen, focusSkuInput]);
 
   // Cargar tipo de cambio al montar
   useEffect(() => {
@@ -813,7 +1032,7 @@ export const Sales = () => {
   const cerrarModalAddProduct = () => {
     setMostrarModalAddProduct(false);
     setProductoParaModal(null);
-    setTimeout(() => campoSkuRef.current?.focus(), 50);
+    focusSkuInput();
   };
 
   // HOOK SCANNER
@@ -955,6 +1174,7 @@ export const Sales = () => {
 
   const cerrarModalPago = () => {
     setMostrarModalPago(false);
+    focusSkuInput(75);
   };
 
   const generarCotizacion = async () => {
@@ -1192,10 +1412,12 @@ export const Sales = () => {
 
     setVendiendo(true);
     
-    const validation = await validateCartStockWithRPC();
-    if (!validation.valid) {
-      setVendiendo(false);
-      return;
+    if (!replacementSale) {
+      const validation = await validateCartStockWithRPC();
+      if (!validation.valid) {
+        setVendiendo(false);
+        return;
+      }
     }
 
     cerrarModalPago();
@@ -1247,7 +1469,16 @@ export const Sales = () => {
         currency: "MXN",
         exchange_rate: null,
         billing_issuer_id: shouldFacturar ? selectedIssuer : null,
-        affect_inventory: user?.affect_inventory !== undefined ? user?.affect_inventory : true
+        affect_inventory: user?.affect_inventory !== undefined ? user?.affect_inventory : true,
+        ...(replacementSale
+          ? {
+              replacement_sale_id: replacementSale.id,
+              replacement_reason: `Reemplazo por nuevo ticket #${replacementSale.id}`,
+              replacement_refund_amount:
+                parseFloat(replacementSale.paid_amount ?? replacementSale.total ?? 0) || 0,
+              replacement_restock: true,
+            }
+          : {}),
       };
 
       // Crear venta en Supabase
@@ -1289,6 +1520,8 @@ export const Sales = () => {
 
       // Vaciar carrito y dejar listo el POS para la siguiente venta
       vaciarCarrito();
+      clearReplacementTicket();
+      focusSkuInput(120);
 
       // Tareas de fondo (Sync y recarga de inventario) - No bloquean el ticket
       activeCartService
@@ -1309,6 +1542,14 @@ export const Sales = () => {
   const handlePaymentComplete = async (datosPago) => {
     console.log("[Sales] Payment complete data received:", datosPago);
     if (datosPago.isCreditSale) {
+      if (replacementSale) {
+        mostrarModalPersonalizado(
+          "Reemplazo no disponible a credito",
+          "Cobra esta venta como contado para reemplazar el ticket original. El ticket original queda intacto.",
+          "warning",
+        );
+        return;
+      }
       try {
         await finalizarVentaCredito(datosPago);
       } catch (error) {
@@ -1325,6 +1566,15 @@ export const Sales = () => {
   };
 
   const finalizarVentaCredito = async (datosPago) => {
+    if (replacementSale) {
+      mostrarModalPersonalizado(
+        "Reemplazo no disponible a credito",
+        "Esta version solo permite reemplazar tickets con venta de contado.",
+        "warning",
+      );
+      return;
+    }
+
     const pagosActualizados = datosPago.pagos || [];
     const shouldFacturar = datosPago.facturar;
     const selectedIssuer = datosPago.issuerId;
@@ -1410,6 +1660,7 @@ export const Sales = () => {
       await imprimirTicketVenta(ventaFinalizada);
 
       vaciarCarrito();
+      focusSkuInput(120);
 
       activeCartService.clearCart("completed", cashSession?.id).catch(console.error);
       cargarDatos({ forceRefresh: true, silent: true }).catch(console.error);
@@ -1510,14 +1761,13 @@ export const Sales = () => {
   };
 
   const manejarFocus = () => {
-    if (campoSkuRef.current) {
-      campoSkuRef.current.focus();
-    }
+    focusSkuInput(0);
   };
 
   const cerrarModal = () => {
     setMostrarModal(false);
     setVentaCompletada(null);
+    focusSkuInput(75);
   };
 
   // Keyboard handling moved to PaymentModal component
@@ -1773,6 +2023,31 @@ export const Sales = () => {
   return (
     <div className="sales-view">
       <SalesHeader onOpenReportModal={() => setMostrarModalReporte(true)} />
+
+      {replacementSale && (
+        <div className="mx-4 mt-4 mb-4 border-l-4 border-blue-600 bg-blue-50 text-blue-950 rounded-r-lg px-4 py-3 shadow-sm flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="material-symbols-outlined text-blue-700">
+              content_copy
+            </span>
+            <div className="min-w-0">
+              <h3 className="font-bold truncate">
+                Reemplazando ticket #{replacementSale.id}
+              </h3>
+              <p className="text-sm text-blue-800">
+                El ticket original se cancelara solo al cobrar esta nueva venta.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={clearReplacementTicket}
+            className="px-3 py-2 rounded-md border border-blue-200 bg-white text-blue-800 text-sm font-semibold hover:bg-blue-100 shrink-0"
+          >
+            Cancelar reemplazo
+          </button>
+        </div>
+      )}
 
       {isSupervising && (
         <div className="bg-gradient-to-r from-amber-100 to-yellow-100 dark:from-amber-900/40 dark:to-yellow-900/40 border-l-4 border-amber-500 dark:border-amber-400 text-amber-900 dark:text-amber-100 p-4 mb-4 rounded-r-xl shadow-md dark:shadow-lg flex items-center justify-between mx-4 mt-4">

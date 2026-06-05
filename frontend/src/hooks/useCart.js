@@ -214,6 +214,41 @@ export const useCart = (mostrarError, allowNegativeStock = false) => {
         setActiveCartItemId(null)
     }
 
+    const reemplazarCarrito = (items = []) => {
+        const normalizedItems = Array.isArray(items)
+            ? items
+                .filter(item => item && (parseFloat(item.quantity) || 0) > 0)
+                .map((item, index) => {
+                    const quantity = parseFloat(item.quantity) || 1
+                    const multiplier = parseFloat(item.conversion_factor || item.stock_multiplier || 1) || 1
+                    const productId = Object.prototype.hasOwnProperty.call(item, 'product_id')
+                        ? item.product_id
+                        : (item.id || null)
+                    const unitSold = String(item.unit_sold || 'PZA').toUpperCase()
+                    const id = item.cart_id || (productId ? `${productId}::${unitSold}` : `replacement-${Date.now()}-${index}`)
+
+                    return {
+                        ...item,
+                        id,
+                        cart_id: id,
+                        product_id: productId,
+                        quantity,
+                        price: parseFloat(item.price || 0),
+                        discount: parseFloat(item.discount || 0),
+                        unit_sold: unitSold,
+                        conversion_factor: multiplier,
+                        stock_multiplier: multiplier,
+                        base_quantity: parseFloat(item.base_quantity || quantity * multiplier),
+                        unit_price: parseFloat(item.unit_price ?? item.price ?? 0),
+                    }
+                })
+            : []
+
+        setCarrito(normalizedItems)
+        setGlobalDiscount(0)
+        setActiveCartItemId(normalizedItems[0]?.id || null)
+    }
+
     // 6.3 CAMBIAR PRECIO DE UN ITEM (override)
     const cambiarPrecio = (idProducto, nuevoPrecio) => {
         setCarrito(carritoAnterior =>
@@ -354,6 +389,7 @@ export const useCart = (mostrarError, allowNegativeStock = false) => {
         convertirCarritoAPaquete, // Función para convertir todo el carrito a paquete
         quitarProducto,    // Función para quitar productos
         vaciarCarrito,     // Función para vaciar el carrito
+        reemplazarCarrito,
         total,             // Total a pagar
         subtotal,
         itemDiscounts,

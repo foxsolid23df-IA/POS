@@ -60,6 +60,7 @@ const PaymentModal = ({
     manejarTecladoNumerico,
     calcularCambio,
     agregarPago,
+    agregarPagoExacto,
     eliminarPago,
     resetearPagos,
     isSaleFullyCovered
@@ -174,6 +175,16 @@ const PaymentModal = ({
       return;
     }
 
+    if (!montoRecibido && saldoPendiente > 0 && metodoPago !== 'dolares') {
+      const result = agregarPagoExacto();
+      if (result && result.success) {
+        finalPayments = result.updatedPayments;
+        covered = result.fullyCovered;
+      } else {
+        return;
+      }
+    }
+
     if (covered) {
       onComplete({
         pagos: finalPayments,
@@ -187,7 +198,10 @@ const PaymentModal = ({
     if (!isOpen) return;
 
     const handleKeyDown = (e) => {
-      if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
+      const isTextInput = e.target.tagName === 'INPUT' && e.target.type === 'text';
+      const isQuickPayInput = e.target.dataset?.quickPayInput === 'true';
+
+      if (isTextInput && !(isQuickPayInput && (e.key === 'Enter' || e.key === 'Escape'))) return;
 
       switch (e.key) {
         case "F1":
@@ -231,7 +245,7 @@ const PaymentModal = ({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, metodoPago, montoRecibido, isSaleFullyCovered, saldoPendiente, agregarPago, setMetodoPago, manejarTecladoNumerico, onClose, tipoCambio, handleComplete]);
+  }, [isOpen, metodoPago, montoRecibido, isSaleFullyCovered, saldoPendiente, agregarPago, agregarPagoExacto, setMetodoPago, manejarTecladoNumerico, onClose, tipoCambio, handleComplete]);
 
   if (!isOpen) return null;
 
@@ -246,6 +260,13 @@ const PaymentModal = ({
   const cambio = saldoPendiente > 0
     ? calcularCambio()
     : (pagosRealizados.length > 0 ? pagosRealizados[pagosRealizados.length - 1].change : 0);
+  const canQuickPayExact = saldoPendiente > 0 && !isCredit && metodoPago !== 'dolares';
+  const typedAmount = parseFloat(montoRecibido || 0) || 0;
+  const typedAmountInPesos = metodoPago === 'dolares' && tipoCambio
+    ? typedAmount * tipoCambio
+    : typedAmount;
+  const typedAmountCoversBalance = typedAmount > 0 && typedAmountInPesos >= saldoPendiente;
+  const canCompleteSale = isCredit || isSaleFullyCovered || canQuickPayExact || typedAmountCoversBalance;
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -630,12 +651,19 @@ const PaymentModal = ({
                 </div>
                 <input
                   type="text"
+                  data-quick-pay-input="true"
                   value={montoRecibido}
                   onChange={(e) => setMontoRecibido(e.target.value.replace(/[^0-9.]/g, ''))}
                   className="w-full pl-10 pr-4 py-3.5 bg-white border-2 border-blue-500 text-3xl font-bold text-gray-900 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/20 text-right transition-shadow"
                   placeholder={saldoPendiente.toFixed(2)}
                 />
               </div>
+              {canQuickPayExact && !montoRecibido && (
+                <p className="text-xs text-blue-600 font-semibold -mt-3 mb-4 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-sm">keyboard_return</span>
+                  Enter cobra el saldo exacto sin capturar monto.
+                </p>
+              )}
 
               {/* Numpad */}
               <div className="grid grid-cols-3 gap-2 mb-4">
@@ -712,11 +740,15 @@ const PaymentModal = ({
             </button>
             <button
               onClick={handleComplete}
-              disabled={!isSaleFullyCovered && !isCredit}
+              disabled={!canCompleteSale}
               className="flex-[2] py-3.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none active:scale-[0.98]"
             >
               <span className="material-symbols-outlined">check_circle</span>
-              {isCredit ? 'Completar Venta a Crédito' : 'Completar Venta'}
+              {isCredit
+                ? 'Completar Venta a Crédito'
+                : (!isSaleFullyCovered && !montoRecibido && metodoPago !== 'dolares'
+                  ? 'Enter: cobrar saldo exacto'
+                  : 'Completar Venta')}
             </button>
           </div>
 

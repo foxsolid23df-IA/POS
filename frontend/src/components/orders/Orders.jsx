@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { salesService } from "../../services/salesService";
 import { returnService } from "../../services/returnService";
@@ -11,6 +12,7 @@ import { isWebAdminMode } from "../../utils/appMode";
 import "./Orders.css";
 
 const ROWS_PER_PAGE = 25;
+const REPLACEMENT_TICKET_STORAGE_KEY = "nexum:replacement-ticket";
 
 const toLocalDateStr = (date) => {
   const d = new Date(date);
@@ -73,6 +75,7 @@ const getPaymentChipClass = (method) => {
 };
 
 export const Orders = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { ticketSettings } = useSettings();
   const webAdminMode = isWebAdminMode();
@@ -214,6 +217,49 @@ export const Orders = () => {
       console.error("[Orders] Error al reimprimir ticket:", err);
     }
   }, [ticketSettings, user]);
+
+  const handleCopyToCurrentSale = useCallback(async (order) => {
+    if (!order?.id) return;
+
+    if (webAdminMode) {
+      await Swal.fire(
+        "Solo lectura en web admin",
+        "Copiar un ticket a venta actual solo esta disponible en el POS local.",
+        "info",
+      );
+      return;
+    }
+
+    if (order.sale_status === "cancelled" || order.sale_status === "returned") {
+      await Swal.fire("Venta ya procesada", "No se puede copiar una venta cancelada o devuelta.", "info");
+      return;
+    }
+
+    if (order.sale_type === "credit") {
+      await Swal.fire(
+        "No disponible para credito",
+        "Por ahora solo se pueden reemplazar tickets de venta normal.",
+        "info",
+      );
+      return;
+    }
+
+    const items = order.sale_items || order.items || order.productos || [];
+    if (items.length === 0) {
+      await Swal.fire("Ticket sin productos", "No hay partidas para copiar a la venta actual.", "warning");
+      return;
+    }
+
+    sessionStorage.setItem(
+      REPLACEMENT_TICKET_STORAGE_KEY,
+      JSON.stringify({
+        sale: order,
+        copied_at: new Date().toISOString(),
+      }),
+    );
+    setSelectedOrder(null);
+    navigate("/ventas");
+  }, [navigate, webAdminMode]);
 
   const handleCancelSale = useCallback(async (order) => {
     if (!order?.id || returningOrderId) return;
@@ -517,6 +563,15 @@ export const Orders = () => {
                   <span className="material-icons-outlined">print</span>
                   Reimprimir Ticket
                 </button>
+                {!isCancelled && (
+                  <button
+                    className="modal-btn primary"
+                    onClick={() => handleCopyToCurrentSale(order)}
+                  >
+                    <span className="material-icons-outlined">content_copy</span>
+                    Copiar a venta actual
+                  </button>
+                )}
                 {!isCancelled && (
                   <button
                     className="modal-btn secondary"

@@ -114,6 +114,36 @@ export const usePaymentLogic = ({ totalVenta, tipoCambio = 1 }) => {
     };
   };
 
+  const agregarPagoExacto = () => {
+    if (saldoPendiente <= 0) return { success: false };
+    if (metodoPago === 'dolares') return { success: false };
+
+    const nuevoPago = {
+      id: Date.now(),
+      method: metodoPago,
+      amount: saldoPendiente,
+      received: saldoPendiente,
+      change: 0,
+      currency: 'MXN',
+      exchange_rate: null,
+      details: { ...paymentDetails }
+    };
+
+    const newPayments = [...pagosRealizados, nuevoPago];
+    setPagosRealizados(newPayments);
+    setMontoRecibido('');
+    setPaymentDetails({ authCode: '', last4: '', bank: '', reference: '' });
+
+    const newTotalAbonado = newPayments.reduce((sum, p) => sum + p.amount, 0);
+    const fullyCovered = newTotalAbonado >= totalVenta;
+
+    return {
+      success: true,
+      updatedPayments: newPayments,
+      fullyCovered
+    };
+  };
+
   const eliminarPago = (id) => {
     setPagosRealizados((prev) => prev.filter((p) => p.id !== id));
   };
@@ -147,6 +177,7 @@ export const usePaymentLogic = ({ totalVenta, tipoCambio = 1 }) => {
     manejarTecladoNumerico,
     calcularCambio,
     agregarPago,
+    agregarPagoExacto,
     eliminarPago,
     resetearPagos,
     isSaleFullyCovered

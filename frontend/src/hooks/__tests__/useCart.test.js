@@ -152,4 +152,59 @@ describe('useCart Hook', () => {
     expect(result.current.carrito[0].conversion_factor).toBe(5);
     expect(result.current.carrito[0].is_custom_pack).toBe(true);
   });
+
+  it('debe reemplazar el carrito con partidas PZA, CAJA y producto manual', () => {
+    const { result } = renderHook(() => useCart(mockMostrarError, false));
+
+    const partidas = [
+      {
+        id: 'p1::PZA',
+        product_id: 'p1',
+        name: 'Cinta pieza',
+        quantity: 2,
+        price: 12,
+        unit_sold: 'PZA',
+        conversion_factor: 1,
+      },
+      {
+        id: 'p2::CAJA',
+        product_id: 'p2',
+        name: 'Cinta caja',
+        quantity: 1,
+        price: 504,
+        unit_sold: 'CAJA',
+        conversion_factor: 36,
+      },
+      {
+        id: 'manual-1',
+        product_id: null,
+        name: 'Producto anterior',
+        quantity: 3,
+        price: 5,
+        unit_sold: 'PZA',
+        is_common: true,
+      },
+    ];
+
+    act(() => {
+      result.current.reemplazarCarrito(partidas);
+    });
+
+    expect(result.current.carrito).toHaveLength(3);
+    expect(result.current.carrito[1]).toEqual(
+      expect.objectContaining({
+        unit_sold: 'CAJA',
+        conversion_factor: 36,
+        stock_multiplier: 36,
+        base_quantity: 36,
+      }),
+    );
+    expect(result.current.carrito[2]).toEqual(
+      expect.objectContaining({
+        product_id: null,
+        is_common: true,
+      }),
+    );
+    expect(result.current.total).toBe(543);
+  });
 });

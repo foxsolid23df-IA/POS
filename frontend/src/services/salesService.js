@@ -20,6 +20,8 @@ export const salesService = {
             throw new Error("Terminal no configurada. No se puede realizar la venta.");
         }
 
+        const isReplacement = !!saleData.replacement_sale_id;
+
         // Formatear items para el RPC de validación y proceso
         const itemsForValidation = saleData.items.map(item => ({
             product_id: isNaN(parseInt(item.product_id ?? item.id)) ? null : parseInt(item.product_id ?? item.id),
@@ -39,7 +41,7 @@ export const salesService = {
         }));
 
         // 1. Validar stock atómicamente vía RPC (si affect_inventory es true)
-        if (saleData.affect_inventory !== false) {
+        if (saleData.affect_inventory !== false && !isReplacement) {
             const { data: validationErrors, error: valError } = await supabase.rpc('validate_sale_stock', {
                 p_items: itemsForValidation
             });
@@ -65,8 +67,8 @@ export const salesService = {
             exchange_rate: p.exchange_rate || null
         }));
 
-        // Llamada única al RPC optimizado (Transacción atómica en DB)
-        const { data: sale, error: rpcError } = await supabase.rpc('process_perfect_sale', {
+        const rpcName = isReplacement ? 'replace_sale_with_new_sale' : 'process_perfect_sale';
+        const rpcParams = {
             p_total: saleData.total,
             p_subtotal: saleData.subtotal || 0,
             p_tax_amount: saleData.tax_amount || 0,
@@ -79,7 +81,19 @@ export const salesService = {
             p_items: itemsJson,
             p_payments: paymentsJson,
             p_affect_inventory: saleData.affect_inventory !== undefined ? saleData.affect_inventory : true
-        });
+        };
+
+        if (isReplacement) {
+            Object.assign(rpcParams, {
+                p_original_sale_id: parseInt(saleData.replacement_sale_id),
+                p_replacement_reason: saleData.replacement_reason || 'Reemplazo por nuevo ticket',
+                p_refund_amount: saleData.replacement_refund_amount ?? null,
+                p_restock: saleData.replacement_restock !== false
+            });
+        }
+
+        // Llamada única al RPC optimizado (Transacción atómica en DB)
+        const { data: sale, error: rpcError } = await supabase.rpc(rpcName, rpcParams);
 
         if (rpcError) throw rpcError;
 
@@ -88,6 +102,10 @@ export const salesService = {
 
     // Crear una venta a crédito usando el RPC especializado
     createCreditSale: async (saleData) => {
+        if (saleData.replacement_sale_id) {
+            throw new Error("El reemplazo de tickets no esta disponible para ventas a credito en esta version.");
+        }
+
         let userId = saleData.user_id;
         if (!userId) {
             const { data: userData } = await supabase.auth.getUser();

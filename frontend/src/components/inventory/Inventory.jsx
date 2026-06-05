@@ -260,26 +260,31 @@ const Inventory = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const productName = formData.name?.trim();
+    const effectiveCategory =
+      formData.category?.trim() ||
+      (productName ? getCategory(productName).name : "") ||
+      "General";
+
     if (
-      !formData.name ||
+      !productName ||
       !formData.price ||
-      !formData.stock ||
-      !formData.category
+      formData.stock === "" ||
+      formData.stock === null ||
+      formData.stock === undefined
     ) {
       Swal.fire(
         "Error",
-        "Por favor completa todos los campos obligatorios (incluyendo categoría)",
+        "Por favor completa todos los campos obligatorios",
         "warning",
       );
       return;
     }
 
     try {
-      // Si no se seleccionó categoría, inferirla del nombre
-      const category = formData.category || getCategory(formData.name).name;
-
+      // Si no se selecciono categoria, se guarda la detectada por nombre.
       const productData = {
-        name: formData.name,
+        name: productName,
         barcode: formData.barcode,
         price: parseFloat(formData.price),
         box_units: parseInt(formData.box_units || 0) || null,
@@ -290,7 +295,7 @@ const Inventory = () => {
         stock: parseInt(formData.stock),
         min_stock: parseInt(formData.min_stock || 0),
         image: formData.image,
-        category: category,
+        category: effectiveCategory,
         notes: formData.notes || "",
         unit: formData.unit || "PZA",
         iva: parseFloat(formData.iva || 0),
@@ -317,7 +322,12 @@ const Inventory = () => {
       fetchProducts();
     } catch (error) {
       console.error("Error saving product:", error);
-      Swal.fire("Error", "Error al guardar el producto", "error");
+      const errorMessage =
+        error?.message ||
+        error?.details ||
+        error?.hint ||
+        "Error al guardar el producto";
+      Swal.fire("Error", errorMessage, "error");
     }
   };
 
