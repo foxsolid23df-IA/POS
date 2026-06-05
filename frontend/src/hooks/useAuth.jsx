@@ -507,9 +507,12 @@ export const AuthProvider = ({ children }) => {
     setNeedsCashFund(true);
   };
 
-  // Verificar permisos basados en el empleado ACTIVO
-  const activeRole = activeStaff?.role || "cajero";
-  const canAccessAdmin = activeStaff?.isOwner || activeRole === "admin";
+  // Verificar permisos basados en el empleado ACTIVO.
+  // En web admin no hay flujo de PIN/caja, por eso el perfil admin tambien
+  // debe habilitar permisos aunque activeStaff aun no se haya hidratado.
+  const isWebAdminOwner = webAdminMode && profile?.role === "admin";
+  const activeRole = activeStaff?.role || (isWebAdminOwner ? "admin" : "cajero");
+  const canAccessAdmin = isWebAdminOwner || activeStaff?.isOwner || activeRole === "admin";
   const canAccessReports = canAccessAdmin || activeRole === "gerente";
 
   const memoizedUser = React.useMemo(

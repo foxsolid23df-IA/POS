@@ -249,12 +249,14 @@ const PrivateLayout = ({ children }) =>
   );
 
 const AdminRoute = ({ children }) => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
+  if (isWebAdminMode() && user?.role === "admin") return children;
   return isAdmin ? children : <Navigate to="/" />;
 };
 
 const PermissionRoute = ({ children, permission, reports = false }) => {
-  const { isAdmin, activeStaff, canAccessReports } = useAuth();
+  const { isAdmin, activeStaff, canAccessReports, user } = useAuth();
+  if (isWebAdminMode() && user?.role === "admin") return children;
   if (isAdmin) return children;
   if (reports && canAccessReports) return children;
   if (permission && activeStaff?.permissions?.[permission]) return children;
