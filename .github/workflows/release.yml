@@ -1,16 +1,20 @@
-name: Build and Release NEXUM POS
-
-permissions:
-  contents: write
+name: Release Windows Installer
 
 on:
   push:
     tags:
-      - "v*"
+      - "v*.*.*"
+
+permissions:
+  contents: write
 
 jobs:
-  release:
+  release-windows:
     runs-on: windows-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -19,30 +23,50 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: "npm"
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+            backend/package-lock.json
 
       - name: Install root dependencies
-        run: npm install
-
-      - name: Install frontend dependencies
-        run: |
-          cd frontend
-          npm install
+        run: npm ci
 
       - name: Install backend dependencies
+        run: npm ci --omit=dev
+        working-directory: backend
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Prepare portable Node.js
+        shell: powershell
         run: |
-          cd backend
-          npm install
+          New-Item -ItemType Directory -Force -Path bin | Out-Null
+          $nodePath = (Get-Command node).Source
+          Copy-Item -Path $nodePath -Destination bin\node.exe -Force
 
-      - name: Build and Distribute
-        run: npm run dist
+      - name: Prepare backend env
+        shell: powershell
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BACKEND_ENV: ${{ secrets.BACKEND_ENV }}
+        run: |
+          New-Item -ItemType Directory -Force -Path build | Out-Null
+          Set-Content -Path build\.env -Value $env:BACKEND_ENV -Encoding UTF8
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Build app
+        run: npm run build:all
+
+      - name: Publish Windows release
+        run: npx electron-builder --win --x64 --publish always
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
         with:
-          files: release/*.exe
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: nexum-pos-windows-release
+          path: |
+            release/*.exe
+            release/*.blockmap
+            release/latest.yml
+          if-no-files-found: error
