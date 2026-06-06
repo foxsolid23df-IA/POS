@@ -373,6 +373,37 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Validar PIN maestro sin cambiar el operador activo ni desbloquear la caja.
+  const validateMasterPin = async (pin) => {
+    if (!user?.id) throw new Error("No hay usuario activo");
+
+    const inputPin = String(pin || "").trim();
+    if (!inputPin) {
+      throw new Error("Ingresa el PIN maestro");
+    }
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("master_pin")
+      .eq("id", user.id)
+      .single();
+
+    if (error) {
+      throw new Error(error.message || "No se pudo validar el PIN maestro");
+    }
+
+    const storedPin = String(data?.master_pin || "").trim();
+    if (!storedPin) {
+      throw new Error("Configura primero el PIN maestro");
+    }
+
+    if (storedPin !== inputPin) {
+      throw new Error("PIN maestro incorrecto");
+    }
+
+    return true;
+  };
+
   // Login de empleado por PIN (Carga la sesion)
   const loginWithPin = async (pin) => {
     const staff = await validateStaffPin(pin);
@@ -543,6 +574,7 @@ export const AuthProvider = ({ children }) => {
     isLocked, // Si la pantalla está bloqueada
     loginWithPin, // Login de empleado por PIN
     validateStaffPin, // Validar PIN sin sesión
+    validateMasterPin, // Validar PIN maestro sin cambiar sesion
     loginAs, // Login de empleado directo
     lockScreen, // Bloquear pantalla
     unlockAsOwner, // Desbloquear como propietario

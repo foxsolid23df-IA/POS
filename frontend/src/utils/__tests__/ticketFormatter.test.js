@@ -30,4 +30,26 @@ describe('ticketFormatter', () => {
     expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;');
     expect(html).toContain('&lt;span&gt;cajero&lt;/span&gt;');
   });
+
+  it('omite imagenes remotas en modo de impresion rapida', () => {
+    const html = generateTicketHtml(
+      {
+        id: '99',
+        total: 25,
+        pin_facturacion: '1234',
+        items: [{ quantity: 1, name: 'Producto', price: 25 }]
+      },
+      {
+        business_name: 'Tienda',
+        logo_url: 'https://example.com/logo.png',
+        show_billing_section: true
+      },
+      { full_name: 'Cajero' },
+      { fastPrint: true }
+    );
+
+    expect(html).not.toContain('https://example.com/logo.png');
+    expect(html).not.toContain('api.qrserver.com');
+    expect(html).toContain('1234');
+  });
 });

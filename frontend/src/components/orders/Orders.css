@@ -1461,6 +1461,28 @@ html.dark .modal-btn.primary:hover {
   box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
 }
 
+.modal-btn.secondary.protected-danger {
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.modal-btn.secondary.protected-danger:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #991b1b;
+}
+
+html.dark .modal-btn.secondary.protected-danger {
+  border-color: #7f1d1d;
+  color: #fca5a5;
+}
+
+html.dark .modal-btn.secondary.protected-danger:hover {
+  background: #451a1a;
+  border-color: #991b1b;
+  color: #fecaca;
+}
+
 /* ──────────── ANIMACIÓN ENTRADA ──────────── */
 @keyframes ordersRowFadeIn {
   from { opacity: 0; transform: translateY(8px); }

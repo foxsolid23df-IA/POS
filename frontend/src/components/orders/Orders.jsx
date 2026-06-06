@@ -76,7 +76,7 @@ const getPaymentChipClass = (method) => {
 
 export const Orders = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, validateMasterPin } = useAuth();
   const { ticketSettings } = useSettings();
   const webAdminMode = isWebAdminMode();
 
@@ -210,7 +210,7 @@ export const Orders = () => {
 
   const handleReprint = useCallback(async (order) => {
     try {
-      const html = generateTicketHtml(order, ticketSettings, user);
+      const html = generateTicketHtml(order, ticketSettings, user, { fastPrint: true });
       const fullHtml = wrapTicketForPrinting(html, ticketSettings);
       printerService.printHtmlTicket(fullHtml, {
         paperWidth: ticketSettings?.paper_width || "58mm",
@@ -277,6 +277,41 @@ export const Orders = () => {
 
     if (order.sale_status === "cancelled" || order.sale_status === "returned") {
       await Swal.fire("Venta ya procesada", "Esta venta ya fue cancelada o devuelta.", "info");
+      return;
+    }
+
+    const authorization = await Swal.fire({
+      title: "Autorizacion requerida",
+      text: "Ingresa el PIN maestro para cancelar o devolver este ticket.",
+      input: "password",
+      inputLabel: "PIN maestro",
+      inputPlaceholder: "PIN maestro",
+      inputAttributes: {
+        autocapitalize: "off",
+        autocomplete: "off",
+        inputmode: "numeric",
+      },
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Autorizar",
+      cancelButtonText: "Volver",
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#64748b",
+      reverseButtons: true,
+      showLoaderOnConfirm: true,
+      allowOutsideClick: () => !Swal.isLoading(),
+      preConfirm: async (pin) => {
+        try {
+          await validateMasterPin(pin);
+          return true;
+        } catch (err) {
+          Swal.showValidationMessage(err.message || "PIN maestro incorrecto");
+          return false;
+        }
+      },
+    });
+
+    if (!authorization.isConfirmed) {
       return;
     }
 
@@ -365,7 +400,7 @@ export const Orders = () => {
     } finally {
       setReturningOrderId(null);
     }
-  }, [returningOrderId, webAdminMode]);
+  }, [returningOrderId, validateMasterPin, webAdminMode]);
 
   const renderSkeleton = () => (
     <div className="orders-skeleton">
@@ -576,11 +611,12 @@ export const Orders = () => {
                 )}
                 {!isCancelled && (
                   <button
-                    className="modal-btn secondary"
+                    className="modal-btn secondary protected-danger"
                     onClick={() => handleCancelSale(order)}
                     disabled={returningOrderId === order.id}
+                    title="Requiere PIN maestro"
                   >
-                    <span className="material-icons-outlined">assignment_return</span>
+                    <span className="material-icons-outlined">lock</span>
                     {returningOrderId === order.id ? "Registrando..." : "Cancelar / Devolver"}
                   </button>
                 )}

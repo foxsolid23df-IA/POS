@@ -14,9 +14,19 @@ let mainWindow;
 let backendProcess;
 let backendPort = 3001;
 let printWorkerWindow = null;
+let printWorkerReadyPromise = null;
 let printQueue = [];
 let isPrintQueueRunning = false;
 let nextPrintJobId = 1;
+
+const PRINT_WORKER_SHELL = `data:text/html;charset=utf-8,${encodeURIComponent(`<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Print Worker</title>
+  </head>
+  <body></body>
+</html>`)}`;
 
 // Función para obtener un puerto libre asignado por el SO
 function obtenerPuertoLibre() {
@@ -475,19 +485,38 @@ function getPrintWorkerWindow() {
 
     printWorkerWindow.on('closed', () => {
         printWorkerWindow = null;
+        printWorkerReadyPromise = null;
     });
 
     return printWorkerWindow;
 }
 
+function ensurePrintWorkerReady(worker) {
+    if (worker.webContents.isDestroyed()) {
+        return Promise.reject(new Error('El worker de impresion fue destruido.'));
+    }
+
+    if (!printWorkerReadyPromise) {
+        const currentUrl = worker.webContents.getURL();
+        printWorkerReadyPromise = currentUrl
+            ? Promise.resolve()
+            : worker.loadURL(PRINT_WORKER_SHELL).then(() => undefined);
+
+        printWorkerReadyPromise = printWorkerReadyPromise.catch((error) => {
+            printWorkerReadyPromise = null;
+            throw error;
+        });
+    }
+
+    return printWorkerReadyPromise;
+}
+
 function preparePrintWorker() {
     try {
         const worker = getPrintWorkerWindow();
-        if (!worker.webContents.getURL()) {
-            worker.loadURL('data:text/html;charset=utf-8,<html><body></body></html>').catch((error) => {
-                console.warn('[Print] No se pudo precalentar el worker:', error.message);
-            });
-        }
+        ensurePrintWorkerReady(worker).catch((error) => {
+            console.warn('[Print] No se pudo precalentar el worker:', error.message);
+        });
         return true;
     } catch (error) {
         console.warn('[Print] No se pudo preparar el worker:', error.message);
@@ -500,34 +529,56 @@ function resetPrintWorker() {
         printWorkerWindow.destroy();
     }
     printWorkerWindow = null;
+    printWorkerReadyPromise = null;
 }
 
-function loadHtmlInPrintWorker(worker, htmlContent) {
-    return new Promise((resolve, reject) => {
-        const cleanup = () => {
-            worker.webContents.removeListener('did-finish-load', onFinish);
-            worker.webContents.removeListener('did-fail-load', onFail);
-        };
-        const onFinish = () => {
-            cleanup();
-            resolve();
-        };
-        const onFail = (_event, _errorCode, errorDescription) => {
-            cleanup();
-            reject(new Error(errorDescription || 'No se pudo cargar el ticket para imprimir.'));
-        };
-
-        worker.webContents.once('did-finish-load', onFinish);
-        worker.webContents.once('did-fail-load', onFail);
-
-        const loadPromise = worker.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
-        if (loadPromise?.catch) {
-            loadPromise.catch((error) => {
-                cleanup();
-                reject(error);
-            });
+function stripRemotePrintAssets(htmlContent) {
+    let removedAssets = 0;
+    const html = String(htmlContent || '').replace(
+        /<img\b[^>]*\bsrc\s*=\s*(["'])(https?:\/\/|blob:)[\s\S]*?\1[^>]*>/gi,
+        () => {
+            removedAssets += 1;
+            return '';
         }
-    });
+    );
+
+    if (removedAssets > 0) {
+        console.warn(`[Print] ${removedAssets} imagen(es) remota(s) omitida(s) para no bloquear la impresion.`);
+    }
+
+    return html;
+}
+
+async function renderHtmlInPrintWorker(worker, htmlContent) {
+    await ensurePrintWorkerReady(worker);
+
+    const safeHtml = stripRemotePrintAssets(htmlContent);
+    return worker.webContents.executeJavaScript(`
+        (() => new Promise((resolve) => {
+            const startedAt = performance.now();
+            const html = ${JSON.stringify(safeHtml)};
+            const parsed = new DOMParser().parseFromString(html, 'text/html');
+            document.head.innerHTML = parsed.head ? parsed.head.innerHTML : '';
+            document.body.innerHTML = parsed.body ? parsed.body.innerHTML : html;
+            document.title = parsed.title || 'Ticket';
+
+            const finish = () => requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    resolve({
+                        renderMs: Math.round(performance.now() - startedAt),
+                        bodyLength: document.body ? document.body.innerText.length : 0
+                    });
+                });
+            });
+
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(finish).catch(finish);
+                return;
+            }
+
+            finish();
+        }))()
+    `, true);
 }
 
 function withTimeout(promise, ms, message) {
@@ -541,25 +592,29 @@ function withTimeout(promise, ms, message) {
 
 function printFromWorker(worker, printOptions) {
     return new Promise((resolve) => {
+        const sentAt = Date.now();
         worker.webContents.print(printOptions, (success, failureReason) => {
+            const driverMs = Date.now() - sentAt;
             if (success) {
-                resolve({ success: true });
+                resolve({ success: true, driverMs });
                 return;
             }
 
-            console.warn(`[Print] Impresion silenciosa fallo: ${failureReason}`);
+            console.warn(`[Print] Impresion silenciosa fallo tras ${driverMs}ms: ${failureReason}`);
             console.log('[Print] Reintentando con dialogo del sistema...');
 
+            const fallbackSentAt = Date.now();
             worker.webContents.print({
                 ...printOptions,
                 silent: false
             }, (fallbackSuccess, fallbackReason) => {
+                const fallbackMs = Date.now() - fallbackSentAt;
                 if (!fallbackSuccess) {
-                    console.error(`[Print] Impresion con dialogo tambien fallo: ${fallbackReason}`);
-                    resolve({ success: false, failureReason: fallbackReason || failureReason });
+                    console.error(`[Print] Impresion con dialogo tambien fallo tras ${fallbackMs}ms: ${fallbackReason}`);
+                    resolve({ success: false, failureReason: fallbackReason || failureReason, driverMs });
                     return;
                 }
-                resolve({ success: true, usedFallback: true });
+                resolve({ success: true, usedFallback: true, driverMs: driverMs + fallbackMs });
             });
         });
     });
@@ -586,6 +641,7 @@ async function processPrintQueue() {
 
     isPrintQueueRunning = true;
     const startedAt = Date.now();
+    const queueWaitMs = startedAt - job.receivedAt;
 
     try {
         const worker = getPrintWorkerWindow();
@@ -602,13 +658,17 @@ async function processPrintQueue() {
             printOptions.deviceName = printerName;
         }
 
-        await withTimeout(
-            loadHtmlInPrintWorker(worker, job.htmlContent),
-            8000,
-            `Timeout cargando HTML del ticket #${job.id}`
+        const renderStartedAt = Date.now();
+        const renderInfo = await withTimeout(
+            renderHtmlInPrintWorker(worker, job.htmlContent),
+            2500,
+            `Timeout renderizando HTML del ticket #${job.id}`
         );
-        console.log(`[Print] Job #${job.id} HTML cargado en ${Date.now() - startedAt}ms`);
+        const renderMs = Date.now() - renderStartedAt;
+        console.log(`[Print] Job #${job.id} render listo en ${renderMs}ms (browser ${renderInfo?.renderMs ?? 'n/a'}ms, cola ${queueWaitMs}ms)`);
 
+        const beforePrintMs = Date.now() - startedAt;
+        console.log(`[Print] Job #${job.id} enviado al driver en ${beforePrintMs}ms (${job.options.paperWidth || '58mm'})`);
         const result = await withTimeout(
             printFromWorker(worker, printOptions),
             15000,
@@ -617,13 +677,12 @@ async function processPrintQueue() {
 
         const totalMs = Date.now() - startedAt;
         if (result.success) {
-            console.log(`[Print] Job #${job.id} enviado/terminado en ${totalMs}ms (${job.options.paperWidth || '58mm'})`);
+            console.log(`[Print] Job #${job.id} callback terminado en ${totalMs}ms (driver ${result.driverMs ?? 'n/a'}ms)`);
         } else {
             console.warn(`[Print] Job #${job.id} termino con error en ${totalMs}ms: ${result.failureReason || 'sin detalle'}`);
         }
     } catch (error) {
         console.error(`[Print] Error en job #${job.id}:`, error.message);
-        resetPrintWorker();
     } finally {
         isPrintQueueRunning = false;
         setImmediate(processPrintQueue);

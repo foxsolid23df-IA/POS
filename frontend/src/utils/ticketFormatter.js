@@ -39,10 +39,12 @@ const escapeHtml = (value) => String(value ?? "")
   .replace(/"/g, "&quot;")
   .replace(/'/g, "&#39;");
 
-const safeImageSrc = (value) => {
+const safeImageSrc = (value, options = {}) => {
+  const { allowRemote = true } = options;
   const src = String(value || "").trim();
   if (!src) return "";
-  if (/^(https?:|data:image\/|blob:)/i.test(src)) return escapeHtml(src);
+  if (/^data:image\//i.test(src)) return escapeHtml(src);
+  if (allowRemote && /^(https?:|blob:)/i.test(src)) return escapeHtml(src);
   return "";
 };
 
@@ -130,6 +132,7 @@ const getPaymentLabel = (payment, fallback = "EFECTIVO") => {
 
 export const generateTicketHtml = (sale, settings, user, options = {}) => {
   const s = getSettings(settings);
+  const fastPrint = options.fastPrint === true;
 
   const isPreSale = options.isPreSale === true;
   const isCotizacion = !isPreSale && sale?.isCotizacion === true;
@@ -202,7 +205,7 @@ export const generateTicketHtml = (sale, settings, user, options = {}) => {
 
   // ── HEADER ──
   html += `<div class="tv-header">`;
-  const logoSrc = safeImageSrc(s.logo_url);
+  const logoSrc = safeImageSrc(s.logo_url, { allowRemote: !fastPrint });
   if (s.show_logo && logoSrc) {
     html += `<div class="tv-logo-wrap"><img src="${logoSrc}" class="tv-logo" alt="Logo"></div>`;
   }
@@ -316,11 +319,18 @@ export const generateTicketHtml = (sale, settings, user, options = {}) => {
     const billingUrl = ((import.meta.env.VITE_BILLING_PORTAL_URL || "https://pos-autofactura.vercel.app").replace(/\/$/, ""));
     const qrData = `${billingUrl}/?folio=${sale.id}&pin=${sale.pin_facturacion}`;
     const displayUrl = billingUrl.replace(/^https?:\/\//, "");
+    const qrDataUrl = safeImageSrc(options.billingQrDataUrl || sale.billing_qr_data_url || "", { allowRemote: false });
 
     html += `<div class="tv-divider"></div>`;
     html += `<div class="tv-billing-box">`;
     html += `<div class="tv-billing-title">¿FACTURAR ESTA COMPRA?</div>`;
-    html += `<div class="tv-billing-qr-wrap"><img src="https://api.qrserver.com/v1/create-qr-code/?size=${qrPx}x${qrPx}&data=${encodeURIComponent(qrData)}" alt="QR" class="tv-billing-qr"></div>`;
+    if (fastPrint) {
+      if (qrDataUrl) {
+        html += `<div class="tv-billing-qr-wrap"><img src="${qrDataUrl}" width="${qrPx}" height="${qrPx}" alt="QR" class="tv-billing-qr"></div>`;
+      }
+    } else {
+      html += `<div class="tv-billing-qr-wrap"><img src="https://api.qrserver.com/v1/create-qr-code/?size=${qrPx}x${qrPx}&data=${encodeURIComponent(qrData)}" alt="QR" class="tv-billing-qr"></div>`;
+    }
     html += `<div class="tv-billing-row"><span class="tv-billing-lbl">FOLIO</span><span class="tv-billing-val">${escapeHtml(folio)}</span></div>`;
     html += `<div class="tv-billing-row"><span class="tv-billing-lbl">PIN</span><span class="tv-billing-val">${escapeHtml(sale.pin_facturacion)}</span></div>`;
     html += `<div class="tv-billing-hint">Escanea o ingresa al portal</div>`;
@@ -337,6 +347,10 @@ export const generateTicketHtml = (sale, settings, user, options = {}) => {
 
 export const wrapTicketForPrinting = (ticketHtml, settings) => {
   const s = getSettings(settings);
+  const printableTicketHtml = String(ticketHtml || "").replace(
+    /<img\b[^>]*\bsrc\s*=\s*(["'])(https?:\/\/|blob:)[\s\S]*?\1[^>]*>/gi,
+    ""
+  );
   const pw = s.paper_width === "80mm" ? "80mm" : "58mm";
   const fw = s.paper_width === "80mm" ? "260px" : "188px";
   const ticketPadding = s.paper_width === "80mm" ? "3px 4px" : "3px";
@@ -447,5 +461,5 @@ export const wrapTicketForPrinting = (ticketHtml, settings) => {
   .tv-billing-url { font-size: 0.7em; color: #555; word-break: break-all; margin-top: 2px; }
   .tv-ticket-uuid { text-align: center; font-size: 0.6em; color: #888; margin-top: 2px; }
 </style>
-</head><body>${ticketHtml}</body></html>`;
+</head><body>${printableTicketHtml}</body></html>`;
 };

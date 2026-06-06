@@ -2005,7 +2005,7 @@ export const Sales = () => {
   const imprimirTicketVenta = async (venta) => {
     if (!venta) return;
     try {
-      const html = generateTicketHtml(venta, ticketSettings, user);
+      const html = generateTicketHtml(venta, ticketSettings, user, { fastPrint: true });
       const fullHtml = wrapTicketForPrinting(html, ticketSettings);
       printerService.printHtmlTicket(fullHtml, {
         paperWidth: ticketSettings?.paper_width || "58mm",
