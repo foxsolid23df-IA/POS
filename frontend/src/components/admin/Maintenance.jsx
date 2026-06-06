@@ -9,6 +9,8 @@ import { isWebAdminMode } from "../../utils/appMode";
 import Swal from "sweetalert2";
 import "./Maintenance.css";
 
+const SUPPORT_MAINTENANCE_PIN = "2026SOP";
+
 const Maintenance = () => {
   const navigate = useNavigate();
   const { user, fetchProfile } = useAuth();
@@ -85,12 +87,14 @@ const Maintenance = () => {
     e.preventDefault();
     setLoading(true);
     setPinError("");
+    const inputPin = masterPin?.toString()?.trim();
 
     try {
       // 1. PIN de Soporte Técnico (Siempre funciona)
-      if (false) {
+      if (inputPin?.toUpperCase() === SUPPORT_MAINTENANCE_PIN) {
         setIsAuthorized(true);
         setPinError("");
+        sessionStorage.setItem("admin_authorized", "true");
         return;
       }
 
@@ -105,7 +109,6 @@ const Maintenance = () => {
         .single();
 
       const storedPin = data?.master_pin?.toString()?.trim();
-      const inputPin = masterPin?.toString()?.trim();
 
       if (storedPin === inputPin) {
         setIsAuthorized(true);
@@ -142,7 +145,7 @@ const Maintenance = () => {
           <h2>Seguridad de Administración</h2>
           <p>
             Para configurar el PIN Maestro por primera vez o realizar cambios,
-            debe ingresar el PIN de Seguridad del Sistema.
+            ingrese el PIN maestro del propietario o la clave de soporte.
           </p>
           <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-xl mb-6 text-sm text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-800">
             <strong>💡 Nota para el Dueño:</strong> Utilice el PIN
@@ -152,7 +155,7 @@ const Maintenance = () => {
           <form onSubmit={handlePinSubmit}>
             <input
               type="password"
-              placeholder="Ingrese PIN Maestro"
+              placeholder="Ingrese PIN Maestro o Soporte"
               value={masterPin}
               onChange={(e) => setMasterPin(e.target.value)}
               className="swal2-input text-center"
