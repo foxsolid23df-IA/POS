@@ -82,10 +82,10 @@ const WebAdminLayout = ({ children }) => {
   if (user.role !== "admin") return <AccessRestricted />;
 
   return (
-    <div className="app-layout">
+    <div className="app-layout web-admin-layout">
       <Sidebar />
-      <main className="main-content">
-        {children}
+      <main className="main-content web-admin-main">
+        <div className="web-admin-content-frame">{children}</div>
         <ScrollTopButton />
       </main>
     </div>

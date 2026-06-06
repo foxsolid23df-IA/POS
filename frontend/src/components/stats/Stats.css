@@ -5,13 +5,18 @@
 
 .stats-view {
     padding: 0;
+    position: relative;
+    z-index: 1;
+    display: block;
     height: 100vh; /* Fixed height to enable scrolling within the container */
     min-height: 100%;
     width: 100%;
+    max-width: 100%;
     flex: 1 1 auto;
     box-sizing: border-box;
     font-family: 'Lexend', sans-serif;
-    background: var(--bg-primary, #f8fafc);
+    background: #f8fafc;
+    color: #111827;
     overflow-y: auto;
     overflow-x: hidden;
 }
@@ -191,10 +196,39 @@
 /* ===== CONTENIDO PRINCIPAL ===== */
 .stats-content {
     padding: 0.75rem 1rem 1rem;
+    width: 100%;
     max-width: 1400px;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     gap: 1rem;
+}
+
+.stats-inline-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid #dbeafe;
+    border-radius: 0.875rem;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 0.8rem;
+    font-weight: 800;
+    box-sizing: border-box;
+}
+
+.stats-inline-loading .material-icons-outlined {
+    font-size: 1rem;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* ===== TARJETAS DE ESTADÍSTICAS ===== */
@@ -904,43 +938,18 @@
 @media (max-width: 1024px) {
     .stats-view {
         height: auto;
+        width: 100%;
         min-height: calc(100dvh - 64px);
+        overflow-y: visible;
     }
 
     .stats-header {
         padding: 0.75rem 1rem;
     }
     
-.stats-content {
-    padding: 0.75rem 1rem 1rem;
-}
-
-.stats-inline-loading {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    width: 100%;
-    margin-bottom: 0.75rem;
-    padding: 0.75rem 1rem;
-    border: 1px solid #dbeafe;
-    border-radius: 0.875rem;
-    background: #eff6ff;
-    color: #1d4ed8;
-    font-size: 0.8rem;
-    font-weight: 800;
-    box-sizing: border-box;
-}
-
-.stats-inline-loading .material-icons-outlined {
-    font-size: 1rem;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
+    .stats-content {
+        padding: 0.75rem 1rem 1rem;
     }
-}
     
     .stats-header h2 {
         font-size: 1.125rem;

@@ -91,6 +91,23 @@ html.dark body {
   background-color: #ffffff !important;
 }
 
+.web-admin-main {
+  position: relative;
+  z-index: 1;
+  align-items: stretch;
+  background-color: #f8fafc !important;
+}
+
+.web-admin-content-frame {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  min-height: 100%;
+  flex: 1 1 auto;
+  background-color: #f8fafc;
+}
+
 html.dark .main-content {
   background-color: #111827 !important;
 }
@@ -135,6 +152,25 @@ html.dark .main-content {
   .main-content {
     padding-top: 64px;
     height: 100dvh;
+  }
+
+  .web-admin-layout {
+    height: 100dvh;
+    min-height: 100dvh;
+  }
+
+  .web-admin-main {
+    padding-top: calc(4rem + var(--safe-top, 0px));
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background-color: #f8fafc !important;
+  }
+
+  .web-admin-content-frame {
+    min-height: calc(100dvh - 4rem - var(--safe-top, 0px));
+    background-color: #f8fafc;
   }
 
   .mobile-header {
