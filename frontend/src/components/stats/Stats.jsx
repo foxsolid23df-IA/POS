@@ -314,7 +314,14 @@ export const Stats = () => {
     }
 
     if (cargandoStats) {
-        return <div className="loading">Cargando estadísticas...</div>
+        return (
+            <div className="stats-view stats-view-loading">
+                <div className="stats-loading-panel">
+                    <span className="material-icons-outlined">query_stats</span>
+                    <p>Cargando estadisticas...</p>
+                </div>
+            </div>
+        )
     }
 
     return (

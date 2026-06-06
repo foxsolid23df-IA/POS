@@ -212,7 +212,9 @@ export const Orders = () => {
     try {
       const html = generateTicketHtml(order, ticketSettings, user);
       const fullHtml = wrapTicketForPrinting(html, ticketSettings);
-      printerService.printHtmlTicket(fullHtml);
+      printerService.printHtmlTicket(fullHtml, {
+        paperWidth: ticketSettings?.paper_width || "58mm",
+      });
     } catch (err) {
       console.error("[Orders] Error al reimprimir ticket:", err);
     }

@@ -216,7 +216,9 @@ export const TicketConfig = () => {
             </html>
         `;
 
-      printerService.printHtmlTicket(ticketHtml);
+      printerService.printHtmlTicket(ticketHtml, {
+        paperWidth: settings.paper_width || "58mm",
+      });
     });
   };
 

@@ -13,6 +13,10 @@ const { autoUpdater } = require('electron-updater');
 let mainWindow;
 let backendProcess;
 let backendPort = 3001;
+let printWorkerWindow = null;
+let printQueue = [];
+let isPrintQueueRunning = false;
+let nextPrintJobId = 1;
 
 // Función para obtener un puerto libre asignado por el SO
 function obtenerPuertoLibre() {
@@ -445,7 +449,10 @@ function crearVentana() {
 
     mainWindow.on('closed', () => {
         mainWindow = null;
+        resetPrintWorker();
     });
+
+    preparePrintWorker();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -453,7 +460,190 @@ function crearVentana() {
 // ═══════════════════════════════════════════════════════════
 
 // Imprimir ticket — modo silencioso (directo a impresora por defecto)
+function getPrintWorkerWindow() {
+    if (printWorkerWindow && !printWorkerWindow.isDestroyed()) {
+        return printWorkerWindow;
+    }
+
+    printWorkerWindow = new BrowserWindow({
+        show: false,
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true
+        }
+    });
+
+    printWorkerWindow.on('closed', () => {
+        printWorkerWindow = null;
+    });
+
+    return printWorkerWindow;
+}
+
+function preparePrintWorker() {
+    try {
+        const worker = getPrintWorkerWindow();
+        if (!worker.webContents.getURL()) {
+            worker.loadURL('data:text/html;charset=utf-8,<html><body></body></html>').catch((error) => {
+                console.warn('[Print] No se pudo precalentar el worker:', error.message);
+            });
+        }
+        return true;
+    } catch (error) {
+        console.warn('[Print] No se pudo preparar el worker:', error.message);
+        return false;
+    }
+}
+
+function resetPrintWorker() {
+    if (printWorkerWindow && !printWorkerWindow.isDestroyed()) {
+        printWorkerWindow.destroy();
+    }
+    printWorkerWindow = null;
+}
+
+function loadHtmlInPrintWorker(worker, htmlContent) {
+    return new Promise((resolve, reject) => {
+        const cleanup = () => {
+            worker.webContents.removeListener('did-finish-load', onFinish);
+            worker.webContents.removeListener('did-fail-load', onFail);
+        };
+        const onFinish = () => {
+            cleanup();
+            resolve();
+        };
+        const onFail = (_event, _errorCode, errorDescription) => {
+            cleanup();
+            reject(new Error(errorDescription || 'No se pudo cargar el ticket para imprimir.'));
+        };
+
+        worker.webContents.once('did-finish-load', onFinish);
+        worker.webContents.once('did-fail-load', onFail);
+
+        const loadPromise = worker.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
+        if (loadPromise?.catch) {
+            loadPromise.catch((error) => {
+                cleanup();
+                reject(error);
+            });
+        }
+    });
+}
+
+function withTimeout(promise, ms, message) {
+    let timer;
+    const timeout = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(message)), ms);
+    });
+
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
+function printFromWorker(worker, printOptions) {
+    return new Promise((resolve) => {
+        worker.webContents.print(printOptions, (success, failureReason) => {
+            if (success) {
+                resolve({ success: true });
+                return;
+            }
+
+            console.warn(`[Print] Impresion silenciosa fallo: ${failureReason}`);
+            console.log('[Print] Reintentando con dialogo del sistema...');
+
+            worker.webContents.print({
+                ...printOptions,
+                silent: false
+            }, (fallbackSuccess, fallbackReason) => {
+                if (!fallbackSuccess) {
+                    console.error(`[Print] Impresion con dialogo tambien fallo: ${fallbackReason}`);
+                    resolve({ success: false, failureReason: fallbackReason || failureReason });
+                    return;
+                }
+                resolve({ success: true, usedFallback: true });
+            });
+        });
+    });
+}
+
+function enqueuePrintJob(htmlContent, options = {}) {
+    const job = {
+        id: nextPrintJobId++,
+        htmlContent,
+        options,
+        receivedAt: Date.now()
+    };
+
+    printQueue.push(job);
+    console.log(`[Print] Job #${job.id} recibido por IPC. Cola: ${printQueue.length}`);
+    processPrintQueue();
+}
+
+async function processPrintQueue() {
+    if (isPrintQueueRunning) return;
+
+    const job = printQueue.shift();
+    if (!job) return;
+
+    isPrintQueueRunning = true;
+    const startedAt = Date.now();
+
+    try {
+        const worker = getPrintWorkerWindow();
+        const paperWidth = job.options.paperWidth === '80mm' ? 80000 : 58000;
+        const printerName = job.options.printerName || null;
+        const printOptions = {
+            silent: true,
+            printBackground: true,
+            margins: { marginType: 'none' },
+            pageSize: { width: paperWidth, height: 297000 }
+        };
+
+        if (printerName) {
+            printOptions.deviceName = printerName;
+        }
+
+        await withTimeout(
+            loadHtmlInPrintWorker(worker, job.htmlContent),
+            8000,
+            `Timeout cargando HTML del ticket #${job.id}`
+        );
+        console.log(`[Print] Job #${job.id} HTML cargado en ${Date.now() - startedAt}ms`);
+
+        const result = await withTimeout(
+            printFromWorker(worker, printOptions),
+            15000,
+            `Timeout imprimiendo ticket #${job.id}`
+        );
+
+        const totalMs = Date.now() - startedAt;
+        if (result.success) {
+            console.log(`[Print] Job #${job.id} enviado/terminado en ${totalMs}ms (${job.options.paperWidth || '58mm'})`);
+        } else {
+            console.warn(`[Print] Job #${job.id} termino con error en ${totalMs}ms: ${result.failureReason || 'sin detalle'}`);
+        }
+    } catch (error) {
+        console.error(`[Print] Error en job #${job.id}:`, error.message);
+        resetPrintWorker();
+    } finally {
+        isPrintQueueRunning = false;
+        setImmediate(processPrintQueue);
+    }
+}
+
+ipcMain.handle('prepare-printer', async () => {
+    return { ok: preparePrintWorker() };
+});
+
 ipcMain.on('print-ticket', (event, htmlContent, options = {}) => {
+    enqueuePrintJob(htmlContent, options);
+});
+
+ipcMain.on('print-ticket-silent', (event, htmlContent, printerName) => {
+    console.log(`[Print] Impresion dirigida a: ${printerName}`);
+    enqueuePrintJob(htmlContent, { printerName, paperWidth: '80mm' });
+});
+
+ipcMain.on('print-ticket-legacy', (event, htmlContent, options = {}) => {
     console.log('[Print] Recibido print-ticket via IPC');
     
     const paperWidth = options.paperWidth === '58mm' ? 58000 : 80000;
@@ -513,7 +703,7 @@ ipcMain.on('print-ticket', (event, htmlContent, options = {}) => {
 });
 
 // Imprimir a impresora específica por nombre
-ipcMain.on('print-ticket-silent', (event, htmlContent, printerName) => {
+ipcMain.on('print-ticket-silent-legacy', (event, htmlContent, printerName) => {
     console.log(`[Print] Impresión dirigida a: ${printerName}`);
 
     const workerWindow = new BrowserWindow({

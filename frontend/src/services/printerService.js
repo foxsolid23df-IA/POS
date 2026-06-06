@@ -15,14 +15,33 @@
  * @param {string} htmlContent - El contenido HTML completo con hoja de estilos inline
  * @param {object} options - Opciones de impresión (paperWidth, etc)
  */
+const isElectronPrinter = () =>
+    typeof window !== 'undefined' &&
+    window.electronAPI &&
+    window.electronAPI.isElectron;
+
+const prepareElectronPrinter = () => {
+    if (!isElectronPrinter() || typeof window.electronAPI.preparePrinter !== 'function') return;
+
+    window.electronAPI.preparePrinter().catch((error) => {
+        console.warn('[PrinterService] No se pudo preparar la impresora:', error);
+    });
+};
+
+prepareElectronPrinter();
+
 export const printHtmlTicket = (htmlContent, options = {}) => {
     try {
         // ═══════════════════════════════════════════════════════════
         // RUTA 1: ELECTRON (app de escritorio .exe)
         // ═══════════════════════════════════════════════════════════
-        if (window.electronAPI && window.electronAPI.isElectron) {
+        if (isElectronPrinter()) {
             console.log("[PrinterService] ✅ Electron detectado — imprimiendo por IPC nativo");
-            window.electronAPI.print(htmlContent, options);
+            prepareElectronPrinter();
+            window.electronAPI.print(htmlContent, {
+                paperWidth: options.paperWidth || '58mm',
+                printerName: options.printerName || null
+            });
             return; // Salir inmediatamente, no crear iframe
         }
 

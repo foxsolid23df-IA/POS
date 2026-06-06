@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     
     // Imprimir silenciosamente a impresora específica
     printSilent: (html, printerName) => ipcRenderer.send('print-ticket-silent', html, printerName),
+    preparePrinter: () => ipcRenderer.invoke('prepare-printer'),
     
     // Obtener lista de impresoras del sistema
     getPrinters: () => ipcRenderer.invoke('get-printers'),

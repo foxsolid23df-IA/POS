@@ -473,7 +473,9 @@ export const CashCut = ({ onClose }) => {
           </div>
         </body></html>`;
 
-      printerService.printHtmlTicket(htmlPrint);
+      printerService.printHtmlTicket(htmlPrint, {
+        paperWidth: ticketSettings?.paper_width || "58mm",
+      });
     });
   };
 

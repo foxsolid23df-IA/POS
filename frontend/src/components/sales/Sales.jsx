@@ -7,6 +7,7 @@ import { formatearDinero, validarCodigoBarras } from "../../utils";
 import { buscarProductoPorCodigo } from "../../utils/api";
 import { productService } from "../../services/productService";
 import { salesService } from "../../services/salesService";
+import { printerService } from "../../services/printerService";
 import { quotationService } from "../../services/quotationService";
 import { activeCartService } from "../../services/activeCartService";
 import { useApi } from "../../hooks/useApi";
@@ -2004,10 +2005,11 @@ export const Sales = () => {
   const imprimirTicketVenta = async (venta) => {
     if (!venta) return;
     try {
-      const { printerService } = await import("../../services/printerService");
       const html = generateTicketHtml(venta, ticketSettings, user);
       const fullHtml = wrapTicketForPrinting(html, ticketSettings);
-      printerService.printHtmlTicket(fullHtml);
+      printerService.printHtmlTicket(fullHtml, {
+        paperWidth: ticketSettings?.paper_width || "58mm",
+      });
     } catch (err) {
       console.error("[Sales] Error al imprimir ticket:", err);
     }
