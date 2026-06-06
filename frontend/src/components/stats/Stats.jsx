@@ -10,11 +10,35 @@ import DateFilter from '../common/DateFilter'
 import '../common/DateFilter.css'
 import './Stats.css'
 
+const EMPTY_STATS = {
+    ventasTotales: 0,
+    ingresosTotales: 0,
+    ventasDeHoy: 0,
+    ingresosDeHoy: 0,
+    ventasSemana: 0,
+    ingresosSemana: 0,
+    ingresosMes: 0,
+    crecimiento: 0
+}
+
+const EMPTY_WEEKLY_SALES = [0, 0, 0, 0, 0, 0, 0]
+
+const withDashboardTimeout = (promise, fallback, label, timeoutMs = 4500) =>
+    Promise.race([
+        promise,
+        new Promise((resolve) => {
+            setTimeout(() => {
+                console.warn(`[Stats] Timeout cargando ${label}; usando fallback temporal`)
+                resolve(fallback)
+            }, timeoutMs)
+        })
+    ])
+
 export const Stats = () => {
     // ESTADOS
     const [estadisticasRango, setEstadisticasRango] = useState(null)
     const [cargandoAnalisis, setCargandoAnalisis] = useState(false)
-    const [ventasSemana, setVentasSemana] = useState([])
+    const [ventasSemana, setVentasSemana] = useState(EMPTY_WEEKLY_SALES)
 
     // MODAL PERSONALIZADO
     const [modal, setModal] = useState({
@@ -33,11 +57,11 @@ export const Stats = () => {
     })
 
     // HOOKS
-    const [estadisticas, setEstadisticas] = useState(null)
+    const [estadisticas, setEstadisticas] = useState(EMPTY_STATS)
     const [cargandoStats, setCargandoStats] = useState(true)
     const [errorStats, setErrorStats] = useState('')
-    const [topProductos, setTopProductos] = useState(null)
-    const [productosPocoStock, setProductosPocoStock] = useState(null)
+    const [topProductos, setTopProductos] = useState([])
+    const [productosPocoStock, setProductosPocoStock] = useState([])
     const { canAccessReports } = useAuth()
 
     // Obtener día actual de la semana (0 = Domingo, 1 = Lunes, etc.)
@@ -56,14 +80,22 @@ export const Stats = () => {
                 setCargandoStats(true)
 
                 // Cargar estadísticas básicas desde Supabase
-                const statsData = await salesService.getStatistics()
+                const statsData = await withDashboardTimeout(
+                    salesService.getStatistics(),
+                    EMPTY_STATS,
+                    'estadisticas'
+                )
                 if (isMounted) {
                     setEstadisticas(statsData)
                 }
 
                 // Intentar cargar top productos
                 try {
-                    const topData = await salesService.getTopProducts(5)
+                    const topData = await withDashboardTimeout(
+                        salesService.getTopProducts(5),
+                        [],
+                        'top productos'
+                    )
                     if (isMounted) {
                         setTopProductos(topData)
                     }
@@ -73,7 +105,11 @@ export const Stats = () => {
 
                 // Intentar cargar productos con poco stock
                 try {
-                    const pocoStockData = await productService.getLowStockProducts(10)
+                    const pocoStockData = await withDashboardTimeout(
+                        productService.getLowStockProducts(10),
+                        [],
+                        'productos con poco stock'
+                    )
                     if (isMounted) {
                         setProductosPocoStock(pocoStockData)
                     }
@@ -83,7 +119,11 @@ export const Stats = () => {
 
                 // Cargar ventas por día de la semana
                 try {
-                    const ventasPorDia = await salesService.getWeeklySalesData()
+                    const ventasPorDia = await withDashboardTimeout(
+                        salesService.getWeeklySalesData(),
+                        EMPTY_WEEKLY_SALES,
+                        'ventas de la semana'
+                    )
                     if (isMounted) {
                         setVentasSemana(ventasPorDia || [])
                     }
@@ -313,17 +353,6 @@ export const Stats = () => {
         return porcentajes[index] || 20
     }
 
-    if (cargandoStats) {
-        return (
-            <div className="stats-view stats-view-loading">
-                <div className="stats-loading-panel">
-                    <span className="material-icons-outlined">query_stats</span>
-                    <p>Cargando estadisticas...</p>
-                </div>
-            </div>
-        )
-    }
-
     return (
         <div className="stats-view">
             {/* HEADER */}
@@ -355,6 +384,12 @@ export const Stats = () => {
             </header>
 
             <div className="stats-content">
+                {cargandoStats && (
+                    <div className="stats-inline-loading">
+                        <span className="material-icons-outlined">sync</span>
+                        Actualizando datos...
+                    </div>
+                )}
                 {/* ESTADÍSTICAS PRINCIPALES */}
                 <div className="stats-grid">
                     <div className="stat-card">
