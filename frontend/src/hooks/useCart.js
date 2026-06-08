@@ -8,13 +8,15 @@ const getBoxUnits = (item) => {
 
 const hasBoxConfig = (item) => getBoxUnits(item) > 0 && parseFloat(item?.box_price || 0) > 0
 
+const isBoxOnly = (item) => item?.sell_by_box_only === true
+
 /**
  * Centraliza el cálculo de conversión, precios y factores
  */
 const getConversionInfo = (producto, unidad, customPiezas = null, customPrecio = null) => {
     const isCustom = producto.is_custom_pack || customPiezas !== null || customPrecio !== null;
     const configurado = hasBoxConfig(producto);
-    const requestedUnit = String(unidad || 'PZA').toUpperCase();
+    const requestedUnit = isBoxOnly(producto) ? 'CAJA' : String(unidad || 'PZA').toUpperCase();
     
     // Determinar la unidad final
     const unitSold = requestedUnit === 'CAJA' && (isCustom || configurado || unidad === 'CAJA')
@@ -162,11 +164,15 @@ export const useCart = (mostrarError, allowNegativeStock = false) => {
     }
 
     const cambiarUnidadVenta = (idProducto, nuevaUnidad, customPiezas = null) => {
+        let activeUnit = String(nuevaUnidad || 'PZA').toUpperCase()
+
         setCarrito(carritoAnterior => {
             const itemActual = carritoAnterior.find(item => item.id === idProducto)
             if (!itemActual) return carritoAnterior
 
-            const itemConvertido = normalizeCartItem(itemActual, nuevaUnidad, customPiezas)
+            const targetUnit = isBoxOnly(itemActual) ? 'CAJA' : nuevaUnidad
+            activeUnit = String(targetUnit || 'PZA').toUpperCase()
+            const itemConvertido = normalizeCartItem(itemActual, targetUnit, customPiezas)
             
             if (!validateStock(itemActual, itemActual.quantity, itemConvertido.stock_multiplier)) {
                 return carritoAnterior
@@ -191,13 +197,13 @@ export const useCart = (mostrarError, allowNegativeStock = false) => {
         })
         
         const productId = String(idProducto).split('::')[0]
-        setActiveCartItemId(`${productId}::${nuevaUnidad}`)
+        setActiveCartItemId(`${productId}::${activeUnit}`)
     }
 
     const alternarUnidadUltimaLinea = () => {
         const item = carrito.find(line => line.id === activeCartItemId) || carrito[carrito.length - 1]
         if (!item) return
-        cambiarUnidadVenta(item.id, item.unit_sold === 'CAJA' ? 'PZA' : 'CAJA')
+        cambiarUnidadVenta(item.id, isBoxOnly(item) ? 'CAJA' : item.unit_sold === 'CAJA' ? 'PZA' : 'CAJA')
     }
 
     // 5. FUNCIÓN PARA QUITAR UN PRODUCTO DEL CARRITO

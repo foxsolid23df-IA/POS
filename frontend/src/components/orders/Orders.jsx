@@ -7,7 +7,7 @@ import { printerService } from "../../services/printerService";
 import { useAuth } from "../../hooks/useAuth";
 import { useSettings } from "../../contexts/SettingsContext";
 import { formatearDinero, formatearFechaHora } from "../../utils";
-import { generateTicketHtml, wrapTicketForPrinting } from "../../utils/ticketFormatter";
+import { generateTicketHtml } from "../../utils/ticketFormatter";
 import { isWebAdminMode } from "../../utils/appMode";
 import "./Orders.css";
 
@@ -210,9 +210,7 @@ export const Orders = () => {
 
   const handleReprint = useCallback(async (order) => {
     try {
-      const html = generateTicketHtml(order, ticketSettings, user, { fastPrint: true });
-      const fullHtml = wrapTicketForPrinting(html, ticketSettings);
-      printerService.printHtmlTicket(fullHtml, {
+      printerService.printSaleTicketFast(order, ticketSettings, user, {
         paperWidth: ticketSettings?.paper_width || "58mm",
       });
     } catch (err) {

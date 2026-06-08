@@ -72,6 +72,7 @@ const Inventory = () => {
     box_units: "",
     box_price: "",
     box_barcode: "",
+    sell_by_box_only: false,
     cost_price: "",
     wholesale_price: "",
     stock: "",
@@ -124,10 +125,10 @@ const Inventory = () => {
   }, []);
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
@@ -139,6 +140,7 @@ const Inventory = () => {
       box_units: "",
       box_price: "",
       box_barcode: "",
+      sell_by_box_only: false,
       cost_price: "",
       wholesale_price: "",
       stock: "",
@@ -171,6 +173,7 @@ const Inventory = () => {
         box_units: product.box_units || "",
         box_price: product.box_price || "",
         box_barcode: product.box_barcode || "",
+        sell_by_box_only: product.sell_by_box_only === true,
         cost_price: product.cost_price || "",
         wholesale_price: product.wholesale_price || "",
         stock: product.stock,
@@ -281,15 +284,28 @@ const Inventory = () => {
       return;
     }
 
+    const boxUnits = parseInt(formData.box_units || 0);
+    const boxPrice = parseFloat(formData.box_price || 0);
+
+    if (formData.sell_by_box_only && (!(boxUnits > 1) || !(boxPrice > 0))) {
+      Swal.fire(
+        "Falta configuracion de caja",
+        "Para vender solo por caja, captura piezas por caja y precio caja.",
+        "warning",
+      );
+      return;
+    }
+
     try {
       // Si no se selecciono categoria, se guarda la detectada por nombre.
       const productData = {
         name: productName,
         barcode: formData.barcode,
         price: parseFloat(formData.price),
-        box_units: parseInt(formData.box_units || 0) || null,
-        box_price: parseFloat(formData.box_price || 0) || null,
+        box_units: boxUnits || null,
+        box_price: boxPrice || null,
         box_barcode: formData.box_barcode || "",
+        sell_by_box_only: formData.sell_by_box_only === true,
         cost_price: parseFloat(formData.cost_price || 0),
         wholesale_price: parseFloat(formData.wholesale_price || 0),
         stock: parseInt(formData.stock),
@@ -784,6 +800,7 @@ const Inventory = () => {
           row["Precio Sugerido"] = parseFloat(p.suggested_price || 0);
           row["Pzas por Caja"] = p.box_units || "";
           row["Precio Caja"] = p.box_price ? parseFloat(p.box_price) : "";
+          row["Solo Caja"] = p.sell_by_box_only ? "SI" : "NO";
           row["Código Caja"] = p.box_barcode || "";
           row["Marca"] = p.brand || "";
           row["Proveedor"] = p.supplier || "";
@@ -1705,6 +1722,28 @@ const Inventory = () => {
                           />
                         </div>
                       </div>
+                    </div>
+                  )}
+
+                  {!isSimplified && (
+                    <div className="new-product-form-group col-span-12">
+                      <label className="inline-flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
+                        <input
+                          type="checkbox"
+                          name="sell_by_box_only"
+                          checked={formData.sell_by_box_only}
+                          onChange={handleInputChange}
+                          className="mt-1 h-4 w-4"
+                        />
+                        <span>
+                          <span className="block font-semibold text-gray-900">
+                            Solo vender por caja
+                          </span>
+                          <span className="block text-xs text-gray-500">
+                            En ventas no se mostrara ni permitira agregar este producto por pieza.
+                          </span>
+                        </span>
+                      </label>
                     </div>
                   )}
 

@@ -14,6 +14,7 @@ export const ProductCard = ({
     box_price,
   } = product;
 
+  const isBoxOnly = product.sell_by_box_only === true;
   const displayPrice = formatearDinero(price);
   const displayBoxPrice = box_price ? formatearDinero(box_price) : null;
 
@@ -26,6 +27,8 @@ export const ProductCard = ({
   let stockClass = "product-card-stock";
   if (isOutOfStock) stockClass += " out-of-stock";
   else if (isLowStock) stockClass += " low";
+
+  const defaultUnit = isBoxOnly ? "CAJA" : "PZA";
 
   const handleKeyDownPza = (e) => {
     if (e.key === "Enter" || e.key === " ") {
@@ -52,16 +55,18 @@ export const ProductCard = ({
         </div>
 
         <div className="product-card-split-buttons">
-          <button
-            type="button"
-            className="product-card-btn product-card-btn-pza"
-            onClick={(e) => { e.stopPropagation(); onAddToCart(product, 'PZA'); }}
-            onKeyDown={handleKeyDownPza}
-            aria-label={`Agregar ${name} como pieza, precio ${displayPrice}`}
-          >
-            <span className="product-card-btn-label">PZA</span>
-            <span className="product-card-btn-price">{displayPrice}</span>
-          </button>
+          {!isBoxOnly && (
+            <button
+              type="button"
+              className="product-card-btn product-card-btn-pza"
+              onClick={(e) => { e.stopPropagation(); onAddToCart(product, 'PZA'); }}
+              onKeyDown={handleKeyDownPza}
+              aria-label={`Agregar ${name} como pieza, precio ${displayPrice}`}
+            >
+              <span className="product-card-btn-label">PZA</span>
+              <span className="product-card-btn-price">{displayPrice}</span>
+            </button>
+          )}
 
           <button
             type="button"
@@ -88,11 +93,11 @@ export const ProductCard = ({
       role="button"
       tabIndex={0}
       aria-label={`${name}, precio ${displayPrice}, ${stockText}`}
-      onClick={() => onAddToCart(product, 'PZA')}
+      onClick={() => onAddToCart(product, defaultUnit)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          onAddToCart(product, "PZA");
+          onAddToCart(product, defaultUnit);
         }
       }}
       style={{ opacity: isOutOfStock ? 0.6 : 1 }}

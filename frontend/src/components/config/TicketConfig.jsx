@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { ticketSettingsService } from "../../services/ticketSettingsService";
+import { printerService, TICKET_PRINT_MODES } from "../../services/printerService";
 import { useSettings } from "../../contexts/SettingsContext";
 import { useAuth } from "../../hooks/useAuth";
 import "./TicketConfig.css";
@@ -48,6 +49,7 @@ export const TicketConfig = () => {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [printMode, setPrintMode] = useState(() => printerService.getTicketPrintMode());
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -121,104 +123,28 @@ export const TicketConfig = () => {
     }
   };
 
-  const handleTestPrint = () => {
-    import("../../services/printerService").then(({ printerService }) => {
-      const printableWidth = settings.paper_width === "58mm" ? "188px" : "260px";
-      const ticketPadding = settings.paper_width === "58mm" ? "3px" : "3px 4px";
-      const userMargin = parseInt(settings.margin, 10) || 0;
-      const leftOffset = `${(settings.paper_width === "58mm" ? 7 : 10) + userMargin}px`;
-      const topOffset = `${userMargin}px`;
-      const ticketHtml = `<!DOCTYPE html>
-            <html>
-                <head>
-                    <title>Prueba de Ticket</title>
-                    <style>
-                        @media print {
-                            @page { margin: 0; }
-                            body { margin: 0; padding: 0; background: none !important; }
-                        }
-                        body {
-                            font-family: ${
-                              settings.font_family === "Sistema"
-                                ? "system-ui, sans-serif"
-                                : "monospace"
-                            };
-                            font-size: ${settings.font_size}px;
-                            font-weight: ${
-                              settings.is_bold ? "bold" : "normal"
-                            };
-                            width: ${printableWidth};
-                            max-width: ${printableWidth};
-                            margin: ${topOffset} 0 0 ${leftOffset};
-                            padding: ${ticketPadding};
-                            color: black;
-                            box-sizing: border-box;
-                        }
-                        .header { text-align: center; margin-bottom: 10px; }
-                        .logo { max-width: 100%; height: auto; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto; }
-                        .name { font-weight: bold; font-size: 1.2em; text-transform: uppercase; }
-                        .content { margin: 10px 0; border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 5px 0; }
-                        .footer { text-align: center; margin-top: 10px; font-size: 0.9em; text-transform: uppercase; }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        ${
-                          settings.show_logo && settings.logo_url
-                            ? `<img src="${settings.logo_url}" class="logo" />`
-                            : ""
-                        }
-                        ${
-                          settings.show_business_name !== false && settings.business_name
-                            ? `<div class="name">${settings.business_name}</div>`
-                            : ""
-                        }
-                        ${
-                          settings.show_owner_name !== false && settings.owner_name
-                            ? `<div>${settings.owner_name}</div>`
-                            : ""
-                        }
-                        ${
-                          settings.show_rfc !== false && settings.rfc
-                            ? `<div>${/^[Rr]\.?[Ff]\.?[Cc]\.?\b/.test(settings.rfc.trim()) ? "" : "R.F.C. "}${settings.rfc}</div>`
-                            : ""
-                        }
-                        ${
-                          settings.show_curp !== false && settings.curp
-                            ? `<div>${/^[Cc]\.?[Uu]\.?[Rr]\.?[Pp]\.?\b/.test(settings.curp.trim()) ? "" : "C.U.R.P. "}${settings.curp}</div>`
-                            : ""
-                        }
-                        ${
-                          settings.show_address !== false && settings.address
-                            ? `<div style="white-space: pre-line;">${settings.address}</div>`
-                            : ""
-                        }
-                        ${
-                          settings.show_phone !== false && settings.phone
-                            ? `<div>${/^[Tt]el\b/.test(settings.phone.trim()) ? "" : "Tel."}${settings.phone}</div>`
-                            : ""
-                        }
-                        ${
-                          settings.show_email !== false && settings.email
-                            ? `<div>${settings.email}</div>`
-                            : ""
-                        }
-                    </div>
-                    <div class="content">
-                        <div>Producto de Prueba x 1 ... $10.00</div>
-                        <div>Item de Muestra x 2 ... $20.00</div>
-                        <div style="text-align: right; font-weight: bold; margin-top: 5px;">TOTAL: $30.00</div>
-                    </div>
-                    <div class="footer">
-                        ${settings.footer_message}
-                    </div>
-                </body>
-            </html>
-        `;
+  const handlePrintModeChange = (e) => {
+    const nextMode = printerService.setTicketPrintMode(e.target.value);
+    setPrintMode(nextMode);
+  };
 
-      printerService.printHtmlTicket(ticketHtml, {
-        paperWidth: settings.paper_width || "58mm",
-      });
+  const handleTestPrint = () => {
+    const testSale = {
+      id: "PRUEBA",
+      total: 30,
+      metodoPago: "efectivo",
+      montoRecibido: 30,
+      cambio: 0,
+      created_at: new Date().toISOString(),
+      items: [
+        { quantity: 1, name: "Producto de Prueba", price: 10, total: 10, barcode: "TEST-1" },
+        { quantity: 2, name: "Item de Muestra", price: 10, total: 20, barcode: "TEST-2" },
+      ],
+    };
+
+    printerService.printSaleTicketFast(testSale, settings, user, {
+      paperWidth: settings.paper_width || "58mm",
+      mode: printMode,
     });
   };
 
@@ -557,6 +483,18 @@ export const TicketConfig = () => {
             </div>
 
             <div className="grid grid-cols-3 gap-4">
+              <div className="form-group">
+                <label className="text-[10px]">Modo de ImpresiÃ³n</label>
+                <select
+                  value={printMode}
+                  onChange={handlePrintModeChange}
+                  className="w-full bg-white dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 rounded-xl px-4 py-2 text-sm dark:text-white"
+                >
+                  <option value={TICKET_PRINT_MODES.AUTO}>AutomÃ¡tico rÃ¡pido</option>
+                  <option value={TICKET_PRINT_MODES.RAW}>ESC/POS raw</option>
+                  <option value={TICKET_PRINT_MODES.HTML}>HTML clÃ¡sico</option>
+                </select>
+              </div>
               <div className="form-group">
                 <label className="text-[10px]">Ancho del Papel</label>
                 <select

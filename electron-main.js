@@ -18,6 +18,13 @@ let printWorkerReadyPromise = null;
 let printQueue = [];
 let isPrintQueueRunning = false;
 let nextPrintJobId = 1;
+let rawPrintQueue = [];
+let isRawPrintQueueRunning = false;
+let rawPrintHelperProcess = null;
+let rawPrintHelperReady = false;
+let rawPrintHelperId = 1;
+let rawPrintHelperStdout = '';
+const rawPrintPending = new Map();
 
 const PRINT_WORKER_SHELL = `data:text/html;charset=utf-8,${encodeURIComponent(`<!DOCTYPE html>
 <html>
@@ -460,6 +467,7 @@ function crearVentana() {
     mainWindow.on('closed', () => {
         mainWindow = null;
         resetPrintWorker();
+        stopRawPrintHelper();
     });
 
     preparePrintWorker();
@@ -517,6 +525,7 @@ function preparePrintWorker() {
         ensurePrintWorkerReady(worker).catch((error) => {
             console.warn('[Print] No se pudo precalentar el worker:', error.message);
         });
+        startRawPrintHelper();
         return true;
     } catch (error) {
         console.warn('[Print] No se pudo preparar el worker:', error.message);
@@ -530,6 +539,277 @@ function resetPrintWorker() {
     }
     printWorkerWindow = null;
     printWorkerReadyPromise = null;
+}
+
+function getRawPrintHelperScript() {
+    return `
+$ErrorActionPreference = 'Stop'
+Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+
+public class RawPrinterHelper {
+    [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Ansi)]
+    public class DOCINFOA {
+        [MarshalAs(UnmanagedType.LPStr)] public string pDocName;
+        [MarshalAs(UnmanagedType.LPStr)] public string pOutputFile;
+        [MarshalAs(UnmanagedType.LPStr)] public string pDataType;
+    }
+
+    [DllImport("winspool.Drv", EntryPoint="OpenPrinterA", SetLastError=true, CharSet=CharSet.Ansi, ExactSpelling=true, CallingConvention=CallingConvention.StdCall)]
+    public static extern bool OpenPrinter(string szPrinter, out IntPtr hPrinter, IntPtr pd);
+
+    [DllImport("winspool.Drv", EntryPoint="ClosePrinter", SetLastError=true, ExactSpelling=true, CallingConvention=CallingConvention.StdCall)]
+    public static extern bool ClosePrinter(IntPtr hPrinter);
+
+    [DllImport("winspool.Drv", EntryPoint="StartDocPrinterA", SetLastError=true, CharSet=CharSet.Ansi, ExactSpelling=true, CallingConvention=CallingConvention.StdCall)]
+    public static extern bool StartDocPrinter(IntPtr hPrinter, int level, [In, MarshalAs(UnmanagedType.LPStruct)] DOCINFOA di);
+
+    [DllImport("winspool.Drv", EntryPoint="EndDocPrinter", SetLastError=true, ExactSpelling=true, CallingConvention=CallingConvention.StdCall)]
+    public static extern bool EndDocPrinter(IntPtr hPrinter);
+
+    [DllImport("winspool.Drv", EntryPoint="StartPagePrinter", SetLastError=true, ExactSpelling=true, CallingConvention=CallingConvention.StdCall)]
+    public static extern bool StartPagePrinter(IntPtr hPrinter);
+
+    [DllImport("winspool.Drv", EntryPoint="EndPagePrinter", SetLastError=true, ExactSpelling=true, CallingConvention=CallingConvention.StdCall)]
+    public static extern bool EndPagePrinter(IntPtr hPrinter);
+
+    [DllImport("winspool.Drv", EntryPoint="WritePrinter", SetLastError=true, ExactSpelling=true, CallingConvention=CallingConvention.StdCall)]
+    public static extern bool WritePrinter(IntPtr hPrinter, IntPtr pBytes, int dwCount, out int dwWritten);
+
+    public static bool SendBytesToPrinter(string printerName, byte[] bytes, string docName, out int written) {
+        written = 0;
+        IntPtr hPrinter = IntPtr.Zero;
+        IntPtr unmanagedBytes = IntPtr.Zero;
+        bool success = false;
+
+        DOCINFOA docInfo = new DOCINFOA();
+        docInfo.pDocName = docName;
+        docInfo.pDataType = "RAW";
+
+        if (!OpenPrinter(printerName, out hPrinter, IntPtr.Zero)) return false;
+
+        try {
+            if (StartDocPrinter(hPrinter, 1, docInfo)) {
+                try {
+                    if (StartPagePrinter(hPrinter)) {
+                        try {
+                            unmanagedBytes = Marshal.AllocCoTaskMem(bytes.Length);
+                            Marshal.Copy(bytes, 0, unmanagedBytes, bytes.Length);
+                            success = WritePrinter(hPrinter, unmanagedBytes, bytes.Length, out written);
+                        } finally {
+                            if (unmanagedBytes != IntPtr.Zero) Marshal.FreeCoTaskMem(unmanagedBytes);
+                            EndPagePrinter(hPrinter);
+                        }
+                    }
+                } finally {
+                    EndDocPrinter(hPrinter);
+                }
+            }
+        } finally {
+            ClosePrinter(hPrinter);
+        }
+
+        return success && written == bytes.Length;
+    }
+}
+"@
+
+while (($line = [Console]::In.ReadLine()) -ne $null) {
+    $started = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+    try {
+        if ([string]::IsNullOrWhiteSpace($line)) { continue }
+        $job = $line | ConvertFrom-Json
+        $printerName = [string]$job.printerName
+        if ([string]::IsNullOrWhiteSpace($printerName)) {
+            $printerName = (New-Object System.Drawing.Printing.PrinterSettings).PrinterName
+        }
+        $bytes = [Convert]::FromBase64String([string]$job.rawBase64)
+        $written = 0
+        $ok = [RawPrinterHelper]::SendBytesToPrinter($printerName, $bytes, "NEXUM POS Ticket", [ref]$written)
+        $elapsed = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() - $started
+        if (-not $ok) { throw "WritePrinter fallo o escribio bytes incompletos ($written/$($bytes.Length))" }
+        @{ id = $job.id; ok = $true; ms = $elapsed; printerName = $printerName; written = $written } | ConvertTo-Json -Compress
+    } catch {
+        $elapsed = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() - $started
+        @{ id = $job.id; ok = $false; ms = $elapsed; error = $_.Exception.Message } | ConvertTo-Json -Compress
+    }
+}
+`;
+}
+
+function getPowerShellCommand() {
+    return process.env.SystemRoot
+        ? path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe')
+        : 'powershell.exe';
+}
+
+function stopRawPrintHelper() {
+    rawPrintHelperReady = false;
+    rawPrintHelperStdout = '';
+    rawPrintPending.forEach(({ reject, timer }) => {
+        clearTimeout(timer);
+        reject(new Error('El helper RAW de impresion se cerro.'));
+    });
+    rawPrintPending.clear();
+
+    if (rawPrintHelperProcess && !rawPrintHelperProcess.killed) {
+        rawPrintHelperProcess.kill();
+    }
+    rawPrintHelperProcess = null;
+}
+
+function startRawPrintHelper() {
+    if (process.platform !== 'win32') {
+        return false;
+    }
+
+    if (rawPrintHelperProcess && !rawPrintHelperProcess.killed) {
+        return true;
+    }
+
+    const encodedScript = Buffer.from(getRawPrintHelperScript(), 'utf16le').toString('base64');
+    rawPrintHelperProcess = spawn(getPowerShellCommand(), [
+        '-NoLogo',
+        '-NoProfile',
+        '-ExecutionPolicy',
+        'Bypass',
+        '-EncodedCommand',
+        encodedScript
+    ], {
+        windowsHide: true,
+        stdio: ['pipe', 'pipe', 'pipe']
+    });
+
+    rawPrintHelperReady = true;
+    rawPrintHelperStdout = '';
+
+    rawPrintHelperProcess.stdout.on('data', (chunk) => {
+        rawPrintHelperStdout += chunk.toString('utf8');
+        const lines = rawPrintHelperStdout.split(/\r?\n/);
+        rawPrintHelperStdout = lines.pop() || '';
+
+        lines.forEach((line) => {
+            const trimmed = line.trim();
+            if (!trimmed) return;
+            let response;
+            try {
+                response = JSON.parse(trimmed);
+            } catch (error) {
+                console.warn('[PrintRaw] Respuesta no JSON del helper:', trimmed);
+                return;
+            }
+
+            const pending = rawPrintPending.get(response.id);
+            if (!pending) return;
+            clearTimeout(pending.timer);
+            rawPrintPending.delete(response.id);
+
+            if (response.ok) {
+                pending.resolve(response);
+            } else {
+                pending.reject(new Error(response.error || 'Error RAW desconocido'));
+            }
+        });
+    });
+
+    rawPrintHelperProcess.stderr.on('data', (chunk) => {
+        const message = chunk.toString('utf8').trim();
+        if (message) console.warn('[PrintRaw helper]', message);
+    });
+
+    rawPrintHelperProcess.on('exit', (code) => {
+        console.warn(`[PrintRaw] Helper cerrado con codigo ${code}`);
+        stopRawPrintHelper();
+    });
+
+    rawPrintHelperProcess.on('error', (error) => {
+        console.warn('[PrintRaw] No se pudo iniciar helper RAW:', error.message);
+        stopRawPrintHelper();
+    });
+
+    console.log('[PrintRaw] Helper RAW preparado.');
+    return true;
+}
+
+function sendRawToSpooler(rawBase64, options = {}) {
+    return new Promise((resolve, reject) => {
+        if (!rawBase64) {
+            reject(new Error('Payload RAW vacio.'));
+            return;
+        }
+
+        if (!startRawPrintHelper() || !rawPrintHelperReady || !rawPrintHelperProcess?.stdin?.writable) {
+            reject(new Error('Helper RAW no disponible.'));
+            return;
+        }
+
+        const id = rawPrintHelperId++;
+        const timer = setTimeout(() => {
+            rawPrintPending.delete(id);
+            reject(new Error(`Timeout escribiendo RAW #${id}`));
+        }, options.timeoutMs || 5000);
+
+        rawPrintPending.set(id, { resolve, reject, timer });
+
+        const payload = {
+            id,
+            rawBase64,
+            printerName: options.printerName || ''
+        };
+
+        try {
+            rawPrintHelperProcess.stdin.write(`${JSON.stringify(payload)}\n`, 'utf8');
+        } catch (error) {
+            clearTimeout(timer);
+            rawPrintPending.delete(id);
+            reject(error);
+        }
+    });
+}
+
+function enqueueEscposPrintJob(payload = {}, options = {}) {
+    const job = {
+        id: nextPrintJobId++,
+        payload,
+        options,
+        receivedAt: Date.now()
+    };
+
+    rawPrintQueue.push(job);
+    console.log(`[PrintRaw] Job #${job.id} recibido. Cola RAW: ${rawPrintQueue.length}`);
+    processRawPrintQueue();
+}
+
+async function processRawPrintQueue() {
+    if (isRawPrintQueueRunning) return;
+
+    const job = rawPrintQueue.shift();
+    if (!job) return;
+
+    isRawPrintQueueRunning = true;
+    const startedAt = Date.now();
+
+    try {
+        const result = await sendRawToSpooler(job.payload.rawBase64, {
+            printerName: job.options.printerName || job.payload.printerName || null,
+            timeoutMs: job.options.timeoutMs || 5000
+        });
+        const totalMs = Date.now() - startedAt;
+        console.log(`[PrintRaw] Job #${job.id} enviado al spooler en ${totalMs}ms (helper ${result.ms ?? 'n/a'}ms, bytes ${result.written ?? job.payload.byteLength ?? 'n/a'})`);
+    } catch (error) {
+        console.warn(`[PrintRaw] Job #${job.id} fallo: ${error.message}`);
+        if (job.options.fallbackHtml) {
+            console.warn(`[PrintRaw] Job #${job.id} fallback HTML`);
+            enqueuePrintJob(job.options.fallbackHtml, {
+                paperWidth: job.options.paperWidth || job.payload.paperWidth || '58mm',
+                printerName: job.options.printerName || job.payload.printerName || null
+            });
+        }
+    } finally {
+        isRawPrintQueueRunning = false;
+        setImmediate(processRawPrintQueue);
+    }
 }
 
 function stripRemotePrintAssets(htmlContent) {
@@ -695,6 +975,10 @@ ipcMain.handle('prepare-printer', async () => {
 
 ipcMain.on('print-ticket', (event, htmlContent, options = {}) => {
     enqueuePrintJob(htmlContent, options);
+});
+
+ipcMain.on('print-escpos-ticket', (event, payload = {}, options = {}) => {
+    enqueueEscposPrintJob(payload, options);
 });
 
 ipcMain.on('print-ticket-silent', (event, htmlContent, printerName) => {
@@ -957,6 +1241,7 @@ app.on('window-all-closed', () => {
 
 // Asegurarse de cerrar el backend cuando la app se cierre
 app.on('quit', () => {
+    stopRawPrintHelper();
     if (backendProcess) {
         backendProcess.kill();
     }

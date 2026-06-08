@@ -11,6 +11,7 @@ const Product = sequelize.define('Product', {
     box_units: { type: DataTypes.INTEGER, allowNull: true },  // Piezas por caja
     box_price: { type: DataTypes.FLOAT, allowNull: true },    // Precio por caja
     box_barcode: { type: DataTypes.STRING },                 // Código de caja (unicidad manejada por índice)
+    sell_by_box_only: { type: DataTypes.BOOLEAN, defaultValue: false },
     image: { type: DataTypes.TEXT }                        // URL o Base64 de imagen (opcional)
 }, {
     indexes: [

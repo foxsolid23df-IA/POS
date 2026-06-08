@@ -58,6 +58,42 @@ describe('useCart Hook', () => {
     expect(result.current.total).toBe(100);
   });
 
+  it('debe agregar como CAJA un producto configurado solo para caja aunque se solicite PZA', () => {
+    const { result } = renderHook(() => useCart(mockMostrarError, false));
+    const productoSoloCaja = { ...mockProducto, sell_by_box_only: true };
+
+    act(() => {
+      result.current.agregarProducto(productoSoloCaja, 'PZA');
+    });
+
+    const item = result.current.carrito[0];
+    expect(item.unit_sold).toBe('CAJA');
+    expect(item.price).toBe(100);
+    expect(item.conversion_factor).toBe(12);
+    expect(result.current.total).toBe(100);
+  });
+
+  it('no debe convertir a PZA un producto configurado solo para caja', () => {
+    const { result } = renderHook(() => useCart(mockMostrarError, false));
+    const productoSoloCaja = { ...mockProducto, sell_by_box_only: true };
+
+    act(() => {
+      result.current.agregarProducto(productoSoloCaja, 'CAJA');
+    });
+
+    act(() => {
+      result.current.cambiarUnidadVenta(result.current.carrito[0].id, 'PZA');
+    });
+
+    expect(result.current.carrito[0].unit_sold).toBe('CAJA');
+
+    act(() => {
+      result.current.alternarUnidadUltimaLinea();
+    });
+
+    expect(result.current.carrito[0].unit_sold).toBe('CAJA');
+  });
+
   it('debe permitir cambio a CAJA "al vuelo" aunque no esté configurado', () => {
     const { result } = renderHook(() => useCart(mockMostrarError, false));
     const productoSinCaja = { id: 'p2', name: 'Sabritas', price: 15, stock: 50 };

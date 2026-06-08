@@ -19,7 +19,6 @@ import { useScannerMode } from "../../hooks/useScannerMode";
 import { exchangeRateService } from "../../services/exchangeRateService";
 import { cashMovementService } from "../../services/cashMovementService";
 import { packPresetService } from "../../services/packPresetService";
-import { generateTicketHtml, wrapTicketForPrinting } from "../../utils/ticketFormatter";
 import { CashMovementModal } from "./CashMovementModal";
 import { CashFundModal } from "../auth/CashFundModal";
 import { supabase } from "../../supabase";
@@ -542,9 +541,12 @@ export const Sales = () => {
     parseInt(producto?.box_units || 0) > 1 &&
     parseFloat(producto?.box_price || 0) > 0;
 
+  const esSoloCaja = (producto) => producto?.sell_by_box_only === true;
+
   const prepararProductoCarrito = (producto, unidad = "PZA") => {
     const baseUnit = String(producto?.unit || "PZA").toUpperCase();
-    const unitSold = tieneCajaConfigurada(producto) && unidad === "CAJA" ? "CAJA" : baseUnit;
+    const requestedUnit = esSoloCaja(producto) ? "CAJA" : unidad;
+    const unitSold = tieneCajaConfigurada(producto) && requestedUnit === "CAJA" ? "CAJA" : baseUnit;
 
     return {
       ...producto,
@@ -1010,7 +1012,8 @@ export const Sales = () => {
   const handleModalAdd = (pzaQty, cajaQty, customPzaPrice, customCajaPrice) => {
     const producto = productoParaModal;
     if (!producto) return;
-    if (pzaQty > 0) {
+    const soloCaja = esSoloCaja(producto);
+    if (!soloCaja && pzaQty > 0) {
       const p = { ...producto, quantity: pzaQty, image: producto.image_url || producto.image };
       if (customPzaPrice !== undefined && customPzaPrice !== parseFloat(producto.price || 0)) {
         p.price = customPzaPrice;
@@ -1018,8 +1021,9 @@ export const Sales = () => {
       }
       agregarProducto(p, 'PZA', true);
     }
-    if (cajaQty > 0) {
-      const p = { ...producto, quantity: cajaQty, image: producto.image_url || producto.image };
+    const finalCajaQty = soloCaja && cajaQty <= 0 ? 1 : cajaQty;
+    if (finalCajaQty > 0) {
+      const p = { ...producto, quantity: finalCajaQty, image: producto.image_url || producto.image };
       if (customCajaPrice !== undefined && customCajaPrice !== parseFloat(producto.box_price || 0)) {
         p.box_price = customCajaPrice;
         p.price = customCajaPrice;
@@ -1062,7 +1066,7 @@ export const Sales = () => {
     );
     if (productoLocal) {
       const unidadEscaneada =
-        productoLocal.box_barcode === codigo && tieneCajaConfigurada(productoLocal)
+        (esSoloCaja(productoLocal) || productoLocal.box_barcode === codigo) && tieneCajaConfigurada(productoLocal)
           ? "CAJA"
           : "PZA";
       const productoConImagen = prepararProductoCarrito(
@@ -1076,7 +1080,11 @@ export const Sales = () => {
     try {
       await ejecutarPeticion(async (signal) => {
         const producto = await buscarProductoPorCodigo(codigo, signal);
-        agregarProducto(prepararProductoCarrito(producto, "PZA"), undefined, true);
+        const unidadEscaneada =
+          (esSoloCaja(producto) || producto?.box_barcode === codigo) && tieneCajaConfigurada(producto)
+            ? "CAJA"
+            : "PZA";
+        agregarProducto(prepararProductoCarrito(producto, unidadEscaneada), undefined, true);
       });
     } catch (error) {
       if (error.message && error.message.includes("404")) {
@@ -1119,7 +1127,7 @@ export const Sales = () => {
       );
       if (productoLocal) {
         const unidadEscaneada =
-          productoLocal.box_barcode === codigo && tieneCajaConfigurada(productoLocal)
+          (esSoloCaja(productoLocal) || productoLocal.box_barcode === codigo) && tieneCajaConfigurada(productoLocal)
             ? "CAJA"
             : "PZA";
         agregarProducto(prepararProductoCarrito(productoLocal, unidadEscaneada), undefined, true);
@@ -1128,7 +1136,11 @@ export const Sales = () => {
 
       await ejecutarPeticion(async (signal) => {
         const producto = await buscarProductoPorCodigo(codigo, signal);
-        agregarProducto(prepararProductoCarrito(producto, "PZA"), undefined, true);
+        const unidadEscaneada =
+          (esSoloCaja(producto) || producto?.box_barcode === codigo) && tieneCajaConfigurada(producto)
+            ? "CAJA"
+            : "PZA";
+        agregarProducto(prepararProductoCarrito(producto, unidadEscaneada), undefined, true);
         // Producto agregado exitosamente - no necesitamos notificación ya que se ve en el carrito
       });
     } catch (error) {
@@ -1956,7 +1968,7 @@ export const Sales = () => {
 
     if (productoLocal) {
       const unidadEscaneada =
-        productoLocal.box_barcode === codigoLimpio &&
+        (esSoloCaja(productoLocal) || productoLocal.box_barcode === codigoLimpio) &&
         tieneCajaConfigurada(productoLocal)
           ? "CAJA"
           : "PZA";
@@ -1978,7 +1990,14 @@ export const Sales = () => {
       await ejecutarPeticion(async () => {
         const producto = await productService.getProductByBarcode(codigoLimpio);
         if (producto) {
-          const productoConImagen = { ...producto, image: producto.image_url };
+          const unidadEscaneada =
+            (esSoloCaja(producto) || producto?.box_barcode === codigoLimpio) && tieneCajaConfigurada(producto)
+              ? "CAJA"
+              : "PZA";
+          const productoConImagen = prepararProductoCarrito(
+            { ...producto, image: producto.image_url },
+            unidadEscaneada,
+          );
           agregarProducto(productoConImagen, undefined, true);
           mostrarModalPersonalizado(
             "Producto agregado",
@@ -2005,9 +2024,7 @@ export const Sales = () => {
   const imprimirTicketVenta = async (venta) => {
     if (!venta) return;
     try {
-      const html = generateTicketHtml(venta, ticketSettings, user, { fastPrint: true });
-      const fullHtml = wrapTicketForPrinting(html, ticketSettings);
-      printerService.printHtmlTicket(fullHtml, {
+      printerService.printSaleTicketFast(venta, ticketSettings, user, {
         paperWidth: ticketSettings?.paper_width || "58mm",
       });
     } catch (err) {
@@ -2235,6 +2252,7 @@ export const Sales = () => {
                   {carrito.map((item, index) => {
                     const tieneCaja = tieneCajaConfigurada(item);
                     const esCaja = item.unit_sold === 'CAJA';
+                    const soloCaja = esSoloCaja(item);
 
                     return (
                       <div
@@ -2346,7 +2364,9 @@ export const Sales = () => {
                              {tieneCaja ? (
                                <button
                                  className={`unit-toggle-btn ${esCaja ? 'active' : ''}`}
-                                 onClick={(e) => { e.stopPropagation(); cambiarUnidadVenta(item.id, esCaja ? 'PZA' : 'CAJA'); }}
+                                 onClick={(e) => { e.stopPropagation(); cambiarUnidadVenta(item.id, soloCaja ? 'CAJA' : esCaja ? 'PZA' : 'CAJA'); }}
+                                 disabled={soloCaja}
+                                 title={soloCaja ? 'Producto configurado solo para venta por caja' : undefined}
                                >
                                  {esCaja ? 'CAJA' : 'PZA'}
                                </button>
@@ -2443,6 +2463,7 @@ export const Sales = () => {
           onAdd={handleModalAdd}
           formatearDinero={formatearDinero}
           hasBoxConfig={tieneCajaConfigurada(productoParaModal)}
+          sellByBoxOnly={esSoloCaja(productoParaModal)}
           boxUnits={parseInt(productoParaModal.box_units || 0)}
           boxPrice={parseFloat(productoParaModal.box_price || 0)}
         />

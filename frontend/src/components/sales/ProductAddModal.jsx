@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const ProductAddModal = ({ product, onClose, onAdd, formatearDinero, hasBoxConfig, boxUnits, boxPrice }) => {
-  const [pzaQty, setPzaQty] = useState(1);
-  const [cajaQty, setCajaQty] = useState(0);
-  const [focusSection, setFocusSection] = useState('pza');
+const ProductAddModal = ({ product, onClose, onAdd, formatearDinero, hasBoxConfig, sellByBoxOnly = false, boxUnits, boxPrice }) => {
+  const [pzaQty, setPzaQty] = useState(sellByBoxOnly ? 0 : 1);
+  const [cajaQty, setCajaQty] = useState(sellByBoxOnly && hasBoxConfig ? 1 : 0);
+  const [focusSection, setFocusSection] = useState(sellByBoxOnly && hasBoxConfig ? 'caja' : 'pza');
   const [pzaPrice, setPzaPrice] = useState(() => parseFloat(product.price || 0));
   const [cajaPrice, setCajaPrice] = useState(() => boxPrice ? parseFloat(boxPrice) : 0);
   
@@ -77,7 +77,7 @@ const ProductAddModal = ({ product, onClose, onAdd, formatearDinero, hasBoxConfi
       } else if (focusSection === 'caja') {
         setFocusSection('actions');
       } else if (focusSection === 'actions') {
-        setFocusSection('pza');
+        setFocusSection(sellByBoxOnly && hasBoxConfig ? 'caja' : 'pza');
       }
       return;
     }
@@ -88,7 +88,7 @@ const ProductAddModal = ({ product, onClose, onAdd, formatearDinero, hasBoxConfi
       if (focusSection === 'pza') {
         setFocusSection('actions');
       } else if (focusSection === 'caja') {
-        setFocusSection('pza');
+        setFocusSection(sellByBoxOnly ? 'actions' : 'pza');
       } else if (focusSection === 'actions') {
         if (hasBoxConfig) setFocusSection('caja');
         else setFocusSection('pza');
@@ -137,6 +137,7 @@ const ProductAddModal = ({ product, onClose, onAdd, formatearDinero, hasBoxConfi
         <div className="px-6 py-4 space-y-4">
 
           {/* PZA Section */}
+          {!sellByBoxOnly && (
           <div 
             className={`bg-gray-50 dark:bg-slate-800/50 rounded-xl p-4 border transition-colors cursor-pointer ${
               focusSection === 'pza' ? 'ring-2 ring-blue-500 border-blue-500' : 'border-gray-200 dark:border-slate-700'
@@ -204,6 +205,7 @@ const ProductAddModal = ({ product, onClose, onAdd, formatearDinero, hasBoxConfi
               <span className="font-bold text-gray-900 dark:text-white">{formatearDinero(pzaSubtotal)}</span>
             </div>
           </div>
+          )}
 
           {/* CAJA Section */}
           {hasBoxConfig && (
