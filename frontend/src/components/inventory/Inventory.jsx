@@ -1588,11 +1588,12 @@ const Inventory = () => {
                 {activeProductTab === "prices" && (
                   <div className="price-sheet product-tab-panel">
                     <div className="price-sheet-grid">
-                      <div className="price-sheet-main">
+                      <div className="price-sheet-main full-width">
                         <div className="price-sheet-row last-purchase">
                           <label>Ultima compra</label>
                           <input className="new-product-input" value={formatLastPurchase(editingProduct)} disabled />
                           <span>{editingProduct?.last_purchase_at ? "" : "Sin compras"}</span>
+                          <span></span>
                         </div>
                         <div className="price-sheet-row">
                           <label>Compra</label>
@@ -1601,8 +1602,14 @@ const Inventory = () => {
                             <input className="new-product-input new-product-price-input" type="number" name="cost_price" value={formData.cost_price} onChange={handleInputChange} placeholder="0.00" step="0.01" min="0" />
                           </div>
                           <span className="price-sheet-muted">Costo base</span>
+                          <span></span>
                         </div>
-                        <div className="price-sheet-header"><span></span><span>Precio</span><span>Utilidad</span></div>
+                        <div className="price-sheet-header">
+                          <span></span>
+                          <span>Precio</span>
+                          <span>Utilidad</span>
+                          <span>Precio automático a partir de</span>
+                        </div>
                         {priceRows.map((row) => (
                           <div className="price-sheet-row" key={row.field}>
                             <label>{row.label}</label>
@@ -1614,19 +1621,22 @@ const Inventory = () => {
                               <input className="new-product-input" type="number" value={getMarginPercent(formData[row.field])} onChange={(e) => handleMarginChange(row.field, e.target.value)} placeholder="0.00" step="0.01" />
                               <span>%</span>
                             </div>
+                            <div className="price-sheet-auto-qty">
+                              {row.field === "wholesale_price" && (
+                                <div className="auto-price-inline">
+                                  <input className="new-product-input text-right" type="number" name="wholesale_from_qty" value={formData.wholesale_from_qty} onChange={handleInputChange} placeholder="20.00" min="0" step="0.01" />
+                                  <span>PZA</span>
+                                </div>
+                              )}
+                              {row.field === "special_price" && (
+                                <div className="auto-price-inline">
+                                  <input className="new-product-input text-right" type="number" name="special_from_qty" value={formData.special_from_qty} onChange={handleInputChange} placeholder="48.00" min="0" step="0.01" />
+                                  <span>PZA</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         ))}
-                      </div>
-                      <div className="price-sheet-side">
-                        <label className="new-product-label">Precio automatico a partir de</label>
-                        <div className="auto-price-row">
-                          <input className="new-product-input" type="number" name="wholesale_from_qty" value={formData.wholesale_from_qty} onChange={handleInputChange} placeholder="20.00" min="0" step="0.01" />
-                          <span>PZA</span>
-                        </div>
-                        <div className="auto-price-row">
-                          <input className="new-product-input" type="number" name="special_from_qty" value={formData.special_from_qty} onChange={handleInputChange} placeholder="48.00" min="0" step="0.01" />
-                          <span>PZA</span>
-                        </div>
                       </div>
                     </div>
                     <div className="box-price-panel">

@@ -6,6 +6,8 @@ const ProductAddModal = ({ product, onClose, onAdd, formatearDinero, hasBoxConfi
   const [focusSection, setFocusSection] = useState(sellByBoxOnly && hasBoxConfig ? 'caja' : 'pza');
   const [pzaPrice, setPzaPrice] = useState(() => parseFloat(product.price || 0));
   const [cajaPrice, setCajaPrice] = useState(() => boxPrice ? parseFloat(boxPrice) : 0);
+  const [pzaPriceManuallyEdited, setPzaPriceManuallyEdited] = useState(false);
+  const [cajaPriceManuallyEdited, setCajaPriceManuallyEdited] = useState(false);
   
   const pzaInputRef = useRef(null);
   const cajaInputRef = useRef(null);
@@ -17,8 +19,8 @@ const ProductAddModal = ({ product, onClose, onAdd, formatearDinero, hasBoxConfi
   const pQtyNum = parseFloat(pzaQty) || 0;
   const cQtyNum = parseFloat(cajaQty) || 0;
   
-  const pzaPriceOverridden = pzaPrice !== defaultPPrice;
-  const cajaPriceOverridden = cajaPrice !== defaultCPrice;
+  const pzaPriceOverridden = pzaPriceManuallyEdited;
+  const cajaPriceOverridden = cajaPriceManuallyEdited;
   
   const pzaSubtotal = pQtyNum * pzaPrice;
   const cajaSubtotal = cQtyNum * cajaPrice;
@@ -30,6 +32,41 @@ const ProductAddModal = ({ product, onClose, onAdd, formatearDinero, hasBoxConfi
   
   const totalRequestedPieces = pQtyNum + (cQtyNum * (bUnits || 0));
   const isOverStock = totalRequestedPieces > stock;
+
+  const getAutomaticPrice = (totalQty) => {
+    const basePrice = parseFloat(product.price || 0);
+    const specialFrom = parseFloat(product.special_from_qty || 0);
+    const wholesaleFrom = parseFloat(product.wholesale_from_qty || 0);
+    const specialPrice = parseFloat(product.special_price || 0);
+    const wholesalePrice = parseFloat(product.wholesale_price || 0);
+
+    if (specialFrom > 0 && totalQty >= specialFrom && specialPrice > 0) {
+      return { price: specialPrice, label: 'Especial' };
+    }
+    if (wholesaleFrom > 0 && totalQty >= wholesaleFrom && wholesalePrice > 0) {
+      return { price: wholesalePrice, label: 'Mayoreo' };
+    }
+    return { price: basePrice, label: 'Menudeo' };
+  };
+
+  const autoPriceTier = getAutomaticPrice(totalRequestedPieces);
+
+  useEffect(() => {
+    const totalPzs = pQtyNum + (cQtyNum * (bUnits || 0));
+    const auto = getAutomaticPrice(totalPzs);
+    
+    if (!pzaPriceManuallyEdited) {
+      setPzaPrice(auto.price);
+    }
+    
+    if (!cajaPriceManuallyEdited) {
+      if (boxPrice && parseFloat(boxPrice) > 0) {
+        setCajaPrice(parseFloat(boxPrice));
+      } else {
+        setCajaPrice(auto.price * (bUnits || 1));
+      }
+    }
+  }, [pQtyNum, cQtyNum, bUnits, boxPrice, pzaPriceManuallyEdited, cajaPriceManuallyEdited]);
 
   const isArrowNav = useRef(true); 
 
@@ -122,9 +159,16 @@ const ProductAddModal = ({ product, onClose, onAdd, formatearDinero, hasBoxConfi
           <div className="flex justify-between items-start">
             <div>
               <h3 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">{product.name}</h3>
-              <p className={`text-sm mt-1 ${stock <= 0 ? 'text-red-500 font-bold' : 'text-gray-500 dark:text-gray-400'}`}>
-                {stockText}
-              </p>
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                <p className={`text-sm ${stock <= 0 ? 'text-red-500 font-bold' : 'text-gray-500 dark:text-gray-400'}`}>
+                  {stockText}
+                </p>
+                {stock > 0 && (
+                  <span className="bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 text-[11px] font-bold px-2 py-0.5 rounded-full">
+                    Precio: {autoPriceTier.label}
+                  </span>
+                )}
+              </div>
             </div>
             {isOverStock && (
               <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">
@@ -165,7 +209,10 @@ const ProductAddModal = ({ product, onClose, onAdd, formatearDinero, hasBoxConfi
                     value={pzaPrice}
                     onChange={(e) => {
                       const val = parseFloat(e.target.value);
-                      if (!isNaN(val) && val >= 0) setPzaPrice(val);
+                      if (!isNaN(val) && val >= 0) {
+                        setPzaPrice(val);
+                        setPzaPriceManuallyEdited(true);
+                      }
                     }}
                     onClick={(e) => e.stopPropagation()}
                   />
@@ -239,7 +286,10 @@ const ProductAddModal = ({ product, onClose, onAdd, formatearDinero, hasBoxConfi
                       value={cajaPrice}
                       onChange={(e) => {
                         const val = parseFloat(e.target.value);
-                        if (!isNaN(val) && val >= 0) setCajaPrice(val);
+                        if (!isNaN(val) && val >= 0) {
+                          setCajaPrice(val);
+                          setCajaPriceManuallyEdited(true);
+                        }
                       }}
                       onClick={(e) => e.stopPropagation()}
                     />

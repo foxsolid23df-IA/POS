@@ -12,3 +12,5 @@ on public.cash_movements(user_id, is_expense, created_at);
 
 create index if not exists idx_cash_movements_expense_session
 on public.cash_movements(user_id, session_id, is_expense);
+
+notify pgrst, 'reload schema';

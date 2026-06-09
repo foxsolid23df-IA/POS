@@ -113,6 +113,58 @@ describe('cashMovementService', () => {
     );
   });
 
+  it('registra el gasto como salida legacy si Supabase no refresco campos de gasto', async () => {
+    let insertCount = 0;
+    mocks.from.mockImplementation((table) =>
+      createQuery(table, (state) => {
+        insertCount += 1;
+
+        if (insertCount === 1) {
+          return {
+            data: null,
+            error: {
+              code: 'PGRST204',
+              message: "Could not find the 'category' column of 'cash_movements' in the schema cache",
+            },
+          };
+        }
+
+        return { data: { id: 'move-legacy', ...state.payload[0] }, error: null };
+      }),
+    );
+
+    const { cashMovementService } = await import('../cashMovementService');
+
+    const movement = await cashMovementService.registerExpense(
+      75,
+      'Compra menor',
+      'Ana',
+      'terminal',
+      { category: 'Compras menores' },
+    );
+
+    expect(mocks.queries[0].payload[0]).toEqual(
+      expect.objectContaining({
+        movement_type: 'salida',
+        is_expense: true,
+        category: 'Compras menores',
+      }),
+    );
+    expect(mocks.queries[1].payload[0]).toEqual(
+      expect.not.objectContaining({
+        is_expense: expect.anything(),
+        category: expect.anything(),
+      }),
+    );
+    expect(movement).toEqual(
+      expect.objectContaining({
+        movement_type: 'salida',
+        amount: 75,
+        concept: 'Compra menor',
+      }),
+    );
+  });
+
   it('bloquea movimientos sin sesion activa', async () => {
     mocks.getActiveSession.mockResolvedValue(null);
     const { cashMovementService } = await import('../cashMovementService');

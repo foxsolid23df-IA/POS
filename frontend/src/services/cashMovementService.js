@@ -3,7 +3,13 @@ import { cashSessionService } from './cashSessionService';
 import { terminalService } from './terminalService';
 
 const isMissingColumnError = (error, columnName) =>
-    error?.code === '42703' && (!columnName || error?.message?.includes(columnName));
+    (error?.code === '42703' || error?.code === 'PGRST204') &&
+    (
+        !columnName ||
+        error?.message?.includes(columnName) ||
+        error?.details?.includes(columnName) ||
+        error?.hint?.includes(columnName)
+    );
 
 export const EXPENSE_CATEGORIES = [
     'Proveedor',

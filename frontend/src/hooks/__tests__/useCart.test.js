@@ -314,4 +314,29 @@ describe('useCart Hook', () => {
     );
     expect(result.current.total).toBe(543);
   });
+
+  it('debe calcular dinámicamente el precio de caja basado en el precio unitario del nivel correspondiente si no hay box_price', () => {
+    const { result } = renderHook(() => useCart(mockMostrarError, false));
+    const productoSinCajaPrice = {
+      ...mockProducto,
+      price: 10,
+      box_price: 0,
+      box_units: 12,
+      wholesale_price: 8,
+      wholesale_from_qty: 5,
+      special_price: 7,
+      special_from_qty: 10,
+      stock: 100,
+    };
+
+    act(() => {
+      // Agregamos 1 CAJA (1 * 12 = 12 piezas). Como 12 >= 10 (special_from_qty),
+      // el precio unitario de pieza debería cambiar a 7, haciendo el precio de caja = 12 * 7 = 84.
+      result.current.agregarProducto(productoSinCajaPrice, 'CAJA');
+    });
+
+    expect(result.current.carrito[0].unit_sold).toBe('CAJA');
+    expect(result.current.carrito[0].price).toBe(84); // 12 * 7
+    expect(result.current.total).toBe(84);
+  });
 });

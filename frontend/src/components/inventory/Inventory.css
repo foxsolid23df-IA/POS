@@ -1061,7 +1061,7 @@
 
 .price-sheet-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 270px;
+    grid-template-columns: minmax(0, 1fr);
     gap: 22px;
     align-items: start;
 }
@@ -1075,7 +1075,7 @@
 .price-sheet-header,
 .price-sheet-row {
     display: grid;
-    grid-template-columns: 140px minmax(120px, 1fr) minmax(110px, 150px);
+    grid-template-columns: 120px minmax(120px, 1fr) minmax(110px, 150px) minmax(180px, 240px);
     gap: 12px;
     align-items: center;
 }
@@ -1109,24 +1109,27 @@
 }
 
 .price-sheet-percent span,
-.auto-price-row span {
+.auto-price-inline span {
     color: #334155;
     font-size: 13px;
     font-weight: 800;
 }
 
-.price-sheet-side {
-    padding-top: 72px;
+.auto-price-inline {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
+    align-items: center;
+    gap: 8px;
 }
 
-.auto-price-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 42px;
-    gap: 10px;
+.auto-price-inline input {
+    max-width: 100px;
+    text-align: right;
+}
+
+.price-sheet-auto-qty {
+    display: flex;
     align-items: center;
+    justify-content: flex-start;
 }
 
 .box-price-panel {

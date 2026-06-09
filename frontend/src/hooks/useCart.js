@@ -31,6 +31,31 @@ const getAutomaticPiecePrice = (producto, quantity = 1) => {
     return basePrice
 }
 
+const getAutomaticItemPrice = (producto, quantity = 1, unitSold = 'PZA', customBoxUnits = null) => {
+    if (producto?.price_overridden) {
+        return parseFloat(producto.price);
+    }
+
+    const qty = parseFloat(quantity || 1) || 1;
+
+    if (unitSold === 'CAJA') {
+        const pieces = customBoxUnits !== null ? customBoxUnits : (getBoxUnits(producto) || 1);
+        const hasBox = hasBoxConfig(producto);
+        const isStandardBox = hasBox && pieces === getBoxUnits(producto);
+        
+        if (isStandardBox) {
+            return parseFloat(producto.box_price);
+        }
+        
+        // Dynamic box price based on total pieces
+        const totalPieces = qty * pieces;
+        const autoPiecePrice = getAutomaticPiecePrice(producto, totalPieces);
+        return autoPiecePrice * pieces;
+    } else {
+        return getAutomaticPiecePrice(producto, qty);
+    }
+}
+
 /**
  * Centraliza el cálculo de conversión, precios y factores
  */
@@ -56,20 +81,14 @@ const getConversionInfo = (producto, unidad, customPiezas = null, customPrecio =
         }
     }
 
-    const unitPrice = parseFloat(producto.unit_price ?? producto.price ?? 0);
-    
     // Determinar precio
-    let price = unitSold === 'CAJA' ? unitPrice : getAutomaticPiecePrice(producto, quantity);
-    if (unitSold === 'CAJA') {
-        if (customPrecio !== null) {
-            price = parseFloat(customPrecio);
-        } else if (producto.is_custom_pack) {
-            price = parseFloat(producto.price);
-        } else if (configurado) {
-            price = parseFloat(producto.box_price);
-        } else {
-            price = unitPrice * piezas;
-        }
+    let price;
+    if (customPrecio !== null) {
+        price = parseFloat(customPrecio);
+    } else if (unitSold === 'CAJA' && producto.is_custom_pack) {
+        price = parseFloat(producto.price);
+    } else {
+        price = getAutomaticItemPrice(producto, quantity, unitSold, unitSold === 'CAJA' ? piezas : null);
     }
 
     const multiplier = unitSold === 'CAJA' ? piezas : 1;
@@ -149,8 +168,8 @@ export const useCart = (mostrarError, allowNegativeStock = false) => {
                             ? {
                                 ...item,
                                 quantity: nuevaCantidad,
-                                price: item.unit_sold === 'PZA' && !item.price_overridden
-                                    ? getAutomaticPiecePrice(item, nuevaCantidad)
+                                price: !item.price_overridden
+                                    ? getAutomaticItemPrice(item, nuevaCantidad, item.unit_sold, item.unit_sold === 'CAJA' ? item.conversion_factor : null)
                                     : item.price,
                                 base_quantity: nuevaCantidad * item.stock_multiplier
                             }
@@ -185,8 +204,8 @@ export const useCart = (mostrarError, allowNegativeStock = false) => {
                         return {
                             ...item,
                             quantity: nuevaCantidad,
-                            price: item.unit_sold === 'PZA' && !item.price_overridden
-                                ? getAutomaticPiecePrice(item, nuevaCantidad)
+                            price: !item.price_overridden
+                                ? getAutomaticItemPrice(item, nuevaCantidad, item.unit_sold, item.unit_sold === 'CAJA' ? item.conversion_factor : null)
                                 : item.price,
                             base_quantity: nuevaCantidad * item.stock_multiplier
                         }
@@ -195,8 +214,8 @@ export const useCart = (mostrarError, allowNegativeStock = false) => {
                     return {
                         ...item,
                         quantity: maxQty,
-                        price: item.unit_sold === 'PZA' && !item.price_overridden
-                            ? getAutomaticPiecePrice(item, maxQty)
+                        price: !item.price_overridden
+                            ? getAutomaticItemPrice(item, maxQty, item.unit_sold, item.unit_sold === 'CAJA' ? item.conversion_factor : null)
                             : item.price,
                         base_quantity: maxQty * item.stock_multiplier
                     };
