@@ -82,6 +82,9 @@ export const CashCut = ({ onClose }) => {
         expectedMXN,
         entradasTotal,
         salidasTotal,
+        expensesTotal: data.expensesTotal || 0,
+        expenses: data.expenses || [],
+        expensesByCategory: data.expensesByCategory || [],
         cardTotal: data.cardTotal || 0,
         transferTotal: data.transferTotal || 0,
         cashTotal: data.cashTotal || 0,
@@ -281,6 +284,9 @@ export const CashCut = ({ onClose }) => {
         terminalBreakdown: summary.terminalBreakdown || [],
         entradas_total: summary.entradasTotal,
         salidas_total: summary.salidasTotal,
+        expenses_total: summary.expensesTotal || 0,
+        expenses: summary.expenses || [],
+        expenses_by_category: summary.expensesByCategory || [],
         notes,
       };
 
@@ -321,6 +327,15 @@ export const CashCut = ({ onClose }) => {
       const cardTotal = ticketResult.cardTotal || 0;
       const salidasTotal =
         ticketResult.salidas_total || summary?.salidasTotal || 0;
+      const expenses =
+        ticketResult.expenses || summary?.expenses || [];
+      const expensesByCategory =
+        ticketResult.expenses_by_category ||
+        ticketResult.expensesByCategory ||
+        summary?.expensesByCategory ||
+        [];
+      const expensesTotal =
+        ticketResult.expenses_total || summary?.expensesTotal || 0;
       const totalSalesAmount = ticketResult.salesTotal || 0;
       const totalSalesCount = ticketResult.salesCount || 0;
       const terminalBreakdown =
@@ -408,6 +423,29 @@ export const CashCut = ({ onClose }) => {
               )}</span>
             </div>
             <div class="separator"></div>`;
+
+        if (expensesTotal > 0) {
+          htmlPrint += `<div class="row">
+              <span class="label">GASTOS REGISTRADOS (${expenses.length}):</span>
+              <span class="value">-${formatMoney(expensesTotal)}</span>
+            </div>`;
+
+          expensesByCategory.slice(0, 5).forEach((item) => {
+            htmlPrint += `<div class="row">
+              <span class="label">${item.category}</span>
+              <span class="value">-${formatMoney(item.total)}</span>
+            </div>`;
+          });
+
+          expenses.slice(0, 5).forEach((expense) => {
+            htmlPrint += `<div class="row">
+              <span class="label">${String(expense.concept || "Gasto").slice(0, 22)}</span>
+              <span class="value">-${formatMoney(expense.amount)}</span>
+            </div>`;
+          });
+
+          htmlPrint += `<div class="separator"></div>`;
+        }
       }
 
       htmlPrint += `<div class="row">
@@ -663,6 +701,25 @@ export const CashCut = ({ onClose }) => {
                     <span className="font-bold text-rose-600 dark:text-rose-400 text-lg">
                       -{formatMoney(cutResult.salidas_total)}
                     </span>
+                  </div>
+                )}
+
+                {cutResult.expenses_total > 0 && showWithdrawals && (
+                  <div className="bg-rose-50 dark:bg-rose-900/10 p-3 rounded-lg border border-rose-100 dark:border-rose-900/20 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs uppercase font-bold text-rose-600 dark:text-rose-400">
+                        Gastos registrados:
+                      </span>
+                      <span className="font-bold text-rose-600 dark:text-rose-400 text-lg">
+                        -{formatMoney(cutResult.expenses_total)}
+                      </span>
+                    </div>
+                    {(cutResult.expenses_by_category || []).slice(0, 3).map((item) => (
+                      <div key={item.category} className="flex justify-between text-xs text-slate-600 dark:text-slate-300">
+                        <span>{item.category}</span>
+                        <span>{formatMoney(item.total)}</span>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -1000,6 +1057,46 @@ export const CashCut = ({ onClose }) => {
                 </div>
               )}
             </div>
+
+            {showWithdrawals && summary?.expensesTotal > 0 && (
+              <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-rose-100 dark:border-rose-900/30">
+                <div className="flex items-center justify-between gap-4 mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-rose-100 dark:bg-rose-900/30 p-2 rounded-xl">
+                      <span className="material-symbols-rounded text-rose-600 dark:text-rose-400">
+                        receipt_long
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest">
+                        Gastos registrados
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {summary.expenses.length} movimiento(s)
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-xl font-black text-rose-600 dark:text-rose-400">
+                    -{formatMoney(summary.expensesTotal)}
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {summary.expensesByCategory.slice(0, 4).map((item) => (
+                    <div
+                      key={item.category}
+                      className="flex items-center justify-between rounded-xl bg-rose-50 dark:bg-rose-950/20 px-4 py-3"
+                    >
+                      <span className="text-xs font-bold text-rose-700 dark:text-rose-300">
+                        {item.category}
+                      </span>
+                      <span className="text-sm font-black text-slate-900 dark:text-white">
+                        {formatMoney(item.total)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </section>
 
           {/* Efectivo en Caja Inputs */}

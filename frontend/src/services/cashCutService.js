@@ -109,6 +109,17 @@ const buildTerminalBreakdown = (sales) => {
     );
 };
 
+const buildExpensesByCategory = (expenses = []) => {
+    return expenses.reduce((acc, expense) => {
+        const category = expense.category || 'Otros';
+        const current = acc[category] || { category, count: 0, total: 0 };
+        current.count += 1;
+        current.total += parseFloat(expense.amount || 0);
+        acc[category] = current;
+        return acc;
+    }, {});
+};
+
 export const cashCutService = {
     getLastCut: async () => {
         try {
@@ -339,6 +350,13 @@ export const cashCutService = {
             const salidasTotal = movements
                 .filter((m) => m.movement_type === 'salida')
                 .reduce((sum, m) => sum + parseFloat(m.amount || 0), 0);
+            const expenses = movements
+                .filter((m) => m.movement_type === 'salida' && m.is_expense === true)
+                .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+            const expensesTotal = expenses
+                .reduce((sum, m) => sum + parseFloat(m.amount || 0), 0);
+            const expensesByCategory = Object.values(buildExpensesByCategory(expenses))
+                .sort((a, b) => b.total - a.total);
 
             return {
                 startTime,
@@ -355,6 +373,9 @@ export const cashCutService = {
                 terminalBreakdown: buildTerminalBreakdown(sales),
                 entradasTotal,
                 salidasTotal,
+                expensesTotal,
+                expenses,
+                expensesByCategory,
                 movements,
                 sales
             };

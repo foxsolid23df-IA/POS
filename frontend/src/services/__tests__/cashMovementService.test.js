@@ -80,6 +80,39 @@ describe('cashMovementService', () => {
     );
   });
 
+  it('registra gastos con categoria y metadatos de caja', async () => {
+    const { cashMovementService } = await import('../cashMovementService');
+
+    const movement = await cashMovementService.registerExpense(
+      120,
+      'Pago de agua',
+      'Ana',
+      'terminal',
+      {
+        category: 'Servicios',
+        reference: 'REC-10',
+        notes: 'Recibo mensual',
+        createdByStaffId: 'staff-1',
+      },
+    );
+
+    expect(movement).toEqual(
+      expect.objectContaining({
+        session_id: 'shared-session',
+        terminal_id: 'terminal-a',
+        movement_type: 'salida',
+        amount: 120,
+        concept: 'Pago de agua',
+        staff_name: 'Ana',
+        is_expense: true,
+        category: 'Servicios',
+        reference: 'REC-10',
+        notes: 'Recibo mensual',
+        created_by_staff_id: 'staff-1',
+      }),
+    );
+  });
+
   it('bloquea movimientos sin sesion activa', async () => {
     mocks.getActiveSession.mockResolvedValue(null);
     const { cashMovementService } = await import('../cashMovementService');

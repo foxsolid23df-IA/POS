@@ -45,6 +45,7 @@ const Maintenance = lazy(() => import("../components/admin/Maintenance"));
 const Orders = lazy(() => import("../components/orders/Orders").then(m => ({ default: m.Orders })));
 const CreditMenu = lazy(() => import("../components/credit/CreditMenu").then(m => ({ default: m.CreditMenu })));
 const CustomerCreditCard = lazy(() => import("../components/credit/CustomerCreditCard").then(m => ({ default: m.CustomerCreditCard })));
+const Expenses = lazy(() => import("../components/expenses/Expenses").then(m => ({ default: m.Expenses })));
 const SuperAdminPortal = lazy(() => import("../pages/SuperAdmin/SuperAdminPortal").then(m => ({ default: m.SuperAdminPortal })));
 
 // Componente invisible que maneja el botón "Atrás" de Android
@@ -360,6 +361,20 @@ export const Routing = () => {
                           <PermissionRoute permission="inventory">
                             <Suppliers />
                           </PermissionRoute>
+                        </PrivateLayout>
+                      }
+                    />
+                    <Route
+                      path="/gastos"
+                      element={
+                        <PrivateLayout>
+                          {isWebAdminMode() || sessionStorage.getItem("visor_mode") === "true" ? (
+                            <Navigate to="/estadisticas" replace />
+                          ) : (
+                            <PermissionRoute reports>
+                              <Expenses />
+                            </PermissionRoute>
+                          )}
                         </PrivateLayout>
                       }
                     />

@@ -597,6 +597,7 @@ export const Sales = () => {
   });
 
   const [mostrarModalSalida, setMostrarModalSalida] = useState(false);
+  const [mostrarModalGasto, setMostrarModalGasto] = useState(false);
   const [salidaForm, setSalidaForm] = useState({ concepto: "", cantidad: "" });
   const [mostrarModalReporte, setMostrarModalReporte] = useState(false);
 
@@ -791,6 +792,7 @@ export const Sales = () => {
     mostrarModalComun || 
     mostrarModalEntrada || 
     mostrarModalSalida || 
+    mostrarModalGasto ||
     mostrarModalEmpaque || 
     mostrarModalFondo || 
     mostrarModalReporte || 
@@ -2092,7 +2094,7 @@ export const Sales = () => {
         <QuickActions 
           isSupervising={isSupervising}
           onOpenComun={() => setMostrarModalComun(true)}
-          onOpenSalida={() => setMostrarModalSalida(true)}
+          onOpenSalida={() => setMostrarModalGasto(true)}
           onOpenEntrada={() => setMostrarModalEntrada(true)}
           setMostrarCameraScanner={setMostrarCameraScanner}
           toggleScannerMode={toggleScannerMode}
@@ -2688,6 +2690,15 @@ export const Sales = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {mostrarModalGasto && (
+        <CashMovementModal
+          defaultType="salida"
+          expenseOnly
+          onClose={() => setMostrarModalGasto(false)}
+          onSuccess={() => setMostrarModalGasto(false)}
+        />
       )}
 
       {/* MODAL SALIDA */}

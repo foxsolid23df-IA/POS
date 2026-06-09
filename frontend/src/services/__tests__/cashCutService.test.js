@@ -96,7 +96,7 @@ describe('cashCutService summaries', () => {
       movementsResult: {
         data: [
           { movement_type: 'entrada', amount: 20 },
-          { movement_type: 'salida', amount: 5 },
+          { movement_type: 'salida', amount: 5, is_expense: true, category: 'Servicios', concept: 'Agua' },
         ],
         error: null,
       },
@@ -144,6 +144,11 @@ describe('cashCutService summaries', () => {
     expect(summary.usdExpected).toBe(10);
     expect(summary.entradasTotal).toBe(20);
     expect(summary.salidasTotal).toBe(5);
+    expect(summary.expensesTotal).toBe(5);
+    expect(summary.expenses).toHaveLength(1);
+    expect(summary.expensesByCategory).toEqual([
+      { category: 'Servicios', count: 1, total: 5 },
+    ]);
     expect(summary.terminalBreakdown).toEqual([
       { terminal_id: 'terminal-a', terminal_name: 'PC A', sales_count: 1, sales_total: 100 },
       { terminal_id: 'terminal-b', terminal_name: 'PC B', sales_count: 2, sales_total: 250 },
