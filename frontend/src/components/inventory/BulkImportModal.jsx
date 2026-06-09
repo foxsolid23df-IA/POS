@@ -187,6 +187,14 @@ const COLUMN_ALIASES = {
     "Special Price",
     "Precio Esp",
   ],
+  special_price_2: [
+    "Precio Especial 2",
+    "P. Especial 2",
+    "precio_esp_2",
+    "PrecioEspecial2",
+    "Especial 2",
+    "Special Price 2",
+  ],
   suggested_price: [
     "Precio Sugerido",
     "P. Sugerido",
@@ -195,6 +203,18 @@ const COLUMN_ALIASES = {
     "Sugerido",
     "Suggested Price",
     "MSRP",
+  ],
+  wholesale_from_qty: [
+    "Mayoreo desde",
+    "Precio Mayoreo desde",
+    "Mayoreo a partir de",
+    "wholesale_from_qty",
+  ],
+  special_from_qty: [
+    "Especial desde",
+    "Precio Especial desde",
+    "Especial a partir de",
+    "special_from_qty",
   ],
   wholesale_unit: [
     "Unidad Mayoreo",
@@ -338,7 +358,10 @@ const toSianInventoryRow = (product, { category = "General", sku } = {}) => ({
   precio_may: toNumber(product.wholesale_price, 0),
   "Solo Caja": product.sell_by_box_only ? "SI" : "",
   precio_esp: toNumber(product.special_price, 0),
+  precio_esp_2: toNumber(product.special_price_2, 0),
   precio_sugerido: toNumber(product.suggested_price, 0),
+  mayoreo_desde: toNumber(product.wholesale_from_qty, 0) || "",
+  especial_desde: toNumber(product.special_from_qty, 0) || "",
   umay: product.wholesale_unit || 1,
   existencia: toInteger(product.stock, 0),
   suc1: toInteger(product.stock, 0),
@@ -376,7 +399,10 @@ const mapRowToProduct = (row) => {
   const unitVal = get("unit");
   const ivaVal = get("iva");
   const specialPriceVal = get("special_price");
+  const specialPrice2Val = get("special_price_2");
   const suggestedPriceVal = get("suggested_price");
+  const wholesaleFromQtyVal = get("wholesale_from_qty");
+  const specialFromQtyVal = get("special_from_qty");
   const wholesaleUnitVal = get("wholesale_unit");
   const brandVal = get("brand");
   const supplierVal = get("supplier");
@@ -412,7 +438,10 @@ const mapRowToProduct = (row) => {
     unit: normalizeUnit(unitVal),
     iva: toNumber(ivaVal, 0),
     special_price: toNumber(specialPriceVal, 0),
+    special_price_2: toNumber(specialPrice2Val, 0),
     suggested_price: toNumber(suggestedPriceVal, 0),
+    wholesale_from_qty: toNumber(wholesaleFromQtyVal, 0) || null,
+    special_from_qty: toNumber(specialFromQtyVal, 0) || null,
     wholesale_unit: cleanText(wholesaleUnitVal) || "",
     brand: cleanText(brandVal) || "",
     supplier: cleanText(supplierVal) || "",
@@ -454,7 +483,10 @@ const BulkImportModal = ({
         "Precio Caja": 300.0,
         "Código Caja": "PRUEBA01-CAJA",
         "Precio Especial": 0,
+        "Precio Especial 2": 0,
         "Precio Sugerido": 0,
+        "Mayoreo desde": 20,
+        "Especial desde": 48,
         "Und. Mayoreo": "",
         Existencia: 10,
         "Inv. Minimo": 5,
@@ -780,7 +812,10 @@ const BulkImportModal = ({
                       <th>Caja</th>
                       <th>Solo Caja</th>
                       <th>P.Esp</th>
+                      <th>P.Esp2</th>
                       <th>P.Sug</th>
+                      <th>May Desde</th>
+                      <th>Esp Desde</th>
                       <th>Stock</th>
                       <th>Und</th>
                       <th>IVA</th>
@@ -805,7 +840,10 @@ const BulkImportModal = ({
                         </td>
                         <td>{product.sell_by_box_only ? "SI" : "NO"}</td>
                         <td>${Number(product.special_price || 0).toFixed(2)}</td>
+                        <td>${Number(product.special_price_2 || 0).toFixed(2)}</td>
                         <td>${Number(product.suggested_price || 0).toFixed(2)}</td>
+                        <td>{product.wholesale_from_qty || "-"}</td>
+                        <td>{product.special_from_qty || "-"}</td>
                         <td>{product.stock}</td>
                         <td>{product.unit || "PZA"}</td>
                         <td>{product.iva || 0}%</td>

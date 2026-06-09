@@ -851,7 +851,7 @@
 .new-product-modal {
     position: relative;
     width: 100%;
-    max-width: 672px;
+    max-width: 860px;
     max-height: 90vh;
     display: flex;
     flex-direction: column;
@@ -1012,6 +1012,164 @@
 /* Form Styles */
 .new-product-form {
     display: block;
+}
+
+.product-edit-tabs {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #cbd5e1;
+    overflow-x: auto;
+}
+
+.product-edit-tab {
+    min-height: 38px;
+    padding: 8px 14px;
+    border: 1px solid transparent;
+    border-bottom: none;
+    background: transparent;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.product-edit-tab.active {
+    background: #ffffff;
+    border-color: #94a3b8;
+    color: #111827;
+}
+
+.product-tab-panel {
+    animation: fadeIn 0.16s ease;
+}
+
+.product-inline-action {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+}
+
+.price-sheet {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.price-sheet-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 270px;
+    gap: 22px;
+    align-items: start;
+}
+
+.price-sheet-main {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.price-sheet-header,
+.price-sheet-row {
+    display: grid;
+    grid-template-columns: 140px minmax(120px, 1fr) minmax(110px, 150px);
+    gap: 12px;
+    align-items: center;
+}
+
+.price-sheet-header {
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.price-sheet-row label {
+    color: #1f2937;
+    font-size: 14px;
+    font-weight: 800;
+    text-align: right;
+}
+
+.price-sheet-row.last-purchase span,
+.price-sheet-muted {
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.price-sheet-percent {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px;
+    align-items: center;
+}
+
+.price-sheet-percent span,
+.auto-price-row span {
+    color: #334155;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.price-sheet-side {
+    padding-top: 72px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.auto-price-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 42px;
+    gap: 10px;
+    align-items: center;
+}
+
+.box-price-panel {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 16px;
+}
+
+.price-sheet-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: #1f2937;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.price-sheet-check input {
+    width: 16px;
+    height: 16px;
+}
+
+@media (max-width: 768px) {
+    .new-product-modal {
+        max-width: 100%;
+    }
+
+    .price-sheet-grid,
+    .price-sheet-header,
+    .price-sheet-row {
+        grid-template-columns: 1fr;
+    }
+
+    .price-sheet-row label {
+        text-align: left;
+    }
+
+    .price-sheet-side {
+        padding-top: 0;
+    }
+
+    .product-inline-action {
+        grid-template-columns: 1fr;
+    }
 }
 
 .new-product-form-grid {
@@ -2608,6 +2766,37 @@
 .dark .new-product-title {
     color: #f1f5f9;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.dark .product-edit-tabs {
+    border-bottom-color: #475569;
+}
+
+.dark .product-edit-tab {
+    color: #cbd5e1;
+}
+
+.dark .product-edit-tab.active {
+    background: #0f172a;
+    border-color: #475569;
+    color: #ffffff;
+}
+
+.dark .price-sheet-row label,
+.dark .price-sheet-check,
+.dark .price-sheet-percent span,
+.dark .auto-price-row span {
+    color: #e2e8f0;
+}
+
+.dark .price-sheet-header,
+.dark .price-sheet-row.last-purchase span,
+.dark .price-sheet-muted {
+    color: #94a3b8;
+}
+
+.dark .box-price-panel {
+    border-top-color: #334155;
 }
 
 /* Formularios - Dark Mode */

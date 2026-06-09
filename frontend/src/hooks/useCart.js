@@ -10,10 +10,31 @@ const hasBoxConfig = (item) => getBoxUnits(item) > 0 && parseFloat(item?.box_pri
 
 const isBoxOnly = (item) => item?.sell_by_box_only === true
 
+const getAutomaticPiecePrice = (producto, quantity = 1) => {
+    const basePrice = parseFloat(producto?.unit_price ?? producto?.price ?? 0)
+    if (producto?.price_overridden) return basePrice
+
+    const qty = parseFloat(quantity || 1) || 1
+    const specialFrom = parseFloat(producto?.special_from_qty || 0)
+    const wholesaleFrom = parseFloat(producto?.wholesale_from_qty || 0)
+    const specialPrice = parseFloat(producto?.special_price || 0)
+    const wholesalePrice = parseFloat(producto?.wholesale_price || 0)
+
+    if (specialFrom > 0 && qty >= specialFrom && specialPrice > 0) {
+        return specialPrice
+    }
+
+    if (wholesaleFrom > 0 && qty >= wholesaleFrom && wholesalePrice > 0) {
+        return wholesalePrice
+    }
+
+    return basePrice
+}
+
 /**
  * Centraliza el cálculo de conversión, precios y factores
  */
-const getConversionInfo = (producto, unidad, customPiezas = null, customPrecio = null) => {
+const getConversionInfo = (producto, unidad, customPiezas = null, customPrecio = null, quantity = 1) => {
     const isCustom = producto.is_custom_pack || customPiezas !== null || customPrecio !== null;
     const configurado = hasBoxConfig(producto);
     const requestedUnit = isBoxOnly(producto) ? 'CAJA' : String(unidad || 'PZA').toUpperCase();
@@ -38,7 +59,7 @@ const getConversionInfo = (producto, unidad, customPiezas = null, customPrecio =
     const unitPrice = parseFloat(producto.unit_price ?? producto.price ?? 0);
     
     // Determinar precio
-    let price = unitPrice;
+    let price = unitSold === 'CAJA' ? unitPrice : getAutomaticPiecePrice(producto, quantity);
     if (unitSold === 'CAJA') {
         if (customPrecio !== null) {
             price = parseFloat(customPrecio);
@@ -57,7 +78,8 @@ const getConversionInfo = (producto, unidad, customPiezas = null, customPrecio =
 };
 
 const normalizeCartItem = (producto, requestedUnit = producto?.unit_sold || 'PZA', customPiezas = null, customPrecio = null) => {
-    const { unitSold, multiplier, price } = getConversionInfo(producto, requestedUnit, customPiezas, customPrecio);
+    const quantity = parseFloat(producto?.quantity || 1) || 1;
+    const { unitSold, multiplier, price } = getConversionInfo(producto, requestedUnit, customPiezas, customPrecio, quantity);
     
     const productId = producto.product_id || producto.id || null;
     
@@ -124,7 +146,14 @@ export const useCart = (mostrarError, allowNegativeStock = false) => {
                 if (validateStock(productoExistente, nuevaCantidad, productoExistente.stock_multiplier, force)) {
                     return carritoAnterior.map(item =>
                         item.id === productoExistente.id
-                            ? { ...item, quantity: nuevaCantidad, base_quantity: nuevaCantidad * item.stock_multiplier }
+                            ? {
+                                ...item,
+                                quantity: nuevaCantidad,
+                                price: item.unit_sold === 'PZA' && !item.price_overridden
+                                    ? getAutomaticPiecePrice(item, nuevaCantidad)
+                                    : item.price,
+                                base_quantity: nuevaCantidad * item.stock_multiplier
+                            }
                             : item
                     )
                 }
@@ -153,10 +182,24 @@ export const useCart = (mostrarError, allowNegativeStock = false) => {
                 if (item.id === idProducto) {
                     const nuevaCantidad = Math.max(1, (item.quantity || 1) + delta);
                     if (validateStock(item, nuevaCantidad, item.stock_multiplier, force)) {
-                        return { ...item, quantity: nuevaCantidad, base_quantity: nuevaCantidad * item.stock_multiplier }
+                        return {
+                            ...item,
+                            quantity: nuevaCantidad,
+                            price: item.unit_sold === 'PZA' && !item.price_overridden
+                                ? getAutomaticPiecePrice(item, nuevaCantidad)
+                                : item.price,
+                            base_quantity: nuevaCantidad * item.stock_multiplier
+                        }
                     }
                     const maxQty = Math.floor((item.stock || 0) / item.stock_multiplier);
-                    return { ...item, quantity: maxQty, base_quantity: maxQty * item.stock_multiplier };
+                    return {
+                        ...item,
+                        quantity: maxQty,
+                        price: item.unit_sold === 'PZA' && !item.price_overridden
+                            ? getAutomaticPiecePrice(item, maxQty)
+                            : item.price,
+                        base_quantity: maxQty * item.stock_multiplier
+                    };
                 }
                 return item
             })

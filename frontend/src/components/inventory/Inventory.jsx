@@ -63,6 +63,7 @@ const Inventory = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [showEntradasModal, setShowEntradasModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [activeProductTab, setActiveProductTab] = useState("general");
 
   // Form State
   const [formData, setFormData] = useState({
@@ -83,7 +84,10 @@ const Inventory = () => {
     unit: "PZA",
     iva: "",
     special_price: "",
+    special_price_2: "",
     suggested_price: "",
+    wholesale_from_qty: "",
+    special_from_qty: "",
     wholesale_unit: "",
     brand: "",
     supplier: "",
@@ -132,6 +136,49 @@ const Inventory = () => {
     }));
   };
 
+  const toNumber = (value) => {
+    const parsed = parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const roundMoney = (value) => {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return "";
+    return (Math.round(parsed * 100) / 100).toString();
+  };
+
+  const getMarginPercent = (priceValue) => {
+    const cost = toNumber(formData.cost_price);
+    const price = toNumber(priceValue);
+    if (cost <= 0 || price <= 0) return "";
+    return (Math.round(((price - cost) / cost) * 10000) / 100).toString();
+  };
+
+  const handleMarginChange = (priceField, marginValue) => {
+    const cost = toNumber(formData.cost_price);
+    const margin = parseFloat(marginValue);
+    const nextPrice =
+      cost > 0 && Number.isFinite(margin)
+        ? roundMoney(cost * (1 + margin / 100))
+        : "";
+
+    setFormData((prev) => ({
+      ...prev,
+      [priceField]: nextPrice,
+    }));
+  };
+
+  const formatLastPurchase = (product) => {
+    if (!product?.last_purchase_at) return "Sin compras";
+    const date = new Date(product.last_purchase_at);
+    if (Number.isNaN(date.getTime())) return "Sin compras";
+    return date.toLocaleDateString("es-MX", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+  };
+
   const resetForm = () => {
     setFormData({
       name: "",
@@ -151,7 +198,10 @@ const Inventory = () => {
       unit: "PZA",
       iva: "",
       special_price: "",
+      special_price_2: "",
       suggested_price: "",
+      wholesale_from_qty: "",
+      special_from_qty: "",
       wholesale_unit: "",
       brand: "",
       supplier: "",
@@ -184,7 +234,10 @@ const Inventory = () => {
         unit: product.unit || "PZA",
         iva: product.iva || "",
         special_price: product.special_price || "",
+        special_price_2: product.special_price_2 || "",
         suggested_price: product.suggested_price || "",
+        wholesale_from_qty: product.wholesale_from_qty || "",
+        special_from_qty: product.special_from_qty || "",
         wholesale_unit: product.wholesale_unit || "",
         brand: product.brand || "",
         supplier: product.supplier || "",
@@ -193,11 +246,13 @@ const Inventory = () => {
     } else {
       resetForm();
     }
+    setActiveProductTab("general");
     setShowModal(true);
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
+    setActiveProductTab("general");
     resetForm();
   };
 
@@ -316,7 +371,10 @@ const Inventory = () => {
         unit: formData.unit || "PZA",
         iva: parseFloat(formData.iva || 0),
         special_price: parseFloat(formData.special_price || 0),
+        special_price_2: parseFloat(formData.special_price_2 || 0),
         suggested_price: parseFloat(formData.suggested_price || 0),
+        wholesale_from_qty: parseFloat(formData.wholesale_from_qty || 0) || null,
+        special_from_qty: parseFloat(formData.special_from_qty || 0) || null,
         wholesale_unit: formData.wholesale_unit || "",
         brand: formData.brand || "",
         supplier: formData.supplier || "",
@@ -797,7 +855,10 @@ const Inventory = () => {
           row["Precio Costo"] = parseFloat(p.cost_price || 0);
           row["Precio Mayoreo"] = parseFloat(p.wholesale_price || 0);
           row["Precio Especial"] = parseFloat(p.special_price || 0);
+          row["Precio Especial 2"] = parseFloat(p.special_price_2 || 0);
           row["Precio Sugerido"] = parseFloat(p.suggested_price || 0);
+          row["Mayoreo desde"] = p.wholesale_from_qty || "";
+          row["Especial desde"] = p.special_from_qty || "";
           row["Pzas por Caja"] = p.box_units || "";
           row["Precio Caja"] = p.box_price ? parseFloat(p.box_price) : "";
           row["Solo Caja"] = p.sell_by_box_only ? "SI" : "NO";
@@ -831,7 +892,10 @@ const Inventory = () => {
           { wch: 15 }, // Precio Costo
           { wch: 15 }, // Precio Mayoreo
           { wch: 15 }, // Precio Especial
+          { wch: 15 }, // Precio Especial 2
           { wch: 15 }, // Precio Sugerido
+          { wch: 15 }, // Mayoreo desde
+          { wch: 15 }, // Especial desde
           { wch: 12 }, // Pzas por Caja
           { wch: 15 }, // Precio Caja
           { wch: 20 }, // Código Caja
@@ -896,6 +960,21 @@ const Inventory = () => {
     if (filters.maxPrice) count++;
     return count;
   };
+
+  const productTabs = [
+    { id: "general", label: "Inf. General" },
+    { id: "prices", label: "Precios" },
+    { id: "inventory", label: "Inventario" },
+    { id: "tax", label: "Inf. fiscal" },
+    { id: "compatibles", label: "Compatibles" },
+  ];
+
+  const priceRows = [
+    { label: "Menudeo", field: "price", required: true },
+    { label: "Mayoreo", field: "wholesale_price" },
+    { label: "Especial", field: "special_price" },
+    { label: "Especial 2", field: "special_price_2" },
+  ];
 
   return (
     <div className="inventory-page">
@@ -1066,7 +1145,10 @@ const Inventory = () => {
                   {!isSimplified && <th>Código Caja</th>}
                   {!isSimplified && <th>Mayoreo</th>}
                   {!isSimplified && <th>P. Especial</th>}
+                  {!isSimplified && <th>P. Especial 2</th>}
                   {!isSimplified && <th>P. Sugerido</th>}
+                  {!isSimplified && <th>Mayoreo Desde</th>}
+                  {!isSimplified && <th>Especial Desde</th>}
                   <th>Existencia</th>
                   {!isSimplified && <th>Unidad</th>}
                   {!isSimplified && <th>IVA %</th>}
@@ -1176,11 +1258,22 @@ const Inventory = () => {
                         )}
                         {!isSimplified && (
                           <td className="price-cell text-slate-500">
+                            ${parseFloat(product.special_price_2 || 0).toFixed(2)}
+                          </td>
+                        )}
+                        {!isSimplified && (
+                          <td className="price-cell text-slate-500">
                             $
                             {parseFloat(product.suggested_price || 0).toFixed(
                               2,
                             )}
                           </td>
+                        )}
+                        {!isSimplified && (
+                          <td className="unit-cell">{product.wholesale_from_qty || "â€”"}</td>
+                        )}
+                        {!isSimplified && (
+                          <td className="unit-cell">{product.special_from_qty || "â€”"}</td>
                         )}
                         <td>
                           <div className="stock-cell">
@@ -1437,6 +1530,203 @@ const Inventory = () => {
                 onSubmit={handleSubmit}
                 className="new-product-form"
               >
+                <div className="product-edit-tabs" role="tablist" aria-label="Secciones de producto">
+                  {productTabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      className={`product-edit-tab ${activeProductTab === tab.id ? "active" : ""}`}
+                      onClick={() => setActiveProductTab(tab.id)}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {activeProductTab === "general" && (
+                  <div className="new-product-form-grid product-tab-panel">
+                    <div className="new-product-form-group col-span-12 md-col-span-8">
+                      <label className="new-product-label" htmlFor="product-name">
+                        Nombre del Producto <span className="text-red-500">*</span>
+                      </label>
+                      <input id="product-name" className="new-product-input" type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="Ej. Coca Cola 600ml" required />
+                    </div>
+                    <div className="new-product-form-group col-span-12 md-col-span-4">
+                      <div className="new-product-category-header">
+                        <label className="new-product-label" htmlFor="category">Categoria <span className="text-red-500">*</span></label>
+                        <button type="button" className="new-product-manage-categories-btn" onClick={(e) => { e.preventDefault(); setShowCategoriesModal(true); }} title="Gestionar categorias">
+                          <svg className="new-product-manage-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 6v6m0 0v6m0-6h6m-6 0H6" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
+                          </svg>
+                        </button>
+                      </div>
+                      <select id="category" className="new-product-select" name="category" value={formData.category} onChange={handleInputChange} required>
+                        <option value="">Seleccionar</option>
+                        {predefinedCategories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
+                        {customCategories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
+                        {existingCategories
+                          .filter((cat) => !predefinedCategories.includes(cat) && !customCategories.includes(cat))
+                          .map((cat) => <option key={cat} value={cat}>{cat}</option>)}
+                      </select>
+                    </div>
+                    <div className="new-product-form-group col-span-12">
+                      <label className="new-product-label" htmlFor="barcode">Codigo de Barras</label>
+                      <div className="product-inline-action">
+                        <input id="barcode" className="new-product-input" type="text" name="barcode" value={formData.barcode} onChange={handleInputChange} placeholder="Escanear codigo..." />
+                        <button type="button" className="new-product-camera-btn" onClick={() => setMostrarCameraScanner(true)} title="Escanear codigo con camara">
+                          <svg className="new-product-camera-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
+                            <path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
+                          </svg>
+                          Camara
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeProductTab === "prices" && (
+                  <div className="price-sheet product-tab-panel">
+                    <div className="price-sheet-grid">
+                      <div className="price-sheet-main">
+                        <div className="price-sheet-row last-purchase">
+                          <label>Ultima compra</label>
+                          <input className="new-product-input" value={formatLastPurchase(editingProduct)} disabled />
+                          <span>{editingProduct?.last_purchase_at ? "" : "Sin compras"}</span>
+                        </div>
+                        <div className="price-sheet-row">
+                          <label>Compra</label>
+                          <div className="new-product-price-wrapper">
+                            <span className="new-product-price-symbol">$</span>
+                            <input className="new-product-input new-product-price-input" type="number" name="cost_price" value={formData.cost_price} onChange={handleInputChange} placeholder="0.00" step="0.01" min="0" />
+                          </div>
+                          <span className="price-sheet-muted">Costo base</span>
+                        </div>
+                        <div className="price-sheet-header"><span></span><span>Precio</span><span>Utilidad</span></div>
+                        {priceRows.map((row) => (
+                          <div className="price-sheet-row" key={row.field}>
+                            <label>{row.label}</label>
+                            <div className="new-product-price-wrapper">
+                              <span className="new-product-price-symbol">$</span>
+                              <input className="new-product-input new-product-price-input" type="number" name={row.field} value={formData[row.field]} onChange={handleInputChange} placeholder="0.00" step="0.01" min="0" required={row.required} />
+                            </div>
+                            <div className="price-sheet-percent">
+                              <input className="new-product-input" type="number" value={getMarginPercent(formData[row.field])} onChange={(e) => handleMarginChange(row.field, e.target.value)} placeholder="0.00" step="0.01" />
+                              <span>%</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="price-sheet-side">
+                        <label className="new-product-label">Precio automatico a partir de</label>
+                        <div className="auto-price-row">
+                          <input className="new-product-input" type="number" name="wholesale_from_qty" value={formData.wholesale_from_qty} onChange={handleInputChange} placeholder="20.00" min="0" step="0.01" />
+                          <span>PZA</span>
+                        </div>
+                        <div className="auto-price-row">
+                          <input className="new-product-input" type="number" name="special_from_qty" value={formData.special_from_qty} onChange={handleInputChange} placeholder="48.00" min="0" step="0.01" />
+                          <span>PZA</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="box-price-panel">
+                      <label className="new-product-label">Empaque por caja</label>
+                      <div className="grid grid-cols-12 gap-4">
+                        <div className="col-span-12 md:col-span-4">
+                          <label className="text-xs text-gray-500 mb-1 block">Piezas por caja</label>
+                          <input className="new-product-input" type="number" name="box_units" value={formData.box_units} onChange={handleInputChange} placeholder="Ej. 24" min="2" />
+                        </div>
+                        <div className="col-span-12 md:col-span-4">
+                          <label className="text-xs text-gray-500 mb-1 block">Precio caja</label>
+                          <div className="new-product-price-wrapper">
+                            <span className="new-product-price-symbol">$</span>
+                            <input className="new-product-input new-product-price-input" type="number" name="box_price" value={formData.box_price} onChange={handleInputChange} placeholder="0.00" step="0.01" min="0" />
+                          </div>
+                        </div>
+                        <div className="col-span-12 md:col-span-4">
+                          <label className="text-xs text-gray-500 mb-1 block">Codigo caja</label>
+                          <input className="new-product-input" type="text" name="box_barcode" value={formData.box_barcode} onChange={handleInputChange} placeholder="Codigo alterno para caja" />
+                        </div>
+                        <div className="col-span-12">
+                          <label className="price-sheet-check">
+                            <input type="checkbox" name="sell_by_box_only" checked={formData.sell_by_box_only} onChange={handleInputChange} />
+                            <span>Solo vender por caja</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeProductTab === "inventory" && (
+                  <div className="new-product-form-grid product-tab-panel">
+                    <div className="new-product-form-group col-span-12 md-col-span-4">
+                      <label className="new-product-label">Existencia Actual <span className="text-red-500">*</span></label>
+                      <input id="stock" className="new-product-input" type="number" name="stock" value={formData.stock} onChange={handleInputChange} placeholder="0" required />
+                    </div>
+                    <div className="new-product-form-group col-span-12 md-col-span-4">
+                      <label className="new-product-label">Inventario Minimo</label>
+                      <input className="new-product-input" type="number" name="min_stock" value={formData.min_stock} onChange={handleInputChange} placeholder="5" />
+                    </div>
+                    <div className="new-product-form-group col-span-12 md-col-span-4">
+                      <label className="new-product-label">Unidad</label>
+                      <select className="new-product-select" name="unit" value={formData.unit} onChange={handleInputChange}>
+                        <option value="PZA">PZA (Pieza)</option>
+                        <option value="KG">KG (Kilogramo)</option>
+                        <option value="L">L (Litro)</option>
+                        <option value="M">M (Metro)</option>
+                        <option value="CAJA">CAJA</option>
+                        <option value="PAQ">PAQ (Paquete)</option>
+                        <option value="TRAMO">TRAMO</option>
+                        <option value="ROLLO">ROLLO</option>
+                        <option value="JGO">JGO (Juego)</option>
+                        <option value="BOLSA">BOLSA</option>
+                      </select>
+                    </div>
+                    <div className="new-product-form-group col-span-12 md-col-span-4">
+                      <label className="new-product-label">Unidad Mayoreo</label>
+                      <input className="new-product-input" type="text" name="wholesale_unit" value={formData.wholesale_unit} onChange={handleInputChange} placeholder="Ej. Caja de 24" />
+                    </div>
+                  </div>
+                )}
+
+                {activeProductTab === "tax" && (
+                  <div className="new-product-form-grid product-tab-panel">
+                    <div className="new-product-form-group col-span-12 md-col-span-4">
+                      <label className="new-product-label">IVA %</label>
+                      <div className="new-product-price-wrapper">
+                        <span className="new-product-price-symbol">%</span>
+                        <input className="new-product-input new-product-price-input" type="number" name="iva" value={formData.iva} onChange={handleInputChange} placeholder="16" step="0.01" min="0" max="100" />
+                      </div>
+                    </div>
+                    <div className="new-product-form-group col-span-12 md-col-span-4">
+                      <label className="new-product-label">Precio Sugerido</label>
+                      <div className="new-product-price-wrapper">
+                        <span className="new-product-price-symbol">$</span>
+                        <input className="new-product-input new-product-price-input" type="number" name="suggested_price" value={formData.suggested_price} onChange={handleInputChange} placeholder="0.00" step="0.01" min="0" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeProductTab === "compatibles" && (
+                  <div className="new-product-form-grid product-tab-panel">
+                    <div className="new-product-form-group col-span-12 md-col-span-4">
+                      <label className="new-product-label">Marca</label>
+                      <input className="new-product-input" type="text" name="brand" value={formData.brand} onChange={handleInputChange} placeholder="Ej. Coca-Cola" />
+                    </div>
+                    <div className="new-product-form-group col-span-12 md-col-span-4">
+                      <label className="new-product-label">Proveedor</label>
+                      <input className="new-product-input" type="text" name="supplier" value={formData.supplier} onChange={handleInputChange} placeholder="Ej. Distribuidora ACME" />
+                    </div>
+                    <div className="new-product-form-group col-span-12">
+                      <label className="new-product-label">Notas</label>
+                      <textarea className="new-product-input" name="notes" value={formData.notes} onChange={handleInputChange} placeholder="Notas adicionales del producto..." rows="3" style={{ resize: "vertical", minHeight: "80px" }} />
+                    </div>
+                  </div>
+                )}
+
+                {false && (
                 <div className="new-product-form-grid">
                   {/* Nombre del Producto */}
                   <div className="new-product-form-group col-span-12 md-col-span-8">
@@ -1963,6 +2253,7 @@ const Inventory = () => {
                     </div>
                   )}
                 </div>
+                )}
               </form>
             </div>
 

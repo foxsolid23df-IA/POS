@@ -58,6 +58,77 @@ describe('useCart Hook', () => {
     expect(result.current.total).toBe(100);
   });
 
+  it('debe aplicar precio mayoreo automatico solo en PZA al alcanzar el minimo', () => {
+    const { result } = renderHook(() => useCart(mockMostrarError, false));
+    const producto = {
+      ...mockProducto,
+      price: 10,
+      wholesale_price: 8,
+      wholesale_from_qty: 5,
+      stock: 100,
+    };
+
+    act(() => {
+      result.current.agregarProducto(producto);
+    });
+
+    act(() => {
+      result.current.cambiarCantidad(result.current.carrito[0].id, 4);
+    });
+
+    expect(result.current.carrito[0].unit_sold).toBe('PZA');
+    expect(result.current.carrito[0].quantity).toBe(5);
+    expect(result.current.carrito[0].price).toBe(8);
+    expect(result.current.total).toBe(40);
+  });
+
+  it('debe priorizar precio especial automatico sobre mayoreo en PZA', () => {
+    const { result } = renderHook(() => useCart(mockMostrarError, false));
+    const producto = {
+      ...mockProducto,
+      price: 10,
+      wholesale_price: 8,
+      wholesale_from_qty: 5,
+      special_price: 7,
+      special_from_qty: 10,
+      stock: 100,
+    };
+
+    act(() => {
+      result.current.agregarProducto(producto);
+    });
+
+    act(() => {
+      result.current.cambiarCantidad(result.current.carrito[0].id, 9);
+    });
+
+    expect(result.current.carrito[0].quantity).toBe(10);
+    expect(result.current.carrito[0].price).toBe(7);
+    expect(result.current.total).toBe(70);
+  });
+
+  it('debe conservar precio de caja aunque existan reglas automaticas por PZA', () => {
+    const { result } = renderHook(() => useCart(mockMostrarError, false));
+    const producto = {
+      ...mockProducto,
+      price: 10,
+      box_price: 100,
+      wholesale_price: 8,
+      wholesale_from_qty: 1,
+      special_price: 7,
+      special_from_qty: 1,
+      stock: 100,
+    };
+
+    act(() => {
+      result.current.agregarProducto(producto, 'CAJA');
+    });
+
+    expect(result.current.carrito[0].unit_sold).toBe('CAJA');
+    expect(result.current.carrito[0].price).toBe(100);
+    expect(result.current.total).toBe(100);
+  });
+
   it('debe agregar como CAJA un producto configurado solo para caja aunque se solicite PZA', () => {
     const { result } = renderHook(() => useCart(mockMostrarError, false));
     const productoSoloCaja = { ...mockProducto, sell_by_box_only: true };
