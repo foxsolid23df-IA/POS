@@ -1,16 +1,165 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb;
-  --color-dark-800: #1e293b;
-  --color-dark-900: #0f172a;
+  --color-on-tertiary-fixed: #001f24;
+  --color-on-error-container: #ffdad6;
+  --color-on-background: #dae2fd;
+  --color-surface-variant: #2d3449;
+  --color-secondary-fixed-dim: #b6c6f0;
+  --color-on-error: #690005;
+  --color-tertiary-container: #00c1d8;
+  --color-secondary-container: #364669;
+  --color-surface: #0b1326;
+  --color-on-secondary: #1f3051;
+  --color-surface-container-high: #222a3d;
+  --color-tertiary-fixed-dim: #1edaf3;
+  --color-on-tertiary: #00363e;
+  --color-surface-container: #171f33;
+  --color-on-primary-fixed-variant: #004f53;
+  --color-primary-fixed: #6bf6ff;
+  --color-surface-container-highest: #2d3449;
+  --color-tertiary: #2adef8;
+  --color-on-surface-variant: #bbc9ca;
+  --color-secondary: #b6c6f0;
+  --color-background: #0b1326;
+  --color-inverse-on-surface: #283044;
+  --color-error-container: #93000a;
+  --color-primary-container: #00c2cb;
+  --color-on-primary: #003739;
+  --color-on-primary-fixed: #002022;
+  --color-outline-variant: #3c494a;
+  --color-surface-dim: #0b1326;
+  --color-on-primary-container: #004a4e;
+  --color-on-surface: #dae2fd;
+  --color-on-tertiary-fixed-variant: #004e59;
+  --color-surface-container-low: #131b2e;
+  --color-on-tertiary-container: #004a54;
+  --color-tertiary-fixed: #9fefff;
+  --color-surface-bright: #31394d;
+  --color-primary: #45dee7;
+  --color-surface-container-lowest: #060e20;
+  --color-on-secondary-fixed: #071b3b;
+  --color-surface-tint: #3edae3;
+  --color-primary-fixed-dim: #3edae3;
+  --color-inverse-surface: #dae2fd;
+  --color-on-secondary-fixed-variant: #364669;
+  --color-on-secondary-container: #a4b5dd;
+  --color-outline: #859394;
+  --color-error: #ffb4ab;
+  --color-inverse-primary: #00696e;
+  --color-secondary-fixed: #d8e2ff;
+
+  --font-hanken: "Hanken Grotesk", sans-serif;
+  --font-jetbrains: "JetBrains Mono", monospace;
+  
+  --spacing-md: 24px;
+  --spacing-gutter: 24px;
+  --spacing-sm: 12px;
+  --spacing-margin-mobile: 16px;
+  --spacing-base: 8px;
+  --spacing-xs: 4px;
+  --spacing-lg: 40px;
+  --spacing-margin-desktop: 64px;
+
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
 }
 
 body {
-  background-color: var(--color-dark-900);
-  color: #f8fafc;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: #0b1326;
+  color: #dae2fd;
+  font-family: 'Hanken Grotesk', sans-serif;
   margin: 0;
   padding: 0;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.font-headline-xl {
+  font-family: var(--font-hanken);
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 56px;
+  letter-spacing: -0.02em;
+}
+
+.font-headline-lg {
+  font-family: var(--font-hanken);
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 40px;
+}
+
+.font-headline-lg-mobile {
+  font-family: var(--font-hanken);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 36px;
+}
+
+.font-headline-md {
+  font-family: var(--font-hanken);
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 32px;
+}
+
+.font-body-lg {
+  font-family: var(--font-hanken);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 28px;
+}
+
+.font-body-md {
+  font-family: var(--font-hanken);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+}
+
+.font-label-md {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: 0.05em;
+}
+
+.font-label-sm {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #131b2e;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #00c2cb;
+  border-radius: 10px;
+}
+
+.brand-glow {
+  box-shadow: 0 0 40px -10px rgba(69, 222, 231, 0.2);
+}
+.brand-glow-lg {
+  box-shadow: 0 0 20px rgba(69, 222, 231, 0.15);
+}
+
+.surface-card {
+  background-color: #171f33;
+  border: 1px solid #3c494a;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
