@@ -16,11 +16,18 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const facturamaUser = Deno.env.get("FACTURAMA_USER") || "Nexum_Pos";
-    const facturamaPassword = Deno.env.get("FACTURAMA_PASSWORD") || "Nexum_Pos";
+    const baseUrl = Deno.env.get("FACTURAMA_API_URL") || "https://api.facturama.mx";
+    const facturamaUser = Deno.env.get("FACTURAMA_USER") || (baseUrl.includes("sandbox") ? "Nexum_Pos" : "");
+    const facturamaPassword = Deno.env.get("FACTURAMA_PASSWORD") || (baseUrl.includes("sandbox") ? "Nexum_Pos" : "");
+
+    if (!facturamaUser || !facturamaPassword) {
+      return new Response(
+        JSON.stringify({ error: "Las credenciales de Facturama (FACTURAMA_USER / FACTURAMA_PASSWORD) no están configuradas." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const encodedCredentials = btoa(`${facturamaUser}:${facturamaPassword}`);
-    // Sandbox URL
-    const baseUrl = "https://apisandbox.facturama.mx"; 
 
     // Obtener Payload del cliente
     // Se espera que envie los archivos `.cer` y `.key` convertidos a Base64 sin prefijos
