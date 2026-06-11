@@ -5,8 +5,8 @@ import Swal from 'sweetalert2';
 import logo from './assets/logo.png';
 
 // ── Configuración Multi-Negocio vía Variables de Entorno ──
-const APP_NAME = import.meta.env.VITE_APP_NAME || 'Mi Negocio';
-const APP_TITLE = import.meta.env.VITE_APP_TITLE || 'Portal de Auto-Facturación';
+const APP_NAME = import.meta.env.VITE_APP_NAME || 'NexumPos';
+const APP_TITLE = import.meta.env.VITE_APP_TITLE || 'Auto-Facturación | NexumPose';
 const ACCENT_HUE = import.meta.env.VITE_ACCENT_HUE || '220'; // 220=blue, 160=teal/lavandería, 0=red, 30=orange
 
 export default function App() {
