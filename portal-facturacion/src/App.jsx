@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Search, FileText, Download, CheckCircle, ArrowRight, ArrowLeft } from 'lucide-react';
 import { supabase } from './supabase';
 import Swal from 'sweetalert2';
+import logo from './assets/logo.png';
 
 // ── Configuración Multi-Negocio vía Variables de Entorno ──
 const APP_NAME = import.meta.env.VITE_APP_NAME || 'Mi Negocio';
@@ -353,9 +354,15 @@ export default function App() {
         
         {/* CABECERA GENERAL - Branding dinámico */}
         <div className="flex justify-center mb-6">
-          <div className="h-16 w-16 rounded-2xl flex items-center justify-center shadow-lg" style={{ backgroundColor: `hsl(${ACCENT_HUE}, 65%, 50%)`, boxShadow: `0 10px 15px -3px hsl(${ACCENT_HUE}, 65%, 50%, 0.3)` }}>
-            {step === 4 ? <CheckCircle size={32} className="text-white" /> : <FileText size={32} className="text-white" />}
-          </div>
+          {step === 4 ? (
+            <div className="h-16 w-16 rounded-2xl flex items-center justify-center shadow-lg" style={{ backgroundColor: `hsl(${ACCENT_HUE}, 65%, 50%)`, boxShadow: `0 10px 15px -3px hsl(${ACCENT_HUE}, 65%, 50%, 0.3)` }}>
+              <CheckCircle size={32} className="text-white" />
+            </div>
+          ) : (
+            <div className="flex items-center justify-center bg-white p-2.5 rounded-2xl shadow-md border border-slate-700/30 h-16 w-16 overflow-hidden">
+              <img src={logo} alt="NEXUM POS" className="w-full h-full object-contain" />
+            </div>
+          )}
         </div>
         
         {step < 4 && (
