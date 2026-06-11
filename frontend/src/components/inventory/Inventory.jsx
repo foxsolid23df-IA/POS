@@ -63,7 +63,6 @@ const Inventory = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [showEntradasModal, setShowEntradasModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-  const [activeProductTab, setActiveProductTab] = useState("general");
 
   // Form State
   const [formData, setFormData] = useState({
@@ -246,13 +245,11 @@ const Inventory = () => {
     } else {
       resetForm();
     }
-    setActiveProductTab("general");
     setShowModal(true);
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
-    setActiveProductTab("general");
     resetForm();
   };
 
@@ -961,20 +958,7 @@ const Inventory = () => {
     return count;
   };
 
-  const productTabs = [
-    { id: "general", label: "Inf. General" },
-    { id: "prices", label: "Precios" },
-    { id: "inventory", label: "Inventario" },
-    { id: "tax", label: "Inf. fiscal" },
-    { id: "compatibles", label: "Compatibles" },
-  ];
 
-  const priceRows = [
-    { label: "Menudeo", field: "price", required: true },
-    { label: "Mayoreo", field: "wholesale_price" },
-    { label: "Especial", field: "special_price" },
-    { label: "Especial 2", field: "special_price_2" },
-  ];
 
   return (
     <div className="inventory-page">
@@ -1530,213 +1514,6 @@ const Inventory = () => {
                 onSubmit={handleSubmit}
                 className="new-product-form"
               >
-                <div className="product-edit-tabs" role="tablist" aria-label="Secciones de producto">
-                  {productTabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      className={`product-edit-tab ${activeProductTab === tab.id ? "active" : ""}`}
-                      onClick={() => setActiveProductTab(tab.id)}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-
-                {activeProductTab === "general" && (
-                  <div className="new-product-form-grid product-tab-panel">
-                    <div className="new-product-form-group col-span-12 md-col-span-8">
-                      <label className="new-product-label" htmlFor="product-name">
-                        Nombre del Producto <span className="text-red-500">*</span>
-                      </label>
-                      <input id="product-name" className="new-product-input" type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="Ej. Coca Cola 600ml" required />
-                    </div>
-                    <div className="new-product-form-group col-span-12 md-col-span-4">
-                      <div className="new-product-category-header">
-                        <label className="new-product-label" htmlFor="category">Categoria <span className="text-red-500">*</span></label>
-                        <button type="button" className="new-product-manage-categories-btn" onClick={(e) => { e.preventDefault(); setShowCategoriesModal(true); }} title="Gestionar categorias">
-                          <svg className="new-product-manage-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 6v6m0 0v6m0-6h6m-6 0H6" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
-                          </svg>
-                        </button>
-                      </div>
-                      <select id="category" className="new-product-select" name="category" value={formData.category} onChange={handleInputChange} required>
-                        <option value="">Seleccionar</option>
-                        {predefinedCategories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
-                        {customCategories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
-                        {existingCategories
-                          .filter((cat) => !predefinedCategories.includes(cat) && !customCategories.includes(cat))
-                          .map((cat) => <option key={cat} value={cat}>{cat}</option>)}
-                      </select>
-                    </div>
-                    <div className="new-product-form-group col-span-12">
-                      <label className="new-product-label" htmlFor="barcode">Codigo de Barras</label>
-                      <div className="product-inline-action">
-                        <input id="barcode" className="new-product-input" type="text" name="barcode" value={formData.barcode} onChange={handleInputChange} placeholder="Escanear codigo..." />
-                        <button type="button" className="new-product-camera-btn" onClick={() => setMostrarCameraScanner(true)} title="Escanear codigo con camara">
-                          <svg className="new-product-camera-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
-                            <path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
-                          </svg>
-                          Camara
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {activeProductTab === "prices" && (
-                  <div className="price-sheet product-tab-panel">
-                    <div className="price-sheet-grid">
-                      <div className="price-sheet-main full-width">
-                        <div className="price-sheet-row last-purchase">
-                          <label>Ultima compra</label>
-                          <input className="new-product-input" value={formatLastPurchase(editingProduct)} disabled />
-                          <span>{editingProduct?.last_purchase_at ? "" : "Sin compras"}</span>
-                          <span></span>
-                        </div>
-                        <div className="price-sheet-row">
-                          <label>Compra</label>
-                          <div className="new-product-price-wrapper">
-                            <span className="new-product-price-symbol">$</span>
-                            <input className="new-product-input new-product-price-input" type="number" name="cost_price" value={formData.cost_price} onChange={handleInputChange} placeholder="0.00" step="0.01" min="0" />
-                          </div>
-                          <span className="price-sheet-muted">Costo base</span>
-                          <span></span>
-                        </div>
-                        <div className="price-sheet-header">
-                          <span></span>
-                          <span>Precio</span>
-                          <span>Utilidad</span>
-                          <span>Precio automático a partir de</span>
-                        </div>
-                        {priceRows.map((row) => (
-                          <div className="price-sheet-row" key={row.field}>
-                            <label>{row.label}</label>
-                            <div className="new-product-price-wrapper">
-                              <span className="new-product-price-symbol">$</span>
-                              <input className="new-product-input new-product-price-input" type="number" name={row.field} value={formData[row.field]} onChange={handleInputChange} placeholder="0.00" step="0.01" min="0" required={row.required} />
-                            </div>
-                            <div className="price-sheet-percent">
-                              <input className="new-product-input" type="number" value={getMarginPercent(formData[row.field])} onChange={(e) => handleMarginChange(row.field, e.target.value)} placeholder="0.00" step="0.01" />
-                              <span>%</span>
-                            </div>
-                            <div className="price-sheet-auto-qty">
-                              {row.field === "wholesale_price" && (
-                                <div className="auto-price-inline">
-                                  <input className="new-product-input text-right" type="number" name="wholesale_from_qty" value={formData.wholesale_from_qty} onChange={handleInputChange} placeholder="20.00" min="0" step="0.01" />
-                                  <span>PZA</span>
-                                </div>
-                              )}
-                              {row.field === "special_price" && (
-                                <div className="auto-price-inline">
-                                  <input className="new-product-input text-right" type="number" name="special_from_qty" value={formData.special_from_qty} onChange={handleInputChange} placeholder="48.00" min="0" step="0.01" />
-                                  <span>PZA</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="box-price-panel">
-                      <label className="new-product-label">Empaque por caja</label>
-                      <div className="grid grid-cols-12 gap-4">
-                        <div className="col-span-12 md:col-span-4">
-                          <label className="text-xs text-gray-500 mb-1 block">Piezas por caja</label>
-                          <input className="new-product-input" type="number" name="box_units" value={formData.box_units} onChange={handleInputChange} placeholder="Ej. 24" min="2" />
-                        </div>
-                        <div className="col-span-12 md:col-span-4">
-                          <label className="text-xs text-gray-500 mb-1 block">Precio caja</label>
-                          <div className="new-product-price-wrapper">
-                            <span className="new-product-price-symbol">$</span>
-                            <input className="new-product-input new-product-price-input" type="number" name="box_price" value={formData.box_price} onChange={handleInputChange} placeholder="0.00" step="0.01" min="0" />
-                          </div>
-                        </div>
-                        <div className="col-span-12 md:col-span-4">
-                          <label className="text-xs text-gray-500 mb-1 block">Codigo caja</label>
-                          <input className="new-product-input" type="text" name="box_barcode" value={formData.box_barcode} onChange={handleInputChange} placeholder="Codigo alterno para caja" />
-                        </div>
-                        <div className="col-span-12">
-                          <label className="price-sheet-check">
-                            <input type="checkbox" name="sell_by_box_only" checked={formData.sell_by_box_only} onChange={handleInputChange} />
-                            <span>Solo vender por caja</span>
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {activeProductTab === "inventory" && (
-                  <div className="new-product-form-grid product-tab-panel">
-                    <div className="new-product-form-group col-span-12 md-col-span-4">
-                      <label className="new-product-label">Existencia Actual <span className="text-red-500">*</span></label>
-                      <input id="stock" className="new-product-input" type="number" name="stock" value={formData.stock} onChange={handleInputChange} placeholder="0" required />
-                    </div>
-                    <div className="new-product-form-group col-span-12 md-col-span-4">
-                      <label className="new-product-label">Inventario Minimo</label>
-                      <input className="new-product-input" type="number" name="min_stock" value={formData.min_stock} onChange={handleInputChange} placeholder="5" />
-                    </div>
-                    <div className="new-product-form-group col-span-12 md-col-span-4">
-                      <label className="new-product-label">Unidad</label>
-                      <select className="new-product-select" name="unit" value={formData.unit} onChange={handleInputChange}>
-                        <option value="PZA">PZA (Pieza)</option>
-                        <option value="KG">KG (Kilogramo)</option>
-                        <option value="L">L (Litro)</option>
-                        <option value="M">M (Metro)</option>
-                        <option value="CAJA">CAJA</option>
-                        <option value="PAQ">PAQ (Paquete)</option>
-                        <option value="TRAMO">TRAMO</option>
-                        <option value="ROLLO">ROLLO</option>
-                        <option value="JGO">JGO (Juego)</option>
-                        <option value="BOLSA">BOLSA</option>
-                      </select>
-                    </div>
-                    <div className="new-product-form-group col-span-12 md-col-span-4">
-                      <label className="new-product-label">Unidad Mayoreo</label>
-                      <input className="new-product-input" type="text" name="wholesale_unit" value={formData.wholesale_unit} onChange={handleInputChange} placeholder="Ej. Caja de 24" />
-                    </div>
-                  </div>
-                )}
-
-                {activeProductTab === "tax" && (
-                  <div className="new-product-form-grid product-tab-panel">
-                    <div className="new-product-form-group col-span-12 md-col-span-4">
-                      <label className="new-product-label">IVA %</label>
-                      <div className="new-product-price-wrapper">
-                        <span className="new-product-price-symbol">%</span>
-                        <input className="new-product-input new-product-price-input" type="number" name="iva" value={formData.iva} onChange={handleInputChange} placeholder="16" step="0.01" min="0" max="100" />
-                      </div>
-                    </div>
-                    <div className="new-product-form-group col-span-12 md-col-span-4">
-                      <label className="new-product-label">Precio Sugerido</label>
-                      <div className="new-product-price-wrapper">
-                        <span className="new-product-price-symbol">$</span>
-                        <input className="new-product-input new-product-price-input" type="number" name="suggested_price" value={formData.suggested_price} onChange={handleInputChange} placeholder="0.00" step="0.01" min="0" />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {activeProductTab === "compatibles" && (
-                  <div className="new-product-form-grid product-tab-panel">
-                    <div className="new-product-form-group col-span-12 md-col-span-4">
-                      <label className="new-product-label">Marca</label>
-                      <input className="new-product-input" type="text" name="brand" value={formData.brand} onChange={handleInputChange} placeholder="Ej. Coca-Cola" />
-                    </div>
-                    <div className="new-product-form-group col-span-12 md-col-span-4">
-                      <label className="new-product-label">Proveedor</label>
-                      <input className="new-product-input" type="text" name="supplier" value={formData.supplier} onChange={handleInputChange} placeholder="Ej. Distribuidora ACME" />
-                    </div>
-                    <div className="new-product-form-group col-span-12">
-                      <label className="new-product-label">Notas</label>
-                      <textarea className="new-product-input" name="notes" value={formData.notes} onChange={handleInputChange} placeholder="Notas adicionales del producto..." rows="3" style={{ resize: "vertical", minHeight: "80px" }} />
-                    </div>
-                  </div>
-                )}
-
-                {false && (
                 <div className="new-product-form-grid">
                   {/* Nombre del Producto */}
                   <div className="new-product-form-group col-span-12 md-col-span-8">
@@ -1904,71 +1681,159 @@ const Inventory = () => {
                       {isSimplified ? "Precio" : "Configuración de Precios"}
                     </label>
                     <div className="grid grid-cols-12 gap-4">
-                      {/* Costo */}
-                      {!isSimplified && (
-                        <div className="col-span-12 md:col-span-4">
+                      {isSimplified ? (
+                        /* Venta Simplificado */
+                        <div className="col-span-12">
                           <label className="text-xs text-gray-500 mb-1 block">
-                            Precio Costo
+                            Precio de Venta <span className="text-red-500">*</span>
                           </label>
                           <div className="new-product-price-wrapper">
                             <span className="new-product-price-symbol">$</span>
                             <input
                               className="new-product-input new-product-price-input"
                               type="number"
-                              name="cost_price"
-                              value={formData.cost_price}
+                              name="price"
+                              value={formData.price}
                               onChange={handleInputChange}
                               placeholder="0.00"
                               step="0.01"
+                              required
                             />
                           </div>
                         </div>
-                      )}
+                      ) : (
+                        /* Modo Completo - Grid Multicolumna de Precios */
+                        <>
+                          {/* Fila 1: Costo, Venta, Especial 2 */}
+                          <div className="col-span-12 md:col-span-4">
+                            <label className="text-xs text-gray-500 mb-1 block">
+                              Precio Costo
+                            </label>
+                            <div className="new-product-price-wrapper">
+                              <span className="new-product-price-symbol">$</span>
+                              <input
+                                className="new-product-input new-product-price-input"
+                                type="number"
+                                name="cost_price"
+                                value={formData.cost_price}
+                                onChange={handleInputChange}
+                                placeholder="0.00"
+                                step="0.01"
+                                min="0"
+                              />
+                            </div>
+                          </div>
 
-                      {/* Venta */}
-                      <div
-                        className={`col-span-12 ${
-                          isSimplified ? "md:col-span-12" : "md:col-span-4"
-                        }`}
-                      >
-                        <label className="text-xs text-gray-500 mb-1 block">
-                          {isSimplified ? "Precio de Venta" : "Precio Venta"}{" "}
-                          <span className="text-red-500">*</span>
-                        </label>
-                        <div className="new-product-price-wrapper">
-                          <span className="new-product-price-symbol">$</span>
-                          <input
-                            className="new-product-input new-product-price-input"
-                            type="number"
-                            name="price"
-                            value={formData.price}
-                            onChange={handleInputChange}
-                            placeholder="0.00"
-                            step="0.01"
-                            required
-                          />
-                        </div>
-                      </div>
+                          <div className="col-span-12 md:col-span-4">
+                            <label className="text-xs text-gray-500 mb-1 block">
+                              Precio Venta (Menudeo) <span className="text-red-500">*</span>
+                            </label>
+                            <div className="new-product-price-wrapper">
+                              <span className="new-product-price-symbol">$</span>
+                              <input
+                                className="new-product-input new-product-price-input"
+                                type="number"
+                                name="price"
+                                value={formData.price}
+                                onChange={handleInputChange}
+                                placeholder="0.00"
+                                step="0.01"
+                                required
+                                min="0"
+                              />
+                            </div>
+                          </div>
 
-                      {/* Mayoreo */}
-                      {!isSimplified && (
-                        <div className="col-span-12 md:col-span-4">
-                          <label className="text-xs text-gray-500 mb-1 block">
-                            Precio Mayoreo
-                          </label>
-                          <div className="new-product-price-wrapper">
-                            <span className="new-product-price-symbol">$</span>
+                          <div className="col-span-12 md:col-span-4">
+                            <label className="text-xs text-gray-500 mb-1 block">
+                              Precio Especial 2
+                            </label>
+                            <div className="new-product-price-wrapper">
+                              <span className="new-product-price-symbol">$</span>
+                              <input
+                                className="new-product-input new-product-price-input"
+                                type="number"
+                                name="special_price_2"
+                                value={formData.special_price_2}
+                                onChange={handleInputChange}
+                                placeholder="0.00"
+                                step="0.01"
+                                min="0"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Fila 2: Mayoreo, Cantidad Mayoreo, Especial 1, Cantidad Especial 1 */}
+                          <div className="col-span-12 md:col-span-3">
+                            <label className="text-xs text-gray-500 mb-1 block">
+                              Precio Mayoreo
+                            </label>
+                            <div className="new-product-price-wrapper">
+                              <span className="new-product-price-symbol">$</span>
+                              <input
+                                className="new-product-input new-product-price-input"
+                                type="number"
+                                name="wholesale_price"
+                                value={formData.wholesale_price}
+                                onChange={handleInputChange}
+                                placeholder="0.00"
+                                step="0.01"
+                                min="0"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="col-span-12 md:col-span-3">
+                            <label className="text-xs text-gray-500 mb-1 block">
+                              Cant. Mín. Mayoreo (PZA)
+                            </label>
                             <input
-                              className="new-product-input new-product-price-input"
+                              className="new-product-input"
                               type="number"
-                              name="wholesale_price"
-                              value={formData.wholesale_price}
+                              name="wholesale_from_qty"
+                              value={formData.wholesale_from_qty}
                               onChange={handleInputChange}
-                              placeholder="0.00"
+                              placeholder="Ej. 20.00"
+                              min="0"
                               step="0.01"
                             />
                           </div>
-                        </div>
+
+                          <div className="col-span-12 md:col-span-3">
+                            <label className="text-xs text-gray-500 mb-1 block">
+                              Precio Especial 1
+                            </label>
+                            <div className="new-product-price-wrapper">
+                              <span className="new-product-price-symbol">$</span>
+                              <input
+                                className="new-product-input new-product-price-input"
+                                type="number"
+                                name="special_price"
+                                value={formData.special_price}
+                                onChange={handleInputChange}
+                                placeholder="0.00"
+                                step="0.01"
+                                min="0"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="col-span-12 md:col-span-3">
+                            <label className="text-xs text-gray-500 mb-1 block">
+                              Cant. Mín. Especial 1 (PZA)
+                            </label>
+                            <input
+                              className="new-product-input"
+                              type="number"
+                              name="special_from_qty"
+                              value={formData.special_from_qty}
+                              onChange={handleInputChange}
+                              placeholder="Ej. 48.00"
+                              min="0"
+                              step="0.01"
+                            />
+                          </div>
+                        </>
                       )}
                     </div>
                   </div>
@@ -2100,7 +1965,7 @@ const Inventory = () => {
                       </label>
                       <div className="grid grid-cols-12 gap-4">
                         {/* Unidad */}
-                        <div className="col-span-12 md:col-span-3">
+                        <div className="col-span-12 md:col-span-4">
                           <label className="text-xs text-gray-500 mb-1 block">
                             Unidad
                           </label>
@@ -2141,7 +2006,7 @@ const Inventory = () => {
                         </div>
 
                         {/* IVA */}
-                        <div className="col-span-12 md:col-span-3">
+                        <div className="col-span-12 md:col-span-4">
                           <label className="text-xs text-gray-500 mb-1 block">
                             IVA %
                           </label>
@@ -2161,27 +2026,8 @@ const Inventory = () => {
                           </div>
                         </div>
 
-                        {/* Precio Especial */}
-                        <div className="col-span-12 md:col-span-3">
-                          <label className="text-xs text-gray-500 mb-1 block">
-                            Precio Especial
-                          </label>
-                          <div className="new-product-price-wrapper">
-                            <span className="new-product-price-symbol">$</span>
-                            <input
-                              className="new-product-input new-product-price-input"
-                              type="number"
-                              name="special_price"
-                              value={formData.special_price}
-                              onChange={handleInputChange}
-                              placeholder="0.00"
-                              step="0.01"
-                            />
-                          </div>
-                        </div>
-
                         {/* Precio Sugerido */}
-                        <div className="col-span-12 md:col-span-3">
+                        <div className="col-span-12 md:col-span-4">
                           <label className="text-xs text-gray-500 mb-1 block">
                             Precio Sugerido
                           </label>
@@ -2263,7 +2109,6 @@ const Inventory = () => {
                     </div>
                   )}
                 </div>
-                )}
               </form>
             </div>
 

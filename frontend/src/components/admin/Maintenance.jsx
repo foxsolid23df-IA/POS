@@ -73,7 +73,7 @@ const Maintenance = () => {
 
   React.useEffect(() => {
     if (isAuthorized) {
-      if (!webAdminMode) fetchTerminals();
+      fetchTerminals();
       fetchHealth();
       fetchLogs(masterPin);
 
@@ -81,7 +81,7 @@ const Maintenance = () => {
       const interval = setInterval(() => fetchHealth(), 30000);
       return () => clearInterval(interval);
     }
-  }, [isAuthorized, webAdminMode]);
+  }, [isAuthorized]);
 
   const handlePinSubmit = async (e) => {
     e.preventDefault();
@@ -423,7 +423,6 @@ const Maintenance = () => {
         </button>
       </div>
 
-      {!webAdminMode && (
       <div className="maintenance-card warning">
         <div className="warning-icon">⚠️</div>
         <div className="warning-content">
@@ -434,7 +433,6 @@ const Maintenance = () => {
           </p>
         </div>
       </div>
-      )}
 
       <div className="maintenance-content">
         <section className="pin-master-card">
@@ -494,7 +492,6 @@ const Maintenance = () => {
           </div>
         )}
 
-        {!webAdminMode && (
         <section className="reset-section">
           <h3>Opciones de Reset</h3>
           <div className="options-grid">
@@ -572,9 +569,7 @@ const Maintenance = () => {
             </div>
           )}
         </section>
-        )}
 
-        {!webAdminMode && (
         <section className="reset-section">
           <h3>Sesiones de Caja</h3>
           <p className="section-description">
@@ -603,7 +598,6 @@ const Maintenance = () => {
             </button>
           </div>
         </section>
-        )}
 
         <section className="reset-section">
           <h3>Respaldos y Recuperacion</h3>
@@ -667,7 +661,6 @@ const Maintenance = () => {
           </div>
         </section>
 
-        {!webAdminMode && (
         <section className="maintenance-section">
           <h3>Dispositivos Registrados</h3>
           <div className="terminals-list">
@@ -719,10 +712,8 @@ const Maintenance = () => {
             )}
           </div>
         </section>
-        )}
       </div>
 
-      {!webAdminMode && (
       <section className="reset-section nuclear">
         <h3 className="text-danger">☢️ Reset de Fábrica</h3>
         <div className="confirmation-box nuclear">
@@ -746,7 +737,6 @@ const Maintenance = () => {
           </button>
         </div>
       </section>
-      )}
     </div>
   );
 };

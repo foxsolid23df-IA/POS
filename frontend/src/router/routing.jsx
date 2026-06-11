@@ -39,6 +39,7 @@ const TaxConfig = lazy(() => import("../components/config/TaxConfig"));
 const PaymentMethodsConfig = lazy(() => import("../components/config/PaymentMethodsConfig"));
 const CashboxConfig = lazy(() => import("../components/config/CashboxConfig"));
 const BillingIssuers = lazy(() => import("../components/config/BillingIssuers"));
+const BillingInvoices = lazy(() => import("../components/config/BillingInvoices"));
 const InventoryConfig = lazy(() => import("../components/config/InventoryConfig"));
 const AppUpdates = lazy(() => import("../components/config/AppUpdates"));
 const Maintenance = lazy(() => import("../components/admin/Maintenance"));
@@ -477,13 +478,9 @@ export const Routing = () => {
                       path="/config-caja"
                       element={
                         <PrivateLayout>
-                          {isWebAdminMode() ? (
-                            <Navigate to="/configuracion" replace />
-                          ) : (
-                            <AdminRoute>
-                              <CashboxConfig />
-                            </AdminRoute>
-                          )}
+                          <AdminRoute>
+                            <CashboxConfig />
+                          </AdminRoute>
                         </PrivateLayout>
                       }
                     />
@@ -494,6 +491,17 @@ export const Routing = () => {
                         <PrivateLayout>
                           <AdminRoute>
                             <BillingIssuers />
+                          </AdminRoute>
+                        </PrivateLayout>
+                      }
+                    />
+
+                    <Route
+                      path="/config-facturas"
+                      element={
+                        <PrivateLayout>
+                          <AdminRoute>
+                            <BillingInvoices />
                           </AdminRoute>
                         </PrivateLayout>
                       }

@@ -98,7 +98,6 @@ export const ConfiguracionHub = () => {
       icon: "point_of_sale",
       path: "/config-caja",
       adminOnly: true,
-      webHidden: true,
       color: "text-emerald-600",
       bgColor: "bg-emerald-600/10",
     },
@@ -121,6 +120,16 @@ export const ConfiguracionHub = () => {
       adminOnly: true,
       color: "text-sky-500",
       bgColor: "bg-sky-500/10",
+    },
+    {
+      id: "facturas",
+      title: "Facturas",
+      description: "Gestionar la cancelación de folios fiscales (CFDI 4.0)",
+      icon: "block",
+      path: "/config-facturas",
+      adminOnly: true,
+      color: "text-red-500",
+      bgColor: "bg-red-500/10",
     },
   ];
 
