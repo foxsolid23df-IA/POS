@@ -108,6 +108,28 @@ serve(async (req) => {
       }
     }
 
+    // ─── PASO 1.3: VALIDACIÓN DE LÍMITES DE FOLIOS (TIMBRES) ───
+    const { data: license, error: licenseErr } = await supabase
+      .from('invitation_codes')
+      .select('allocated_folios, consumed_folios')
+      .eq('used_by', sale.user_id)
+      .maybeSingle();
+
+    if (licenseErr) {
+      console.error("Error al consultar saldo de folios:", licenseErr);
+    } else if (license) {
+      const { allocated_folios, consumed_folios } = license;
+      if (allocated_folios !== null && consumed_folios >= allocated_folios) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            message: `Límite de folios contratados agotado (${consumed_folios}/${allocated_folios}). Por favor, adquiera más folios con soporte técnico.` 
+          }), 
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     // ─── PASO 1.5: LIMPIEZA DE FACTURAS PREVIAS ───
     await supabase.from('invoices').delete().eq('sale_id', sale.id);
 

@@ -30,6 +30,10 @@ export const SuperAdminPortal = () => {
   const [updatingLicense, setUpdatingLicense] = useState(false);
   const [editLicenseError, setEditLicenseError] = useState("");
 
+  // Billing folios state
+  const [newClientAllocatedFolios, setNewClientAllocatedFolios] = useState("");
+  const [editClientAllocatedFolios, setEditClientAllocatedFolios] = useState("");
+
   // Administrators state
   const [admins, setAdmins] = useState([]);
   const [showAdminModal, setShowAdminModal] = useState(false);
@@ -93,7 +97,7 @@ export const SuperAdminPortal = () => {
         .from("invitation_codes")
         .select(
           `
-          id, code, expires_at, created_at, used_by, license_type,
+          id, code, expires_at, created_at, used_by, license_type, allocated_folios, consumed_folios,
           profiles (store_name, full_name)
         `,
         )
@@ -151,6 +155,7 @@ export const SuperAdminPortal = () => {
       if (!newClientCode) throw new Error("Ingrese un nombre para el código");
       const duration = parseInt(newClientDuration);
       const maxRegisters = newClientLicenseType === "monocaja" ? 1 : 999;
+      const foliosLimit = newClientAllocatedFolios.trim() !== "" ? parseInt(newClientAllocatedFolios) : null;
 
       const { error } = await supabase.from("invitation_codes").insert([
         {
@@ -160,12 +165,15 @@ export const SuperAdminPortal = () => {
           ).toISOString(),
           license_type: newClientLicenseType,
           max_registers: maxRegisters,
+          allocated_folios: foliosLimit,
+          consumed_folios: 0
         },
       ]);
 
       if (error) throw error;
       setShowCreateModal(false);
       setNewClientCode("");
+      setNewClientAllocatedFolios("");
       loadLicenses();
     } catch (err) {
       setActionError(err.message);
@@ -177,6 +185,7 @@ export const SuperAdminPortal = () => {
   const handleOpenEditLicense = (lic) => {
     setEditingLicense(lic);
     setEditLicenseType(lic.license_type || "monocaja");
+    setEditClientAllocatedFolios(lic.allocated_folios !== null ? String(lic.allocated_folios) : "");
     setEditLicenseError("");
     setShowEditLicenseModal(true);
   };
@@ -188,11 +197,16 @@ export const SuperAdminPortal = () => {
 
     try {
       const maxRegisters = editLicenseType === "monocaja" ? 1 : 999;
+      const foliosLimit = editClientAllocatedFolios.trim() !== "" ? parseInt(editClientAllocatedFolios) : null;
 
       // 1. Actualizar el código de invitación
       const { error: codeError } = await supabase
         .from("invitation_codes")
-        .update({ license_type: editLicenseType, max_registers: maxRegisters })
+        .update({ 
+          license_type: editLicenseType, 
+          max_registers: maxRegisters,
+          allocated_folios: foliosLimit
+        })
         .eq("id", editingLicense.id);
 
       if (codeError) throw codeError;
@@ -488,6 +502,7 @@ export const SuperAdminPortal = () => {
                       <th>Tienda / Dueño</th>
                       <th>Fecha de Expiración</th>
                       <th>Licencia</th>
+                      <th>Folios (Cons./Asig.)</th>
                       <th>Estado</th>
                       <th>Acción</th>
                     </tr>
@@ -536,6 +551,15 @@ export const SuperAdminPortal = () => {
                                 ? "Multicajas"
                                 : "Monocaja"}
                             </span>
+                          </td>
+                          <td>
+                            {lic.used_by ? (
+                              <span style={{ fontSize: "13px", fontWeight: "600" }}>
+                                {lic.consumed_folios} / {lic.allocated_folios !== null ? lic.allocated_folios : "∞"}
+                              </span>
+                            ) : (
+                              <span className="sub-text italic">—</span>
+                            )}
                           </td>
                           <td>
                             <div
@@ -740,6 +764,16 @@ export const SuperAdminPortal = () => {
                   <option value="multicajas">Multicajas (Ilimitado)</option>
                 </select>
               </div>
+              <div className="input-group">
+                <label>Límite de Folios de Facturación (Dejar vacío para Ilimitado)</label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Ej. 100"
+                  value={newClientAllocatedFolios}
+                  onChange={(e) => setNewClientAllocatedFolios(e.target.value)}
+                />
+              </div>
               {actionError && (
                 <div className="superadmin-error">{actionError}</div>
               )}
@@ -837,6 +871,16 @@ export const SuperAdminPortal = () => {
                   <option value="monocaja">Monocaja (1 Caja)</option>
                   <option value="multicajas">Multicajas (Ilimitado)</option>
                 </select>
+              </div>
+              <div className="input-group mt-4">
+                <label>Límite de Folios de Facturación (Dejar vacío para Ilimitado)</label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Ej. 100"
+                  value={editClientAllocatedFolios}
+                  onChange={(e) => setEditClientAllocatedFolios(e.target.value)}
+                />
               </div>
 
               <div

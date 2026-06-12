@@ -19,10 +19,31 @@ export default function BillingInvoices() {
   const [searchVal, setSearchVal] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [license, setLicense] = useState(null);
 
   useEffect(() => {
     fetchInvoices();
+    fetchLicense();
   }, []);
+
+  const fetchLicense = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      const { data, error: licenseErr } = await supabase
+        .from("invitation_codes")
+        .select("allocated_folios, consumed_folios")
+        .eq("used_by", user.id)
+        .maybeSingle();
+        
+      if (!licenseErr && data) {
+        setLicense(data);
+      }
+    } catch (err) {
+      console.error("Error fetching license for billing credits:", err);
+    }
+  };
 
   const fetchInvoices = async () => {
     try {
@@ -272,6 +293,62 @@ export default function BillingInvoices() {
             />
           </form>
         </div>
+
+        {/* Folio Credit Dashboard */}
+        {license && (
+          (() => {
+            const hasLimit = license.allocated_folios !== null;
+            const remaining = hasLimit ? license.allocated_folios - license.consumed_folios : null;
+            const isLow = hasLimit && license.allocated_folios > 0 && (remaining / license.allocated_folios) <= 0.10;
+            const progressPercent = hasLimit && license.allocated_folios > 0 
+              ? Math.min(100, Math.max(0, (license.consumed_folios / license.allocated_folios) * 100))
+              : 0;
+
+            return (
+              <div className="mb-8 p-6 bg-white dark:bg-slate-800 rounded-[20px] border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-2 font-['Inter']">
+                    <span className="text-sm font-bold text-slate-500 dark:text-slate-400">
+                      Consumo de Folios de Facturación
+                    </span>
+                    <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
+                      {license.consumed_folios} / {license.allocated_folios !== null ? license.allocated_folios : "Ilimitados"}
+                    </span>
+                  </div>
+                  
+                  {license.allocated_folios !== null && (
+                    <div className="w-full h-2.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          isLow ? "bg-rose-500" : progressPercent > 75 ? "bg-amber-500" : "bg-emerald-500"
+                        }`}
+                        style={{ width: `${progressPercent}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
+                
+                {hasLimit && (
+                  <div className="flex flex-col items-end shrink-0 font-['Inter']">
+                    <span className="text-xs text-slate-400 dark:text-slate-500 font-semibold">Folios Restantes</span>
+                    <span className={`text-2xl font-black ${isLow ? "text-rose-500 animate-pulse" : "text-slate-700 dark:text-slate-300"}`}>
+                      {remaining}
+                    </span>
+                  </div>
+                )}
+                
+                {isLow && (
+                  <div className="flex items-center gap-3 p-4 bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 rounded-xl text-rose-600 dark:text-rose-400 md:max-w-xs font-['Inter']">
+                    <AlertCircle size={20} className="shrink-0 text-rose-500" />
+                    <p className="text-xs font-semibold leading-relaxed">
+                      ¡Te estás quedando sin folios! Te queda el 10% o menos. Contacta a soporte para recargar.
+                    </p>
+                  </div>
+                )}
+              </div>
+            );
+          })()
+        )}
 
         {/* Data Table */}
         <div className="bg-white dark:bg-slate-800 rounded-[20px] shadow-[0_4px_24px_-8px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_24px_-8px_rgba(0,0,0,0.5)] border border-slate-100 dark:border-slate-700 p-2 relative overflow-hidden">
