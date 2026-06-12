@@ -111,3 +111,41 @@ describe('salesService.createSale', () => {
     );
   });
 });
+
+describe('salesService.createCreditSale', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    mocks.getTerminalId.mockReturnValue('terminal-1');
+    mocks.getUser.mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null });
+  });
+
+  it('llama process_credit_sale con la firma canonica sin p_user_id', async () => {
+    mocks.rpc.mockResolvedValueOnce({ data: { id: 12, total: 100 }, error: null });
+
+    const { salesService } = await import('../salesService');
+    const sale = await salesService.createCreditSale({
+      ...baseSaleData,
+      metodoPago: 'credito',
+      customer_id: 'customer-1',
+      paid_amount: 0,
+      balance: 100,
+    });
+
+    expect(sale).toEqual({ id: 12, total: 100 });
+    expect(mocks.rpc).toHaveBeenCalledTimes(1);
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'process_credit_sale',
+      expect.objectContaining({
+        p_total: 100,
+        p_customer_id: 'customer-1',
+        p_paid_amount: 0,
+        p_balance: 100,
+        p_due_date: null,
+      }),
+    );
+
+    const [, params] = mocks.rpc.mock.calls[0];
+    expect(params).not.toHaveProperty('p_user_id');
+  });
+});

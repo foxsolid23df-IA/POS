@@ -63,6 +63,7 @@ const Inventory = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [showEntradasModal, setShowEntradasModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [productEditTab, setProductEditTab] = useState("datos");
 
   // Form State
   const [formData, setFormData] = useState({
@@ -146,15 +147,38 @@ const Inventory = () => {
     return (Math.round(parsed * 100) / 100).toString();
   };
 
-  const getMarginPercent = (priceValue) => {
-    const cost = toNumber(formData.cost_price);
+  const formatMoney = (value) => {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return "$0.00";
+    return parsed.toLocaleString("es-MX", {
+      style: "currency",
+      currency: "MXN",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
+
+  const normalizeCostMultiplier = (costMultiplier = 1) => {
+    const parsed = toNumber(costMultiplier);
+    return parsed > 0 ? parsed : 0;
+  };
+
+  const getMarginPercent = (priceValue, costMultiplier = 1) => {
+    const cost = toNumber(formData.cost_price) * normalizeCostMultiplier(costMultiplier);
     const price = toNumber(priceValue);
     if (cost <= 0 || price <= 0) return "";
     return (Math.round(((price - cost) / cost) * 10000) / 100).toString();
   };
 
-  const handleMarginChange = (priceField, marginValue) => {
-    const cost = toNumber(formData.cost_price);
+  const getProfitAmount = (priceValue, costMultiplier = 1) => {
+    const cost = toNumber(formData.cost_price) * normalizeCostMultiplier(costMultiplier);
+    const price = toNumber(priceValue);
+    if (cost <= 0 || price <= 0) return null;
+    return price - cost;
+  };
+
+  const handleMarginChange = (priceField, marginValue, costMultiplier = 1) => {
+    const cost = toNumber(formData.cost_price) * normalizeCostMultiplier(costMultiplier);
     const margin = parseFloat(marginValue);
     const nextPrice =
       cost > 0 && Number.isFinite(margin)
@@ -166,6 +190,20 @@ const Inventory = () => {
       [priceField]: nextPrice,
     }));
   };
+
+  const profitPriceRows = [
+    { label: "Menudeo", field: "price", value: formData.price, costMultiplier: 1 },
+    { label: "Mayoreo", field: "wholesale_price", value: formData.wholesale_price, costMultiplier: 1 },
+    { label: "Especial 1", field: "special_price", value: formData.special_price, costMultiplier: 1 },
+    { label: "Especial 2", field: "special_price_2", value: formData.special_price_2, costMultiplier: 1 },
+    {
+      label: "Caja",
+      field: "box_price",
+      value: formData.box_price,
+      costMultiplier: toNumber(formData.box_units),
+      detail: `${toNumber(formData.box_units) || 0} pzas`,
+    },
+  ];
 
   const formatLastPurchase = (product) => {
     if (!product?.last_purchase_at) return "Sin compras";
@@ -207,9 +245,11 @@ const Inventory = () => {
     });
     setPreviewImage(null);
     setEditingProduct(null);
+    setProductEditTab("datos");
   };
 
   const handleOpenModal = (product = null) => {
+    setProductEditTab("datos");
     if (product) {
       setEditingProduct(product);
       // Obtener categoría del producto o inferirla del nombre
@@ -1514,7 +1554,27 @@ const Inventory = () => {
                 onSubmit={handleSubmit}
                 className="new-product-form"
               >
-                <div className="new-product-form-grid">
+                {!isSimplified && (
+                  <div className="product-edit-tabs" role="tablist" aria-label="Secciones del producto">
+                    <button
+                      type="button"
+                      className={`product-edit-tab ${productEditTab === "datos" ? "active" : ""}`}
+                      onClick={() => setProductEditTab("datos")}
+                    >
+                      Datos y precios
+                    </button>
+                    <button
+                      type="button"
+                      className={`product-edit-tab ${productEditTab === "ganancia" ? "active" : ""}`}
+                      onClick={() => setProductEditTab("ganancia")}
+                    >
+                      Ganancia
+                    </button>
+                  </div>
+                )}
+
+                {(isSimplified || productEditTab === "datos") && (
+                <div className="new-product-form-grid product-tab-panel">
                   {/* Nombre del Producto */}
                   <div className="new-product-form-group col-span-12 md-col-span-8">
                     <label className="new-product-label" htmlFor="product-name">
@@ -2109,6 +2169,99 @@ const Inventory = () => {
                     </div>
                   )}
                 </div>
+                )}
+
+                {!isSimplified && productEditTab === "ganancia" && (
+                  <div className="product-tab-panel price-sheet profit-sheet">
+                    <div className="profit-sheet-summary">
+                      <div>
+                        <span className="profit-sheet-label">Costo base por pieza</span>
+                        <div className="new-product-price-wrapper profit-sheet-cost">
+                          <span className="new-product-price-symbol">$</span>
+                          <input
+                            className="new-product-input new-product-price-input"
+                            type="number"
+                            name="cost_price"
+                            value={formData.cost_price}
+                            onChange={handleInputChange}
+                            placeholder="0.00"
+                            step="0.01"
+                            min="0"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <span className="profit-sheet-label">Última compra</span>
+                        <strong className="profit-sheet-value">
+                          {formatLastPurchase(editingProduct)}
+                        </strong>
+                      </div>
+                    </div>
+
+                    <p className="price-sheet-muted">
+                      El porcentaje se calcula sobre costo. También puedes escribir el porcentaje y el sistema recalcula el precio.
+                    </p>
+
+                    <div className="price-sheet-main">
+                      <div className="price-sheet-header">
+                        <span>Precio</span>
+                        <span>Importe</span>
+                        <span>Ganancia %</span>
+                        <span>Utilidad</span>
+                      </div>
+
+                      {profitPriceRows.map((row) => {
+                        const profitAmount = getProfitAmount(row.value, row.costMultiplier);
+                        const marginPercent = getMarginPercent(row.value, row.costMultiplier);
+                        const hasCostBasis = toNumber(formData.cost_price) > 0 && normalizeCostMultiplier(row.costMultiplier) > 0;
+                        const hasPrice = toNumber(row.value) > 0;
+
+                        return (
+                          <div className="price-sheet-row" key={row.field}>
+                            <label>
+                              {row.label}
+                              {row.detail && <span className="profit-sheet-detail">{row.detail}</span>}
+                            </label>
+                            <div className="new-product-price-wrapper">
+                              <span className="new-product-price-symbol">$</span>
+                              <input
+                                className="new-product-input new-product-price-input"
+                                type="number"
+                                name={row.field}
+                                value={row.value}
+                                onChange={handleInputChange}
+                                placeholder="0.00"
+                                step="0.01"
+                                min="0"
+                              />
+                            </div>
+                            <div className="price-sheet-percent">
+                              <input
+                                className="new-product-input"
+                                type="number"
+                                value={marginPercent}
+                                onChange={(e) => handleMarginChange(row.field, e.target.value, row.costMultiplier)}
+                                placeholder="0.00"
+                                step="0.01"
+                                disabled={!hasCostBasis}
+                              />
+                              <span>%</span>
+                            </div>
+                            <span className={`profit-sheet-profit ${profitAmount < 0 ? "negative" : ""}`}>
+                              {!hasCostBasis
+                                ? row.field === "box_price" && normalizeCostMultiplier(row.costMultiplier) <= 0
+                                  ? "Configura caja"
+                                  : "Agrega costo"
+                                : !hasPrice
+                                  ? "Sin precio"
+                                  : formatMoney(profitAmount)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </form>
             </div>
 

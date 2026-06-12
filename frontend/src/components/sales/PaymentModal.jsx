@@ -34,6 +34,7 @@ const PaymentModal = ({
   const customerSearchRef = useRef(null);
 
   const selectedCustomer = propSelectedCustomer || localCustomer;
+  const creditCustomerData = creditCustomer?.customer || selectedCustomer;
 
   const totalVenta = useMemo(() => {
     if (!facturar) return total;
@@ -162,15 +163,15 @@ const PaymentModal = ({
     }
 
     // Modo crédito: permitir completar aunque no esté cubierto
-    if (isCredit && creditCustomer) {
+    if (isCredit && selectedCustomer?.id) {
       onComplete({
         pagos: finalPayments,
         facturar,
         issuerId: facturar ? selectedIssuerId : null,
         isCreditSale: true,
-        customerId: creditCustomer.id,
-        creditBalance: parseFloat(creditCustomer.credit_balance || 0),
-        creditLimit: parseFloat(creditCustomer.credit_limit || 0)
+        customerId: selectedCustomer.id,
+        creditBalance: parseFloat(creditCustomerData?.credit_balance || 0),
+        creditLimit: parseFloat(creditCustomerData?.credit_limit || 0)
       });
       return;
     }
@@ -266,7 +267,7 @@ const PaymentModal = ({
     ? typedAmount * tipoCambio
     : typedAmount;
   const typedAmountCoversBalance = typedAmount > 0 && typedAmountInPesos >= saldoPendiente;
-  const canCompleteSale = isCredit || isSaleFullyCovered || canQuickPayExact || typedAmountCoversBalance;
+  const canCompleteSale = (isCredit && !!selectedCustomer?.id) || isSaleFullyCovered || canQuickPayExact || typedAmountCoversBalance;
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -520,9 +521,9 @@ const PaymentModal = ({
               <div className="flex items-center justify-between text-xs text-amber-700 dark:text-amber-300">
                 <div>
                   Cliente: <strong>{selectedCustomer.name}</strong>
-                  {creditCustomer && (
-                    <> · Límite: <strong>{formatearDinero(creditCustomer.credit_limit)}</strong>
-                    · Disponible: <strong>{formatearDinero(Math.max(0, parseFloat(creditCustomer.credit_limit || 0) - parseFloat(creditCustomer.credit_balance || 0)))}</strong></>
+                  {creditCustomerData && (
+                    <> · Límite: <strong>{formatearDinero(creditCustomerData.credit_limit)}</strong>
+                    · Disponible: <strong>{formatearDinero(Math.max(0, parseFloat(creditCustomerData.credit_limit || 0) - parseFloat(creditCustomerData.credit_balance || 0)))}</strong></>
                   )}
                 </div>
               </div>

@@ -1151,6 +1151,61 @@
     height: 16px;
 }
 
+.profit-sheet {
+    gap: 14px;
+}
+
+.profit-sheet-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(150px, auto);
+    gap: 14px;
+    align-items: end;
+    padding: 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #f8fafc;
+}
+
+.profit-sheet-label {
+    display: block;
+    margin-bottom: 6px;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.profit-sheet-cost {
+    max-width: 220px;
+}
+
+.profit-sheet-value {
+    display: block;
+    min-height: 42px;
+    padding: 11px 12px;
+    color: #111827;
+    font-size: 14px;
+    line-height: 20px;
+}
+
+.profit-sheet-detail {
+    display: block;
+    margin-top: 2px;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.profit-sheet-profit {
+    color: #047857;
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.profit-sheet-profit.negative {
+    color: #dc2626;
+}
+
 @media (max-width: 768px) {
     .new-product-modal {
         max-width: 100%;
@@ -1171,6 +1226,10 @@
     }
 
     .product-inline-action {
+        grid-template-columns: 1fr;
+    }
+
+    .profit-sheet-summary {
         grid-template-columns: 1fr;
     }
 }
@@ -2800,6 +2859,28 @@
 
 .dark .box-price-panel {
     border-top-color: #334155;
+}
+
+.dark .profit-sheet-summary {
+    background: #0f172a;
+    border-color: #334155;
+}
+
+.dark .profit-sheet-label,
+.dark .profit-sheet-detail {
+    color: #94a3b8;
+}
+
+.dark .profit-sheet-value {
+    color: #e2e8f0;
+}
+
+.dark .profit-sheet-profit {
+    color: #34d399;
+}
+
+.dark .profit-sheet-profit.negative {
+    color: #f87171;
 }
 
 /* Formularios - Dark Mode */
