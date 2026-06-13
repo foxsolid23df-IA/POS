@@ -46,6 +46,26 @@ export default function BillingIssuers() {
   const cerInputRef = useRef(null);
   const keyInputRef = useRef(null);
 
+  const readFileAsBase64 = (file) =>
+    new Promise((resolve, reject) => {
+      if (!file) {
+        reject(new Error("Archivo CSD no seleccionado."));
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64String = String(event.target.result || "").split(",")[1] || "";
+        if (!base64String) {
+          reject(new Error(`No se pudo leer el archivo ${file.name}.`));
+          return;
+        }
+        resolve(base64String);
+      };
+      reader.onerror = () => reject(new Error(`No se pudo leer el archivo ${file.name}.`));
+      reader.readAsDataURL(file);
+    });
+
   useEffect(() => {
     fetchIssuers();
   }, []);
@@ -149,19 +169,25 @@ export default function BillingIssuers() {
       return;
     }
 
-    if (!files.cerBase64 || !files.keyBase64) {
-      alert("Los archivos CSD aun se estan leyendo. Espere unos segundos e intente nuevamente.");
-      return;
-    }
-
     try {
       setIsSubmitting(true);
+
+      const cerBase64 = files.cerBase64 || await readFileAsBase64(files.cer);
+      const keyBase64 = files.keyBase64 || await readFileAsBase64(files.key);
+
+      if (cerBase64 !== files.cerBase64 || keyBase64 !== files.keyBase64) {
+        setFiles((prev) => ({
+          ...prev,
+          cerBase64,
+          keyBase64,
+        }));
+      }
 
       const response = await supabase.functions.invoke("upload-csd", {
         body: {
           rfc: formData.rfc,
-          cer_base64: files.cerBase64,
-          key_base64: files.keyBase64,
+          cer_base64: cerBase64,
+          key_base64: keyBase64,
           password: formData.password,
           razon_social: formData.razonSocial,
           regimen_fiscal: formData.regimenFiscal,
@@ -505,6 +531,7 @@ export default function BillingIssuers() {
                         accept=".cer,.CER"
                         ref={cerInputRef}
                         onChange={(e) => handleFileChange(e, "cer")}
+                        onClick={(e) => e.stopPropagation()}
                         className="hidden"
                       />
                       <div
@@ -543,6 +570,7 @@ export default function BillingIssuers() {
                         accept=".key,.KEY"
                         ref={keyInputRef}
                         onChange={(e) => handleFileChange(e, "key")}
+                        onClick={(e) => e.stopPropagation()}
                         className="hidden"
                       />
                       <div

@@ -182,6 +182,7 @@ export default function BillingPortalModal({ issuer, onClose, onSave }) {
                   className="hidden"
                   ref={fileInputRef}
                   onChange={handleFileChange}
+                  onClick={(e) => e.stopPropagation()}
                 />
               </div>
               <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
