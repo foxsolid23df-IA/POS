@@ -132,6 +132,16 @@ export default function BillingIssuers() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (
+      !formData.rfc.trim() ||
+      !formData.razonSocial.trim() ||
+      !formData.regimenFiscal.trim() ||
+      !formData.codigoPostal.trim()
+    ) {
+      alert("Por favor rellene todos los campos obligatorios del contribuyente.");
+      return;
+    }
+
     if (!files.cer || !files.key || !formData.password.trim()) {
       alert(
         "Por favor cargue los archivos .cer y .key, además de la contraseña.",
@@ -395,7 +405,7 @@ export default function BillingIssuers() {
             </div>
 
             {/* Body */}
-            <form onSubmit={handleSubmit} className="px-8 py-6 overflow-y-auto">
+            <form onSubmit={handleSubmit} className="px-8 py-6 overflow-y-auto" noValidate>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
