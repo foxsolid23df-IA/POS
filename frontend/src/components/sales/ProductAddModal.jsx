@@ -51,6 +51,25 @@ const ProductAddModal = ({ product, onClose, onAdd, formatearDinero, hasBoxConfi
 
   const autoPriceTier = getAutomaticPrice(totalRequestedPieces);
 
+  const getAutomaticBoxPrice = (boxQty) => {
+    const baseBoxPrice = parseFloat(boxPrice || product.box_price || 0);
+    const specialBoxPrice = parseFloat(product.box_special_price || 0);
+    const specialBoxFrom = parseFloat(product.box_special_from_qty || 0);
+    const qty = parseFloat(boxQty || 0) || 0;
+
+    if (specialBoxFrom > 0 && qty >= specialBoxFrom && specialBoxPrice > 0) {
+      return { price: specialBoxPrice, label: 'Caja especial' };
+    }
+
+    if (baseBoxPrice > 0) {
+      return { price: baseBoxPrice, label: 'Caja' };
+    }
+
+    return { price: autoPriceTier.price * (bUnits || 1), label: autoPriceTier.label };
+  };
+
+  const autoBoxPriceTier = getAutomaticBoxPrice(cQtyNum);
+
   useEffect(() => {
     const totalPzs = pQtyNum + (cQtyNum * (bUnits || 0));
     const auto = getAutomaticPrice(totalPzs);
@@ -60,11 +79,7 @@ const ProductAddModal = ({ product, onClose, onAdd, formatearDinero, hasBoxConfi
     }
     
     if (!cajaPriceManuallyEdited) {
-      if (boxPrice && parseFloat(boxPrice) > 0) {
-        setCajaPrice(parseFloat(boxPrice));
-      } else {
-        setCajaPrice(auto.price * (bUnits || 1));
-      }
+      setCajaPrice(getAutomaticBoxPrice(cQtyNum).price);
     }
   }, [pQtyNum, cQtyNum, bUnits, boxPrice, pzaPriceManuallyEdited, cajaPriceManuallyEdited]);
 
@@ -141,7 +156,12 @@ const ProductAddModal = ({ product, onClose, onAdd, formatearDinero, hasBoxConfi
 
       if (pQtyNum > 0 || cQtyNum > 0) {
         e.preventDefault();
-        onAdd(pQtyNum, cQtyNum, pzaPrice, cajaPrice);
+        onAdd(
+          pQtyNum,
+          cQtyNum,
+          pzaPrice,
+          cajaPriceManuallyEdited ? cajaPrice : undefined,
+        );
       }
     }
   };
@@ -266,6 +286,11 @@ const ProductAddModal = ({ product, onClose, onAdd, formatearDinero, hasBoxConfi
                 <div>
                   <span className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Cajas</span>
                   <p className="text-xs text-gray-400 mt-0.5">1 caja = {bUnits} piezas</p>
+                  {cQtyNum > 0 && autoBoxPriceTier.label === 'Caja especial' && !cajaPriceManuallyEdited && (
+                    <p className="text-[11px] font-bold text-emerald-600 mt-1">
+                      Precio especial aplicado
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <div className={`flex items-center bg-white dark:bg-slate-900 border rounded-lg transition-all shadow-sm ${
@@ -357,7 +382,12 @@ const ProductAddModal = ({ product, onClose, onAdd, formatearDinero, hasBoxConfi
           <button
             ref={addBtnRef}
             type="button"
-            onClick={() => onAdd(parseFloat(pzaQty) || 0, parseFloat(cajaQty) || 0, pzaPrice, cajaPrice)}
+            onClick={() => onAdd(
+              parseFloat(pzaQty) || 0,
+              parseFloat(cajaQty) || 0,
+              pzaPrice,
+              cajaPriceManuallyEdited ? cajaPrice : undefined,
+            )}
             disabled={(parseFloat(pzaQty) || 0) === 0 && (parseFloat(cajaQty) || 0) === 0}
             onFocus={() => setFocusSection('actions')}
             className={`flex-[2] py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-500/25 disabled:shadow-none ${
