@@ -46,6 +46,19 @@ export default function BillingIssuers() {
   const cerInputRef = useRef(null);
   const keyInputRef = useRef(null);
 
+  const arrayBufferToBase64 = (buffer) => {
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 0x8000;
+    let binary = "";
+
+    for (let index = 0; index < bytes.length; index += chunkSize) {
+      const chunk = bytes.subarray(index, index + chunkSize);
+      binary += String.fromCharCode(...chunk);
+    }
+
+    return window.btoa(binary);
+  };
+
   const readFileAsBase64 = (file) =>
     new Promise((resolve, reject) => {
       if (!file) {
@@ -53,17 +66,27 @@ export default function BillingIssuers() {
         return;
       }
 
+      if (file.size <= 0) {
+        reject(new Error(`El archivo ${file.name} esta vacio.`));
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = (event) => {
-        const base64String = String(event.target.result || "").split(",")[1] || "";
-        if (!base64String) {
+        const buffer = event.target.result;
+        if (!buffer) {
           reject(new Error(`No se pudo leer el archivo ${file.name}.`));
           return;
         }
-        resolve(base64String);
+
+        try {
+          resolve(arrayBufferToBase64(buffer));
+        } catch (error) {
+          reject(new Error(`No se pudo convertir el archivo ${file.name}.`));
+        }
       };
       reader.onerror = () => reject(new Error(`No se pudo leer el archivo ${file.name}.`));
-      reader.readAsDataURL(file);
+      reader.readAsArrayBuffer(file);
     });
 
   useEffect(() => {
@@ -99,24 +122,22 @@ export default function BillingIssuers() {
       [`${type}Base64`]: "",
     }));
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64String = String(event.target.result || "").split(",")[1] || "";
-      setFiles((prev) => ({
-        ...prev,
-        [type]: file,
-        [`${type}Base64`]: base64String,
-      }));
-    };
-    reader.onerror = () => {
+    readFileAsBase64(file)
+      .then((base64String) => {
+        setFiles((prev) => ({
+          ...prev,
+          [type]: file,
+          [`${type}Base64`]: base64String,
+        }));
+      })
+      .catch((error) => {
       setFiles((prev) => ({
         ...prev,
         [type]: null,
         [`${type}Base64`]: "",
       }));
-      alert(`No se pudo leer el archivo .${type}. Intente cargarlo nuevamente.`);
-    };
-    reader.readAsDataURL(file);
+        alert(error.message || `No se pudo leer el archivo .${type}. Intente cargarlo nuevamente.`);
+      });
   };
 
   const handleChange = (e) => {
