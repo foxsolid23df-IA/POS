@@ -217,19 +217,36 @@ export const salesService = {
         return data || [];
     },
 
-    // Obtener todas las ventas (con paginación)
-    getSales: async (limit = 50) => {
-        const { data, error } = await supabase
+    // Obtener todas las ventas (con paginación y filtros)
+    getSales: async (limit = 50, filters = {}) => {
+        let query = supabase
             .from('sales')
             .select(`
                 *,
                 customers (name),
                 sale_items (*),
                 invoices (*)
-            `)
-            .order('created_at', { ascending: false })
-            .limit(limit);
+            `);
 
+        if (filters.createdAfter) {
+            query = query.gte('created_at', filters.createdAfter);
+        }
+        if (filters.createdBefore) {
+            query = query.lte('created_at', filters.createdBefore);
+        }
+
+        if (filters.searchTerm) {
+            const term = filters.searchTerm.trim();
+            if (/^\d+$/.test(term)) {
+                query = query.eq('id', parseInt(term, 10));
+            } else {
+                query = query.ilike('pin_facturacion', `%${term}%`);
+            }
+        }
+
+        query = query.order('created_at', { ascending: false }).limit(limit);
+
+        const { data, error } = await query;
         if (error) throw error;
         return data || [];
     },

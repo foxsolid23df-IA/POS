@@ -93,6 +93,14 @@ export const Orders = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [returningOrderId, setReturningOrderId] = useState(null);
   const [page, setPage] = useState(0);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
 
   const filteredOrders = useMemo(() => {
     let result = [...orders];
@@ -141,7 +149,28 @@ export const Orders = () => {
     setLoading(true);
     setError(null);
 
-    salesService.getSales(200)
+    const filters = {};
+    if (dateFrom) {
+      try {
+        const d = new Date(`${dateFrom}T00:00:00`);
+        filters.createdAfter = d.toISOString();
+      } catch (e) {
+        console.error("Invalid dateFrom:", dateFrom);
+      }
+    }
+    if (dateTo) {
+      try {
+        const d = new Date(`${dateTo}T23:59:59.999`);
+        filters.createdBefore = d.toISOString();
+      } catch (e) {
+        console.error("Invalid dateTo:", dateTo);
+      }
+    }
+    if (debouncedSearchTerm.trim()) {
+      filters.searchTerm = debouncedSearchTerm.trim();
+    }
+
+    salesService.getSales(500, filters)
       .then((data) => {
         if (!cancelled) {
           setOrders(data || []);
@@ -156,7 +185,7 @@ export const Orders = () => {
       });
 
     return () => { cancelled = true; };
-  }, []);
+  }, [dateFrom, dateTo, debouncedSearchTerm]);
 
   const handlePresetClick = useCallback((key) => {
     if (activePreset === key) {
