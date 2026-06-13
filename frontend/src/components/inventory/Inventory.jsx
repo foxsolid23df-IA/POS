@@ -199,6 +199,13 @@ const Inventory = () => {
     return roundMoney(cost * (1 + margin / 100));
   };
 
+  const getBoxPriceFromPiecePrice = (piecePriceValue, boxUnitsValue) => {
+    const piecePrice = toNumber(piecePriceValue);
+    const boxUnits = toNumber(boxUnitsValue);
+    if (piecePrice <= 0 || boxUnits <= 0) return "";
+    return roundMoney(piecePrice * boxUnits);
+  };
+
   useEffect(() => {
     if (generalProfitMargin === "") return;
 
@@ -207,11 +214,7 @@ const Inventory = () => {
 
     setFormData((prev) => {
       const nextPiecePrice = getPriceFromMargin(prev.cost_price, margin);
-      const boxUnits = toNumber(prev.box_units);
-      const nextBoxPrice =
-        nextPiecePrice && boxUnits > 0
-          ? roundMoney(toNumber(nextPiecePrice) * boxUnits)
-          : prev.box_price;
+      const nextBoxPrice = getBoxPriceFromPiecePrice(nextPiecePrice, prev.box_units);
 
       return {
         ...prev,
@@ -223,6 +226,17 @@ const Inventory = () => {
       };
     });
   }, [generalProfitMargin, formData.cost_price, formData.box_units]);
+
+  useEffect(() => {
+    setFormData((prev) => {
+      const nextBoxPrice = getBoxPriceFromPiecePrice(prev.price, prev.box_units);
+      if (prev.box_price === nextBoxPrice) return prev;
+      return {
+        ...prev,
+        box_price: nextBoxPrice,
+      };
+    });
+  }, [formData.price, formData.box_units]);
 
   const profitPriceRows = [
     { label: "Menudeo", field: "price", value: formData.price, costMultiplier: 1 },
@@ -2265,6 +2279,7 @@ const Inventory = () => {
                         const marginPercent = getMarginPercent(row.value, row.costMultiplier);
                         const hasCostBasis = toNumber(formData.cost_price) > 0 && normalizeCostMultiplier(row.costMultiplier) > 0;
                         const hasPrice = toNumber(row.value) > 0;
+                        const isBoxRow = row.field === "box_price";
 
                         return (
                           <div className="price-sheet-row" key={row.field}>
@@ -2279,10 +2294,12 @@ const Inventory = () => {
                                 type="number"
                                 name={row.field}
                                 value={row.value}
-                                onChange={handleInputChange}
+                                onChange={isBoxRow ? undefined : handleInputChange}
+                                readOnly={isBoxRow}
                                 placeholder="0.00"
                                 step="0.01"
                                 min="0"
+                                title={isBoxRow ? "Automatico: menudeo por piezas de caja" : undefined}
                               />
                             </div>
                             <div className="price-sheet-percent">
@@ -2293,7 +2310,8 @@ const Inventory = () => {
                                 onChange={(e) => handleMarginChange(row.field, e.target.value, row.costMultiplier)}
                                 placeholder="0.00"
                                 step="0.01"
-                                disabled={!hasCostBasis}
+                                disabled={isBoxRow || !hasCostBasis}
+                                title={isBoxRow ? "Calculado automaticamente desde el precio de caja" : undefined}
                               />
                               <span>%</span>
                             </div>
