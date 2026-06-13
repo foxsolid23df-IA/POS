@@ -42,6 +42,10 @@ export default function BillingIssuers() {
     cerBase64: "",
     keyBase64: "",
   });
+  const [fileErrors, setFileErrors] = useState({
+    cer: "",
+    key: "",
+  });
 
   const cerInputRef = useRef(null);
   const keyInputRef = useRef(null);
@@ -116,6 +120,27 @@ export default function BillingIssuers() {
     const file = e.target.files[0];
     if (!file) return;
 
+    if (file.size <= 0) {
+      const message = `El archivo ${file.name} esta vacio. Descargue o seleccione nuevamente el archivo CSD correcto.`;
+      setFiles((prev) => ({
+        ...prev,
+        [type]: null,
+        [`${type}Base64`]: "",
+      }));
+      setFileErrors((prev) => ({
+        ...prev,
+        [type]: message,
+      }));
+      e.target.value = "";
+      alert(message);
+      return;
+    }
+
+    setFileErrors((prev) => ({
+      ...prev,
+      [type]: "",
+    }));
+
     setFiles((prev) => ({
       ...prev,
       [type]: file,
@@ -136,7 +161,13 @@ export default function BillingIssuers() {
         [type]: null,
         [`${type}Base64`]: "",
       }));
-        alert(error.message || `No se pudo leer el archivo .${type}. Intente cargarlo nuevamente.`);
+        const message = error.message || `No se pudo leer el archivo .${type}. Intente cargarlo nuevamente.`;
+        setFileErrors((prev) => ({
+          ...prev,
+          [type]: message,
+        }));
+        e.target.value = "";
+        alert(message);
       });
   };
 
@@ -267,6 +298,7 @@ export default function BillingIssuers() {
         password: "",
       });
       setFiles({ cer: null, key: null, cerBase64: "", keyBase64: "" });
+      setFileErrors({ cer: "", key: "" });
       fetchIssuers();
     } catch (error) {
       console.error("Error completo:", error);
@@ -542,7 +574,9 @@ export default function BillingIssuers() {
                       onClick={() => cerInputRef.current?.click()}
                       className={`relative cursor-pointer border-2 border-dashed rounded-xl p-4 flex items-center gap-4 transition-all
                         ${
-                          files.cer
+                          fileErrors.cer
+                            ? "border-rose-300 dark:border-rose-600 bg-rose-50 dark:bg-rose-900/20"
+                            : files.cer
                             ? "border-emerald-300 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-900/20"
                             : "border-slate-300 dark:border-slate-600 hover:border-[#003f87] dark:hover:border-blue-500 bg-white dark:bg-slate-800"
                         }`}
@@ -557,13 +591,15 @@ export default function BillingIssuers() {
                       />
                       <div
                         className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          files.cer
+                          fileErrors.cer
+                            ? "bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400"
+                            : files.cer
                             ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400"
                             : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
                         }`}
                       >
                         <span className="material-icons-outlined">
-                          {files.cer ? "check_circle" : "upload_file"}
+                          {fileErrors.cer ? "error" : files.cer ? "check_circle" : "upload_file"}
                         </span>
                       </div>
                       <div className="overflow-hidden">
@@ -573,6 +609,11 @@ export default function BillingIssuers() {
                         <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                           {files.cer?.name || "Seleccione un archivo"}
                         </p>
+                        {fileErrors.cer && (
+                          <p className="text-xs text-rose-600 dark:text-rose-400 font-semibold mt-1">
+                            {fileErrors.cer}
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -581,7 +622,9 @@ export default function BillingIssuers() {
                       onClick={() => keyInputRef.current?.click()}
                       className={`relative cursor-pointer border-2 border-dashed rounded-xl p-4 flex items-center gap-4 transition-all
                         ${
-                          files.key
+                          fileErrors.key
+                            ? "border-rose-300 dark:border-rose-600 bg-rose-50 dark:bg-rose-900/20"
+                            : files.key
                             ? "border-emerald-300 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-900/20"
                             : "border-slate-300 dark:border-slate-600 hover:border-[#003f87] dark:hover:border-blue-500 bg-white dark:bg-slate-800"
                         }`}
@@ -596,13 +639,15 @@ export default function BillingIssuers() {
                       />
                       <div
                         className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          files.key
+                          fileErrors.key
+                            ? "bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400"
+                            : files.key
                             ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400"
                             : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
                         }`}
                       >
                         <span className="material-icons-outlined">
-                          {files.key ? "check_circle" : "key"}
+                          {fileErrors.key ? "error" : files.key ? "check_circle" : "key"}
                         </span>
                       </div>
                       <div className="overflow-hidden">
@@ -612,6 +657,11 @@ export default function BillingIssuers() {
                         <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                           {files.key?.name || "Seleccione un archivo"}
                         </p>
+                        {fileErrors.key && (
+                          <p className="text-xs text-rose-600 dark:text-rose-400 font-semibold mt-1">
+                            {fileErrors.key}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
