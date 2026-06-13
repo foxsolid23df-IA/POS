@@ -40,6 +40,7 @@ export const Expenses = () => {
   const [range, setRange] = useState("turno");
   const [categoryFilter, setCategoryFilter] = useState("Todas");
   const [searchTerm, setSearchTerm] = useState("");
+  const [editingExpense, setEditingExpense] = useState(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -69,6 +70,7 @@ export const Expenses = () => {
 
   const activeSummary = range === "dia" ? daySummary : summary;
   const expenses = activeSummary?.expenses || [];
+  const isEditing = Boolean(editingExpense);
 
   const filteredExpenses = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -79,7 +81,8 @@ export const Expenses = () => {
         !query ||
         String(expense.concept || "").toLowerCase().includes(query) ||
         String(expense.reference || "").toLowerCase().includes(query) ||
-        String(expense.notes || "").toLowerCase().includes(query);
+        String(expense.notes || "").toLowerCase().includes(query) ||
+        String(expense.cancellation_reason || "").toLowerCase().includes(query);
       return matchesCategory && matchesSearch;
     });
   }, [expenses, categoryFilter, searchTerm]);
@@ -107,33 +110,129 @@ export const Expenses = () => {
 
     setSubmitting(true);
     try {
-      await cashMovementService.registerExpense(
-        amount,
-        concept,
-        activeStaff?.name,
-        user?.cashbox_mode || "terminal",
-        {
-          category: form.category,
-          reference: form.reference,
-          notes: form.notes,
-          createdByStaffId: activeStaff?.id || activeStaff?.staff_id || null,
-        },
-      );
+      if (editingExpense) {
+        await cashMovementService.updateExpense(
+          editingExpense.id,
+          {
+            amount,
+            concept,
+            category: form.category,
+            reference: form.reference,
+            notes: form.notes,
+          },
+          activeStaff?.name,
+        );
 
-      Swal.fire({
-        title: "Gasto registrado",
-        text: "El gasto fue aplicado al corte de caja.",
-        icon: "success",
-        timer: 1400,
-        showConfirmButton: false,
-      });
+        Swal.fire({
+          title: "Gasto actualizado",
+          text: "El cambio ya se refleja en caja.",
+          icon: "success",
+          timer: 1400,
+          showConfirmButton: false,
+        });
+      } else {
+        await cashMovementService.registerExpense(
+          amount,
+          concept,
+          activeStaff?.name,
+          user?.cashbox_mode || "terminal",
+          {
+            category: form.category,
+            reference: form.reference,
+            notes: form.notes,
+            createdByStaffId: activeStaff?.id || activeStaff?.staff_id || null,
+          },
+        );
+
+        Swal.fire({
+          title: "Gasto registrado",
+          text: "El gasto fue aplicado al corte de caja.",
+          icon: "success",
+          timer: 1400,
+          showConfirmButton: false,
+        });
+      }
+
       setForm(initialForm);
+      setEditingExpense(null);
       await loadData();
     } catch (error) {
       console.error("Error registrando gasto:", error);
       Swal.fire(
         "Error",
         error.message || "No se pudo registrar el gasto.",
+        "error",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEditExpense = (expense) => {
+    if (expense.expense_status === "cancelled" || expense.cancelled_at) return;
+
+    setEditingExpense(expense);
+    setForm({
+      amount: String(expense.amount || ""),
+      concept: expense.concept || "",
+      category: expense.category || "Otros",
+      reference: expense.reference || "",
+      notes: expense.notes || "",
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingExpense(null);
+    setForm(initialForm);
+  };
+
+  const handleCancelExpense = async (expense) => {
+    if (expense.expense_status === "cancelled" || expense.cancelled_at) return;
+
+    const result = await Swal.fire({
+      title: "Cancelar gasto",
+      text: "El gasto dejara de sumar en caja, pero quedara guardado como historial.",
+      input: "text",
+      inputPlaceholder: "Motivo de cancelacion",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Cancelar gasto",
+      cancelButtonText: "Regresar",
+      inputValidator: (value) => {
+        if (!String(value || "").trim()) {
+          return "Captura el motivo de cancelacion.";
+        }
+        return null;
+      },
+    });
+
+    if (!result.isConfirmed) return;
+
+    setSubmitting(true);
+    try {
+      await cashMovementService.cancelExpense(
+        expense.id,
+        result.value,
+        activeStaff?.name,
+      );
+
+      if (editingExpense?.id === expense.id) {
+        handleCancelEdit();
+      }
+
+      Swal.fire({
+        title: "Gasto cancelado",
+        text: "Ya no suma en los totales de caja.",
+        icon: "success",
+        timer: 1400,
+        showConfirmButton: false,
+      });
+      await loadData();
+    } catch (error) {
+      console.error("Error cancelando gasto:", error);
+      Swal.fire(
+        "Error",
+        error.message || "No se pudo cancelar el gasto.",
         "error",
       );
     } finally {
@@ -187,8 +286,17 @@ export const Expenses = () => {
         <section className="expenses-form-panel">
           <div className="expenses-section-title">
             <span className="material-symbols-rounded">payments</span>
-            <h2>Registrar gasto</h2>
+            <h2>{isEditing ? "Editar gasto" : "Registrar gasto"}</h2>
           </div>
+          {isEditing && (
+            <div className="expenses-editing-banner">
+              <span className="material-symbols-rounded">edit</span>
+              <strong>Editando gasto registrado</strong>
+              <button type="button" onClick={handleCancelEdit}>
+                Cancelar edicion
+              </button>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="expenses-form">
             <label>
               <span>Categoría</span>
@@ -258,7 +366,13 @@ export const Expenses = () => {
               <span className="material-symbols-rounded">
                 {submitting ? "progress_activity" : "save"}
               </span>
-              {submitting ? "Registrando" : "Registrar gasto"}
+              {submitting
+                ? isEditing
+                  ? "Guardando"
+                  : "Registrando"
+                : isEditing
+                  ? "Guardar cambios"
+                  : "Registrar gasto"}
             </button>
           </form>
         </section>
@@ -316,27 +430,64 @@ export const Expenses = () => {
             ) : filteredExpenses.length === 0 ? (
               <div className="expenses-empty">Sin gastos registrados</div>
             ) : (
-              filteredExpenses.map((expense) => (
-                <article key={expense.id} className="expense-row">
-                  <div className="expense-row-icon">
-                    <span className="material-symbols-rounded">receipt</span>
-                  </div>
-                  <div className="expense-row-main">
-                    <div className="expense-row-title">
-                      <strong>{expense.concept}</strong>
-                      <span>{formatMoney(expense.amount)}</span>
+              filteredExpenses.map((expense) => {
+                const isCancelled =
+                  expense.expense_status === "cancelled" ||
+                  Boolean(expense.cancelled_at);
+
+                return (
+                  <article
+                    key={expense.id}
+                    className={`expense-row ${isCancelled ? "cancelled" : ""}`}
+                  >
+                    <div className="expense-row-icon">
+                      <span className="material-symbols-rounded">
+                        {isCancelled ? "block" : "receipt"}
+                      </span>
                     </div>
-                    <div className="expense-row-meta">
-                      <span>{expense.category || "Otros"}</span>
-                      <span>{formatDateTime(expense.created_at)}</span>
-                      {expense.reference && <span>{expense.reference}</span>}
+                    <div className="expense-row-main">
+                      <div className="expense-row-title">
+                        <strong>{expense.concept}</strong>
+                        <span>{formatMoney(expense.amount)}</span>
+                      </div>
+                      <div className="expense-row-meta">
+                        <span>{expense.category || "Otros"}</span>
+                        <span>{formatDateTime(expense.created_at)}</span>
+                        {expense.reference && <span>{expense.reference}</span>}
+                        {expense.edited_at && <span>Editado</span>}
+                        {isCancelled && <span>Cancelado</span>}
+                      </div>
+                      {expense.notes && (
+                        <p className="expense-row-notes">{expense.notes}</p>
+                      )}
+                      {isCancelled && expense.cancellation_reason && (
+                        <p className="expense-row-notes">
+                          Motivo: {expense.cancellation_reason}
+                        </p>
+                      )}
                     </div>
-                    {expense.notes && (
-                      <p className="expense-row-notes">{expense.notes}</p>
-                    )}
-                  </div>
-                </article>
-              ))
+                    <div className="expense-row-actions">
+                      <button
+                        type="button"
+                        onClick={() => handleEditExpense(expense)}
+                        disabled={isCancelled || submitting}
+                        title="Editar gasto"
+                      >
+                        <span className="material-symbols-rounded">edit</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="danger"
+                        onClick={() => handleCancelExpense(expense)}
+                        disabled={isCancelled || submitting}
+                        title="Cancelar gasto"
+                      >
+                        <span className="material-symbols-rounded">block</span>
+                      </button>
+                    </div>
+                  </article>
+                );
+              })
             )}
           </div>
         </section>

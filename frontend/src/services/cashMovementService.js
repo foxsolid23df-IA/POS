@@ -26,6 +26,9 @@ const normalizeExpenseCategory = (category) => {
     return EXPENSE_CATEGORIES.includes(clean) ? clean : 'Otros';
 };
 
+export const isExpenseCancelled = (movement) =>
+    movement?.expense_status === 'cancelled' || movement?.cancelled_at;
+
 const stripExpenseFields = (payload) => {
     const {
         category,
@@ -138,6 +141,96 @@ export const cashMovementService = {
         });
     },
 
+    async updateExpense(expenseId, updates = {}, staffName = 'Cajero') {
+        if (!expenseId) throw new Error('Gasto no encontrado.');
+
+        const amount = parseFloat(updates.amount);
+        if (!Number.isFinite(amount) || amount <= 0) {
+            throw new Error('El monto debe ser numerico y mayor a 0.');
+        }
+
+        const concept = String(updates.concept || '').trim();
+        if (!concept) {
+            throw new Error('Captura el concepto del gasto.');
+        }
+
+        const payload = {
+            amount,
+            concept,
+            category: normalizeExpenseCategory(updates.category),
+            reference: String(updates.reference || '').trim() || null,
+            notes: String(updates.notes || '').trim() || null,
+            edited_at: new Date().toISOString(),
+            edited_by_staff_name: staffName || 'Cajero',
+            edit_reason: String(updates.editReason || 'Correccion de gasto').trim(),
+        };
+
+        const { data, error } = await supabase
+            .from('cash_movements')
+            .update(payload)
+            .eq('id', expenseId)
+            .eq('movement_type', 'salida')
+            .eq('is_expense', true)
+            .select()
+            .single();
+
+        if (error) {
+            if (
+                isMissingColumnError(error, 'edited_at') ||
+                isMissingColumnError(error, 'edited_by_staff_name') ||
+                isMissingColumnError(error, 'edit_reason')
+            ) {
+                throw new Error('Falta aplicar la migracion de edicion y cancelacion de gastos en Supabase.');
+            }
+
+            console.error('Error actualizando gasto:', error);
+            throw error;
+        }
+
+        return data;
+    },
+
+    async cancelExpense(expenseId, reason, staffName = 'Cajero') {
+        if (!expenseId) throw new Error('Gasto no encontrado.');
+
+        const cleanReason = String(reason || '').trim();
+        if (!cleanReason) {
+            throw new Error('Captura el motivo de cancelacion.');
+        }
+
+        const payload = {
+            expense_status: 'cancelled',
+            cancelled_at: new Date().toISOString(),
+            cancelled_by_staff_name: staffName || 'Cajero',
+            cancellation_reason: cleanReason,
+        };
+
+        const { data, error } = await supabase
+            .from('cash_movements')
+            .update(payload)
+            .eq('id', expenseId)
+            .eq('movement_type', 'salida')
+            .eq('is_expense', true)
+            .select()
+            .single();
+
+        if (error) {
+            if (
+                isMissingColumnError(error, 'expense_status') ||
+                isMissingColumnError(error, 'cancelled_at') ||
+                isMissingColumnError(error, 'cancelled_by_staff_name') ||
+                isMissingColumnError(error, 'cancellation_reason')
+            ) {
+                throw new Error('Falta aplicar la migracion de edicion y cancelacion de gastos en Supabase.');
+            }
+
+            console.error('Error cancelando gasto:', error);
+            throw error;
+        }
+
+        return data;
+    },
+
     /**
      * Obtiene los movimientos de caja asociados a una sesión
      * @param {number} sessionId - ID de la sesión
@@ -183,8 +276,9 @@ export const cashMovementService = {
 
     async getExpenseSummary(params = {}) {
         const expenses = await this.getExpenses(params);
-        const total = expenses.reduce((sum, expense) => sum + (parseFloat(expense.amount) || 0), 0);
-        const byCategory = expenses.reduce((acc, expense) => {
+        const activeExpenses = expenses.filter((expense) => !isExpenseCancelled(expense));
+        const total = activeExpenses.reduce((sum, expense) => sum + (parseFloat(expense.amount) || 0), 0);
+        const byCategory = activeExpenses.reduce((acc, expense) => {
             const category = expense.category || 'Otros';
             acc[category] = (acc[category] || 0) + (parseFloat(expense.amount) || 0);
             return acc;
@@ -192,7 +286,7 @@ export const cashMovementService = {
 
         return {
             total,
-            count: expenses.length,
+            count: activeExpenses.length,
             expenses,
             byCategory
         };
@@ -210,6 +304,8 @@ export const cashMovementService = {
         let totalSalidas = 0;
 
         movements.forEach(mov => {
+            if (isExpenseCancelled(mov)) return;
+
             const amt = parseFloat(mov.amount) || 0;
             if (mov.movement_type === 'entrada') {
                 totalEntradas += amt;

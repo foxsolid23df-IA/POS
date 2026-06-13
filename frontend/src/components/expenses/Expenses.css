@@ -168,6 +168,40 @@
   font-weight: 900;
 }
 
+.expenses-editing-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 12px;
+}
+
+.expenses-editing-banner strong {
+  flex: 1;
+}
+
+.expenses-editing-banner button {
+  border: 0;
+  background: transparent;
+  color: #1d4ed8;
+  font-weight: 900;
+}
+
+.dark .expenses-editing-banner {
+  background: rgba(37, 99, 235, 0.16);
+  border-color: rgba(96, 165, 250, 0.35);
+  color: #bfdbfe;
+}
+
+.dark .expenses-editing-banner button {
+  color: #bfdbfe;
+}
+
 .expenses-form {
   display: grid;
   gap: 14px;
@@ -385,6 +419,15 @@
   border-bottom: 1px solid #e2e8f0;
 }
 
+.expense-row.cancelled {
+  opacity: 0.72;
+}
+
+.expense-row.cancelled .expense-row-title strong,
+.expense-row.cancelled .expense-row-title span {
+  text-decoration: line-through;
+}
+
 .dark .expense-row {
   border-color: #1e293b;
 }
@@ -457,6 +500,66 @@
   color: #cbd5e1;
 }
 
+.expense-row-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.expense-row-actions button {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #475569;
+}
+
+.expense-row-actions button:hover:not(:disabled) {
+  border-color: #0f172a;
+  color: #0f172a;
+}
+
+.expense-row-actions button.danger {
+  border-color: #fecdd3;
+  color: #be123c;
+}
+
+.expense-row-actions button.danger:hover:not(:disabled) {
+  border-color: #be123c;
+  background: #fff1f2;
+}
+
+.expense-row-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.dark .expense-row-actions button {
+  background: #020617;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+.dark .expense-row-actions button:hover:not(:disabled) {
+  border-color: #94a3b8;
+  color: #f8fafc;
+}
+
+.dark .expense-row-actions button.danger {
+  border-color: rgba(251, 113, 133, 0.35);
+  color: #fb7185;
+}
+
+.dark .expense-row-actions button.danger:hover:not(:disabled) {
+  border-color: #fb7185;
+  background: rgba(225, 29, 72, 0.12);
+}
+
 .expenses-empty {
   padding: 44px 16px;
   color: #64748b;
@@ -494,5 +597,13 @@
   .expenses-filters {
     grid-template-columns: 1fr;
     min-width: 0;
+  }
+
+  .expense-row {
+    align-items: flex-start;
+  }
+
+  .expense-row-actions {
+    flex-direction: column;
   }
 }

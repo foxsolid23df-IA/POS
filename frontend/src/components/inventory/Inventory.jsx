@@ -64,6 +64,7 @@ const Inventory = () => {
   const [showEntradasModal, setShowEntradasModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [productEditTab, setProductEditTab] = useState("datos");
+  const [generalProfitMargin, setGeneralProfitMargin] = useState("");
 
   // Form State
   const [formData, setFormData] = useState({
@@ -191,6 +192,38 @@ const Inventory = () => {
     }));
   };
 
+  const getPriceFromMargin = (costValue, marginValue) => {
+    const cost = toNumber(costValue);
+    const margin = parseFloat(marginValue);
+    if (cost <= 0 || !Number.isFinite(margin)) return "";
+    return roundMoney(cost * (1 + margin / 100));
+  };
+
+  useEffect(() => {
+    if (generalProfitMargin === "") return;
+
+    const margin = parseFloat(generalProfitMargin);
+    if (!Number.isFinite(margin)) return;
+
+    setFormData((prev) => {
+      const nextPiecePrice = getPriceFromMargin(prev.cost_price, margin);
+      const boxUnits = toNumber(prev.box_units);
+      const nextBoxPrice =
+        nextPiecePrice && boxUnits > 0
+          ? roundMoney(toNumber(nextPiecePrice) * boxUnits)
+          : prev.box_price;
+
+      return {
+        ...prev,
+        price: nextPiecePrice,
+        wholesale_price: nextPiecePrice,
+        special_price: nextPiecePrice,
+        special_price_2: nextPiecePrice,
+        box_price: nextBoxPrice,
+      };
+    });
+  }, [generalProfitMargin, formData.cost_price, formData.box_units]);
+
   const profitPriceRows = [
     { label: "Menudeo", field: "price", value: formData.price, costMultiplier: 1 },
     { label: "Mayoreo", field: "wholesale_price", value: formData.wholesale_price, costMultiplier: 1 },
@@ -246,10 +279,12 @@ const Inventory = () => {
     setPreviewImage(null);
     setEditingProduct(null);
     setProductEditTab("datos");
+    setGeneralProfitMargin("");
   };
 
   const handleOpenModal = (product = null) => {
     setProductEditTab("datos");
+    setGeneralProfitMargin("");
     if (product) {
       setEditingProduct(product);
       // Obtener categoría del producto o inferirla del nombre
@@ -2195,6 +2230,21 @@ const Inventory = () => {
                         <strong className="profit-sheet-value">
                           {formatLastPurchase(editingProduct)}
                         </strong>
+                      </div>
+                      <div>
+                        <span className="profit-sheet-label">Ganancia general</span>
+                        <div className="price-sheet-percent profit-sheet-general-margin">
+                          <input
+                            className="new-product-input"
+                            type="number"
+                            value={generalProfitMargin}
+                            onChange={(e) => setGeneralProfitMargin(e.target.value)}
+                            placeholder="15.00"
+                            step="0.01"
+                            disabled={toNumber(formData.cost_price) <= 0}
+                          />
+                          <span>%</span>
+                        </div>
                       </div>
                     </div>
 

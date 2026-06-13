@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nexum POS - Información Fiscal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-tertiary-fixed": "#001f24",
+            "on-error-container": "#ffdad6",
+            "on-background": "#dae2fd",
+            "surface-variant": "#2d3449",
+            "secondary-fixed-dim": "#b6c6f0",
+            "on-error": "#690005",
+            "tertiary-container": "#00c1d8",
+            "secondary-container": "#364669",
+            "surface": "#0b1326",
+            "on-secondary": "#1f3051",
+            "surface-container-high": "#222a3d",
+            "tertiary-fixed-dim": "#1edaf3",
+            "on-tertiary": "#00363e",
+            "surface-container": "#171f33",
+            "on-primary-fixed-variant": "#004f53",
+            "primary-fixed": "#6bf6ff",
+            "surface-container-highest": "#2d3449",
+            "tertiary": "#2adef8",
+            "on-surface-variant": "#bbc9ca",
+            "secondary": "#b6c6f0",
+            "background": "#0b1326",
+            "inverse-on-surface": "#283044",
+            "error-container": "#93000a",
+            "primary-container": "#00c2cb",
+            "on-primary": "#003739",
+            "on-primary-fixed": "#002022",
+            "outline-variant": "#3c494a",
+            "surface-dim": "#0b1326",
+            "on-primary-container": "#004a4e",
+            "on-surface": "#dae2fd",
+            "on-tertiary-fixed-variant": "#004e59",
+            "surface-container-low": "#131b2e",
+            "on-tertiary-container": "#004a54",
+            "tertiary-fixed": "#9fefff",
+            "surface-bright": "#31394d",
+            "primary": "#45dee7",
+            "surface-container-lowest": "#060e20",
+            "on-secondary-fixed": "#071b3b",
+            "surface-tint": "#3edae3",
+            "primary-fixed-dim": "#3edae3",
+            "inverse-surface": "#dae2fd",
+            "on-secondary-fixed-variant": "#364669",
+            "on-secondary-container": "#a4b5dd",
+            "outline": "#859394",
+            "error": "#ffb4ab",
+            "inverse-primary": "#00696e",
+            "secondary-fixed": "#d8e2ff"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "md": "24px",
+            "gutter": "24px",
+            "sm": "12px",
+            "margin-mobile": "16px",
+            "base": "8px",
+            "xs": "4px",
+            "lg": "40px",
+            "margin-desktop": "64px"
+          },
+          "fontFamily": {
+            "headline-md": ["Hanken Grotesk"],
+            "body-lg": ["Hanken Grotesk"],
+            "label-sm": ["JetBrains Mono"],
+            "headline-lg-mobile": ["Hanken Grotesk"],
+            "label-md": ["JetBrains Mono"],
+            "body-md": ["Hanken Grotesk"],
+            "headline-xl": ["Hanken Grotesk"],
+            "headline-lg": ["Hanken Grotesk"]
+          },
+          "fontSize": {
+            "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "500"}],
+            "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+            "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+            "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+            "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+            "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+            "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    body {
+      background-color: #0b1326;
+      color: #dae2fd;
+      font-family: 'Hanken Grotesk', sans-serif;
+    }
+
+    .form-input-focus:focus {
+      border-color: #45dee7;
+      box-shadow: 0 0 0 1px #45dee7;
+    }
+
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+<!-- TopNavBar (from COMPONENTS_10) -->
+<nav class="fixed top-0 left-0 right-0 z-50 border-b border-outline-variant/10 bg-surface/80 backdrop-blur-md">
+<div class="flex justify-between items-center w-full px-margin-desktop py-base max-w-7xl mx-auto">
+<div class="flex items-center gap-3">
+<img alt="Nexum POS" class="h-10 w-10 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-FvRoI1Z_JHYweQCm5tKKkeZqtfH7GJJRW2eEa20gQGuuR3qFi4G78mKeQpE8ueThNGYakg910ia9n33QWies3t9BaEttny1gTLpz1W8ldmdWWXe9YiVdR7qsaUNLQvSvrXOYvfX_5GzDsAwrfWhaJL0PNclUaEBtZbQZ0vAy3FHDhtw7YAnzPquPI4Y7Lg2T_AvC61jp5cUTgcMhPagzzULIMjW2sk2kb-YA70e2LrMAfA44OkdEdJ6JFiPVN7G8Jyr5ATnqzkE"/>
+<div class="font-headline-md text-headline-md font-bold text-on-surface">Nexum POS</div>
+</div>
+<div class="hidden md:flex items-center gap-8">
+<a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#">Inicio</a>
+<a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#">Mis Facturas</a>
+<a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#">Soporte</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">account_circle</button>
+<button class="ml-2 font-label-md text-label-md text-on-primary bg-primary px-6 py-2 rounded-lg hover:opacity-90 active:scale-95 transition-all duration-150 ease-in-out">Nueva Factura</button>
+</div>
+</div>
+</nav>
+<main class="flex-grow flex flex-col items-center justify-center pt-32 pb-20 px-margin-mobile">
+<!-- Main Content Container -->
+<div class="w-full max-w-[600px] bg-surface-container rounded-xl p-8 border border-outline-variant/20 shadow-xl">
+<!-- Header Area -->
+<header class="mb-10">
+<div class="flex items-center gap-4 mb-4">
+<div class="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container text-2xl">description</span>
+</div>
+<div>
+<h1 class="text-headline-lg font-headline-lg text-on-surface">Información Fiscal</h1>
+<p class="text-body-md font-body-md text-on-surface-variant">Complete los datos requeridos para generar su factura CFDI 4.0</p>
+</div>
+</div>
+</header>
+<!-- Form -->
+<form class="space-y-6">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- RFC -->
+<div class="flex flex-col gap-2">
+<label class="text-label-md font-label-md text-on-surface-variant" for="rfc">RFC</label>
+<input class="w-full bg-surface-container-low border border-outline-variant/40 rounded-lg px-4 py-3 text-on-surface form-input-focus outline-none transition-all" id="rfc" name="rfc" placeholder="ABCD123456EFG" required="" type="text"/>
+</div>
+<!-- Código Postal -->
+<div class="flex flex-col gap-2">
+<label class="text-label-md font-label-md text-on-surface-variant" for="cp">Código Postal</label>
+<input class="w-full bg-surface-container-low border border-outline-variant/40 rounded-lg px-4 py-3 text-on-surface form-input-focus outline-none transition-all" id="cp" maxlength="5" name="cp" placeholder="C.P. de 5 dígitos" required="" type="text"/>
+</div>
+</div>
+<!-- Razón Social -->
+<div class="flex flex-col gap-2">
+<label class="text-label-md font-label-md text-on-surface-variant" for="razon-social">Razón Social</label>
+<input class="w-full bg-surface-container-low border border-outline-variant/40 rounded-lg px-4 py-3 text-on-surface form-input-focus outline-none transition-all" id="razon-social" name="razon-social" placeholder="Nombre oficial de la empresa o persona" required="" type="text"/>
+</div>
+<!-- Régimen Fiscal -->
+<div class="flex flex-col gap-2">
+<label class="text-label-md font-label-md text-on-surface-variant" for="regimen">Régimen Fiscal</label>
+<select class="w-full bg-surface-container-low border border-outline-variant/40 rounded-lg px-4 py-3 text-on-surface form-input-focus outline-none transition-all appearance-none cursor-pointer" id="regimen" name="regimen" required="">
+<option disabled="" selected="" value="">Seleccione un régimen</option>
+<option value="601">601 - General de Ley Personas Morales</option>
+<option value="603">603 - Personas Morales con Fines no Lucrativos</option>
+<option value="605">605 - Sueldos y Salarios</option>
+<option value="612">612 - Personas Físicas con Actividades Empresariales</option>
+<option value="626">626 - Régimen Simplificado de Confianza (RESICO)</option>
+</select>
+</div>
+<!-- Security Disclaimer -->
+<div class="flex items-start gap-3 p-4 bg-surface-container-highest/30 rounded-lg border border-outline-variant/10">
+<span class="material-symbols-outlined text-primary text-xl mt-0.5">verified_user</span>
+<p class="text-label-sm font-label-sm text-on-surface-variant">
+            Su información está protegida bajo los más altos estándares de seguridad fiscal y el cumplimiento con las normativas vigentes del SAT.
+          </p>
+</div>
+<!-- Action Buttons -->
+<div class="pt-4 flex flex-col gap-4">
+<button class="w-full bg-primary hover:opacity-90 text-on-primary font-headline-md text-headline-md py-4 rounded-lg flex items-center justify-center gap-3 transition-all duration-150 ease-in-out active:scale-[0.98]" type="submit">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">receipt_long</span>
+            Generar Factura
+          </button>
+<button class="w-full text-label-md font-label-md text-primary hover:underline underline-offset-4 transition-all opacity-80 hover:opacity-100 py-2" type="button">
+            Volver a buscar ticket
+          </button>
+</div>
+</form>
+</div>
+</main>
+<!-- Footer (from COMPONENTS_10) -->
+<footer class="bg-surface-container-lowest border-t border-outline-variant/10">
+<div class="flex flex-col md:flex-row justify-between items-center w-full px-margin-desktop py-md max-w-7xl mx-auto">
+<div class="flex flex-col items-center md:items-start mb-6 md:mb-0">
+<div class="font-headline-lg text-headline-lg text-on-surface mb-2">Nexum POS</div>
+<p class="font-body-md text-body-md text-on-surface-variant">© 2024 Nexum POS. Todos los derechos reservados.</p>
+</div>
+<div class="flex gap-8">
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Privacidad</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Términos</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Contacto</a>
+</div>
+</div>
+</footer>
+<script>
+    // Simple Form Submission Simulation
+    document.querySelector('form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button[type="submit"]');
+      const originalContent = btn.innerHTML;
+      
+      btn.innerHTML = `<span class="animate-spin material-symbols-outlined">sync</span> Generando...`;
+      btn.disabled = true;
+
+      setTimeout(() => {
+        btn.innerHTML = `<span class="material-symbols-outlined">check_circle</span> Factura Generada`;
+        btn.classList.add('bg-tertiary-container', 'text-on-tertiary-container');
+        btn.classList.remove('bg-primary', 'text-on-primary');
+        console.log("Información fiscal procesada");
+      }, 1500);
+    });
+  </script>
+</body></html>

@@ -25,7 +25,7 @@ vi.mock('../cashSessionService', () => ({
   },
 }));
 
-const createQuery = (table, resolver) => {
+const createInsertQuery = (table, resolver) => {
   const state = {
     table,
     action: null,
@@ -44,6 +44,28 @@ const createQuery = (table, resolver) => {
   return query;
 };
 
+const createUpdateQuery = (result = { data: {}, error: null }) => {
+  const query = {
+    update: vi.fn(() => query),
+    eq: vi.fn(() => query),
+    select: vi.fn(() => query),
+    single: vi.fn().mockResolvedValue(result),
+  };
+  return query;
+};
+
+const createSelectQuery = (result = { data: [], error: null }) => {
+  const query = {
+    select: vi.fn(() => query),
+    eq: vi.fn(() => query),
+    order: vi.fn(() => query),
+    gte: vi.fn(() => query),
+    lte: vi.fn(() => query),
+    then: (resolve) => Promise.resolve(result).then(resolve),
+  };
+  return query;
+};
+
 describe('cashMovementService', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -52,7 +74,7 @@ describe('cashMovementService', () => {
     mocks.getTerminalId.mockReturnValue('terminal-a');
     mocks.getActiveSession.mockResolvedValue({ id: 'shared-session', staff_name: 'Ana' });
     mocks.from.mockImplementation((table) =>
-      createQuery(table, (state) => ({ data: { id: 'move-1', ...state.payload[0] }, error: null })),
+      createInsertQuery(table, (state) => ({ data: { id: 'move-1', ...state.payload[0] }, error: null })),
     );
   });
 
@@ -116,7 +138,7 @@ describe('cashMovementService', () => {
   it('registra el gasto como salida legacy si Supabase no refresco campos de gasto', async () => {
     let insertCount = 0;
     mocks.from.mockImplementation((table) =>
-      createQuery(table, (state) => {
+      createInsertQuery(table, (state) => {
         insertCount += 1;
 
         if (insertCount === 1) {
@@ -172,5 +194,81 @@ describe('cashMovementService', () => {
     await expect(
       cashMovementService.registerMovement('salida', 50, 'Pago proveedor', 'Ana'),
     ).rejects.toThrow(/No hay una sesi.n de caja activa/);
+  });
+
+  it('actualiza un gasto registrado con datos de auditoria', async () => {
+    const updateQuery = createUpdateQuery({
+      data: { id: 15, amount: 250, concept: 'Proveedor corregido' },
+      error: null,
+    });
+    mocks.from.mockReturnValue(updateQuery);
+
+    const { cashMovementService } = await import('../cashMovementService');
+    const result = await cashMovementService.updateExpense(
+      15,
+      {
+        amount: '250',
+        concept: 'Proveedor corregido',
+        category: 'Proveedor',
+        reference: 'F-123',
+        notes: 'Captura corregida',
+      },
+      'Ana',
+    );
+
+    expect(result).toEqual({ id: 15, amount: 250, concept: 'Proveedor corregido' });
+    expect(mocks.from).toHaveBeenCalledWith('cash_movements');
+    expect(updateQuery.update).toHaveBeenCalledWith(expect.objectContaining({
+      amount: 250,
+      concept: 'Proveedor corregido',
+      category: 'Proveedor',
+      reference: 'F-123',
+      notes: 'Captura corregida',
+      edited_by_staff_name: 'Ana',
+      edit_reason: 'Correccion de gasto',
+    }));
+    expect(updateQuery.eq).toHaveBeenCalledWith('id', 15);
+    expect(updateQuery.eq).toHaveBeenCalledWith('movement_type', 'salida');
+    expect(updateQuery.eq).toHaveBeenCalledWith('is_expense', true);
+  });
+
+  it('cancela un gasto sin borrarlo', async () => {
+    const updateQuery = createUpdateQuery({
+      data: { id: 20, expense_status: 'cancelled' },
+      error: null,
+    });
+    mocks.from.mockReturnValue(updateQuery);
+
+    const { cashMovementService } = await import('../cashMovementService');
+    const result = await cashMovementService.cancelExpense(20, 'Cantidad equivocada', 'Luis');
+
+    expect(result).toEqual({ id: 20, expense_status: 'cancelled' });
+    expect(updateQuery.update).toHaveBeenCalledWith(expect.objectContaining({
+      expense_status: 'cancelled',
+      cancelled_by_staff_name: 'Luis',
+      cancellation_reason: 'Cantidad equivocada',
+    }));
+    expect(updateQuery.eq).toHaveBeenCalledWith('id', 20);
+    expect(updateQuery.eq).toHaveBeenCalledWith('movement_type', 'salida');
+    expect(updateQuery.eq).toHaveBeenCalledWith('is_expense', true);
+  });
+
+  it('excluye gastos cancelados del total del resumen', async () => {
+    const selectQuery = createSelectQuery({
+      data: [
+        { id: 1, movement_type: 'salida', is_expense: true, amount: 100, category: 'Proveedor' },
+        { id: 2, movement_type: 'salida', is_expense: true, amount: 50, category: 'Flete', expense_status: 'cancelled' },
+      ],
+      error: null,
+    });
+    mocks.from.mockReturnValue(selectQuery);
+
+    const { cashMovementService } = await import('../cashMovementService');
+    const summary = await cashMovementService.getExpenseSummary();
+
+    expect(summary.total).toBe(100);
+    expect(summary.count).toBe(1);
+    expect(summary.expenses).toHaveLength(2);
+    expect(summary.byCategory).toEqual({ Proveedor: 100 });
   });
 });

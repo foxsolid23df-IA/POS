@@ -73,21 +73,38 @@ export default function BillingIssuers() {
     const file = e.target.files[0];
     if (!file) return;
 
+    setFiles((prev) => ({
+      ...prev,
+      [type]: file,
+      [`${type}Base64`]: "",
+    }));
+
     const reader = new FileReader();
     reader.onload = (event) => {
-      const base64String = event.target.result.split(",")[1];
+      const base64String = String(event.target.result || "").split(",")[1] || "";
       setFiles((prev) => ({
         ...prev,
         [type]: file,
         [`${type}Base64`]: base64String,
       }));
     };
+    reader.onerror = () => {
+      setFiles((prev) => ({
+        ...prev,
+        [type]: null,
+        [`${type}Base64`]: "",
+      }));
+      alert(`No se pudo leer el archivo .${type}. Intente cargarlo nuevamente.`);
+    };
     reader.readAsDataURL(file);
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value.toUpperCase() }));
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === "password" ? value : value.toUpperCase(),
+    }));
   };
 
   const handleDelete = async (id) => {
@@ -115,10 +132,15 @@ export default function BillingIssuers() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!files.cerBase64 || !files.keyBase64 || !formData.password) {
+    if (!files.cer || !files.key || !formData.password.trim()) {
       alert(
         "Por favor cargue los archivos .cer y .key, además de la contraseña.",
       );
+      return;
+    }
+
+    if (!files.cerBase64 || !files.keyBase64) {
+      alert("Los archivos CSD aun se estan leyendo. Espere unos segundos e intente nuevamente.");
       return;
     }
 
@@ -470,8 +492,7 @@ export default function BillingIssuers() {
                     >
                       <input
                         type="file"
-                        required
-                        accept=".cer"
+                        accept=".cer,.CER"
                         ref={cerInputRef}
                         onChange={(e) => handleFileChange(e, "cer")}
                         className="hidden"
@@ -509,8 +530,7 @@ export default function BillingIssuers() {
                     >
                       <input
                         type="file"
-                        required
-                        accept=".key"
+                        accept=".key,.KEY"
                         ref={keyInputRef}
                         onChange={(e) => handleFileChange(e, "key")}
                         className="hidden"

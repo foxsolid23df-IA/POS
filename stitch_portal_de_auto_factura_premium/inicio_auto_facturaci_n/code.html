@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Inicio - Auto-Facturación</title>
+<!-- Material Symbols for Iconography -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Hanken Grotesk for Headings/Body & JetBrains Mono for Labels -->
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "on-tertiary-fixed": "#001f24",
+                  "on-error-container": "#ffdad6",
+                  "on-background": "#dae2fd",
+                  "surface-variant": "#2d3449",
+                  "secondary-fixed-dim": "#b6c6f0",
+                  "on-error": "#690005",
+                  "tertiary-container": "#00c1d8",
+                  "secondary-container": "#364669",
+                  "surface": "#0b1326",
+                  "on-secondary": "#1f3051",
+                  "surface-container-high": "#222a3d",
+                  "tertiary-fixed-dim": "#1edaf3",
+                  "on-tertiary": "#00363e",
+                  "surface-container": "#171f33",
+                  "on-primary-fixed-variant": "#004f53",
+                  "primary-fixed": "#6bf6ff",
+                  "surface-container-highest": "#2d3449",
+                  "tertiary": "#2adef8",
+                  "on-surface-variant": "#bbc9ca",
+                  "secondary": "#b6c6f0",
+                  "background": "#0b1326",
+                  "inverse-on-surface": "#283044",
+                  "error-container": "#93000a",
+                  "primary-container": "#00c2cb",
+                  "on-primary": "#003739",
+                  "on-primary-fixed": "#002022",
+                  "outline-variant": "#3c494a",
+                  "surface-dim": "#0b1326",
+                  "on-primary-container": "#004a4e",
+                  "on-surface": "#dae2fd",
+                  "on-tertiary-fixed-variant": "#004e59",
+                  "surface-container-low": "#131b2e",
+                  "on-tertiary-container": "#004a54",
+                  "tertiary-fixed": "#9fefff",
+                  "surface-bright": "#31394d",
+                  "primary": "#45dee7",
+                  "surface-container-lowest": "#060e20",
+                  "on-secondary-fixed": "#071b3b",
+                  "surface-tint": "#3edae3",
+                  "primary-fixed-dim": "#3edae3",
+                  "inverse-surface": "#dae2fd",
+                  "on-secondary-fixed-variant": "#364669",
+                  "on-secondary-container": "#a4b5dd",
+                  "outline": "#859394",
+                  "error": "#ffb4ab",
+                  "inverse-primary": "#00696e",
+                  "secondary-fixed": "#d8e2ff"
+          },
+          "borderRadius": {
+                  "DEFAULT": "0.25rem",
+                  "lg": "0.5rem",
+                  "xl": "0.75rem",
+                  "full": "9999px"
+          },
+          "spacing": {
+                  "md": "24px",
+                  "gutter": "24px",
+                  "sm": "12px",
+                  "margin-mobile": "16px",
+                  "base": "8px",
+                  "xs": "4px",
+                  "lg": "40px",
+                  "margin-desktop": "64px"
+          },
+          "fontFamily": {
+                  "headline-md": ["Hanken Grotesk"],
+                  "body-lg": ["Hanken Grotesk"],
+                  "label-sm": ["JetBrains Mono"],
+                  "headline-lg-mobile": ["Hanken Grotesk"],
+                  "label-md": ["JetBrains Mono"],
+                  "body-md": ["Hanken Grotesk"],
+                  "headline-xl": ["Hanken Grotesk"],
+                  "headline-lg": ["Hanken Grotesk"]
+          },
+          "fontSize": {
+                  "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "500"}],
+                  "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                  "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                  "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                  "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                  "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                  "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                  "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    body {
+      background-color: #0b1326;
+      color: #dae2fd;
+      font-family: 'Hanken Grotesk', sans-serif;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .surface-card {
+      background-color: #171f33;
+      border: 1px solid #3c494a;
+    }
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+  </style>
+</head>
+<body class="flex flex-col min-h-screen">
+<!-- TopNavBar (Shared Component) -->
+<nav class="fixed top-0 left-0 right-0 z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/10">
+<div class="flex justify-between items-center w-full px-margin-desktop py-base max-w-7xl mx-auto">
+<div class="flex items-center gap-2">
+<img alt="Nexum POS Logo" class="h-10 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-FvRoI1Z_JHYweQCm5tKKkeZqtfH7GJJRW2eEa20gQGuuR3qFi4G78mKeQpE8ueThNGYakg910ia9n33QWies3t9BaEttny1gTLpz1W8ldmdWWXe9YiVdR7qsaUNLQvSvrXOYvfX_5GzDsAwrfWhaJL0PNclUaEBtZbQZ0vAy3FHDhtw7YAnzPquPI4Y7Lg2T_AvC61jp5cUTgcMhPagzzULIMjW2sk2kb-YA70e2LrMAfA44OkdEdJ6JFiPVN7G8Jyr5ATnqzkE"/>
+</div>
+<div class="hidden md:flex space-x-8 items-center">
+<a class="text-primary border-b-2 border-primary font-bold text-label-md" href="#">Inicio</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-label-md" href="#">Mis Facturas</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-label-md" href="#">Soporte</a>
+</div>
+<div class="flex items-center space-x-6">
+<div class="flex items-center space-x-4">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:bg-surface-container-high/50 p-2 rounded-full transition-all">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:bg-surface-container-high/50 p-2 rounded-full transition-all">account_circle</span>
+</div>
+<button class="bg-primary text-on-primary-container px-6 py-2 font-label-md rounded-lg active:scale-95 transition-all duration-150 ease-in-out">
+        Nueva Factura
+      </button>
+</div>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="flex-grow flex items-center justify-center pt-24 pb-16 px-4">
+<div class="w-full max-w-[540px] z-10">
+<div class="surface-card rounded-xl p-10 shadow-xl border-outline-variant/20">
+<!-- Header Section -->
+<div class="flex flex-col items-center text-center mb-10">
+<div class="w-16 h-16 mb-6 flex items-center justify-center bg-primary/10 rounded-2xl border border-primary/20">
+<span class="material-symbols-outlined text-[32px] text-primary" style="font-variation-settings: 'FILL' 1;">receipt_long</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-3">Auto-Facturación</h1>
+<p class="text-body-md font-body-md text-on-surface-variant">Ingresa los detalles de tu ticket de compra para generar tu factura fiscal de forma segura.</p>
+</div>
+<!-- Form Section -->
+<form class="space-y-6" onsubmit="event.preventDefault();">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<!-- Folio Input -->
+<div class="space-y-2">
+<label class="block text-label-md font-label-md text-on-surface-variant" for="folio">Folio del Ticket</label>
+<input class="w-full bg-surface-container-low border border-outline-variant/30 rounded-lg px-4 py-3 text-on-surface placeholder:text-outline-variant focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" id="folio" placeholder="Ej. 1254" type="text"/>
+</div>
+<!-- PIN Input -->
+<div class="space-y-2">
+<label class="block text-label-md font-label-md text-on-surface-variant" for="pin">PIN</label>
+<input class="w-full bg-surface-container-low border border-outline-variant/30 rounded-lg px-4 py-3 text-on-surface placeholder:text-outline-variant focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" id="pin" placeholder="Ej. F7D1" type="text"/>
+</div>
+</div>
+<!-- Total Input -->
+<div class="space-y-2">
+<label class="block text-label-md font-label-md text-on-surface-variant" for="total">Monto Total</label>
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant font-medium">$</span>
+<input class="w-full bg-surface-container-low border border-outline-variant/30 rounded-lg pl-9 pr-4 py-3 text-on-surface placeholder:text-outline-variant focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" id="total" placeholder="0.00" step="0.01" type="number"/>
+</div>
+</div>
+<!-- Primary Action Button -->
+<button class="w-full bg-primary hover:bg-primary-fixed-dim text-on-primary-container font-headline-md py-4 rounded-lg flex items-center justify-center space-x-3 transition-all duration-300 shadow-lg shadow-primary/10 active:scale-[0.98]">
+<span class="material-symbols-outlined text-xl">search</span>
+<span>Buscar Ticket</span>
+</button>
+</form>
+<!-- Security / Trust Indicator -->
+<div class="mt-8 pt-8 border-t border-outline-variant/10 flex flex-col items-center gap-4">
+<div class="flex items-center space-x-3 text-on-surface-variant/70">
+<span class="material-symbols-outlined text-xl text-primary">verified_user</span>
+<p class="text-label-sm font-label-sm">Conexión Segura SSL — Datos Encriptados</p>
+</div>
+<div class="flex flex-wrap justify-center gap-x-6 gap-y-2">
+<a class="text-label-sm font-label-sm text-primary hover:underline underline-offset-4 flex items-center space-x-1" href="#">
+<span class="material-symbols-outlined text-base">help</span>
+<span>Ayuda</span>
+</a>
+<a class="text-label-sm font-label-sm text-primary hover:underline underline-offset-4 flex items-center space-x-1" href="#">
+<span class="material-symbols-outlined text-base">support_agent</span>
+<span>Soporte</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer (Shared Component) -->
+<footer class="bg-surface-container-lowest border-t border-outline-variant/10">
+<div class="flex flex-col md:flex-row justify-between items-center w-full px-margin-desktop py-md max-w-7xl mx-auto">
+<div class="flex flex-col items-center md:items-start mb-6 md:mb-0">
+<div class="font-headline-lg text-headline-lg text-on-surface mb-1">Nexum POS</div>
+<p class="font-body-md text-body-md text-on-surface-variant">© 2024 Nexum POS. Todos los derechos reservados.</p>
+</div>
+<div class="flex flex-wrap justify-center gap-x-8 gap-y-2">
+<a class="text-on-surface-variant hover:text-primary transition-colors text-label-sm" href="#">Privacidad</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-label-sm" href="#">Términos</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors text-label-sm" href="#">Contacto</a>
+</div>
+</div>
+</footer>
+<script>
+  // Simple interaction for the search button
+  const searchBtn = document.querySelector('button.w-full');
+  searchBtn.addEventListener('click', (e) => {
+    const btnText = searchBtn.querySelector('span:last-child');
+    const originalText = btnText.innerText;
+    btnText.innerText = 'Buscando...';
+    searchBtn.classList.add('opacity-70', 'cursor-not-allowed');
+    searchBtn.disabled = true;
+
+    setTimeout(() => {
+      btnText.innerText = originalText;
+      searchBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+      searchBtn.disabled = false;
+    }, 1200);
+  });
+</script>
+</body></html>

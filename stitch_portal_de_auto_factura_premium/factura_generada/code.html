@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nexum POS - Factura Exitosa</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "on-tertiary-fixed": "#001f24",
+                  "on-error-container": "#ffdad6",
+                  "on-background": "#dae2fd",
+                  "surface-variant": "#2d3449",
+                  "secondary-fixed-dim": "#b6c6f0",
+                  "on-error": "#690005",
+                  "tertiary-container": "#00c1d8",
+                  "secondary-container": "#364669",
+                  "surface": "#0b1326",
+                  "on-secondary": "#1f3051",
+                  "surface-container-high": "#222a3d",
+                  "tertiary-fixed-dim": "#1edaf3",
+                  "on-tertiary": "#00363e",
+                  "surface-container": "#171f33",
+                  "on-primary-fixed-variant": "#004f53",
+                  "primary-fixed": "#6bf6ff",
+                  "surface-container-highest": "#2d3449",
+                  "tertiary": "#2adef8",
+                  "on-surface-variant": "#bbc9ca",
+                  "secondary": "#b6c6f0",
+                  "background": "#0b1326",
+                  "inverse-on-surface": "#283044",
+                  "error-container": "#93000a",
+                  "primary-container": "#00c2cb",
+                  "on-primary": "#003739",
+                  "on-primary-fixed": "#002022",
+                  "outline-variant": "#3c494a",
+                  "surface-dim": "#0b1326",
+                  "on-primary-container": "#004a4e",
+                  "on-surface": "#dae2fd",
+                  "on-tertiary-fixed-variant": "#004e59",
+                  "surface-container-low": "#131b2e",
+                  "on-tertiary-container": "#004a54",
+                  "tertiary-fixed": "#9fefff",
+                  "surface-bright": "#31394d",
+                  "primary": "#45dee7",
+                  "surface-container-lowest": "#060e20",
+                  "on-secondary-fixed": "#071b3b",
+                  "surface-tint": "#3edae3",
+                  "primary-fixed-dim": "#3edae3",
+                  "inverse-surface": "#dae2fd",
+                  "on-secondary-fixed-variant": "#364669",
+                  "on-secondary-container": "#a4b5dd",
+                  "outline": "#859394",
+                  "error": "#ffb4ab",
+                  "inverse-primary": "#00696e",
+                  "secondary-fixed": "#d8e2ff"
+          },
+          "borderRadius": {
+                  "DEFAULT": "0.25rem",
+                  "lg": "0.5rem",
+                  "xl": "0.75rem",
+                  "full": "9999px"
+          },
+          "spacing": {
+                  "md": "24px",
+                  "gutter": "24px",
+                  "sm": "12px",
+                  "margin-mobile": "16px",
+                  "base": "8px",
+                  "xs": "4px",
+                  "lg": "40px",
+                  "margin-desktop": "64px"
+          },
+          "fontFamily": {
+                  "headline-md": ["Hanken Grotesk"],
+                  "body-lg": ["Hanken Grotesk"],
+                  "label-sm": ["JetBrains Mono"],
+                  "headline-lg-mobile": ["Hanken Grotesk"],
+                  "label-md": ["JetBrains Mono"],
+                  "body-md": ["Hanken Grotesk"],
+                  "headline-xl": ["Hanken Grotesk"],
+                  "headline-lg": ["Hanken Grotesk"]
+          },
+          "fontSize": {
+                  "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "500"}],
+                  "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                  "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                  "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                  "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                  "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                  "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                  "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .brand-glow {
+      box-shadow: 0 0 40px -10px rgba(69, 222, 231, 0.2);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body-md">
+<!-- TopNavBar (Shared Component) -->
+<nav class="bg-surface/80 backdrop-blur-md fixed top-0 left-0 right-0 z-50 border-b border-outline-variant/10">
+<div class="flex justify-between items-center w-full px-margin-desktop py-base max-w-7xl mx-auto">
+<div class="flex items-center gap-4">
+<img alt="Nexum POS Logo" class="h-10 w-10 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-FvRoI1Z_JHYweQCm5tKKkeZqtfH7GJJRW2eEa20gQGuuR3qFi4G78mKeQpE8ueThNGYakg910ia9n33QWies3t9BaEttny1gTLpz1W8ldmdWWXe9YiVdR7qsaUNLQvSvrXOYvfX_5GzDsAwrfWhaJL0PNclUaEBtZbQZ0vAy3FHDhtw7YAnzPquPI4Y7Lg2T_AvC61jp5cUTgcMhPagzzULIMjW2sk2kb-YA70e2LrMAfA44OkdEdJ6JFiPVN7G8Jyr5ATnqzkE"/>
+<span class="font-headline-md text-headline-md font-bold text-on-surface">Nexum POS</span>
+</div>
+<div class="hidden md:flex gap-8 items-center">
+<a class="text-on-surface-variant hover:text-primary transition-colors font-label-md text-label-md" href="#">Inicio</a>
+<a class="text-primary border-b-2 border-primary font-bold font-label-md text-label-md" href="#">Mis Facturas</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-label-md text-label-md" href="#">Soporte</a>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:bg-surface-container-high/50 p-2 rounded-full transition-all" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:bg-surface-container-high/50 p-2 rounded-full transition-all" data-icon="account_circle">account_circle</span>
+</div>
+<button class="bg-primary text-on-primary px-6 py-2 rounded-full font-label-md text-label-md active:scale-95 duration-150 ease-in-out">Nueva Factura</button>
+</div>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="flex-grow flex items-center justify-center px-margin-mobile pt-32 pb-24 z-10">
+<div class="w-full max-w-xl bg-surface-container border border-outline-variant/20 rounded-xl p-lg flex flex-col items-center text-center brand-glow">
+<!-- Success Icon -->
+<div class="mb-md relative">
+<div class="absolute inset-0 bg-primary/20 blur-xl rounded-full"></div>
+<div class="relative w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center border-2 border-primary/30">
+<span class="material-symbols-outlined text-[64px] text-primary" style="font-variation-settings: 'FILL' 1, 'wght' 300;">check_circle</span>
+</div>
+</div>
+<!-- Success Messaging -->
+<h1 class="text-headline-xl font-headline-xl text-on-surface mb-xs">¡Factura Exitosa!</h1>
+<p class="text-body-lg font-body-lg text-on-surface-variant mb-lg">
+        Tu comprobante fiscal ha sido generado correctamente.
+      </p>
+<!-- Transaction Summary -->
+<div class="w-full grid grid-cols-2 gap-md border-y border-outline-variant/20 py-md mb-lg">
+<div class="text-left">
+<p class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">Folio</p>
+<p class="text-body-md font-bold text-primary">NXM-2024-88421</p>
+</div>
+<div class="text-right">
+<p class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">Total</p>
+<p class="text-body-md font-bold text-on-surface">$1,450.00 MXN</p>
+</div>
+</div>
+<!-- Action Layout -->
+<div class="w-full flex flex-col gap-sm mb-md">
+<div class="grid grid-cols-2 gap-sm">
+<button class="bg-primary text-on-primary py-4 rounded-lg flex items-center justify-center gap-2 font-label-md text-label-md hover:brightness-110 transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="picture_as_pdf">picture_as_pdf</span>
+            Descargar PDF
+          </button>
+<button class="border border-primary text-primary py-4 rounded-lg flex items-center justify-center gap-2 font-label-md text-label-md hover:bg-primary/5 transition-all active:scale-95">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+            Descargar XML
+          </button>
+</div>
+<button class="bg-surface-container-highest text-on-surface py-4 rounded-lg flex items-center justify-center gap-2 font-label-md text-label-md hover:bg-surface-variant transition-all active:scale-95 border border-outline-variant/20">
+<span class="material-symbols-outlined" data-icon="mail">mail</span>
+          Enviar por Email
+        </button>
+</div>
+<!-- Tertiary Action -->
+<a class="text-primary font-label-md text-label-md hover:underline underline-offset-4 flex items-center gap-2 transition-all" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="arrow_back">arrow_back</span>
+        Facturar otro ticket
+      </a>
+</div>
+</main>
+<!-- Footer (Shared Component) -->
+<footer class="bg-surface-container-lowest border-t border-outline-variant/10 mt-auto">
+<div class="flex flex-col md:flex-row justify-between items-center w-full px-margin-desktop py-md max-w-7xl mx-auto gap-4">
+<div class="flex flex-col items-center md:items-start">
+<span class="font-headline-lg text-headline-lg text-on-surface">Nexum POS</span>
+<p class="font-body-md text-body-md text-on-surface-variant opacity-70">© 2024 Nexum POS. Todos los derechos reservados.</p>
+</div>
+<div class="flex gap-x-8">
+<a class="text-on-surface-variant font-label-sm text-label-sm hover:text-primary transition-colors" href="#">Privacidad</a>
+<a class="text-on-surface-variant font-label-sm text-label-sm hover:text-primary transition-colors" href="#">Términos</a>
+<a class="text-on-surface-variant font-label-sm text-label-sm hover:text-primary transition-colors" href="#">Contacto</a>
+</div>
+</div>
+</footer>
+</body></html>

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nexum Portal - Detalles del Ticket</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed": "#001f24",
+                        "on-error-container": "#ffdad6",
+                        "on-background": "#dae2fd",
+                        "surface-variant": "#2d3449",
+                        "secondary-fixed-dim": "#b6c6f0",
+                        "on-error": "#690005",
+                        "tertiary-container": "#00c1d8",
+                        "secondary-container": "#364669",
+                        "surface": "#0b1326",
+                        "on-secondary": "#1f3051",
+                        "surface-container-high": "#222a3d",
+                        "tertiary-fixed-dim": "#1edaf3",
+                        "on-tertiary": "#00363e",
+                        "surface-container": "#171f33",
+                        "on-primary-fixed-variant": "#004f53",
+                        "primary-fixed": "#6bf6ff",
+                        "surface-container-highest": "#2d3449",
+                        "tertiary": "#2adef8",
+                        "on-surface-variant": "#bbc9ca",
+                        "secondary": "#b6c6f0",
+                        "background": "#0b1326",
+                        "inverse-on-surface": "#283044",
+                        "error-container": "#93000a",
+                        "primary-container": "#00c2cb",
+                        "on-primary": "#003739",
+                        "on-primary-fixed": "#002022",
+                        "outline-variant": "#3c494a",
+                        "surface-dim": "#0b1326",
+                        "on-primary-container": "#004a4e",
+                        "on-surface": "#dae2fd",
+                        "on-tertiary-fixed-variant": "#004e59",
+                        "surface-container-low": "#131b2e",
+                        "on-tertiary-container": "#004a54",
+                        "tertiary-fixed": "#9fefff",
+                        "surface-bright": "#31394d",
+                        "primary": "#45dee7",
+                        "surface-container-lowest": "#060e20",
+                        "on-secondary-fixed": "#071b3b",
+                        "surface-tint": "#3edae3",
+                        "primary-fixed-dim": "#3edae3",
+                        "inverse-surface": "#dae2fd",
+                        "on-secondary-fixed-variant": "#364669",
+                        "on-secondary-container": "#a4b5dd",
+                        "outline": "#859394",
+                        "error": "#ffb4ab",
+                        "inverse-primary": "#00696e",
+                        "secondary-fixed": "#d8e2ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "md": "24px",
+                        "gutter": "24px",
+                        "sm": "12px",
+                        "margin-mobile": "16px",
+                        "base": "8px",
+                        "xs": "4px",
+                        "lg": "40px",
+                        "margin-desktop": "64px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Hanken Grotesk"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "label-sm": ["JetBrains Mono"],
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "label-md": ["JetBrains Mono"],
+                        "body-md": ["Hanken Grotesk"],
+                        "headline-xl": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "500"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #131b2e;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #00c2cb;
+            border-radius: 10px;
+        }
+        .brand-glow {
+            box-shadow: 0 0 20px rgba(69, 222, 231, 0.15);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen flex flex-col selection:bg-primary/30">
+<!-- TopNavBar Component (from DataStore) -->
+<header class="bg-surface/80 backdrop-blur-md border-b border-outline-variant/10 sticky top-0 z-50">
+<div class="flex justify-between items-center w-full px-margin-desktop py-base max-w-7xl mx-auto">
+<div class="flex items-center gap-3">
+<img alt="Nexum POS Logo" class="h-8 w-8 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-FvRoI1Z_JHYweQCm5tKKkeZqtfH7GJJRW2eEa20gQGuuR3qFi4G78mKeQpE8ueThNGYakg910ia9n33QWies3t9BaEttny1gTLpz1W8ldmdWWXe9YiVdR7qsaUNLQvSvrXOYvfX_5GzDsAwrfWhaJL0PNclUaEBtZbQZ0vAy3FHDhtw7YAnzPquPI4Y7Lg2T_AvC61jp5cUTgcMhPagzzULIMjW2sk2kb-YA70e2LrMAfA44OkdEdJ6JFiPVN7G8Jyr5ATnqzkE"/>
+<div class="font-headline-md text-headline-md font-bold text-on-surface">Nexum POS</div>
+</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-on-surface-variant hover:text-primary transition-colors font-label-md" href="#">Inicio</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-label-md" href="#">Mis Facturas</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-label-md" href="#">Soporte</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container-high/50 p-2 rounded-full transition-all" data-icon="notifications">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container-high/50 p-2 rounded-full transition-all" data-icon="account_circle">account_circle</button>
+<button class="px-6 py-2 bg-primary text-on-primary font-label-md rounded-lg active:scale-95 transition-transform duration-150 ease-in-out">Nueva Factura</button>
+</div>
+</div>
+</header>
+<!-- Progress Indicator -->
+<div class="w-full bg-surface-container-low h-1.5">
+<div class="bg-primary h-full transition-all duration-700 w-[66%]"></div>
+</div>
+<main class="flex-grow flex items-center justify-center py-16 px-margin-mobile relative overflow-hidden">
+<!-- Atmospheric Background Element -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 blur-[120px] rounded-full pointer-events-none"></div>
+<div class="w-full max-w-[600px] bg-surface-container-low border border-outline-variant/30 rounded-xl p-8 relative z-10 backdrop-blur-sm">
+<!-- Stepper Indicator -->
+<div class="flex items-center gap-2 mb-8">
+<span class="text-label-md text-primary font-bold uppercase">Paso 2 de 3</span>
+<div class="flex-grow h-[1px] bg-outline-variant/30"></div>
+<span class="text-label-md text-on-surface-variant">Revisión de Ticket</span>
+</div>
+<div class="text-center mb-10">
+<div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-surface-container-highest border border-primary/20 mb-4 shadow-inner">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="receipt_long">receipt_long</span>
+</div>
+<h1 class="text-headline-md font-headline-md text-on-surface mb-2">Resumen del Ticket</h1>
+<p class="text-body-md text-on-surface-variant">Por favor verifique que la información de su compra sea correcta antes de generar el comprobante fiscal.</p>
+</div>
+<!-- Ticket Details Container -->
+<div class="space-y-6">
+<!-- Merchant Info -->
+<div class="bg-surface-container p-6 rounded-lg border-l-4 border-primary">
+<div class="flex flex-col sm:flex-row justify-between gap-4">
+<div>
+<h3 class="text-label-sm text-primary uppercase tracking-widest font-bold mb-1">Establecimiento</h3>
+<p class="text-body-lg font-bold text-on-surface">Nexum POS Station #422</p>
+<p class="text-label-md text-on-surface-variant mt-1">Av. Libertad 1200, Col. Centro, CP 06000</p>
+</div>
+<div class="sm:text-right">
+<h3 class="text-label-sm text-primary uppercase tracking-widest font-bold mb-1">Fecha y Hora</h3>
+<p class="text-body-md font-bold text-on-surface">24 Oct, 2024</p>
+<p class="text-label-md text-on-surface-variant">14:32 PM</p>
+</div>
+</div>
+</div>
+<!-- Items Simplified List -->
+<div class="space-y-4">
+<div class="flex items-center gap-2">
+<span class="text-label-sm text-on-surface-variant font-bold uppercase tracking-widest">Lista de Conceptos</span>
+<div class="h-[1px] flex-grow bg-outline-variant/20"></div>
+</div>
+<div class="space-y-3">
+<!-- Item Row -->
+<div class="flex justify-between items-center group">
+<div class="flex flex-col">
+<span class="text-body-md font-medium text-on-surface group-hover:text-primary transition-colors">Gasolina Premium</span>
+<span class="text-label-sm text-on-surface-variant">45.00 Lts × $22.40</span>
+</div>
+<span class="text-body-md font-bold text-on-surface">$1,008.00</span>
+</div>
+<!-- Item Row -->
+<div class="flex justify-between items-center group">
+<div class="flex flex-col">
+<span class="text-body-md font-medium text-on-surface group-hover:text-primary transition-colors">Aceite Sintético (1L)</span>
+<span class="text-label-sm text-on-surface-variant">1 Unidad</span>
+</div>
+<span class="text-body-md font-bold text-on-surface">$245.00</span>
+</div>
+<!-- Item Row -->
+<div class="flex justify-between items-center group">
+<div class="flex flex-col">
+<span class="text-body-md font-medium text-on-surface group-hover:text-primary transition-colors">Lavado Premium</span>
+<span class="text-label-sm text-on-surface-variant">1 Servicio</span>
+</div>
+<span class="text-body-md font-bold text-on-surface">$150.00</span>
+</div>
+</div>
+</div>
+<!-- Total Calculation -->
+<div class="border-t border-outline-variant/30 pt-6">
+<div class="flex justify-between items-center mb-2">
+<span class="text-body-md text-on-surface-variant">Subtotal</span>
+<span class="text-body-md text-on-surface font-medium">$1,183.62</span>
+</div>
+<div class="flex justify-between items-center mb-4">
+<span class="text-body-md text-on-surface-variant">IVA (16%)</span>
+<span class="text-body-md text-on-surface font-medium">$219.38</span>
+</div>
+<div class="flex justify-between items-center bg-surface-container-highest/50 p-5 rounded-xl border border-primary/10">
+<span class="text-headline-md font-bold text-primary">Total</span>
+<span class="text-headline-md font-extrabold text-primary tracking-tight">$1,403.00 MXN</span>
+</div>
+</div>
+</div>
+<!-- Action Cluster -->
+<div class="mt-10 flex flex-col sm:flex-row gap-4">
+<button class="flex-grow flex items-center justify-center gap-2 py-4 px-8 bg-primary text-on-primary font-bold rounded-lg brand-glow hover:bg-primary-container hover:text-on-primary-container transition-all transform active:scale-95">
+<span>Continuar a Facturación</span>
+<span class="material-symbols-outlined text-xl" data-icon="chevron_right">chevron_right</span>
+</button>
+<button class="flex-shrink-0 flex items-center justify-center gap-2 py-4 px-8 bg-transparent border border-outline text-on-surface-variant font-bold rounded-lg hover:border-primary hover:text-primary transition-all transform active:scale-95">
+<span class="material-symbols-outlined text-xl" data-icon="arrow_back">arrow_back</span>
+<span>Regresar</span>
+</button>
+</div>
+<!-- Security Disclaimer -->
+<div class="mt-8 flex items-center justify-center gap-2 text-label-sm text-on-surface-variant/70">
+<span class="material-symbols-outlined text-sm text-primary" data-icon="verified_user" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+<span>Transacción segura protegida por Nexum Shield</span>
+</div>
+</div>
+</main>
+<!-- Footer Component (from DataStore) -->
+<footer class="bg-surface-container-lowest border-t border-outline-variant/10 mt-auto">
+<div class="flex flex-col md:flex-row justify-between items-center w-full px-margin-desktop py-md max-w-7xl mx-auto">
+<div class="mb-4 md:mb-0">
+<div class="font-headline-lg text-headline-lg text-on-surface font-bold">Nexum POS</div>
+<p class="font-body-md text-body-md text-on-surface-variant opacity-80">© 2024 Nexum POS. Todos los derechos reservados.</p>
+</div>
+<div class="flex flex-wrap justify-center gap-x-8 gap-y-2">
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Privacidad</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Términos</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Contacto</a>
+</div>
+</div>
+</footer>
+<script>
+        // Simple navigation simulation
+        document.querySelector('button.border-outline').addEventListener('click', () => {
+            document.body.classList.add('opacity-50');
+            setTimeout(() => {
+                window.history.back();
+                document.body.classList.remove('opacity-50');
+            }, 300);
+        });
+
+        // Interactive primary action
+        const primaryBtn = document.querySelector('button.bg-primary');
+        primaryBtn.addEventListener('click', () => {
+            primaryBtn.innerHTML = '<span class="material-symbols-outlined animate-spin" data-icon="progress_activity">progress_activity</span> Procesando...';
+            setTimeout(() => {
+                alert("Redirigiendo al formulario fiscal...");
+                location.reload();
+            }, 1000);
+        });
+    </script>
+</body></html>

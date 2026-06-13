@@ -1,6 +1,7 @@
 import { supabase } from '../supabase';
 import { salesService } from './salesService';
 import { terminalService } from './terminalService';
+import { isExpenseCancelled } from './cashMovementService';
 
 const isMissingColumnError = (error, columnName) =>
     error?.code === '42703' && (!columnName || error?.message?.includes(columnName));
@@ -344,18 +345,20 @@ export const cashCutService = {
             if (movementsError) throw movementsError;
 
             const movements = movementsData || [];
+            const activeCashMovements = movements.filter((movement) => !isExpenseCancelled(movement));
             const entradasTotal = movements
                 .filter((m) => m.movement_type === 'entrada')
                 .reduce((sum, m) => sum + parseFloat(m.amount || 0), 0);
-            const salidasTotal = movements
+            const salidasTotal = activeCashMovements
                 .filter((m) => m.movement_type === 'salida')
                 .reduce((sum, m) => sum + parseFloat(m.amount || 0), 0);
             const expenses = movements
                 .filter((m) => m.movement_type === 'salida' && m.is_expense === true)
                 .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-            const expensesTotal = expenses
+            const activeExpenses = expenses.filter((expense) => !isExpenseCancelled(expense));
+            const expensesTotal = activeExpenses
                 .reduce((sum, m) => sum + parseFloat(m.amount || 0), 0);
-            const expensesByCategory = Object.values(buildExpensesByCategory(expenses))
+            const expensesByCategory = Object.values(buildExpensesByCategory(activeExpenses))
                 .sort((a, b) => b.total - a.total);
 
             return {

@@ -3432,3 +3432,23 @@ html.dark .inventory-page .empty-state-cell {
     background: #0f172a !important;
     color: #9fb0c8 !important;
 }
+
+/* ===== PROFIT AUTOMATION ===== */
+.profit-sheet-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.profit-sheet-general-margin {
+    width: 100%;
+}
+
+.profit-sheet-general-margin input {
+    min-width: 0;
+}
+
+@media (max-width: 720px) {
+    .profit-sheet-summary {
+        grid-template-columns: 1fr;
+    }
+}
