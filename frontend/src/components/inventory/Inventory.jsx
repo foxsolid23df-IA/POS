@@ -131,10 +131,27 @@ const Inventory = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+    const nextValue = type === "checkbox" ? checked : value;
+
+    if (["price", "wholesale_price", "special_price", "special_price_2"].includes(name)) {
+      setGeneralProfitMargin("");
+    }
+
+    setFormData((prev) => {
+      const nextData = {
+        ...prev,
+        [name]: nextValue,
+      };
+
+      if (name === "price" || name === "box_units") {
+        return {
+          ...nextData,
+          box_price: getBoxPriceFromPiecePrice(nextData.price, nextData.box_units),
+        };
+      }
+
+      return nextData;
+    });
   };
 
   const toNumber = (value) => {
@@ -186,10 +203,45 @@ const Inventory = () => {
         ? roundMoney(cost * (1 + margin / 100))
         : "";
 
-    setFormData((prev) => ({
-      ...prev,
-      [priceField]: nextPrice,
-    }));
+    if (priceField !== "box_price") {
+      setGeneralProfitMargin("");
+    }
+
+    setFormData((prev) => {
+      const nextData = {
+        ...prev,
+        [priceField]: nextPrice,
+      };
+
+      if (priceField === "price") {
+        return {
+          ...nextData,
+          box_price: getBoxPriceFromPiecePrice(nextPrice, prev.box_units),
+        };
+      }
+
+      return nextData;
+    });
+  };
+
+  const handleProfitPriceChange = (priceField, value) => {
+    setGeneralProfitMargin("");
+
+    setFormData((prev) => {
+      const nextData = {
+        ...prev,
+        [priceField]: value,
+      };
+
+      if (priceField === "price") {
+        return {
+          ...nextData,
+          box_price: getBoxPriceFromPiecePrice(value, prev.box_units),
+        };
+      }
+
+      return nextData;
+    });
   };
 
   const getPriceFromMargin = (costValue, marginValue) => {
@@ -2294,7 +2346,11 @@ const Inventory = () => {
                                 type="number"
                                 name={row.field}
                                 value={row.value}
-                                onChange={isBoxRow ? undefined : handleInputChange}
+                                onChange={
+                                  isBoxRow
+                                    ? undefined
+                                    : (e) => handleProfitPriceChange(row.field, e.target.value)
+                                }
                                 readOnly={isBoxRow}
                                 placeholder="0.00"
                                 step="0.01"
