@@ -77,6 +77,21 @@ describe('hardware operation services', () => {
     });
   });
 
+  it('cancelSaleWithRestock permite cancelacion rapida con defaults', async () => {
+    const { returnService } = await import('../returnService');
+
+    await returnService.cancelSaleWithRestock({
+      saleId: 51,
+    });
+
+    expect(mocks.rpc).toHaveBeenCalledWith('cancel_sale_with_restock', {
+      p_sale_id: 51,
+      p_reason: 'Cancelacion de venta',
+      p_refund_amount: null,
+      p_restock: true,
+    });
+  });
+
   it('createQuotation conserva unidad y base_quantity para ferreteria', async () => {
     const { quotationService } = await import('../quotationService');
 

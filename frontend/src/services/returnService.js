@@ -3,16 +3,16 @@ import { supabase } from '../supabase';
 export const returnService = {
   cancelSaleWithRestock: async ({
     saleId,
-    reason,
+    reason = 'Cancelacion de venta',
     refundAmount = null,
     restock = true,
   }) => {
     if (!saleId) throw new Error('Venta requerida');
-    if (!reason?.trim()) throw new Error('Motivo requerido');
+    const cleanReason = String(reason || 'Cancelacion de venta').trim() || 'Cancelacion de venta';
 
     const { data, error } = await supabase.rpc('cancel_sale_with_restock', {
       p_sale_id: saleId,
-      p_reason: reason.trim(),
+      p_reason: cleanReason,
       p_refund_amount: refundAmount === null || refundAmount === '' ? null : parseFloat(refundAmount),
       p_restock: Boolean(restock),
     });

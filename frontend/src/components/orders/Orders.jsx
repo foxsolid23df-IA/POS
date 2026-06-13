@@ -313,80 +313,23 @@ export const Orders = () => {
       return;
     }
 
+    const reason = "Cancelacion de venta";
     const defaultRefundAmount = parseFloat(order.paid_amount ?? order.total ?? 0) || 0;
-    const result = await Swal.fire({
-      title: `Cancelar / Devolver ${formatFolio(order.id)}`,
-      html: `
-        <div style="text-align:left; display:flex; flex-direction:column; gap:0.85rem;">
-          <label style="display:flex; flex-direction:column; gap:0.35rem; font-size:0.85rem; font-weight:700; color:#334155;">
-            Motivo
-            <textarea id="orders-return-reason" class="swal2-textarea" rows="3" placeholder="Ej. Cliente regreso material" style="margin:0; width:100%; min-height:5.25rem; resize:vertical;"></textarea>
-          </label>
-          <label style="display:flex; flex-direction:column; gap:0.35rem; font-size:0.85rem; font-weight:700; color:#334155;">
-            Monto a devolver / registrar en caja
-            <input id="orders-return-refund" class="swal2-input" type="number" min="0" step="0.01" value="${defaultRefundAmount}" placeholder="Total pagado" style="margin:0; width:100%;">
-          </label>
-          <label style="display:flex; align-items:center; gap:0.55rem; font-size:0.85rem; color:#334155;">
-            <input id="orders-return-restock" type="checkbox" checked style="width:1rem; height:1rem;">
-            Regresar productos al inventario
-          </label>
-        </div>
-      `,
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Registrar cancelacion",
-      cancelButtonText: "Volver",
-      confirmButtonColor: "#dc2626",
-      cancelButtonColor: "#64748b",
-      reverseButtons: true,
-      focusConfirm: false,
-      didOpen: () => {
-        document.getElementById("orders-return-reason")?.focus();
-      },
-      preConfirm: () => {
-        const reason = document.getElementById("orders-return-reason")?.value?.trim() || "";
-        const refundValue = document.getElementById("orders-return-refund")?.value ?? "";
-        const restock = Boolean(document.getElementById("orders-return-restock")?.checked);
-
-        if (!reason) {
-          Swal.showValidationMessage("Ingresa el motivo de la cancelacion/devolucion.");
-          return false;
-        }
-
-        if (refundValue !== "") {
-          const parsedRefund = Number(refundValue);
-          if (!Number.isFinite(parsedRefund) || parsedRefund < 0) {
-            Swal.showValidationMessage("Ingresa un monto valido mayor o igual a 0.");
-            return false;
-          }
-        }
-
-        return {
-          reason,
-          refundAmount: refundValue === "" ? null : Number(refundValue),
-          restock,
-        };
-      },
-    });
-
-    if (!result.isConfirmed || !result.value) return;
-
-    const { reason, refundAmount, restock } = result.value;
 
     try {
       setReturningOrderId(order.id);
       await returnService.cancelSaleWithRestock({
         saleId: order.id,
         reason,
-        refundAmount,
-        restock,
+        refundAmount: null,
+        restock: true,
       });
 
       const updatedOrder = {
         ...order,
         sale_status: "cancelled",
         cancellation_reason: reason,
-        refunded_amount: refundAmount === null ? defaultRefundAmount : refundAmount,
+        refunded_amount: defaultRefundAmount,
       };
 
       setOrders((prev) => prev.map((item) => item.id === order.id ? updatedOrder : item));
