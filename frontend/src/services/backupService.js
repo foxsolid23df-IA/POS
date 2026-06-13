@@ -38,7 +38,7 @@ export const backupService = {
   downloadInventoryCsv: async () => {
     const { data, error } = await supabase
       .from('products')
-      .select('id, barcode, box_barcode, name, stock, unit, box_units, price, box_price, sell_by_box_only, cost_price, margin_percent, supplier, updated_at')
+      .select('id, barcode, box_barcode, name, stock, unit, box_units, price, box_price, box_special_price, box_special_from_qty, sell_by_box_only, cost_price, margin_percent, supplier, updated_at')
       .order('name', { ascending: true });
 
     if (error) throw error;
@@ -53,6 +53,8 @@ export const backupService = {
       'Pzas Caja',
       'Precio',
       'Precio Caja',
+      'Precio Especial Caja',
+      'Especial Caja Desde',
       'Solo Caja',
       'Costo',
       'Margen',
@@ -70,6 +72,8 @@ export const backupService = {
       p.box_units,
       p.price,
       p.box_price,
+      p.box_special_price,
+      p.box_special_from_qty,
       p.sell_by_box_only ? 'SI' : 'NO',
       p.cost_price,
       p.margin_percent,

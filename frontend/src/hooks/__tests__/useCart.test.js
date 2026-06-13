@@ -129,6 +129,131 @@ describe('useCart Hook', () => {
     expect(result.current.total).toBe(100);
   });
 
+  it('debe aplicar precio especial de caja con minimo configurable distinto a 5', () => {
+    const { result } = renderHook(() => useCart(mockMostrarError, false));
+    const producto = {
+      ...mockProducto,
+      stock: 200,
+      box_price: 100,
+      box_special_price: 90,
+      box_special_from_qty: 8,
+    };
+
+    act(() => {
+      result.current.agregarProducto(producto, 'CAJA');
+    });
+
+    act(() => {
+      result.current.cambiarCantidad(result.current.carrito[0].id, 7);
+    });
+
+    expect(result.current.carrito[0].quantity).toBe(8);
+    expect(result.current.carrito[0].price).toBe(90);
+    expect(result.current.total).toBe(720);
+  });
+
+  it('no debe aplicar precio especial de caja si no llega al minimo', () => {
+    const { result } = renderHook(() => useCart(mockMostrarError, false));
+    const producto = {
+      ...mockProducto,
+      stock: 200,
+      box_price: 100,
+      box_special_price: 90,
+      box_special_from_qty: 8,
+    };
+
+    act(() => {
+      result.current.agregarProducto(producto, 'CAJA');
+    });
+
+    act(() => {
+      result.current.cambiarCantidad(result.current.carrito[0].id, 6);
+    });
+
+    expect(result.current.carrito[0].quantity).toBe(7);
+    expect(result.current.carrito[0].price).toBe(100);
+    expect(result.current.total).toBe(700);
+  });
+
+  it('debe regresar al precio normal de caja al bajar debajo del minimo', () => {
+    const { result } = renderHook(() => useCart(mockMostrarError, false));
+    const producto = {
+      ...mockProducto,
+      stock: 200,
+      box_price: 100,
+      box_special_price: 90,
+      box_special_from_qty: 8,
+    };
+
+    act(() => {
+      result.current.agregarProducto(producto, 'CAJA');
+    });
+
+    act(() => {
+      result.current.cambiarCantidad(result.current.carrito[0].id, 7);
+    });
+
+    act(() => {
+      result.current.cambiarCantidad(result.current.carrito[0].id, -1);
+    });
+
+    expect(result.current.carrito[0].quantity).toBe(7);
+    expect(result.current.carrito[0].price).toBe(100);
+    expect(result.current.total).toBe(700);
+  });
+
+  it('no debe aplicar precio especial de caja en ventas por pieza', () => {
+    const { result } = renderHook(() => useCart(mockMostrarError, false));
+    const producto = {
+      ...mockProducto,
+      stock: 200,
+      price: 10,
+      box_price: 100,
+      box_special_price: 90,
+      box_special_from_qty: 8,
+    };
+
+    act(() => {
+      result.current.agregarProducto(producto, 'PZA');
+    });
+
+    act(() => {
+      result.current.cambiarCantidad(result.current.carrito[0].id, 7);
+    });
+
+    expect(result.current.carrito[0].unit_sold).toBe('PZA');
+    expect(result.current.carrito[0].quantity).toBe(8);
+    expect(result.current.carrito[0].price).toBe(10);
+    expect(result.current.total).toBe(80);
+  });
+
+  it('no debe pisar precio manual de caja con el precio especial automatico', () => {
+    const { result } = renderHook(() => useCart(mockMostrarError, false));
+    const producto = {
+      ...mockProducto,
+      stock: 200,
+      box_price: 100,
+      box_special_price: 90,
+      box_special_from_qty: 8,
+    };
+
+    act(() => {
+      result.current.agregarProducto(producto, 'CAJA');
+    });
+
+    act(() => {
+      result.current.cambiarPrecio(result.current.carrito[0].id, 95);
+    });
+
+    act(() => {
+      result.current.cambiarCantidad(result.current.carrito[0].id, 7);
+    });
+
+    expect(result.current.carrito[0].quantity).toBe(8);
+    expect(result.current.carrito[0].price).toBe(95);
+    expect(result.current.total).toBe(760);
+  });
+
   it('debe agregar como CAJA un producto configurado solo para caja aunque se solicite PZA', () => {
     const { result } = renderHook(() => useCart(mockMostrarError, false));
     const productoSoloCaja = { ...mockProducto, sell_by_box_only: true };

@@ -10,6 +10,19 @@ const hasBoxConfig = (item) => getBoxUnits(item) > 0 && parseFloat(item?.box_pri
 
 const isBoxOnly = (item) => item?.sell_by_box_only === true
 
+const getAutomaticBoxPrice = (producto, quantity = 1) => {
+    const baseBoxPrice = parseFloat(producto?.box_price || 0)
+    const boxSpecialPrice = parseFloat(producto?.box_special_price || 0)
+    const boxSpecialFrom = parseFloat(producto?.box_special_from_qty || 0)
+    const qty = parseFloat(quantity || 1) || 1
+
+    if (boxSpecialFrom > 0 && qty >= boxSpecialFrom && boxSpecialPrice > 0) {
+        return boxSpecialPrice
+    }
+
+    return baseBoxPrice
+}
+
 const getAutomaticPiecePrice = (producto, quantity = 1) => {
     const basePrice = parseFloat(producto?.unit_price ?? producto?.price ?? 0)
     if (producto?.price_overridden) return basePrice
@@ -44,7 +57,7 @@ const getAutomaticItemPrice = (producto, quantity = 1, unitSold = 'PZA', customB
         const isStandardBox = hasBox && pieces === getBoxUnits(producto);
         
         if (isStandardBox) {
-            return parseFloat(producto.box_price);
+            return getAutomaticBoxPrice(producto, qty);
         }
         
         // Dynamic box price based on total pieces

@@ -73,6 +73,8 @@ const Inventory = () => {
     price: "",
     box_units: "",
     box_price: "",
+    box_special_price: "",
+    box_special_from_qty: "",
     box_barcode: "",
     sell_by_box_only: false,
     cost_price: "",
@@ -322,6 +324,8 @@ const Inventory = () => {
       price: "",
       box_units: "",
       box_price: "",
+      box_special_price: "",
+      box_special_from_qty: "",
       box_barcode: "",
       sell_by_box_only: false,
       cost_price: "",
@@ -362,6 +366,8 @@ const Inventory = () => {
         price: product.price,
         box_units: product.box_units || "",
         box_price: product.box_price || "",
+        box_special_price: product.box_special_price || "",
+        box_special_from_qty: product.box_special_from_qty || "",
         box_barcode: product.box_barcode || "",
         sell_by_box_only: product.sell_by_box_only === true,
         cost_price: product.cost_price || "",
@@ -479,11 +485,22 @@ const Inventory = () => {
 
     const boxUnits = parseInt(formData.box_units || 0);
     const boxPrice = parseFloat(formData.box_price || 0);
+    const boxSpecialPrice = parseFloat(formData.box_special_price || 0);
+    const boxSpecialFromQty = parseFloat(formData.box_special_from_qty || 0);
 
     if (formData.sell_by_box_only && (!(boxUnits > 1) || !(boxPrice > 0))) {
       Swal.fire(
         "Falta configuracion de caja",
         "Para vender solo por caja, captura piezas por caja y precio caja.",
+        "warning",
+      );
+      return;
+    }
+
+    if ((boxSpecialPrice > 0 || boxSpecialFromQty > 0) && (!(boxSpecialPrice > 0) || !(boxSpecialFromQty > 0))) {
+      Swal.fire(
+        "Falta regla de precio especial",
+        "Para precio especial por caja, captura el precio especial y desde cuantas cajas aplica.",
         "warning",
       );
       return;
@@ -497,6 +514,8 @@ const Inventory = () => {
         price: parseFloat(formData.price),
         box_units: boxUnits || null,
         box_price: boxPrice || null,
+        box_special_price: boxSpecialPrice || null,
+        box_special_from_qty: boxSpecialFromQty || null,
         box_barcode: formData.box_barcode || "",
         sell_by_box_only: formData.sell_by_box_only === true,
         cost_price: parseFloat(formData.cost_price || 0),
@@ -999,6 +1018,8 @@ const Inventory = () => {
           row["Especial desde"] = p.special_from_qty || "";
           row["Pzas por Caja"] = p.box_units || "";
           row["Precio Caja"] = p.box_price ? parseFloat(p.box_price) : "";
+          row["Precio Especial Caja"] = p.box_special_price ? parseFloat(p.box_special_price) : "";
+          row["Especial Caja desde"] = p.box_special_from_qty || "";
           row["Solo Caja"] = p.sell_by_box_only ? "SI" : "NO";
           row["Código Caja"] = p.box_barcode || "";
           row["Marca"] = p.brand || "";
@@ -2045,6 +2066,39 @@ const Inventory = () => {
                             value={formData.box_barcode}
                             onChange={handleInputChange}
                             placeholder="Código alterno para caja"
+                          />
+                        </div>
+                        <div className="col-span-12 md:col-span-4">
+                          <label className="text-xs text-gray-500 mb-1 block">
+                            Precio especial por caja
+                          </label>
+                          <div className="new-product-price-wrapper">
+                            <span className="new-product-price-symbol">$</span>
+                            <input
+                              className="new-product-input new-product-price-input"
+                              type="number"
+                              name="box_special_price"
+                              value={formData.box_special_price}
+                              onChange={handleInputChange}
+                              placeholder="0.00"
+                              step="0.01"
+                              min="0"
+                            />
+                          </div>
+                        </div>
+                        <div className="col-span-12 md:col-span-4">
+                          <label className="text-xs text-gray-500 mb-1 block">
+                            Aplica desde cajas
+                          </label>
+                          <input
+                            className="new-product-input"
+                            type="number"
+                            name="box_special_from_qty"
+                            value={formData.box_special_from_qty}
+                            onChange={handleInputChange}
+                            placeholder="Ej. 8"
+                            min="0"
+                            step="1"
                           />
                         </div>
                       </div>

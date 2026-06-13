@@ -98,6 +98,22 @@ const COLUMN_ALIASES = {
     "Box Price",
     "box_price",
   ],
+  box_special_price: [
+    "Precio Especial Caja",
+    "Precio caja especial",
+    "Precio especial por caja",
+    "Caja Especial",
+    "Box Special Price",
+    "box_special_price",
+  ],
+  box_special_from_qty: [
+    "Especial Caja desde",
+    "Caja especial desde",
+    "Aplica desde cajas",
+    "Desde cajas",
+    "Box Special From",
+    "box_special_from_qty",
+  ],
   box_barcode: [
     "Codigo Caja",
     "Código Caja",
@@ -362,6 +378,8 @@ const toSianInventoryRow = (product, { category = "General", sku } = {}) => ({
   precio_sugerido: toNumber(product.suggested_price, 0),
   mayoreo_desde: toNumber(product.wholesale_from_qty, 0) || "",
   especial_desde: toNumber(product.special_from_qty, 0) || "",
+  precio_caja_especial: toNumber(product.box_special_price, 0) || "",
+  caja_especial_desde: toNumber(product.box_special_from_qty, 0) || "",
   umay: product.wholesale_unit || 1,
   existencia: toInteger(product.stock, 0),
   suc1: toInteger(product.stock, 0),
@@ -387,6 +405,8 @@ const mapRowToProduct = (row) => {
   const wholesaleVal = get("wholesale_price");
   const boxUnitsVal = get("box_units");
   const boxPriceVal = get("box_price");
+  const boxSpecialPriceVal = get("box_special_price");
+  const boxSpecialFromQtyVal = get("box_special_from_qty");
   const boxBarcodeVal = get("box_barcode");
   const sellByBoxOnlyVal = get("sell_by_box_only");
   const stockVal = get("stock");
@@ -428,6 +448,8 @@ const mapRowToProduct = (row) => {
     wholesale_price: wholesalePrice,
     box_units: fallbackBoxUnits,
     box_price: boxPrice,
+    box_special_price: toNumber(boxSpecialPriceVal, 0) || null,
+    box_special_from_qty: toNumber(boxSpecialFromQtyVal, 0) || null,
     box_barcode: boxBarcode,
     sell_by_box_only: toBoolean(sellByBoxOnlyVal),
     stock: getStockValue(branchStockVal, stockVal),
@@ -810,6 +832,8 @@ const BulkImportModal = ({
                       <th>Mayoreo</th>
                       <th>Pzas/Caja</th>
                       <th>Caja</th>
+                      <th>Caja Esp.</th>
+                      <th>Desde Cajas</th>
                       <th>Solo Caja</th>
                       <th>P.Esp</th>
                       <th>P.Esp2</th>
@@ -838,6 +862,12 @@ const BulkImportModal = ({
                             ? `$${Number(product.box_price || 0).toFixed(2)}`
                             : "-"}
                         </td>
+                        <td>
+                          {product.box_special_price
+                            ? `$${Number(product.box_special_price || 0).toFixed(2)}`
+                            : "-"}
+                        </td>
+                        <td>{product.box_special_from_qty || "-"}</td>
                         <td>{product.sell_by_box_only ? "SI" : "NO"}</td>
                         <td>${Number(product.special_price || 0).toFixed(2)}</td>
                         <td>${Number(product.special_price_2 || 0).toFixed(2)}</td>
