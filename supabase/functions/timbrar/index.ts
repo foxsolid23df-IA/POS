@@ -12,7 +12,7 @@ const jsonResponse = (body: Record<string, unknown>, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-const errorResponse = (message: string, status = 400, details?: unknown) =>
+const errorResponse = (message: string, status = 200, details?: unknown) =>
   jsonResponse({ success: false, error: message, message, details }, status);
 
 const flattenFacturamaModelState = (modelState: unknown): string[] => {
@@ -99,17 +99,17 @@ serve(async (req) => {
     if (!issuer) {
       // Comportamiento de AutoFactura Clásico: Resolviendo por terminal
       if (!sale.terminal_id) {
-        return new Response(JSON.stringify({ success: false, message: "La venta no está asignada a ninguna terminal ni a un emisor específico." }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return errorResponse("La venta no está asignada a ninguna terminal ni a un emisor específico.");
       }
 
       const { data: terminal } = await supabase.from('terminals').select('billing_portal_id').eq('id', sale.terminal_id).single();
       if (!terminal || !terminal.billing_portal_id) {
-        return new Response(JSON.stringify({ success: false, message: "El comercio no tiene configurado un portal de facturación y no se seleccionó el emisor manualmente en caja." }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return errorResponse("El comercio no tiene configurado un portal de facturación y no se seleccionó el emisor manualmente en caja.");
       }
 
       const { data: fetchedPortal } = await supabase.from('billing_portals').select('*, billing_issuers(*)').eq('id', terminal.billing_portal_id).single();
       if (!fetchedPortal || !fetchedPortal.billing_issuers) {
-        return new Response(JSON.stringify({ success: false, message: "No hay un emisor fiscal vinculado a este portal." }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return errorResponse("No hay un emisor fiscal vinculado a este portal.");
       }
       portal = fetchedPortal;
       issuer = portal.billing_issuers;
@@ -125,13 +125,13 @@ serve(async (req) => {
     if (portal) {
       if (portal.limite_tipo === 'mes_consumo') {
         if (saleDate.getMonth() !== now.getMonth() || saleDate.getFullYear() !== now.getFullYear()) {
-           return new Response(JSON.stringify({ success: false, message: "Su ticket ha expirado, debe ser facturado en el mismo mes de su consumo." }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+           return errorResponse("Su ticket ha expirado, debe ser facturado en el mismo mes de su consumo.");
         }
       } else if (portal.limite_tipo === 'dias' && portal.limite_dias > 0) {
         const diffTime = Math.abs(now.getTime() - saleDate.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         if (diffDays > portal.limite_dias) {
-           return new Response(JSON.stringify({ success: false, message: `Su ticket ha expirado. El comercio permite facturar máximo ${portal.limite_dias} días después del consumo.` }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+           return errorResponse(`Su ticket ha expirado. El comercio permite facturar máximo ${portal.limite_dias} días después del consumo.`);
         }
       }
     }

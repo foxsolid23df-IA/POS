@@ -248,12 +248,17 @@ export default function App() {
     if (!rfc || rfc.length < 12) return;
     setLoading(true);
     try {
-      const { data } = await supabase
+      let query = supabase
         .from('clients')
         .select('*')
         .eq('rfc', rfc.toUpperCase())
-        .limit(1)
-        .maybeSingle();
+        .limit(1);
+
+      if (ticketData?.user_id) {
+        query = query.eq('user_id', ticketData.user_id);
+      }
+
+      const { data } = await query.maybeSingle();
       
       if (data) {
         setRazonSocial(data.razon_social);
@@ -276,32 +281,38 @@ export default function App() {
 
     try {
       // 1. Guardar o actualizar cliente
-      const { data: existingClient, error: selectErr } = await supabase
-        .from('clients')
-        .select('id')
-        .eq('rfc', rfc.toUpperCase())
-        .limit(1)
-        .maybeSingle();
+      if (ticketData?.user_id) {
+        const { data: existingClient, error: selectErr } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('rfc', rfc.toUpperCase())
+          .eq('user_id', ticketData.user_id)
+          .limit(1)
+          .maybeSingle();
 
-      if (selectErr && selectErr.code !== 'PGRST116') {
-        console.warn("Error consultando cliente", selectErr);
-      }
+        if (selectErr && selectErr.code !== 'PGRST116') {
+          console.warn("Error consultando cliente", selectErr);
+        }
 
-      const clientData = {
-        rfc: rfc.toUpperCase(), 
-        razon_social: razonSocial,
-        regimen_fiscal: regimenFiscal,
-        uso_cfdi: usoCfdi,
-        codigo_postal: codigoPostal,
-        email: email
-      };
+        const clientData = {
+          user_id: ticketData.user_id,
+          rfc: rfc.toUpperCase(), 
+          razon_social: razonSocial,
+          regimen_fiscal: regimenFiscal,
+          uso_cfdi: usoCfdi,
+          codigo_postal: codigoPostal,
+          email: email
+        };
 
-      if (existingClient) {
-        const { error: updateErr } = await supabase.from('clients').update(clientData).eq('id', existingClient.id);
-        if (updateErr) console.warn("Error actualizando cliente", updateErr);
+        if (existingClient) {
+          const { error: updateErr } = await supabase.from('clients').update(clientData).eq('id', existingClient.id);
+          if (updateErr) console.warn("Error actualizando cliente", updateErr);
+        } else {
+          const { error: insertErr } = await supabase.from('clients').insert([clientData]);
+          if (insertErr) console.warn("Error guardando nuevo cliente", insertErr);
+        }
       } else {
-        const { error: insertErr } = await supabase.from('clients').insert([clientData]);
-        if (insertErr) console.warn("Error guardando nuevo cliente", insertErr);
+        console.warn("No se guardó historial del cliente porque el ticket no trae user_id.");
       }
 
       // 2. Invocar la Edge Function 'timbrar'
