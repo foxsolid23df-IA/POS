@@ -1,11 +1,52 @@
 import { useState } from 'react';
 import { supabase } from './supabase';
 import Swal from 'sweetalert2';
-import logo from './assets/logo.png';
 
 // Configuración de Marca y Textos por defecto
 const APP_NAME = import.meta.env.VITE_APP_NAME || 'NexumPOS';
 const APP_TITLE = import.meta.env.VITE_APP_TITLE || 'Auto-Facturación | NexumPos';
+
+const parseTicketAmount = (value) => {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : NaN;
+
+  const cleaned = String(value ?? '')
+    .trim()
+    .replace(/\s+/g, '')
+    .replace(/[^\d,.-]/g, '');
+
+  if (!cleaned) return NaN;
+
+  const lastComma = cleaned.lastIndexOf(',');
+  const lastDot = cleaned.lastIndexOf('.');
+  let normalized = cleaned;
+
+  if (lastComma >= 0 && lastDot >= 0) {
+    const decimalSep = lastComma > lastDot ? ',' : '.';
+    const thousandsSep = decimalSep === ',' ? '.' : ',';
+    normalized = cleaned.split(thousandsSep).join('').replace(decimalSep, '.');
+  } else {
+    const sep = lastComma >= 0 ? ',' : lastDot >= 0 ? '.' : '';
+
+    if (sep) {
+      const parts = cleaned.split(sep);
+      const decimalPart = parts[parts.length - 1];
+
+      if (parts.length > 2) {
+        const integerPart = parts.slice(0, -1).join('');
+        normalized = decimalPart.length > 0 && decimalPart.length <= 2
+          ? `${integerPart}.${decimalPart}`
+          : parts.join('');
+      } else if (decimalPart.length === 3 && parts[0].length <= 3) {
+        normalized = parts.join('');
+      } else {
+        normalized = cleaned.replace(sep, '.');
+      }
+    }
+  }
+
+  const amount = Number(normalized);
+  return Number.isFinite(amount) ? amount : NaN;
+};
 
 export default function App() {
   const [step, setStep] = useState(1);
@@ -110,8 +151,16 @@ export default function App() {
       if (!data) throw new Error("No se encontró ningún ticket devuelto por el servidor.");
 
       // Validar monto total ingresado vs registrado
-      const dbTotal = parseFloat(data.total);
-      const inputTotal = parseFloat(totalValue);
+      const dbTotal = parseTicketAmount(data.total);
+      const inputTotal = parseTicketAmount(totalValue);
+
+      if (!Number.isFinite(inputTotal)) {
+        throw new Error('Ingresa el monto total como aparece en el ticket, por ejemplo 4.044,96 o 4044.96.');
+      }
+
+      if (!Number.isFinite(dbTotal)) {
+        throw new Error('No se pudo validar el monto registrado del ticket.');
+      }
       
       if (Math.abs(dbTotal - inputTotal) > 0.01) {
         throw new Error('El monto ingresado no coincide con el registrado en el ticket.');
@@ -455,7 +504,7 @@ export default function App() {
   const showHelpAlert = () => {
     Swal.fire({
       title: 'Centro de Ayuda',
-      html: '<div class="text-left"><p class="mb-2">1. <b>Folio:</b> Se encuentra en la parte media de su recibo.</p><p class="mb-2">2. <b>PIN:</b> Código de 4 letras/dígitos impreso en el ticket.</p><p>3. <b>Monto:</b> El valor exacto pagado en caja.</p></div>',
+      html: '<div class="text-left"><p class="mb-2">1. <b>Folio:</b> Se encuentra en la parte media de su recibo.</p><p class="mb-2">2. <b>PIN:</b> Código de 4 letras/dígitos impreso en el ticket.</p><p>3. <b>Monto:</b> El valor exacto pagado en caja. Puedes escribirlo como aparece en el ticket, por ejemplo $ 4.044,96.</p></div>',
       icon: 'info',
       confirmButtonText: 'Entendido',
       confirmButtonColor: '#00c2cb',
@@ -582,12 +631,12 @@ export default function App() {
                   <input 
                     required 
                     id="total" 
-                    type="number" 
-                    step="0.01" 
+                    type="text" 
+                    inputMode="decimal"
                     value={totalValue} 
                     onChange={(e) => setTotalValue(e.target.value)} 
                     className="w-full bg-surface-container-low border border-outline-variant/30 rounded-lg pl-9 pr-4 py-3 text-on-surface placeholder:text-outline-variant/40 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
-                    placeholder="0.00" 
+                    placeholder="Ej. 4.044,96" 
                   />
                 </div>
               </div>

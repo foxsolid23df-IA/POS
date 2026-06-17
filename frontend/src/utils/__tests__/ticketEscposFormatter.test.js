@@ -93,7 +93,7 @@ describe("ticketEscposFormatter", () => {
     expect(payload.byteLength).toBe(bytes.length);
   });
 
-  it("agrega comando QR nativo cuando la venta tiene PIN de facturacion", () => {
+  it("agrega QR como imagen raster cuando la venta tiene PIN de facturacion", () => {
     const bytes = Array.from(formatSaleToEscposBytes(
       {
         id: 127,
@@ -106,11 +106,11 @@ describe("ticketEscposFormatter", () => {
       { cut: false },
     ));
 
-    const qrPrintCommand = [0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x51, 0x30];
-    const hasQrPrintCommand = bytes.some((_, index) =>
-      qrPrintCommand.every((value, offset) => bytes[index + offset] === value)
+    const rasterImageCommand = [0x1d, 0x76, 0x30, 0x00];
+    const hasRasterImageCommand = bytes.some((_, index) =>
+      rasterImageCommand.every((value, offset) => bytes[index + offset] === value)
     );
 
-    expect(hasQrPrintCommand).toBe(true);
+    expect(hasRasterImageCommand).toBe(true);
   });
 });

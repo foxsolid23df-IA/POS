@@ -1,5 +1,5 @@
 import { formatearDinero } from "./formatters";
-import { buildBillingPortalUrl, normalizeBillingPortalUrl } from "./qrCode";
+import { buildBillingPortalUrl, createQrMatrix, normalizeBillingPortalUrl } from "./qrCode";
 
 const ESC = 0x1b;
 const GS = 0x1d;
@@ -243,20 +243,46 @@ const pushRaw = (bytes, values) => {
 };
 
 const pushEscposQr = (bytes, value, moduleSize = 5) => {
-  const data = Array.from(new TextEncoder().encode(String(value ?? "")));
-  if (data.length === 0) return;
+  if (!String(value ?? "").trim()) return;
 
-  const size = Math.max(3, Math.min(8, moduleSize));
-  const storeLength = data.length + 3;
-  const pL = storeLength & 0xff;
-  const pH = (storeLength >> 8) & 0xff;
+  const scale = Math.max(3, Math.min(8, moduleSize));
+  const matrix = createQrMatrix(value, { quietZone: 4, errorCorrectionLevel: "M" });
+  const widthDots = matrix.totalModules * scale;
+  const heightDots = widthDots;
+  const widthBytes = Math.ceil(widthDots / 8);
+  const data = [];
+
+  for (let y = 0; y < heightDots; y += 1) {
+    const moduleRow = Math.floor(y / scale);
+
+    for (let byteIndex = 0; byteIndex < widthBytes; byteIndex += 1) {
+      let byte = 0;
+
+      for (let bit = 0; bit < 8; bit += 1) {
+        const x = byteIndex * 8 + bit;
+        const moduleCol = Math.floor(x / scale);
+
+        if (x < widthDots && matrix.isDark(moduleRow, moduleCol)) {
+          byte |= 0x80 >> bit;
+        }
+      }
+
+      data.push(byte);
+    }
+  }
 
   pushRaw(bytes, [ESC, 0x61, 0x01]); // center
-  pushRaw(bytes, [GS, 0x28, 0x6b, 0x04, 0x00, 0x31, 0x41, 0x32, 0x00]);
-  pushRaw(bytes, [GS, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x43, size]);
-  pushRaw(bytes, [GS, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x45, 0x30]);
-  pushRaw(bytes, [GS, 0x28, 0x6b, pL, pH, 0x31, 0x50, 0x30, ...data]);
-  pushRaw(bytes, [GS, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x51, 0x30]);
+  pushRaw(bytes, [
+    GS,
+    0x76,
+    0x30,
+    0x00,
+    widthBytes & 0xff,
+    (widthBytes >> 8) & 0xff,
+    heightDots & 0xff,
+    (heightDots >> 8) & 0xff,
+    ...data,
+  ]);
   pushRaw(bytes, [ESC, 0x61, 0x00]); // left
   pushLine(bytes);
 };
