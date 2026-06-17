@@ -97,22 +97,76 @@ serve(async (req) => {
     }
 
     if (!issuer) {
-      // Comportamiento de AutoFactura Clásico: Resolviendo por terminal
-      if (!sale.terminal_id) {
-        return errorResponse("La venta no está asignada a ninguna terminal ni a un emisor específico.");
+      // 1) Resolver por portal asignado a la terminal, si existe.
+      let fetchedPortal: any = null;
+
+      if (sale.terminal_id) {
+        const { data: terminal } = await supabase
+          .from('terminals')
+          .select('billing_portal_id')
+          .eq('id', sale.terminal_id)
+          .maybeSingle();
+
+        if (terminal?.billing_portal_id) {
+          const { data: terminalPortal } = await supabase
+            .from('billing_portals')
+            .select('*, billing_issuers(*)')
+            .eq('id', terminal.billing_portal_id)
+            .maybeSingle();
+
+          if (terminalPortal?.billing_issuers) {
+            fetchedPortal = terminalPortal;
+          }
+        }
       }
 
-      const { data: terminal } = await supabase.from('terminals').select('billing_portal_id').eq('id', sale.terminal_id).single();
-      if (!terminal || !terminal.billing_portal_id) {
-        return errorResponse("El comercio no tiene configurado un portal de facturación y no se seleccionó el emisor manualmente en caja.");
+      // 2) Fallback: usar el portal del comercio dueño del ticket.
+      if (!fetchedPortal) {
+        const { data: userPortal } = await supabase
+          .from('billing_portals')
+          .select('*, billing_issuers(*)')
+          .eq('user_id', sale.user_id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (userPortal?.billing_issuers) {
+          fetchedPortal = userPortal;
+        }
       }
 
-      const { data: fetchedPortal } = await supabase.from('billing_portals').select('*, billing_issuers(*)').eq('id', terminal.billing_portal_id).single();
-      if (!fetchedPortal || !fetchedPortal.billing_issuers) {
-        return errorResponse("No hay un emisor fiscal vinculado a este portal.");
+      if (fetchedPortal?.billing_issuers) {
+        portal = fetchedPortal;
+        issuer = fetchedPortal.billing_issuers;
       }
-      portal = fetchedPortal;
-      issuer = portal.billing_issuers;
+    }
+
+    if (!issuer) {
+      // 3) Ultimo fallback: usar cualquier emisor fiscal del comercio.
+      const { data: fallbackIssuer } = await supabase
+        .from('billing_issuers')
+        .select('*')
+        .eq('user_id', sale.user_id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (fallbackIssuer) {
+        issuer = fallbackIssuer;
+
+        const { data: fallbackPortal } = await supabase
+          .from('billing_portals')
+          .select('*')
+          .eq('billing_issuer_id', fallbackIssuer.id)
+          .limit(1)
+          .maybeSingle();
+
+        if (fallbackPortal) portal = fallbackPortal;
+      }
+    }
+
+    if (!issuer) {
+      return errorResponse("El comercio no tiene un emisor fiscal configurado. Registra un emisor en Configuración > Facturas.");
     }
 
     if (!issuer || !issuer.rfc || !issuer.razon_social || !issuer.regimen_fiscal || !issuer.codigo_postal) {
