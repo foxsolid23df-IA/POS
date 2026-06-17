@@ -1,4 +1,5 @@
 import { formatearDinero } from "./formatters";
+import { generateQrDataUrl } from "./qrCode";
 
 const defaults = {
   business_name: "TICKET DE VENTA",
@@ -319,17 +320,16 @@ export const generateTicketHtml = (sale, settings, user, options = {}) => {
     const billingUrl = ((import.meta.env.VITE_BILLING_PORTAL_URL || "https://pos-autofactura.vercel.app").replace(/\/$/, ""));
     const qrData = `${billingUrl}/?folio=${sale.id}&pin=${sale.pin_facturacion}`;
     const displayUrl = billingUrl.replace(/^https?:\/\//, "");
-    const qrDataUrl = safeImageSrc(options.billingQrDataUrl || sale.billing_qr_data_url || "", { allowRemote: false });
+    const qrDataUrl = safeImageSrc(
+      options.billingQrDataUrl || sale.billing_qr_data_url || generateQrDataUrl(qrData),
+      { allowRemote: false }
+    );
 
     html += `<div class="tv-divider"></div>`;
     html += `<div class="tv-billing-box">`;
     html += `<div class="tv-billing-title">¿FACTURAR ESTA COMPRA?</div>`;
-    if (fastPrint) {
-      if (qrDataUrl) {
-        html += `<div class="tv-billing-qr-wrap"><img src="${qrDataUrl}" width="${qrPx}" height="${qrPx}" alt="QR" class="tv-billing-qr"></div>`;
-      }
-    } else {
-      html += `<div class="tv-billing-qr-wrap"><img src="https://api.qrserver.com/v1/create-qr-code/?size=${qrPx}x${qrPx}&data=${encodeURIComponent(qrData)}" alt="QR" class="tv-billing-qr"></div>`;
+    if (qrDataUrl) {
+      html += `<div class="tv-billing-qr-wrap"><img src="${qrDataUrl}" width="${qrPx}" height="${qrPx}" alt="QR" class="tv-billing-qr"></div>`;
     }
     html += `<div class="tv-billing-row"><span class="tv-billing-lbl">FOLIO</span><span class="tv-billing-val">${escapeHtml(folio)}</span></div>`;
     html += `<div class="tv-billing-row"><span class="tv-billing-lbl">PIN</span><span class="tv-billing-val">${escapeHtml(sale.pin_facturacion)}</span></div>`;

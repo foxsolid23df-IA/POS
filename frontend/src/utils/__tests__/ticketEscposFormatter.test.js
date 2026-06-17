@@ -92,4 +92,25 @@ describe("ticketEscposFormatter", () => {
     expect(payload.rawBase64).toMatch(/^[A-Za-z0-9+/=]+$/);
     expect(payload.byteLength).toBe(bytes.length);
   });
+
+  it("agrega comando QR nativo cuando la venta tiene PIN de facturacion", () => {
+    const bytes = Array.from(formatSaleToEscposBytes(
+      {
+        id: 127,
+        total: 10,
+        pin_facturacion: "A0E39F",
+        items: [{ quantity: 1, name: "Producto", price: 10 }],
+      },
+      settings,
+      { full_name: "Caja 1" },
+      { cut: false },
+    ));
+
+    const qrPrintCommand = [0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x51, 0x30];
+    const hasQrPrintCommand = bytes.some((_, index) =>
+      qrPrintCommand.every((value, offset) => bytes[index + offset] === value)
+    );
+
+    expect(hasQrPrintCommand).toBe(true);
+  });
 });

@@ -144,6 +144,14 @@ const leftRight = (left, right, columns) => {
 
 const separator = (columns) => "-".repeat(columns);
 
+const getBillingUrl = () =>
+  ((import.meta.env.VITE_BILLING_PORTAL_URL || "https://pos-autofactura.vercel.app").replace(/\/$/, ""));
+
+const getBillingQrData = (sale, folio) => {
+  const billingUrl = getBillingUrl();
+  return `${billingUrl}/?folio=${folio}&pin=${sale.pin_facturacion}`;
+};
+
 export const formatSaleToEscposText = (sale, settings, user, options = {}) => {
   const s = getSettings(settings);
   const columns = getColumns(s);
@@ -203,7 +211,7 @@ export const formatSaleToEscposText = (sale, settings, user, options = {}) => {
   }
 
   if (sale?.pin_facturacion && s.show_billing_section !== false) {
-    const billingUrl = ((import.meta.env.VITE_BILLING_PORTAL_URL || "https://pos-autofactura.vercel.app").replace(/\/$/, ""));
+    const billingUrl = getBillingUrl();
     lines.push(separator(columns));
     lines.push(center("FACTURACION", columns));
     lines.push(leftRight("FOLIO", folio, columns));
@@ -229,14 +237,43 @@ const pushLine = (bytes, text = "") => {
   bytes.push(0x0a);
 };
 
+const pushRaw = (bytes, values) => {
+  values.forEach((value) => bytes.push(value & 0xff));
+};
+
+const pushEscposQr = (bytes, value, moduleSize = 5) => {
+  const data = Array.from(new TextEncoder().encode(String(value ?? "")));
+  if (data.length === 0) return;
+
+  const size = Math.max(3, Math.min(8, moduleSize));
+  const storeLength = data.length + 3;
+  const pL = storeLength & 0xff;
+  const pH = (storeLength >> 8) & 0xff;
+
+  pushRaw(bytes, [ESC, 0x61, 0x01]); // center
+  pushRaw(bytes, [GS, 0x28, 0x6b, 0x04, 0x00, 0x31, 0x41, 0x32, 0x00]);
+  pushRaw(bytes, [GS, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x43, size]);
+  pushRaw(bytes, [GS, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x45, 0x30]);
+  pushRaw(bytes, [GS, 0x28, 0x6b, pL, pH, 0x31, 0x50, 0x30, ...data]);
+  pushRaw(bytes, [GS, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x51, 0x30]);
+  pushRaw(bytes, [ESC, 0x61, 0x00]); // left
+  pushLine(bytes);
+};
+
 export const formatSaleToEscposBytes = (sale, settings, user, options = {}) => {
+  const s = getSettings(settings);
   const bytes = [];
   bytes.push(ESC, 0x40); // Initialize
   bytes.push(ESC, 0x74, 0x02); // PC850 where supported
   bytes.push(ESC, 0x61, 0x00); // Left align
 
-  const text = formatSaleToEscposText(sale, settings, user, options);
+  const text = formatSaleToEscposText(sale, s, user, options);
   text.split("\n").forEach((line) => pushLine(bytes, line));
+
+  if (sale?.pin_facturacion && s.show_billing_section !== false) {
+    const folio = sale?.id?.toString() || options.transactionId?.toString() || "N/A";
+    pushEscposQr(bytes, getBillingQrData(sale, folio), s.paper_width === "80mm" ? 6 : 5);
+  }
 
   if (options.cut !== false) {
     bytes.push(GS, 0x56, 0x00);

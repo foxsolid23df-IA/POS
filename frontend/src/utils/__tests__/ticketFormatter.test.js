@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { generateTicketHtml } from '../ticketFormatter';
+import { buildQrPayload, generateQrSvg } from '../qrCode';
 
 describe('ticketFormatter', () => {
   it('escapa datos dinámicos antes de generar HTML de ticket', () => {
@@ -50,6 +51,37 @@ describe('ticketFormatter', () => {
 
     expect(html).not.toContain('https://example.com/logo.png');
     expect(html).not.toContain('api.qrserver.com');
+    expect(html).toContain('data:image/svg+xml');
     expect(html).toContain('1234');
+  });
+
+  it('genera QR embebido sin depender de servicios externos', () => {
+    const html = generateTicketHtml(
+      {
+        id: '100',
+        total: 25,
+        pin_facturacion: 'A0E39F',
+        items: [{ quantity: 1, name: 'Producto', price: 25 }]
+      },
+      {
+        business_name: 'Tienda',
+        show_billing_section: true
+      },
+      { full_name: 'Cajero' }
+    );
+
+    expect(html).toContain('data:image/svg+xml');
+    expect(html).not.toContain('api.qrserver.com');
+    expect(html).toContain('A0E39F');
+  });
+
+  it('construye un QR version 5-L completo para el portal', () => {
+    const value = 'https://pos-autofactura.vercel.app/?folio=2635&pin=A0E39F';
+    const payload = buildQrPayload(value);
+    const svg = generateQrSvg(value);
+
+    expect(payload).toHaveLength(134);
+    expect(svg).toContain('viewBox="0 0 45 45"');
+    expect(svg).toContain('<rect');
   });
 });
