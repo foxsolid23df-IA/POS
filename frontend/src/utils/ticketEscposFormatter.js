@@ -1,4 +1,5 @@
 import { formatearDinero } from "./formatters";
+import { buildBillingPortalUrl, normalizeBillingPortalUrl } from "./qrCode";
 
 const ESC = 0x1b;
 const GS = 0x1d;
@@ -145,11 +146,11 @@ const leftRight = (left, right, columns) => {
 const separator = (columns) => "-".repeat(columns);
 
 const getBillingUrl = () =>
-  ((import.meta.env.VITE_BILLING_PORTAL_URL || "https://pos-autofactura.vercel.app").replace(/\/$/, ""));
+  normalizeBillingPortalUrl(import.meta.env.VITE_BILLING_PORTAL_URL);
 
 const getBillingQrData = (sale, folio) => {
   const billingUrl = getBillingUrl();
-  return `${billingUrl}/?folio=${folio}&pin=${sale.pin_facturacion}`;
+  return buildBillingPortalUrl(folio, sale.pin_facturacion, billingUrl);
 };
 
 export const formatSaleToEscposText = (sale, settings, user, options = {}) => {

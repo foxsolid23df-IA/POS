@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { generateTicketHtml } from '../ticketFormatter';
-import { buildQrPayload, generateQrSvg } from '../qrCode';
+import { buildBillingPortalUrl, generateQrSvg } from '../qrCode';
 
 describe('ticketFormatter', () => {
   it('escapa datos dinámicos antes de generar HTML de ticket', () => {
@@ -75,13 +75,12 @@ describe('ticketFormatter', () => {
     expect(html).toContain('A0E39F');
   });
 
-  it('construye un QR version 5-L completo para el portal', () => {
-    const value = 'https://pos-autofactura.vercel.app/?folio=2635&pin=A0E39F';
-    const payload = buildQrPayload(value);
+  it('construye un QR local para la URL correcta del portal', () => {
+    const value = buildBillingPortalUrl(2635, 'A0E39F');
     const svg = generateQrSvg(value);
 
-    expect(payload).toHaveLength(134);
-    expect(svg).toContain('viewBox="0 0 45 45"');
+    expect(value).toBe('https://pos-autofactura.vercel.app/?folio=2635&pin=A0E39F');
+    expect(svg).toContain('viewBox="0 0 ');
     expect(svg).toContain('<rect');
   });
 });

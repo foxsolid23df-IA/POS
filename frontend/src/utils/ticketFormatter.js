@@ -1,5 +1,5 @@
 import { formatearDinero } from "./formatters";
-import { generateQrDataUrl } from "./qrCode";
+import { buildBillingPortalUrl, generateQrDataUrl, normalizeBillingPortalUrl } from "./qrCode";
 
 const defaults = {
   business_name: "TICKET DE VENTA",
@@ -317,8 +317,8 @@ export const generateTicketHtml = (sale, settings, user, options = {}) => {
   const showBilling = !isPreSale && !isCotizacion && sale?.pin_facturacion && s.show_billing_section !== false;
   if (showBilling) {
     const qrPx = qrSizeToPx(s.qr_code_size);
-    const billingUrl = ((import.meta.env.VITE_BILLING_PORTAL_URL || "https://pos-autofactura.vercel.app").replace(/\/$/, ""));
-    const qrData = `${billingUrl}/?folio=${sale.id}&pin=${sale.pin_facturacion}`;
+    const billingUrl = normalizeBillingPortalUrl(import.meta.env.VITE_BILLING_PORTAL_URL);
+    const qrData = buildBillingPortalUrl(sale.id, sale.pin_facturacion, billingUrl);
     const displayUrl = billingUrl.replace(/^https?:\/\//, "");
     const qrDataUrl = safeImageSrc(
       options.billingQrDataUrl || sale.billing_qr_data_url || generateQrDataUrl(qrData),
