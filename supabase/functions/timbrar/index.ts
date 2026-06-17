@@ -6,6 +6,25 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const jsonResponse = (body: Record<string, unknown>, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+const errorResponse = (message: string, status = 400, details?: unknown) =>
+  jsonResponse({ success: false, error: message, message, details }, status);
+
+const flattenFacturamaModelState = (modelState: unknown): string[] => {
+  if (!modelState || typeof modelState !== "object") return [];
+
+  return Object.values(modelState as Record<string, unknown>).flatMap((value) => {
+    if (Array.isArray(value)) return value.map((item) => String(item));
+    if (value && typeof value === "object") return flattenFacturamaModelState(value);
+    return value ? [String(value)] : [];
+  });
+};
+
 serve(async (req) => {
   // CORS preflight
   if (req.method === "OPTIONS") {
@@ -25,10 +44,7 @@ serve(async (req) => {
     const FACTURAMA_PASSWORD = Deno.env.get("FACTURAMA_PASSWORD") || (BASE_URL.includes("sandbox") ? "NexumPos" : "");
     
     if (!FACTURAMA_USER || !FACTURAMA_PASSWORD) {
-      return new Response(
-        JSON.stringify({ error: "Las credenciales de Facturama (FACTURAMA_USER / FACTURAMA_PASSWORD) no están configuradas." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return errorResponse("Las credenciales de Facturama (FACTURAMA_USER / FACTURAMA_PASSWORD) no están configuradas.", 500);
     }
     
     // Authorization: Basic base64(usuario:contraseña)
@@ -43,10 +59,7 @@ serve(async (req) => {
     console.log("Body recibido para Facturama Multiemisor:", JSON.stringify(body));
 
     if (!ticket_uuid || !rfc || !razon_social || !codigo_postal || !regimen_fiscal || !uso_cfdi) {
-      return new Response(
-        JSON.stringify({ error: "Faltan campos requeridos para timbrar: ticket_uuid, rfc, razon_social, codigo_postal, regimen_fiscal, uso_cfdi" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return errorResponse("Faltan campos requeridos para timbrar: ticket_uuid, rfc, razon_social, codigo_postal, regimen_fiscal, uso_cfdi");
     }
 
     // ─── PASO 1: Obtener datos reales de la venta y sus productos ────
@@ -55,6 +68,13 @@ serve(async (req) => {
       .select('*, sale_items(*)')
       .eq('ticket_uuid', ticket_uuid)
       .single();
+
+    if (saleErr || !sale) {
+      console.error("No se pudo obtener la venta para timbrar:", saleErr);
+      return errorResponse("No se encontró el ticket para timbrar. Verifica el folio/PIN o vuelve a buscar el ticket.");
+    }
+
+    sale.sale_items = Array.isArray(sale.sale_items) ? sale.sale_items : [];
 
     // ─── PASO 1.1: OBTENER DATA DEL EMISOR ───
     let issuer = null;
@@ -71,6 +91,10 @@ serve(async (req) => {
       const { data: foundPortal } = await supabase.from('billing_portals').select('*').eq('billing_issuer_id', sale.billing_issuer_id).limit(1).maybeSingle();
       if (foundPortal) portal = foundPortal;
     } 
+
+    if (issuer && (!issuer.rfc || !issuer.razon_social || !issuer.regimen_fiscal || !issuer.codigo_postal)) {
+      return errorResponse("El emisor fiscal está incompleto. Verifica RFC, razón social, régimen fiscal y código postal en Configuración > Facturas.");
+    }
 
     if (!issuer) {
       // Comportamiento de AutoFactura Clásico: Resolviendo por terminal
@@ -89,6 +113,10 @@ serve(async (req) => {
       }
       portal = fetchedPortal;
       issuer = portal.billing_issuers;
+    }
+
+    if (!issuer || !issuer.rfc || !issuer.razon_social || !issuer.regimen_fiscal || !issuer.codigo_postal) {
+      return errorResponse("El emisor fiscal está incompleto. Verifica RFC, razón social, régimen fiscal y código postal en Configuración > Facturas.");
     }
 
     // ─── PASO 1.2: VALIDACIÓN DE LÍMITES DE TIEMPO (Si se encontró portal) ───
@@ -132,6 +160,10 @@ serve(async (req) => {
 
     // ─── PASO 1.5: LIMPIEZA DE FACTURAS PREVIAS ───
     await supabase.from('invoices').delete().eq('sale_id', sale.id);
+
+    if (sale.sale_items.length === 0) {
+      return errorResponse("El ticket no tiene partidas para facturar. Revisa la venta en el POS antes de timbrar.");
+    }
 
     // Calcular factor de impuesto
     const hasTax = (sale.tax_amount || 0) > 0;
@@ -252,11 +284,11 @@ serve(async (req) => {
     if (!cfdiRes.ok) {
       let errorMsg = `Facturama Error ${cfdiRes.status}`;
       if (cfdiData.ModelState) {
-        errorMsg += ": " + Object.values(cfdiData.ModelState).flat().join(", ");
+        errorMsg += ": " + flattenFacturamaModelState(cfdiData.ModelState).join(", ");
       } else if (cfdiData.Message) {
         errorMsg += ": " + cfdiData.Message;
       }
-      return new Response(JSON.stringify({ success: false, message: errorMsg }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return errorResponse(errorMsg, 200, cfdiData);
     }
     
     // ─── PASO 3: OBTENER ARCHIVOS BASE64 (API LITE - issuedLite) ───
@@ -317,9 +349,6 @@ serve(async (req) => {
 
   } catch (err: any) {
     console.error("Error inesperado en timbrar:", err);
-    return new Response(
-      JSON.stringify({ error: err.message, stack: err.stack }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return errorResponse(err.message || "Error inesperado al timbrar la factura.", 500);
   }
 });

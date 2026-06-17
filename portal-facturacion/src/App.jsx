@@ -48,6 +48,33 @@ const parseTicketAmount = (value) => {
   return Number.isFinite(amount) ? amount : NaN;
 };
 
+const extractFunctionErrorMessage = async (error, fallback = 'Error al procesar la solicitud.') => {
+  let message = error?.message || fallback;
+  const response = error?.context;
+
+  if (!response) return message;
+
+  try {
+    const text = await response.clone().text();
+    if (!text) return message;
+
+    try {
+      const body = JSON.parse(text);
+      message = body.message || body.error || (typeof body.details === 'string' ? body.details : '') || message;
+
+      if (body.details?.Message && !String(message).includes(body.details.Message)) {
+        message = `${message}: ${body.details.Message}`;
+      }
+    } catch {
+      message = text;
+    }
+  } catch (parseErr) {
+    console.warn('No se pudo leer el detalle de error de la Edge Function:', parseErr);
+  }
+
+  return String(message);
+};
+
 export default function App() {
   const [step, setStep] = useState(1);
   const [folioValue, setFolioValue] = useState('');
@@ -291,15 +318,7 @@ export default function App() {
       });
 
       if (timbrarErr) {
-        let errorDetails = timbrarErr.message;
-        if (timbrarErr.context) {
-          try {
-            const errBody = await timbrarErr.context.json();
-            if (errBody.error) errorDetails = errBody.error;
-          } catch {
-            console.warn('Cannot parse error context as JSON');
-          }
-        }
+        const errorDetails = await extractFunctionErrorMessage(timbrarErr, 'No se pudo timbrar la factura.');
         throw new Error(`Error en timbrado: ${errorDetails}`);
       }
       
