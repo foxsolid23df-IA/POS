@@ -378,6 +378,9 @@ serve(async (req) => {
       } else if (cfdiData.Message) {
         errorMsg += ": " + cfdiData.Message;
       }
+      if (/Nombre del emisor/i.test(errorMsg)) {
+        errorMsg += " Corrige la Razón Social SAT del emisor en Configuración > Facturas > Editar. Debe coincidir exactamente con la constancia fiscal del RFC emisor.";
+      }
       return errorResponse(errorMsg, 200, cfdiData);
     }
     
