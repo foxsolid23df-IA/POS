@@ -6,6 +6,11 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const normalizePostalCode = (value: unknown) => {
+  const digits = String(value ?? "").replace(/\D/g, "");
+  return digits.length >= 5 ? digits.slice(0, 5) : "";
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -42,10 +47,18 @@ serve(async (req) => {
       key_base64, 
       password 
     } = body;
+    const issuerPostalCode = normalizePostalCode(codigo_postal);
 
     if (!rfc || !razon_social || !regimen_fiscal || !codigo_postal || !cer_base64 || !key_base64 || !password) {
       return new Response(
         JSON.stringify({ error: "Faltan datos obligatorios o los archivos CSD no se proporcionaron." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!issuerPostalCode) {
+      return new Response(
+        JSON.stringify({ error: "El código postal del emisor debe contener 5 dígitos." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -126,7 +139,7 @@ serve(async (req) => {
         rfc: rfc.toUpperCase(),
         razon_social: razon_social.toUpperCase(),
         regimen_fiscal: regimen_fiscal,
-        codigo_postal: codigo_postal,
+        codigo_postal: issuerPostalCode,
         sucursal_nombre: sucursal_nombre || null,
         is_csd_loaded: true
       })

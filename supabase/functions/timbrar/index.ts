@@ -25,6 +25,11 @@ const flattenFacturamaModelState = (modelState: unknown): string[] => {
   });
 };
 
+const normalizePostalCode = (value: unknown) => {
+  const digits = String(value ?? "").replace(/\D/g, "");
+  return digits.length >= 5 ? digits.slice(0, 5) : "";
+};
+
 serve(async (req) => {
   // CORS preflight
   if (req.method === "OPTIONS") {
@@ -55,11 +60,16 @@ serve(async (req) => {
     // ─── PASO 0: Parsear body del frontend ────────────────────────
     const body = await req.json();
     const { ticket_uuid, rfc, razon_social, codigo_postal, regimen_fiscal, uso_cfdi, email } = body;
+    const receiverPostalCode = normalizePostalCode(codigo_postal);
 
     console.log("Body recibido para Facturama Multiemisor:", JSON.stringify(body));
 
     if (!ticket_uuid || !rfc || !razon_social || !codigo_postal || !regimen_fiscal || !uso_cfdi) {
       return errorResponse("Faltan campos requeridos para timbrar: ticket_uuid, rfc, razon_social, codigo_postal, regimen_fiscal, uso_cfdi");
+    }
+
+    if (!receiverPostalCode) {
+      return errorResponse("El código postal del receptor debe contener 5 dígitos.");
     }
 
     // ─── PASO 1: Obtener datos reales de la venta y sus productos ────
@@ -92,8 +102,8 @@ serve(async (req) => {
       if (foundPortal) portal = foundPortal;
     } 
 
-    if (issuer && (!issuer.rfc || !issuer.razon_social || !issuer.regimen_fiscal || !issuer.codigo_postal)) {
-      return errorResponse("El emisor fiscal está incompleto. Verifica RFC, razón social, régimen fiscal y código postal en Configuración > Facturas.");
+    if (issuer && (!issuer.rfc || !issuer.razon_social || !issuer.regimen_fiscal)) {
+      return errorResponse("El emisor fiscal está incompleto. Verifica RFC, razón social y régimen fiscal en Configuración > Facturas.");
     }
 
     if (!issuer) {
@@ -169,7 +179,33 @@ serve(async (req) => {
       return errorResponse("El comercio no tiene un emisor fiscal configurado. Registra un emisor en Configuración > Facturas.");
     }
 
-    if (!issuer || !issuer.rfc || !issuer.razon_social || !issuer.regimen_fiscal || !issuer.codigo_postal) {
+    let issuerPostalCode = normalizePostalCode(issuer?.codigo_postal);
+
+    if (issuer && !issuerPostalCode) {
+      const { data: validIssuers } = await supabase
+        .from('billing_issuers')
+        .select('*')
+        .eq('user_id', sale.user_id)
+        .order('created_at', { ascending: false });
+
+      const validIssuer = (validIssuers || []).find((candidate: any) => normalizePostalCode(candidate.codigo_postal));
+
+      if (validIssuer) {
+        issuer = validIssuer;
+        issuerPostalCode = normalizePostalCode(validIssuer.codigo_postal);
+
+        const { data: validPortal } = await supabase
+          .from('billing_portals')
+          .select('*')
+          .eq('billing_issuer_id', validIssuer.id)
+          .limit(1)
+          .maybeSingle();
+
+        if (validPortal) portal = validPortal;
+      }
+    }
+
+    if (!issuer || !issuer.rfc || !issuer.razon_social || !issuer.regimen_fiscal || !issuerPostalCode) {
       return errorResponse("El emisor fiscal está incompleto. Verifica RFC, razón social, régimen fiscal y código postal en Configuración > Facturas.");
     }
 
@@ -296,7 +332,7 @@ serve(async (req) => {
       LogoUrl: portal?.logo_url || null,
       PaymentForm: (sale.payment_method === 'tarjeta') ? "04" : "01", 
       PaymentMethod: "PUE",
-      ExpeditionPlace: issuer.codigo_postal,
+      ExpeditionPlace: issuerPostalCode,
       Folio: ticket_uuid.substring(0, 8).toUpperCase(),
       Issuer: {
         Rfc: issuer.rfc,
@@ -308,7 +344,7 @@ serve(async (req) => {
         CfdiUse: uso_cfdi,
         Name: razon_social,
         FiscalRegime: regimen_fiscal,
-        TaxZipCode: codigo_postal
+        TaxZipCode: receiverPostalCode
       },
       Items: facturamaItems
     };
