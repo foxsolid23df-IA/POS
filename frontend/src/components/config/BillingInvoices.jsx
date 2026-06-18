@@ -50,9 +50,17 @@ export default function BillingInvoices() {
       setLoading(true);
       setError("");
 
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setInvoices([]);
+        setClientsMap({});
+        return;
+      }
+
       let query = supabase
         .from("invoices")
         .select("*, sales(id, created_at)")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (searchVal.trim()) {
@@ -63,6 +71,7 @@ export default function BillingInvoices() {
         const { data: matchedClients } = await supabase
           .from("clients")
           .select("rfc")
+          .eq("user_id", user.id)
           .ilike("razon_social", `%${term}%`);
 
         const clientRfcs = matchedClients ? matchedClients.map((c) => c.rfc) : [];
@@ -95,6 +104,7 @@ export default function BillingInvoices() {
         const { data: clientsData } = await supabase
           .from("clients")
           .select("rfc, razon_social")
+          .eq("user_id", user.id)
           .in("rfc", rfcs);
 
         if (clientsData) {

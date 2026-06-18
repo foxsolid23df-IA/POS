@@ -334,12 +334,21 @@ export default function App() {
       }
       
       if (timbradoData && timbradoData.success) {
+        const invoice = timbradoData.invoice || timbradoData.data?.Invoice || {};
+        const cfdiId = invoice.facturama_id || timbradoData.data?.Id || timbradoData.data?.id || timbradoData.data?.CfdiId || timbradoData.data?.cfdiId;
+        const uuid = invoice.uuid_cfdi || timbradoData.data?.FolioFiscal || timbradoData.data?.Uuid || timbradoData.data?.uuid;
+
+        if (!cfdiId && !uuid) {
+          throw new Error('La factura se timbro, pero el servidor no devolvio un identificador fiscal valido.');
+        }
+
         setInvoiceResult({
-          id: timbradoData.data?.Id || timbradoData.data?.id || timbradoData.data?.Uuid || timbradoData.data?.uuid,
-          uuid: timbradoData.data?.FolioFiscal || timbradoData.data?.uuid || 'AAABBBCC-1234-5678-UIOP',
-          xml_url: timbradoData.data?.Xml,
-          pdf_url: timbradoData.data?.Pdf,
-          created_at: new Date().toISOString()
+          id: cfdiId || uuid,
+          facturama_id: cfdiId,
+          uuid: uuid || cfdiId,
+          xml_url: invoice.xml_url || timbradoData.data?.Xml,
+          pdf_url: invoice.pdf_url || timbradoData.data?.Pdf,
+          created_at: invoice.created_at || new Date().toISOString()
         });
       } else {
         throw new Error(timbradoData?.message || 'Error desconocido al facturar');
@@ -866,7 +875,7 @@ export default function App() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-label-md font-label-md text-on-surface-variant" htmlFor="razonSocial">Razón Social / Nombre (Exacto SAT, sin S.A. de C.V.)</label>
+                <label className="text-label-md font-label-md text-on-surface-variant" htmlFor="razonSocial">Razón Social / Nombre exacto SAT</label>
                 <input 
                   required 
                   id="razonSocial" 

@@ -30,6 +30,32 @@ const normalizePostalCode = (value: unknown) => {
   return digits.length >= 5 ? digits.slice(0, 5) : "";
 };
 
+const firstString = (...values: unknown[]) => {
+  for (const value of values) {
+    if (value === null || value === undefined) continue;
+    const text = String(value).trim();
+    if (text) return text;
+  }
+  return "";
+};
+
+const getFacturamaResourceId = (data: any) =>
+  firstString(data?.Id, data?.id, data?.CfdiId, data?.cfdiId, data?.ResourceId, data?.resourceId);
+
+const getFacturamaUuid = (data: any) =>
+  firstString(
+    data?.Uuid,
+    data?.uuid,
+    data?.UUID,
+    data?.FolioFiscal,
+    data?.folioFiscal,
+    data?.Complement?.TaxStamp?.Uuid,
+    data?.Complement?.TaxStamp?.UUID,
+    data?.Complement?.TimbreFiscalDigital?.UUID,
+    data?.Complements?.TaxStamp?.Uuid,
+    data?.Complements?.TaxStamp?.UUID,
+  );
+
 serve(async (req) => {
   // CORS preflight
   if (req.method === "OPTIONS") {
@@ -248,8 +274,36 @@ serve(async (req) => {
       }
     }
 
-    // ─── PASO 1.5: LIMPIEZA DE FACTURAS PREVIAS ───
-    await supabase.from('invoices').delete().eq('sale_id', sale.id);
+    // Paso 1.5: proteger reintentos para no timbrar duplicado.
+    const { data: existingInvoice, error: existingInvoiceErr } = await supabase
+      .from('invoices')
+      .select('id, sale_id, user_id, uuid_cfdi, facturama_id, xml_url, pdf_url, total, status, created_at')
+      .eq('sale_id', sale.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingInvoiceErr) {
+      console.error("Error al consultar factura previa:", existingInvoiceErr);
+      return errorResponse("No se pudo validar si el ticket ya estaba facturado. Intenta de nuevo.");
+    }
+
+    if (existingInvoice) {
+      return new Response(JSON.stringify({
+        success: true,
+        data: {
+          Id: existingInvoice.facturama_id,
+          Uuid: existingInvoice.uuid_cfdi,
+          Xml: existingInvoice.xml_url,
+          Pdf: existingInvoice.pdf_url,
+          Invoice: existingInvoice,
+        },
+        invoice: existingInvoice,
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     if (sale.sale_items.length === 0) {
       return errorResponse("El ticket no tiene partidas para facturar. Revisa la venta en el POS antes de timbrar.");
@@ -385,10 +439,20 @@ serve(async (req) => {
     }
     
     // ─── PASO 3: OBTENER ARCHIVOS BASE64 (API LITE - issuedLite) ───
-    const resourceId = cfdiData.Id || cfdiData.id || cfdiData.Uuid || cfdiData.uuid;
+    const resourceId = getFacturamaResourceId(cfdiData);
+    const cfdiUuid = getFacturamaUuid(cfdiData);
 
-    if (cfdiRes.ok && resourceId) {
-      try {
+    if (!resourceId && !cfdiUuid) {
+      console.error("Facturama timbro sin devolver identificador fiscal:", cfdiData);
+      return errorResponse(
+        "Facturama timbro la factura, pero no devolvio un identificador fiscal para guardarla. Contacta soporte antes de reintentar para evitar duplicados.",
+        200,
+        cfdiData,
+      );
+    }
+
+    try {
+      if (resourceId) {
         console.log(`Pausa de 1.5s para archivos ID: ${resourceId}`);
         await new Promise(r => setTimeout(r, 1500));
 
@@ -410,35 +474,67 @@ serve(async (req) => {
           if (xmlData.Content) cfdiData.Xml = xmlData.Content;
         }
 
-        // ─── PASO 4: PERSISTENCIA EN SUPABASE ────────────────────────
-        const invoiceRecord = {
-          sale_id: sale.id,
-          user_id: sale.user_id,
-          uuid_cfdi: cfdiData.Uuid || cfdiData.uuid || cfdiData.FolioFiscal || 'STAMPED',
-          facturama_id: cfdiData.Id || cfdiData.id || null, // Guardamos el ID interno para el envío de correo
-          emisor_rfc: issuer.rfc,
-          cliente_rfc: rfc,
-          xml_url: cfdiData.Xml || null, 
-          pdf_url: cfdiData.Pdf || null, 
-          total: sale.total,
-          status: 'VIGENTE'
-        };
-        
-        const { error: insertErr } = await supabase.from('invoices').insert([invoiceRecord]);
-        if (insertErr) {
-            console.error("Error al insertar registro de factura:", insertErr);
-        }
-        await supabase.from('sales').update({ facturado: true }).eq('id', sale.id);
-
-      } catch (err) {
-        console.error("Error persistencia:", err);
       }
-    }
 
-    return new Response(JSON.stringify({ success: true, data: cfdiData }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+      const invoiceRecord = {
+        sale_id: sale.id,
+        user_id: sale.user_id,
+        uuid_cfdi: cfdiUuid || resourceId,
+        facturama_id: resourceId || null,
+        emisor_rfc: issuer.rfc,
+        cliente_rfc: rfc,
+        xml_url: cfdiData.Xml || null,
+        pdf_url: cfdiData.Pdf || null,
+        total: sale.total,
+        status: 'VIGENTE'
+      };
+        
+      const { data: insertedInvoice, error: insertErr } = await supabase
+        .from('invoices')
+        .insert([invoiceRecord])
+        .select('id, sale_id, user_id, uuid_cfdi, facturama_id, xml_url, pdf_url, total, status, created_at')
+        .single();
+
+      if (insertErr || !insertedInvoice) {
+        console.error("Error al insertar registro de factura:", insertErr);
+        return errorResponse(
+          "La factura se timbro en Facturama, pero no se pudo guardar en el POS. Contacta soporte antes de reintentar para evitar duplicados.",
+          200,
+          { insertErr, facturama: cfdiData, invoiceRecord },
+        );
+      }
+
+      const { error: saleUpdateErr } = await supabase
+        .from('sales')
+        .update({ facturado: true })
+        .eq('id', sale.id);
+
+      if (saleUpdateErr) {
+        console.error("Factura guardada, pero no se pudo marcar la venta como facturada:", saleUpdateErr);
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        data: {
+          ...cfdiData,
+          Id: resourceId || cfdiData.Id || cfdiData.id,
+          Uuid: cfdiUuid || insertedInvoice.uuid_cfdi,
+          Invoice: insertedInvoice,
+        },
+        invoice: insertedInvoice,
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+
+    } catch (err: any) {
+      console.error("Error persistencia:", err);
+      return errorResponse(
+        "La factura se timbro en Facturama, pero ocurrio un error al guardar sus datos en el POS. Contacta soporte antes de reintentar para evitar duplicados.",
+        200,
+        { error: err.message, facturama: cfdiData },
+      );
+    }
 
   } catch (err: any) {
     console.error("Error inesperado en timbrar:", err);
