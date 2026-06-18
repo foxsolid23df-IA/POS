@@ -224,6 +224,8 @@ export default function App() {
           setStep(4); // Pantalla de éxito
           return;
         }
+
+        throw new Error('Este ticket ya fue facturado, pero no se encontro el registro local de la factura. Contacta soporte para recuperar el CFDI antes de intentar nuevamente.');
       }
 
       setTicketData(data);

@@ -305,6 +305,14 @@ serve(async (req) => {
       });
     }
 
+    if (sale.facturado) {
+      return errorResponse(
+        "Este ticket ya fue facturado, pero no se encontro el registro local de la factura. Contacta soporte para recuperar o reconciliar el CFDI antes de intentar nuevamente.",
+        200,
+        { sale_id: sale.id, ticket_uuid: sale.ticket_uuid },
+      );
+    }
+
     if (sale.sale_items.length === 0) {
       return errorResponse("El ticket no tiene partidas para facturar. Revisa la venta en el POS antes de timbrar.");
     }
@@ -406,6 +414,52 @@ serve(async (req) => {
     console.log("Enviando Payload REAL a Facturama:", JSON.stringify(facturamaBody));
 
     // ─── PASO 2: POST a Facturama API-LITE ──────────────────────────
+    const { data: claimedSale, error: claimErr } = await supabase
+      .from('sales')
+      .update({ facturado: true })
+      .eq('id', sale.id)
+      .or('facturado.is.false,facturado.is.null')
+      .select('id')
+      .maybeSingle();
+
+    if (claimErr) {
+      console.error("Error al reservar ticket para timbrado:", claimErr);
+      return errorResponse("No se pudo bloquear el ticket para facturacion. Intenta de nuevo.");
+    }
+
+    if (!claimedSale) {
+      const { data: claimedInvoice } = await supabase
+        .from('invoices')
+        .select('id, sale_id, user_id, uuid_cfdi, facturama_id, xml_url, pdf_url, total, status, created_at')
+        .eq('sale_id', sale.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (claimedInvoice) {
+        return new Response(JSON.stringify({
+          success: true,
+          data: {
+            Id: claimedInvoice.facturama_id,
+            Uuid: claimedInvoice.uuid_cfdi,
+            Xml: claimedInvoice.xml_url,
+            Pdf: claimedInvoice.pdf_url,
+            Invoice: claimedInvoice,
+          },
+          invoice: claimedInvoice,
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return errorResponse(
+        "Este ticket ya fue facturado o tiene una facturacion en proceso. Contacta soporte si no aparece el CFDI en Mis Facturas.",
+        200,
+        { sale_id: sale.id, ticket_uuid: sale.ticket_uuid },
+      );
+    }
+
     const cfdiRes = await fetch(`${BASE_URL}/api-lite/3/cfdis`, {
       method: "POST",
       headers: {
@@ -426,6 +480,11 @@ serve(async (req) => {
     }
 
     if (!cfdiRes.ok) {
+      await supabase
+        .from('sales')
+        .update({ facturado: false })
+        .eq('id', sale.id);
+
       let errorMsg = `Facturama Error ${cfdiRes.status}`;
       if (cfdiData.ModelState) {
         errorMsg += ": " + flattenFacturamaModelState(cfdiData.ModelState).join(", ");
