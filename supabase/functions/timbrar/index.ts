@@ -56,6 +56,11 @@ const getFacturamaUuid = (data: any) =>
     data?.Complements?.TaxStamp?.UUID,
   );
 
+const isMissingRpcError = (error: any) => {
+  const message = `${error?.message || ""} ${error?.details || ""} ${error?.hint || ""}`;
+  return /function .*claim_sale_for_invoicing|Could not find|schema cache/i.test(message);
+};
+
 serve(async (req) => {
   // CORS preflight
   if (req.method === "OPTIONS") {
@@ -414,17 +419,37 @@ serve(async (req) => {
     console.log("Enviando Payload REAL a Facturama:", JSON.stringify(facturamaBody));
 
     // ─── PASO 2: POST a Facturama API-LITE ──────────────────────────
-    const { data: claimedSale, error: claimErr } = await supabase
-      .from('sales')
-      .update({ facturado: true })
-      .eq('id', sale.id)
-      .or('facturado.is.false,facturado.is.null')
-      .select('id')
-      .maybeSingle();
+    let claimedSale = false;
+    let claimErr = null;
+
+    const { data: rpcClaimed, error: rpcClaimErr } = await supabase
+      .rpc('claim_sale_for_invoicing', { p_sale_id: sale.id });
+
+    if (!rpcClaimErr) {
+      claimedSale = rpcClaimed === true;
+    } else if (isMissingRpcError(rpcClaimErr)) {
+      console.warn("RPC claim_sale_for_invoicing no disponible, usando fallback PostgREST:", rpcClaimErr);
+      const { data: fallbackClaimed, error: fallbackClaimErr } = await supabase
+        .from('sales')
+        .update({ facturado: true })
+        .eq('id', sale.id)
+        .eq('facturado', false)
+        .select('id')
+        .maybeSingle();
+
+      claimedSale = !!fallbackClaimed;
+      claimErr = fallbackClaimErr;
+    } else {
+      claimErr = rpcClaimErr;
+    }
 
     if (claimErr) {
       console.error("Error al reservar ticket para timbrado:", claimErr);
-      return errorResponse("No se pudo bloquear el ticket para facturacion. Intenta de nuevo.");
+      return errorResponse(
+        "No se pudo bloquear el ticket para facturacion. Intenta de nuevo.",
+        200,
+        claimErr,
+      );
     }
 
     if (!claimedSale) {
