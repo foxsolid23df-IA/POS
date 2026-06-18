@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from './supabase';
 import Swal from 'sweetalert2';
 
 // Configuración de Marca y Textos por defecto
 const APP_NAME = import.meta.env.VITE_APP_NAME || 'NexumPOS';
 const APP_TITLE = import.meta.env.VITE_APP_TITLE || 'Auto-Facturación | NexumPos';
+const SUPPORT_EMAIL = import.meta.env.VITE_SUPPORT_EMAIL || 'soporte@nexumpos.com';
+const SUPPORT_WHATSAPP = import.meta.env.VITE_SUPPORT_WHATSAPP || '5215650607108';
 
 const parseTicketAmount = (value) => {
   if (typeof value === 'number') return Number.isFinite(value) ? value : NaN;
@@ -80,9 +82,11 @@ export default function App() {
   const [folioValue, setFolioValue] = useState('');
   const [pinValue, setPinValue] = useState('');
   const [totalValue, setTotalValue] = useState('');
+  const [prefillNotice, setPrefillNotice] = useState('');
   
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [processStep, setProcessStep] = useState('');
   const [ticketData, setTicketData] = useState(null);
 
   // Información extendida del ticket
@@ -98,6 +102,138 @@ export default function App() {
   const [email, setEmail] = useState('');
 
   const [invoiceResult, setInvoiceResult] = useState(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const folioParam = params.get('folio') || params.get('ticket') || '';
+    const pinParam = params.get('pin') || '';
+    const totalParam = params.get('total') || '';
+
+    if (folioParam) setFolioValue(folioParam.trim());
+    if (pinParam) setPinValue(pinParam.trim().toUpperCase());
+    if (totalParam) setTotalValue(totalParam.trim());
+
+    if (folioParam && pinParam) {
+      setPrefillNotice(`Encontramos tu ticket #${folioParam.trim()}. Solo confirma el monto total para continuar.`);
+    }
+  }, []);
+
+  useEffect(() => {
+    const draftKey = getDraftKey(ticketData);
+    if (!draftKey) return;
+
+    try {
+      const savedDraft = JSON.parse(localStorage.getItem(draftKey) || '{}');
+      if (!savedDraft || typeof savedDraft !== 'object') return;
+
+      if (savedDraft.rfc) setRfc(savedDraft.rfc);
+      if (savedDraft.razonSocial) setRazonSocial(savedDraft.razonSocial);
+      if (savedDraft.codigoPostal) setCodigoPostal(savedDraft.codigoPostal);
+      if (savedDraft.regimenFiscal) setRegimenFiscal(savedDraft.regimenFiscal);
+      if (savedDraft.usoCfdi) setUsoCfdi(savedDraft.usoCfdi);
+      if (savedDraft.email) setEmail(savedDraft.email);
+    } catch (err) {
+      console.warn('No se pudo recuperar el borrador fiscal:', err);
+    }
+  }, [ticketData?.id]);
+
+  useEffect(() => {
+    const draftKey = getDraftKey(ticketData);
+    if (!draftKey) return;
+
+    const draft = { rfc, razonSocial, codigoPostal, regimenFiscal, usoCfdi, email };
+    localStorage.setItem(draftKey, JSON.stringify(draft));
+  }, [ticketData?.id, rfc, razonSocial, codigoPostal, regimenFiscal, usoCfdi, email]);
+
+  const getTicketReference = () => {
+    const folio = ticketData?.id || folioValue.trim();
+    const pin = pinValue.trim().toUpperCase();
+    const total = totalValue.trim();
+    const parts = [];
+
+    if (folio) parts.push(`folio ${folio}`);
+    if (pin) parts.push(`PIN ${pin}`);
+    if (total) parts.push(`monto ${total}`);
+
+    return parts.length ? parts.join(', ') : 'los datos de tu ticket';
+  };
+
+  const getSupportMessage = () => (
+    `Tengo problema facturando ${getTicketReference()}. ` +
+    `Error mostrado: ${errorMsg || 'Sin error visible todavía'}.`
+  );
+
+  const openSupportEmail = () => {
+    const subject = encodeURIComponent('Soporte de facturación');
+    const body = encodeURIComponent(getSupportMessage());
+    window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
+  };
+
+  const openSupportWhatsApp = () => {
+    window.open(`https://wa.me/${SUPPORT_WHATSAPP}?text=${encodeURIComponent(getSupportMessage())}`, '_blank', 'noopener,noreferrer');
+  };
+
+  const getDraftKey = (ticket = ticketData) => (
+    ticket?.id ? `nexumpos:billing-draft:${ticket.user_id || 'public'}:${ticket.id}` : null
+  );
+
+  const getFriendlyErrorMessage = (message) => {
+    const rawMessage = String(message || '').trim();
+    const reference = getTicketReference();
+
+    if (/bloquear|facturacion en proceso|facturaci[oó]n en proceso|ya fue facturado/i.test(rawMessage)) {
+      return `Este ticket ya fue facturado o está en proceso. Espera 1 minuto y vuelve a buscarlo. Si no aparece el CFDI, contacta soporte con ${reference}.`;
+    }
+
+    if (/No se encontr[oó]|ticket con esos datos|PGRST116|22P02/i.test(rawMessage)) {
+      return `No encontramos el ticket. Revisa que el folio y PIN estén escritos exactamente como aparecen en tu recibo. Datos capturados: ${reference}.`;
+    }
+
+    if (/monto ingresado no coincide|monto total/i.test(rawMessage)) {
+      return `El monto no coincide con el ticket. Escríbelo como aparece en el recibo, por ejemplo 4.044,96 o 4044.96. Datos capturados: ${reference}.`;
+    }
+
+    if (/Nombre del emisor|RFC del Emisor|ExpeditionPlace|emisor fiscal/i.test(rawMessage)) {
+      return `El comercio necesita corregir su configuración fiscal antes de emitir esta factura. Contacta soporte con ${reference}.`;
+    }
+
+    if (/identificador fiscal|guardar en el POS|registro local/i.test(rawMessage)) {
+      return `La factura requiere revisión de soporte antes de intentar de nuevo para evitar duplicados. Contacta soporte con ${reference}.`;
+    }
+
+    return rawMessage || 'No se pudo completar la solicitud. Intenta de nuevo o contacta soporte con los datos del ticket.';
+  };
+
+  const getFiscalValidation = () => {
+    const errors = {};
+    const warnings = {};
+    const cleanRfc = rfc.trim().toUpperCase();
+    const cleanPostalCode = codigoPostal.trim();
+    const cleanBusinessName = razonSocial.trim().replace(/\s+/g, ' ');
+    const cleanEmail = email.trim();
+
+    if (cleanRfc && !/^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/.test(cleanRfc)) {
+      errors.rfc = 'El RFC debe tener 12 o 13 caracteres y el formato correcto del SAT.';
+    }
+
+    if (cleanPostalCode && !/^\d{5}$/.test(cleanPostalCode)) {
+      errors.codigoPostal = 'El código postal fiscal debe tener exactamente 5 dígitos.';
+    }
+
+    if (cleanBusinessName && cleanBusinessName.length < 3) {
+      errors.razonSocial = 'La razón social debe tener al menos 3 caracteres.';
+    }
+
+    if (/\bS\.?\s*A\.?\s*(DE)?\s*C\.?\s*V\.?\b|\bSA\s+DE\s+CV\b|\bS\.?\s*DE\s*R\.?\s*L\.?/i.test(cleanBusinessName)) {
+      warnings.razonSocial = 'Revisa tu constancia fiscal: en muchos casos el nombre se captura sin S.A. de C.V. ni régimen societario.';
+    }
+
+    if (cleanEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      errors.email = 'Ingresa un correo válido o deja este campo vacío.';
+    }
+
+    return { errors, warnings };
+  };
 
   // Carga el nombre del establecimiento y los conceptos del ticket
   const loadExtraTicketInfo = async (ticket) => {
@@ -153,6 +289,7 @@ export default function App() {
     if (e) e.preventDefault();
     setLoading(true);
     setErrorMsg('');
+    setProcessStep('Validando datos fiscales');
 
     try {
       if (!folioValue || !pinValue || !totalValue) {
@@ -212,15 +349,17 @@ export default function App() {
 
         if (invData) {
           setInvoiceResult({
-            id: invData.id,
+            id: invData.facturama_id || invData.uuid_cfdi || invData.uuid_fiscal || invData.id,
             facturama_id: invData.facturama_id,
             uuid: invData.uuid_fiscal || invData.uuid_cfdi || 'UUID no disponible',
             xml_url: invData.xml_url,
             pdf_url: invData.pdf_url,
             status: invData.status,
-            created_at: invData.created_at
+            created_at: invData.created_at,
+            alreadyIssued: true
           });
           setTicketData(data);
+          localStorage.removeItem(getDraftKey(data));
           setStep(4); // Pantalla de éxito
           return;
         }
@@ -231,10 +370,11 @@ export default function App() {
       setTicketData(data);
       setStep(2); // Revisión de ticket
     } catch (err) {
-      setErrorMsg(err.message || 'Error al buscar el ticket.');
+      const friendlyMessage = getFriendlyErrorMessage(err.message || 'Error al buscar el ticket.');
+      setErrorMsg(friendlyMessage);
       Swal.fire({
         title: 'Error de Búsqueda',
-        text: err.message || 'Error al buscar el ticket.',
+        text: friendlyMessage,
         icon: 'error',
         confirmButtonText: 'Aceptar',
         confirmButtonColor: '#00c2cb',
@@ -282,7 +422,40 @@ export default function App() {
     setErrorMsg('');
 
     try {
+      const validation = getFiscalValidation();
+      const validationMessages = Object.values(validation.errors);
+
+      if (validationMessages.length > 0) {
+        throw new Error(validationMessages.join(' '));
+      }
+
+      const confirmation = await Swal.fire({
+        title: 'Verifica tus datos fiscales',
+        html: `
+          <div style="text-align:left;display:grid;gap:8px;font-size:14px;line-height:1.45">
+            <p style="margin-bottom:6px;color:#bbc9ca">Deben coincidir exactamente con tu constancia fiscal.</p>
+            <div><b>RFC:</b> ${rfc.toUpperCase()}</div>
+            <div><b>Razón social:</b> ${razonSocial}</div>
+            <div><b>Código postal:</b> ${codigoPostal}</div>
+            <div><b>Régimen fiscal:</b> ${regimenFiscal}</div>
+            <div><b>Uso CFDI:</b> ${usoCfdi}</div>
+            <div><b>Correo:</b> ${email || 'Sin correo'}</div>
+          </div>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, generar factura',
+        cancelButtonText: 'Revisar datos',
+        confirmButtonColor: '#00c2cb',
+        cancelButtonColor: '#2d3449',
+        background: '#171f33',
+        color: '#dae2fd'
+      });
+
+      if (!confirmation.isConfirmed) return;
+
       // 1. Guardar o actualizar cliente
+      setProcessStep('Guardando datos fiscales');
       if (ticketData?.user_id) {
         const { data: existingClient, error: selectErr } = await supabase
           .from('clients')
@@ -318,6 +491,7 @@ export default function App() {
       }
 
       // 2. Invocar la Edge Function 'timbrar'
+      setProcessStep('Enviando al SAT / Facturama');
       const { data: timbradoData, error: timbrarErr } = await supabase.functions.invoke('timbrar', {
         body: {
           ticket_uuid: ticketData.ticket_uuid,
@@ -336,6 +510,7 @@ export default function App() {
       }
       
       if (timbradoData && timbradoData.success) {
+        setProcessStep('Preparando PDF y XML');
         const invoice = timbradoData.invoice || timbradoData.data?.Invoice || {};
         const cfdiId = invoice.facturama_id || timbradoData.data?.Id || timbradoData.data?.id || timbradoData.data?.CfdiId || timbradoData.data?.cfdiId;
         const uuid = invoice.uuid_cfdi || timbradoData.data?.FolioFiscal || timbradoData.data?.Uuid || timbradoData.data?.uuid;
@@ -350,20 +525,23 @@ export default function App() {
           uuid: uuid || cfdiId,
           xml_url: invoice.xml_url || timbradoData.data?.Xml,
           pdf_url: invoice.pdf_url || timbradoData.data?.Pdf,
-          created_at: invoice.created_at || new Date().toISOString()
+          created_at: invoice.created_at || new Date().toISOString(),
+          alreadyIssued: false
         });
       } else {
         throw new Error(timbradoData?.message || 'Error desconocido al facturar');
       }
       
+      localStorage.removeItem(getDraftKey());
       setStep(4); // Éxito
       
     } catch (err) {
       console.error("Error en handleFacturar:", err);
-      setErrorMsg(err.message || "Error al procesar la factura con el SAT.");
+      const friendlyMessage = getFriendlyErrorMessage(err.message || "Error al procesar la factura con el SAT.");
+      setErrorMsg(friendlyMessage);
       Swal.fire({
         title: 'Error de Facturación',
-        text: err.message || "Error al procesar la factura con el SAT.",
+        text: friendlyMessage,
         icon: 'error',
         confirmButtonText: 'Aceptar',
         confirmButtonColor: '#00c2cb',
@@ -372,6 +550,7 @@ export default function App() {
       });
     } finally {
       setLoading(false);
+      setProcessStep('');
     }
   };
 
@@ -415,6 +594,32 @@ export default function App() {
       const blob = new Blob([content], { type: type });
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
+    }
+  };
+
+  const handleCopyUuid = async () => {
+    if (!invoiceResult?.uuid) return;
+
+    try {
+      await navigator.clipboard.writeText(invoiceResult.uuid);
+      Swal.fire({
+        title: 'UUID copiado',
+        text: 'El folio fiscal se copió al portapapeles.',
+        icon: 'success',
+        timer: 1600,
+        showConfirmButton: false,
+        background: '#171f33',
+        color: '#dae2fd'
+      });
+    } catch {
+      Swal.fire({
+        title: 'UUID Fiscal',
+        text: invoiceResult.uuid,
+        icon: 'info',
+        confirmButtonColor: '#00c2cb',
+        background: '#171f33',
+        color: '#dae2fd'
+      });
     }
   };
 
@@ -536,16 +741,40 @@ export default function App() {
     setFolioValue('');
     setPinValue('');
     setTotalValue('');
+    setPrefillNotice('');
     setTicketData(null);
     setInvoiceResult(null);
     setErrorMsg('');
+    setProcessStep('');
   };
 
   // Ayuda y soporte mock actions
   const showHelpAlert = () => {
     Swal.fire({
-      title: 'Centro de Ayuda',
-      html: '<div class="text-left"><p class="mb-2">1. <b>Folio:</b> Se encuentra en la parte media de su recibo.</p><p class="mb-2">2. <b>PIN:</b> Código de 4 letras/dígitos impreso en el ticket.</p><p>3. <b>Monto:</b> El valor exacto pagado en caja. Puedes escribirlo como aparece en el ticket, por ejemplo $ 4.044,96.</p></div>',
+      title: 'Ubica los datos en tu ticket',
+      html: `
+        <div style="display:grid;gap:14px;text-align:left">
+          <div style="background:#0b1326;border:1px solid rgba(69,222,231,.35);border-radius:12px;padding:14px;font-family:monospace;color:#dae2fd">
+            <div style="text-align:center;font-weight:800;margin-bottom:10px">*** VENTA ***</div>
+            <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:8px">
+              <span style="background:rgba(69,222,231,.14);border:1px solid rgba(69,222,231,.5);border-radius:8px;padding:6px 8px">Folio: 2867</span>
+              <span>Hora: 8:14</span>
+            </div>
+            <div style="border-top:1px dashed #859394;border-bottom:1px dashed #859394;padding:10px 0;margin:10px 0">
+              <div>PRODUCTO EJEMPLO</div>
+              <div style="text-align:right;font-weight:800;background:rgba(69,222,231,.14);border:1px solid rgba(69,222,231,.5);border-radius:8px;padding:6px 8px;margin-top:8px">TOTAL $7,200.00</div>
+            </div>
+            <div style="border:1px dashed #859394;border-radius:10px;padding:12px;text-align:center">
+              <div style="width:74px;height:74px;margin:0 auto 10px;background:repeating-linear-gradient(45deg,#dae2fd 0 4px,#0b1326 4px 8px);border:8px solid #dae2fd"></div>
+              <div style="font-weight:800;background:rgba(69,222,231,.14);border:1px solid rgba(69,222,231,.5);border-radius:8px;padding:6px 8px;margin-bottom:6px">FOLIO 2867</div>
+              <div style="font-weight:800;background:rgba(69,222,231,.14);border:1px solid rgba(69,222,231,.5);border-radius:8px;padding:6px 8px">PIN 4F1B78</div>
+            </div>
+          </div>
+          <div style="font-size:13px;line-height:1.5;color:#dae2fd">
+            Escanea el QR o escribe <b>Folio</b>, <b>PIN</b> y <b>Total</b> tal como aparecen en el ticket. El monto acepta formatos como <b>7,200.00</b>, <b>7200.00</b> o <b>7.200,00</b>.
+          </div>
+        </div>
+      `,
       icon: 'info',
       confirmButtonText: 'Entendido',
       confirmButtonColor: '#00c2cb',
@@ -554,29 +783,122 @@ export default function App() {
     });
   };
 
-  const showSupportAlert = () => {
-    Swal.fire({
+  const showSupportAlert = async () => {
+    const result = await Swal.fire({
       title: 'Soporte Técnico',
-      text: '¿Tiene problemas para facturar? Contáctenos a soporte@nexumpos.com indicando su Folio de ticket y error observado.',
+      html: `<div style="text-align:left;line-height:1.5">
+        <p>Te ayudamos con tu factura. El mensaje incluirá: <b>${getTicketReference()}</b>.</p>
+        <p style="margin-top:8px;color:#bbc9ca">Teléfono: +52 1 56 5060 7108</p>
+      </div>`,
       icon: 'question',
-      confirmButtonText: 'Aceptar',
+      showDenyButton: true,
+      showCancelButton: true,
+      confirmButtonText: 'WhatsApp',
+      denyButtonText: 'Correo',
+      cancelButtonText: 'Cerrar',
       confirmButtonColor: '#00c2cb',
+      denyButtonColor: '#2d3449',
       background: '#171f33',
       color: '#dae2fd'
     });
+
+    if (result.isConfirmed) openSupportWhatsApp();
+    if (result.isDenied) openSupportEmail();
   };
 
-  const showFeatureAlert = () => {
-    Swal.fire({
-      title: 'Próximamente',
-      text: 'Esta sección está en desarrollo y se integrará en una próxima versión.',
-      icon: 'info',
-      confirmButtonText: 'Aceptar',
+  const showFeatureAlert = async () => {
+    const result = await Swal.fire({
+      title: 'Mis Facturas',
+      html: `
+        <div style="display:grid;gap:10px;text-align:left">
+          <label style="font-size:12px;color:#bbc9ca">Folio del ticket</label>
+          <input id="lookup-folio" class="swal2-input" style="margin:0;width:100%" value="${folioValue}" placeholder="Ej. 2867" />
+          <label style="font-size:12px;color:#bbc9ca">PIN</label>
+          <input id="lookup-pin" class="swal2-input" style="margin:0;width:100%;text-transform:uppercase" value="${pinValue}" placeholder="Ej. 4F1B78" />
+          <label style="font-size:12px;color:#bbc9ca">Correo para reenviar (opcional)</label>
+          <input id="lookup-email" class="swal2-input" style="margin:0;width:100%" value="${email}" placeholder="correo@ejemplo.com" />
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Buscar factura',
+      cancelButtonText: 'Cerrar',
       confirmButtonColor: '#00c2cb',
+      cancelButtonColor: '#2d3449',
       background: '#171f33',
-      color: '#dae2fd'
+      color: '#dae2fd',
+      preConfirm: () => {
+        const folio = document.getElementById('lookup-folio')?.value?.trim();
+        const pin = document.getElementById('lookup-pin')?.value?.trim().toUpperCase();
+        const lookupEmail = document.getElementById('lookup-email')?.value?.trim();
+
+        if (!folio || !pin) {
+          Swal.showValidationMessage('Captura folio y PIN del ticket.');
+          return false;
+        }
+
+        return { folio, pin, lookupEmail };
+      }
     });
+
+    if (!result.isConfirmed) return;
+
+    const { folio, pin, lookupEmail } = result.value;
+    setLoading(true);
+    setFolioValue(folio);
+    setPinValue(pin);
+    if (lookupEmail) setEmail(lookupEmail);
+
+    try {
+      const { data: sale, error: saleErr } = await supabase
+        .from('sales')
+        .select('*')
+        .eq('id', folio)
+        .eq('pin_facturacion', pin)
+        .single();
+
+      if (saleErr || !sale) {
+        throw new Error('No encontramos un ticket con ese folio y PIN.');
+      }
+
+      const { data: invData, error: invErr } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('sale_id', sale.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (invErr) throw invErr;
+      if (!invData) throw new Error('Este ticket todavía no tiene una factura emitida.');
+
+      await loadExtraTicketInfo(sale);
+      setTicketData(sale);
+      setInvoiceResult({
+        id: invData.facturama_id || invData.uuid_cfdi || invData.uuid_fiscal || invData.id,
+        facturama_id: invData.facturama_id,
+        uuid: invData.uuid_fiscal || invData.uuid_cfdi || 'UUID no disponible',
+        xml_url: invData.xml_url,
+        pdf_url: invData.pdf_url,
+        status: invData.status,
+        created_at: invData.created_at,
+        alreadyIssued: true
+      });
+      setStep(4);
+    } catch (err) {
+      Swal.fire({
+        title: 'Factura no encontrada',
+        text: getFriendlyErrorMessage(err.message || 'No se pudo buscar la factura.'),
+        icon: 'info',
+        confirmButtonColor: '#00c2cb',
+        background: '#171f33',
+        color: '#dae2fd'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const fiscalValidation = getFiscalValidation();
 
   return (
     <div className="min-h-screen bg-background text-on-background flex flex-col font-body-md relative overflow-hidden">
@@ -637,6 +959,12 @@ export default function App() {
               </p>
             </div>
 
+            {prefillNotice && (
+              <div className="mb-6 bg-primary/10 border border-primary/40 rounded-lg p-3 text-sm text-primary text-center animate-fade-in">
+                {prefillNotice}
+              </div>
+            )}
+
             <form onSubmit={handleSearch} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -685,6 +1013,12 @@ export default function App() {
               {errorMsg && (
                 <div className="bg-error-container/40 border border-error/50 rounded-lg p-3 text-sm text-error/90 text-center animate-fade-in">
                   {errorMsg}
+                </div>
+              )}
+
+              {loading && processStep && (
+                <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 text-sm text-primary text-center animate-fade-in">
+                  {processStep}
                 </div>
               )}
 
@@ -855,11 +1189,14 @@ export default function App() {
                     id="rfc" 
                     type="text" 
                     value={rfc} 
-                    onChange={(e) => setRfc(e.target.value.toUpperCase())} 
+                    onChange={(e) => setRfc(e.target.value.toUpperCase().replace(/\s+/g, ''))}
                     onBlur={handleSearchRfc}
                     placeholder="XAXX010101000" 
                     className="w-full bg-surface-container-low border border-outline-variant/40 rounded-lg px-4 py-3 text-on-surface placeholder:text-outline-variant/40 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-mono uppercase"
                   />
+                  {rfc && fiscalValidation.errors.rfc && (
+                    <p className="text-error text-xs leading-relaxed">{fiscalValidation.errors.rfc}</p>
+                  )}
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-label-md font-label-md text-on-surface-variant" htmlFor="cp">Código Postal Domicilio Fiscal</label>
@@ -869,10 +1206,13 @@ export default function App() {
                     type="text" 
                     maxLength={5} 
                     value={codigoPostal} 
-                    onChange={(e) => setCodigoPostal(e.target.value)} 
+                    onChange={(e) => setCodigoPostal(e.target.value.replace(/\D/g, '').slice(0, 5))}
                     placeholder="Ej. 06000" 
                     className="w-full bg-surface-container-low border border-outline-variant/40 rounded-lg px-4 py-3 text-on-surface placeholder:text-outline-variant/40 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-mono"
                   />
+                  {codigoPostal && fiscalValidation.errors.codigoPostal && (
+                    <p className="text-error text-xs leading-relaxed">{fiscalValidation.errors.codigoPostal}</p>
+                  )}
                 </div>
               </div>
 
@@ -887,6 +1227,12 @@ export default function App() {
                   placeholder="Ej. JUAN PEREZ MARTINEZ o EMPRESA DE PRUEBAS" 
                   className="w-full bg-surface-container-low border border-outline-variant/40 rounded-lg px-4 py-3 text-on-surface placeholder:text-outline-variant/40 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all uppercase"
                 />
+                {razonSocial && fiscalValidation.errors.razonSocial && (
+                  <p className="text-error text-xs leading-relaxed">{fiscalValidation.errors.razonSocial}</p>
+                )}
+                {razonSocial && fiscalValidation.warnings.razonSocial && (
+                  <p className="text-primary text-xs leading-relaxed">{fiscalValidation.warnings.razonSocial}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -934,6 +1280,9 @@ export default function App() {
                   placeholder="correo@ejemplo.com" 
                   className="w-full bg-surface-container-low border border-outline-variant/40 rounded-lg px-4 py-3 text-on-surface placeholder:text-outline-variant/40 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
                 />
+                {email && fiscalValidation.errors.email && (
+                  <p className="text-error text-xs leading-relaxed">{fiscalValidation.errors.email}</p>
+                )}
               </div>
 
               {errorMsg && (
@@ -952,11 +1301,14 @@ export default function App() {
               <div className="pt-4 flex flex-col sm:flex-row gap-3 border-t border-outline-variant/10">
                 <button 
                   type="submit" 
-                  disabled={loading} 
+                  disabled={loading || Object.keys(fiscalValidation.errors).length > 0}
                   className="flex-grow py-3.5 bg-primary hover:brightness-110 text-on-primary font-headline-md rounded-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer"
                 >
                   {loading ? (
-                    <span className="material-symbols-outlined animate-spin text-xl">sync</span>
+                    <>
+                      <span className="material-symbols-outlined animate-spin text-xl">sync</span>
+                      <span>{processStep || 'Procesando factura'}</span>
+                    </>
                   ) : (
                     <>
                       <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>receipt_long</span>
@@ -984,13 +1336,19 @@ export default function App() {
             <div className="mb-6 relative">
               <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full"></div>
               <div className="relative w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center border-2 border-primary/30">
-                <span className="material-symbols-outlined text-[52px] text-primary" style={{ fontVariationSettings: "'FILL' 1, 'wght' 300" }}>check_circle</span>
+                <span className="material-symbols-outlined text-[52px] text-primary" style={{ fontVariationSettings: "'FILL' 1, 'wght' 300" }}>
+                  {invoiceResult.alreadyIssued ? 'receipt_long' : 'check_circle'}
+                </span>
               </div>
             </div>
 
-            <h1 className="text-headline-xl font-headline-xl text-on-surface mb-1">¡Factura Exitosa!</h1>
+            <h1 className="text-headline-xl font-headline-xl text-on-surface mb-1">
+              {invoiceResult.alreadyIssued ? 'Esta compra ya fue facturada' : '¡Factura Exitosa!'}
+            </h1>
             <p className="text-body-lg font-body-lg text-on-surface-variant mb-6 text-sm">
-              Tu comprobante fiscal ha sido generado y timbrado correctamente.
+              {invoiceResult.alreadyIssued
+                ? 'Este ticket ya cuenta con un CFDI emitido. Puedes descargarlo o reenviarlo sin generar una factura nueva.'
+                : 'Tu comprobante fiscal ha sido generado y timbrado correctamente.'}
             </p>
 
             {/* Resumen Fiscal */}
@@ -998,6 +1356,14 @@ export default function App() {
               <div>
                 <p className="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider text-xs">Folio Fiscal (UUID CFDI)</p>
                 <p className="text-body-md font-mono text-primary text-xs break-all mt-1">{invoiceResult.uuid}</p>
+                <button
+                  type="button"
+                  onClick={handleCopyUuid}
+                  className="mt-2 inline-flex items-center gap-1 text-xs text-on-surface-variant hover:text-primary transition-colors"
+                >
+                  <span className="material-symbols-outlined text-sm">content_copy</span>
+                  Copiar UUID
+                </button>
               </div>
               <div className="md:text-right">
                 <p className="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider text-xs">Monto Total</p>
@@ -1026,7 +1392,7 @@ export default function App() {
               
               {invoiceResult.status !== 'CANCELADO' ? (
                 <>
-                  <button 
+                  <button
                     disabled={loading}
                     onClick={handleSendEmail}
                     className="bg-surface-container-highest text-on-surface py-3.5 rounded-lg flex items-center justify-center gap-2 font-label-md text-label-md hover:bg-surface-variant transition-all active:scale-95 border border-outline-variant/20 cursor-pointer"
@@ -1039,6 +1405,14 @@ export default function App() {
                         <span>Enviar por Email a {email || '...'}</span>
                       </>
                     )}
+                  </button>
+
+                  <button
+                    onClick={resetFlow}
+                    className="border border-outline text-on-surface py-3.5 rounded-lg flex items-center justify-center gap-2 font-label-md text-label-md hover:border-primary hover:text-primary transition-all active:scale-95 cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                    <span>Facturar otro ticket</span>
                   </button>
 
                   {!isCancellationExpired() ? (
@@ -1064,13 +1438,6 @@ export default function App() {
             </div>
 
             {/* Back action */}
-            <button 
-              onClick={resetFlow}
-              className="text-primary hover:underline underline-offset-4 flex items-center gap-2 transition-all font-label-md text-label-md cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-              <span>Facturar otro ticket</span>
-            </button>
           </div>
         )}
       </main>

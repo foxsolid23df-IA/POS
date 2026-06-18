@@ -163,3 +163,26 @@ input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
+
+@media (max-width: 640px) {
+  input,
+  select {
+    color: #f4f7ff;
+    border-color: rgba(133, 147, 148, 0.62) !important;
+    background-color: #182238;
+  }
+
+  input::placeholder {
+    color: rgba(218, 226, 253, 0.62);
+  }
+
+  label,
+  .text-on-surface-variant {
+    color: #d0dcdd;
+  }
+
+  button[class*="border-outline"] {
+    border-color: rgba(208, 220, 221, 0.68);
+    color: #eef4ff;
+  }
+}
