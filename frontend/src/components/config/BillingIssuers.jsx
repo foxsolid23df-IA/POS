@@ -25,6 +25,7 @@ export default function BillingIssuers() {
   const [showModal, setShowModal] = useState(false);
   const [showPortalModal, setShowPortalModal] = useState(false);
   const [selectedIssuer, setSelectedIssuer] = useState(null);
+  const [editingIssuer, setEditingIssuer] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -49,6 +50,46 @@ export default function BillingIssuers() {
 
   const cerInputRef = useRef(null);
   const keyInputRef = useRef(null);
+
+  const resetIssuerForm = () => {
+    setFormData({
+      rfc: "",
+      razonSocial: "",
+      regimenFiscal: "612",
+      codigoPostal: "",
+      branchName: "Matriz principal",
+      password: "",
+    });
+    setFiles({ cer: null, key: null, cerBase64: "", keyBase64: "" });
+    setFileErrors({ cer: "", key: "" });
+  };
+
+  const closeIssuerModal = () => {
+    setShowModal(false);
+    setEditingIssuer(null);
+    resetIssuerForm();
+  };
+
+  const openCreateModal = () => {
+    setEditingIssuer(null);
+    resetIssuerForm();
+    setShowModal(true);
+  };
+
+  const openEditModal = (issuer) => {
+    setEditingIssuer(issuer);
+    setFormData({
+      rfc: issuer.rfc || "",
+      razonSocial: issuer.razon_social || "",
+      regimenFiscal: issuer.regimen_fiscal || "612",
+      codigoPostal: issuer.codigo_postal || "",
+      branchName: issuer.sucursal_nombre || issuer.branch_name || "Matriz principal",
+      password: "",
+    });
+    setFiles({ cer: null, key: null, cerBase64: "", keyBase64: "" });
+    setFileErrors({ cer: "", key: "" });
+    setShowModal(true);
+  };
 
   const arrayBufferToBase64 = (buffer) => {
     const bytes = new Uint8Array(buffer);
@@ -204,17 +245,24 @@ export default function BillingIssuers() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const normalizedPostalCode = formData.codigoPostal.replace(/\D/g, "").slice(0, 5);
+
     if (
       !formData.rfc.trim() ||
       !formData.razonSocial.trim() ||
       !formData.regimenFiscal.trim() ||
-      !formData.codigoPostal.trim()
+      !normalizedPostalCode
     ) {
       alert("Por favor rellene todos los campos obligatorios del contribuyente.");
       return;
     }
 
-    if (!files.cer || !files.key || !formData.password.trim()) {
+    if (normalizedPostalCode.length !== 5) {
+      alert("El código postal debe contener 5 dígitos.");
+      return;
+    }
+
+    if (!editingIssuer && (!files.cer || !files.key || !formData.password.trim())) {
       alert(
         "Por favor cargue los archivos .cer y .key, además de la contraseña.",
       );
@@ -223,6 +271,26 @@ export default function BillingIssuers() {
 
     try {
       setIsSubmitting(true);
+
+      if (editingIssuer) {
+        const { error } = await supabase
+          .from("billing_issuers")
+          .update({
+            razon_social: formData.razonSocial.toUpperCase(),
+            regimen_fiscal: formData.regimenFiscal,
+            codigo_postal: normalizedPostalCode,
+            sucursal_nombre: formData.branchName || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", editingIssuer.id);
+
+        if (error) throw error;
+
+        alert("Emisor actualizado correctamente.");
+        closeIssuerModal();
+        fetchIssuers();
+        return;
+      }
 
       const cerBase64 = files.cerBase64 || await readFileAsBase64(files.cer);
       const keyBase64 = files.keyBase64 || await readFileAsBase64(files.key);
@@ -243,7 +311,7 @@ export default function BillingIssuers() {
           password: formData.password,
           razon_social: formData.razonSocial,
           regimen_fiscal: formData.regimenFiscal,
-          codigo_postal: formData.codigoPostal,
+          codigo_postal: normalizedPostalCode,
           sucursal_nombre: formData.branchName,
         },
       });
@@ -288,17 +356,7 @@ export default function BillingIssuers() {
       }
 
       alert("Emisor validado y registrado exitosamente a través de Facturama.");
-      setShowModal(false);
-      setFormData({
-        rfc: "",
-        razonSocial: "",
-        regimenFiscal: "612",
-        codigoPostal: "",
-        branchName: "Matriz principal",
-        password: "",
-      });
-      setFiles({ cer: null, key: null, cerBase64: "", keyBase64: "" });
-      setFileErrors({ cer: "", key: "" });
+      closeIssuerModal();
       fetchIssuers();
     } catch (error) {
       console.error("Error completo:", error);
@@ -332,7 +390,7 @@ export default function BillingIssuers() {
             </button>
           </div>
           <button
-            onClick={() => setShowModal(true)}
+            onClick={openCreateModal}
             className="flex items-center gap-2 px-6 py-3 bg-gradient-to-b from-[#003f87] to-[#0056b3] hover:from-[#004b9e] hover:to-[#0060c5] text-white rounded-xl shadow-sm transition-all duration-300 font-medium font-['Inter']"
           >
             <span className="material-icons-outlined text-[20px]">
@@ -403,7 +461,7 @@ export default function BillingIssuers() {
                             {issuer.codigo_postal}
                           </span>
                           <span className="text-sm opacity-70 dark:opacity-60">
-                            {issuer.branch_name}
+                            {issuer.sucursal_nombre || issuer.branch_name}
                           </span>
                         </div>
                       </td>
@@ -438,6 +496,15 @@ export default function BillingIssuers() {
                       </td>
                       <td className="p-5 text-right pr-6 gap-2 flex items-center justify-end">
                         <button
+                          onClick={() => openEditModal(issuer)}
+                          className="w-9 h-9 rounded-lg inline-flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-[#003f87] dark:hover:text-blue-400 hover:bg-[#003f87]/10 dark:hover:bg-blue-900/20 transition-colors"
+                          title="Editar Emisor"
+                        >
+                          <span className="material-icons-outlined text-[20px]">
+                            edit
+                          </span>
+                        </button>
+                        <button
                           onClick={() => handleDelete(issuer.id)}
                           className="w-9 h-9 rounded-lg inline-flex items-center justify-center text-rose-400 dark:text-rose-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors"
                           title="Eliminar Emisor"
@@ -461,21 +528,21 @@ export default function BillingIssuers() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-[#001a40]/40 dark:bg-slate-900/60 backdrop-blur-md"
-            onClick={() => !isSubmitting && setShowModal(false)}
+            onClick={() => !isSubmitting && closeIssuerModal()}
           />
           <div className="relative w-full max-w-3xl bg-white dark:bg-slate-800 rounded-[24px] shadow-[0_24px_40px_-8px_rgba(0,0,0,0.1)] dark:shadow-[0_24px_40px_-8px_rgba(0,0,0,0.5)] flex flex-col font-['Inter'] animate-in fade-in zoom-in-95 duration-200 object-contain max-h-[90vh] overflow-hidden">
             {/* Header Modal */}
             <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-[#ffffff] dark:bg-slate-800">
               <div>
                 <h2 className="text-2xl font-bold font-['Manrope'] text-slate-800 dark:text-slate-100">
-                  Cargar Datos de Facturación
+                  {editingIssuer ? "Editar Datos de Facturación" : "Cargar Datos de Facturación"}
                 </h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                  Configura tu CSD mediante conexión segura a Facturama.
+                  {editingIssuer ? "Actualiza los datos fiscales guardados para este emisor." : "Configura tu CSD mediante conexión segura a Facturama."}
                 </p>
               </div>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={closeIssuerModal}
                 className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 disabled={isSubmitting}
               >
@@ -495,8 +562,9 @@ export default function BillingIssuers() {
                     value={formData.rfc}
                     onChange={handleChange}
                     required
+                    disabled={Boolean(editingIssuer)}
                     placeholder="Ej. EJM951010AAA"
-                    className="w-full px-4 py-3 bg-[#f2f4f7] dark:bg-slate-700 border border-slate-200/50 dark:border-slate-600 rounded-xl focus:border-[#003f87] dark:focus:border-blue-500 focus:ring-4 focus:ring-[#d7e2ff] dark:focus:ring-blue-900/30 transition-all outline-none font-medium uppercase text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500"
+                    className="w-full px-4 py-3 bg-[#f2f4f7] dark:bg-slate-700 border border-slate-200/50 dark:border-slate-600 rounded-xl focus:border-[#003f87] dark:focus:border-blue-500 focus:ring-4 focus:ring-[#d7e2ff] dark:focus:ring-blue-900/30 transition-all outline-none font-medium uppercase text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 disabled:opacity-70 disabled:cursor-not-allowed"
                   />
                 </div>
                 <div className="space-y-2">
@@ -545,9 +613,22 @@ export default function BillingIssuers() {
                     className="w-full px-4 py-3 bg-[#f2f4f7] dark:bg-slate-700 border border-slate-200/50 dark:border-slate-600 rounded-xl focus:border-[#003f87] dark:focus:border-blue-500 focus:ring-4 focus:ring-[#d7e2ff] dark:focus:ring-blue-900/30 transition-all outline-none font-medium text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500"
                   />
                 </div>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    Sucursal
+                  </label>
+                  <input
+                    name="branchName"
+                    value={formData.branchName}
+                    onChange={handleChange}
+                    placeholder="Matriz principal"
+                    className="w-full px-4 py-3 bg-[#f2f4f7] dark:bg-slate-700 border border-slate-200/50 dark:border-slate-600 rounded-xl focus:border-[#003f87] dark:focus:border-blue-500 focus:ring-4 focus:ring-[#d7e2ff] dark:focus:ring-blue-900/30 transition-all outline-none font-medium text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500"
+                  />
+                </div>
               </div>
 
               {/* Uploads Zone */}
+              {!editingIssuer && (
               <div className="bg-[#f7f9fc] dark:bg-slate-700/50 rounded-2xl p-6 border border-indigo-50 dark:border-blue-900/30 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4">
                   <span className="material-icons-outlined text-[#003f87]/10 dark:text-blue-400/10 text-6xl">
@@ -682,12 +763,13 @@ export default function BillingIssuers() {
                   </div>
                 </div>
               </div>
+              )}
 
               {/* Actions */}
               <div className="mt-8 flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-700 pt-6">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
+                  onClick={closeIssuerModal}
                   disabled={isSubmitting}
                   className="px-6 py-3 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 font-semibold rounded-xl transition-colors"
                 >
@@ -703,14 +785,14 @@ export default function BillingIssuers() {
                       <span className="material-icons-outlined animate-spin text-[20px]">
                         sync
                       </span>
-                      Validando...
+                      {editingIssuer ? "Guardando..." : "Validando..."}
                     </>
                   ) : (
                     <>
                       <span className="material-icons-outlined text-[20px]">
-                        verified_user
+                        {editingIssuer ? "save" : "verified_user"}
                       </span>
-                      Guardar y Validar CSD
+                      {editingIssuer ? "Guardar Cambios" : "Guardar y Validar CSD"}
                     </>
                   )}
                 </button>
