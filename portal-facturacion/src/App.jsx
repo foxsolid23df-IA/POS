@@ -204,6 +204,34 @@ export default function App() {
     return rawMessage || 'No se pudo completar la solicitud. Intenta de nuevo o contacta soporte con los datos del ticket.';
   };
 
+  const mapIssuedInvoiceResult = (invoice) => ({
+    id: invoice?.id || invoice?.facturama_id || invoice?.uuid || 'UUID no disponible',
+    facturama_id: invoice?.facturama_id,
+    uuid: invoice?.uuid || 'UUID no disponible',
+    xml_url: invoice?.xml_url,
+    pdf_url: invoice?.pdf_url,
+    status: invoice?.status,
+    created_at: invoice?.created_at,
+    alreadyIssued: true
+  });
+
+  const recoverIssuedInvoice = async ({ folio, pin, total }) => {
+    const { data, error } = await supabase.functions.invoke('buscar-factura-ticket', {
+      body: { folio, pin, total }
+    });
+
+    if (error) {
+      const errorDetails = await extractFunctionErrorMessage(error, 'No se pudo recuperar la factura.');
+      throw new Error(errorDetails);
+    }
+
+    if (!data?.success) {
+      throw new Error(data?.message || 'No encontramos la factura emitida para este ticket.');
+    }
+
+    return data;
+  };
+
   const getFiscalValidation = () => {
     const errors = {};
     const warnings = {};
@@ -334,37 +362,17 @@ export default function App() {
       await loadExtraTicketInfo(data);
 
       if (data.facturado) {
-        // Si ya está facturado, buscar la factura previamente generada
-        const { data: invData, error: invErr } = await supabase
-          .from('invoices')
-          .select('*')
-          .eq('sale_id', data.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+        const issuedData = await recoverIssuedInvoice({
+          folio: data.id,
+          pin: pinValue.trim().toUpperCase(),
+          total: totalValue
+        });
 
-        if (invErr) {
-          console.error("Error al buscar factura previa:", invErr);
-        }
-
-        if (invData) {
-          setInvoiceResult({
-            id: invData.facturama_id || invData.uuid_cfdi || invData.uuid_fiscal || invData.id,
-            facturama_id: invData.facturama_id,
-            uuid: invData.uuid_fiscal || invData.uuid_cfdi || 'UUID no disponible',
-            xml_url: invData.xml_url,
-            pdf_url: invData.pdf_url,
-            status: invData.status,
-            created_at: invData.created_at,
-            alreadyIssued: true
-          });
-          setTicketData(data);
-          localStorage.removeItem(getDraftKey(data));
-          setStep(4); // Pantalla de éxito
-          return;
-        }
-
-        throw new Error('Este ticket ya fue facturado, pero no se encontro el registro local de la factura. Contacta soporte para recuperar el CFDI antes de intentar nuevamente.');
+        setInvoiceResult(mapIssuedInvoiceResult(issuedData.invoice));
+        setTicketData(data);
+        localStorage.removeItem(getDraftKey(data));
+        setStep(4);
+        return;
       }
 
       setTicketData(data);
@@ -815,6 +823,8 @@ export default function App() {
           <input id="lookup-folio" class="swal2-input" style="margin:0;width:100%" value="${folioValue}" placeholder="Ej. 2867" />
           <label style="font-size:12px;color:#bbc9ca">PIN</label>
           <input id="lookup-pin" class="swal2-input" style="margin:0;width:100%;text-transform:uppercase" value="${pinValue}" placeholder="Ej. 4F1B78" />
+          <label style="font-size:12px;color:#bbc9ca">Monto total del ticket</label>
+          <input id="lookup-total" class="swal2-input" style="margin:0;width:100%" value="${totalValue}" placeholder="Ej. 10,780.00" />
           <label style="font-size:12px;color:#bbc9ca">Correo para reenviar (opcional)</label>
           <input id="lookup-email" class="swal2-input" style="margin:0;width:100%" value="${email}" placeholder="correo@ejemplo.com" />
         </div>
@@ -829,60 +839,31 @@ export default function App() {
       preConfirm: () => {
         const folio = document.getElementById('lookup-folio')?.value?.trim();
         const pin = document.getElementById('lookup-pin')?.value?.trim().toUpperCase();
+        const total = document.getElementById('lookup-total')?.value?.trim();
         const lookupEmail = document.getElementById('lookup-email')?.value?.trim();
 
-        if (!folio || !pin) {
-          Swal.showValidationMessage('Captura folio y PIN del ticket.');
+        if (!folio || !pin || !total) {
+          Swal.showValidationMessage('Captura folio, PIN y monto total del ticket.');
           return false;
         }
 
-        return { folio, pin, lookupEmail };
+        return { folio, pin, total, lookupEmail };
       }
     });
 
     if (!result.isConfirmed) return;
 
-    const { folio, pin, lookupEmail } = result.value;
+    const { folio, pin, total, lookupEmail } = result.value;
     setLoading(true);
     setFolioValue(folio);
     setPinValue(pin);
+    setTotalValue(total);
     if (lookupEmail) setEmail(lookupEmail);
 
     try {
-      const { data: sale, error: saleErr } = await supabase
-        .from('sales')
-        .select('*')
-        .eq('id', folio)
-        .eq('pin_facturacion', pin)
-        .single();
-
-      if (saleErr || !sale) {
-        throw new Error('No encontramos un ticket con ese folio y PIN.');
-      }
-
-      const { data: invData, error: invErr } = await supabase
-        .from('invoices')
-        .select('*')
-        .eq('sale_id', sale.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (invErr) throw invErr;
-      if (!invData) throw new Error('Este ticket todavía no tiene una factura emitida.');
-
-      await loadExtraTicketInfo(sale);
-      setTicketData(sale);
-      setInvoiceResult({
-        id: invData.facturama_id || invData.uuid_cfdi || invData.uuid_fiscal || invData.id,
-        facturama_id: invData.facturama_id,
-        uuid: invData.uuid_fiscal || invData.uuid_cfdi || 'UUID no disponible',
-        xml_url: invData.xml_url,
-        pdf_url: invData.pdf_url,
-        status: invData.status,
-        created_at: invData.created_at,
-        alreadyIssued: true
-      });
+      const issuedData = await recoverIssuedInvoice({ folio, pin, total });
+      setTicketData(issuedData.sale);
+      setInvoiceResult(mapIssuedInvoiceResult(issuedData.invoice));
       setStep(4);
     } catch (err) {
       Swal.fire({
