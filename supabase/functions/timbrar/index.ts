@@ -64,6 +64,45 @@ const isMissingRpcError = (error: any) => {
 const isActiveInvoiceStatus = (status: unknown) =>
   !["CANCELADO", "CANCELLED", "ANULADO"].includes(String(status ?? "ACTIVO").toUpperCase());
 
+const normalizePaymentMethod = (method: unknown) =>
+  String(method ?? "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+const mapPaymentMethodToSatForm = (method: unknown) => {
+  const normalized = normalizePaymentMethod(method);
+
+  if (["transferencia", "transfer", "spei", "wire"].includes(normalized)) return "03";
+  if (["tarjeta", "card", "credito", "credit"].includes(normalized)) return "04";
+  if (["debito", "debit"].includes(normalized)) return "28";
+  if (["efectivo", "cash", "dolares", "usd"].includes(normalized)) return "01";
+
+  return "";
+};
+
+const getSatPaymentForm = (sale: any) => {
+  const payments = Array.isArray(sale?.sale_payments) ? sale.sale_payments : [];
+  const validPayments = payments
+    .map((payment: any) => ({
+      method: payment?.payment_method,
+      amount: Number(payment?.amount ?? 0),
+    }))
+    .filter((payment: any) => payment.method && Number.isFinite(payment.amount) && payment.amount > 0)
+    .sort((a: any, b: any) => b.amount - a.amount);
+
+  if (validPayments.length > 0) {
+    const topPayment = validPayments[0];
+    const hasTie = validPayments.length > 1 && validPayments[1].amount === topPayment.amount;
+    if (hasTie) return "99";
+
+    return mapPaymentMethodToSatForm(topPayment.method) || "99";
+  }
+
+  return mapPaymentMethodToSatForm(sale?.payment_method) || "99";
+};
+
 const MEXICO_TIME_ZONE = "America/Mexico_City";
 
 const getMexicoMonthParts = (date: Date) => {
@@ -133,7 +172,7 @@ serve(async (req) => {
     // ─── PASO 1: Obtener datos reales de la venta y sus productos ────
     const { data: sale, error: saleErr } = await supabase
       .from('sales')
-      .select('*, sale_items(*)')
+      .select('*, sale_items(*), sale_payments(*)')
       .eq('ticket_uuid', ticket_uuid)
       .single();
 
@@ -143,6 +182,7 @@ serve(async (req) => {
     }
 
     sale.sale_items = Array.isArray(sale.sale_items) ? sale.sale_items : [];
+    sale.sale_payments = Array.isArray(sale.sale_payments) ? sale.sale_payments : [];
 
     // ─── PASO 1.1: OBTENER DATA DEL EMISOR ───
     let issuer = null;
@@ -394,7 +434,7 @@ serve(async (req) => {
       CfdiType: "I",
       NameId: "1",
       LogoUrl: portal?.logo_url || null,
-      PaymentForm: (sale.payment_method === 'tarjeta') ? "04" : "01", 
+      PaymentForm: getSatPaymentForm(sale),
       PaymentMethod: "PUE",
       ExpeditionPlace: issuerPostalCode,
       Folio: ticket_uuid.substring(0, 8).toUpperCase(),
