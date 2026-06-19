@@ -345,76 +345,46 @@ serve(async (req) => {
       return errorResponse("El ticket no tiene partidas para facturar. Revisa la venta en el POS antes de timbrar.");
     }
 
-    // Calcular factor de impuesto
-    const hasTax = (sale.tax_amount || 0) > 0;
-    const taxRate = hasTax ? (sale.tax_amount / (sale.subtotal || (sale.total - sale.tax_amount))) : 0;
+    const roundCurrency = (value: number) => Number(value.toFixed(2));
+    const roundSix = (value: number) => Number(value.toFixed(6));
+    const taxPercentage = Number(sale.tax_percentage) > 0 ? Number(sale.tax_percentage) : 16;
+    const taxRate = taxPercentage / 100;
+    const saleTotal = roundCurrency(Number(sale.total || 0));
 
-    // ─── PASO 1.8: AGRUPACIÓN U ORDINARIO ───
-    let facturamaItems = [];
-    if (portal && portal.agrupar_conceptos) {
-      // Lógica de Venta General
-      let totalSubtotal = 0;
-      let totalTax = 0;
-      
-      sale.sale_items.forEach((item: any) => {
-        const unitPriceBeforeTax = hasTax ? (item.price / (1 + taxRate)) : item.price;
-        const subtotalItem = unitPriceBeforeTax * item.quantity;
-        const taxAmountItem = (item.total || (item.price * item.quantity)) - subtotalItem;
-        totalSubtotal += subtotalItem;
-        totalTax += taxAmountItem;
-      });
+    // Paso 1.8: todas las facturas salen con IVA trasladado por producto.
+    let accumulatedTotal = 0;
+    const facturamaItems = sale.sale_items.map((item: any, index: number) => {
+      const quantity = Number(item.quantity || 1);
+      const rawItemTotal = Number(item.total ?? (Number(item.price || 0) * quantity));
+      const isLastItem = index === sale.sale_items.length - 1;
+      const itemTotal = isLastItem
+        ? roundCurrency(saleTotal - accumulatedTotal)
+        : roundCurrency(rawItemTotal);
 
-      const genericItem: any = {
-        ProductCode: portal.clave_servicio_agrupada || "01010101",
-        Description: "Venta General",
+      accumulatedTotal = roundCurrency(accumulatedTotal + itemTotal);
+
+      const subtotalItem = roundCurrency(itemTotal / (1 + taxRate));
+      const taxAmountItem = roundCurrency(itemTotal - subtotalItem);
+      const unitPriceBeforeTax = quantity > 0 ? subtotalItem / quantity : subtotalItem;
+
+      return {
+        ProductCode: "01010101",
+        Description: item.product_name || "Venta de Producto",
         UnitCode: "E48",
-        Quantity: 1,
-        UnitPrice: parseFloat(totalSubtotal.toFixed(2)),
-        Subtotal: parseFloat(totalSubtotal.toFixed(2)),
-        TaxObject: hasTax ? "02" : "01",
-        Total: parseFloat((totalSubtotal + totalTax).toFixed(2))
+        Quantity: quantity,
+        UnitPrice: roundSix(unitPriceBeforeTax),
+        Subtotal: subtotalItem,
+        TaxObject: "02",
+        Total: itemTotal,
+        Taxes: [{
+          Total: taxAmountItem,
+          Name: "IVA",
+          Base: subtotalItem,
+          Rate: roundSix(taxRate),
+          IsRetention: false
+        }]
       };
-
-      if (hasTax) {
-        genericItem.Taxes = [{
-            Total: parseFloat(totalTax.toFixed(2)),
-            Name: "IVA",
-            Base: parseFloat(totalSubtotal.toFixed(2)),
-            Rate: parseFloat(taxRate.toFixed(2)),
-            IsRetention: false
-        }];
-      }
-      facturamaItems.push(genericItem);
-    } else {
-      // Lógica Desglosada actual
-      facturamaItems = sale.sale_items.map((item: any) => {
-        const unitPriceBeforeTax = hasTax ? (item.price / (1 + taxRate)) : item.price;
-        const subtotalItem = unitPriceBeforeTax * item.quantity;
-        const taxAmountItem = (item.total || (item.price * item.quantity)) - subtotalItem;
-
-        const itemObj: any = {
-          ProductCode: "01010101",
-          Description: item.product_name || "Venta de Producto",
-          UnitCode: "E48",
-          Quantity: item.quantity,
-          UnitPrice: parseFloat(unitPriceBeforeTax.toFixed(2)),
-          Subtotal: parseFloat(subtotalItem.toFixed(2)),
-          TaxObject: hasTax ? "02" : "01",
-          Total: parseFloat((item.total || (item.price * item.quantity)).toFixed(2))
-        };
-
-        if (hasTax) {
-          itemObj.Taxes = [{
-            Total: parseFloat(taxAmountItem.toFixed(2)),
-            Name: "IVA",
-            Base: parseFloat(subtotalItem.toFixed(2)),
-            Rate: parseFloat(taxRate.toFixed(2)),
-            IsRetention: false
-          }];
-        }
-        return itemObj;
-      });
-    }
+    });
 
     const facturamaBody = {
       CfdiType: "I",
