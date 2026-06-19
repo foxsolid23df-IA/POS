@@ -61,6 +61,30 @@ const isMissingRpcError = (error: any) => {
   return /function .*claim_sale_for_invoicing|Could not find|schema cache/i.test(message);
 };
 
+const MEXICO_TIME_ZONE = "America/Mexico_City";
+
+const getMexicoMonthParts = (date: Date) => {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: MEXICO_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(date);
+
+  const getPart = (type: string) => parts.find((part) => part.type === type)?.value || "";
+
+  return {
+    year: Number(getPart("year")),
+    month: Number(getPart("month")),
+  };
+};
+
+const isSameBillingMonth = (saleDate: Date, now = new Date()) => {
+  const saleParts = getMexicoMonthParts(saleDate);
+  const nowParts = getMexicoMonthParts(now);
+
+  return saleParts.year === nowParts.year && saleParts.month === nowParts.month;
+};
+
 serve(async (req) => {
   // CORS preflight
   if (req.method === "OPTIONS") {
@@ -240,20 +264,19 @@ serve(async (req) => {
       return errorResponse("El emisor fiscal está incompleto. Verifica RFC, razón social, régimen fiscal y código postal en Configuración > Facturas.");
     }
 
-    // ─── PASO 1.2: VALIDACIÓN DE LÍMITES DE TIEMPO (Si se encontró portal) ───
+    // Paso 1.2: validacion global de limites de tiempo.
     const saleDate = new Date(sale.created_at);
     const now = new Date();
-    if (portal) {
-      if (portal.limite_tipo === 'mes_consumo') {
-        if (saleDate.getMonth() !== now.getMonth() || saleDate.getFullYear() !== now.getFullYear()) {
-           return errorResponse("Su ticket ha expirado, debe ser facturado en el mismo mes de su consumo.");
-        }
-      } else if (portal.limite_tipo === 'dias' && portal.limite_dias > 0) {
-        const diffTime = Math.abs(now.getTime() - saleDate.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        if (diffDays > portal.limite_dias) {
-           return errorResponse(`Su ticket ha expirado. El comercio permite facturar máximo ${portal.limite_dias} días después del consumo.`);
-        }
+
+    if (!isSameBillingMonth(saleDate, now)) {
+      return errorResponse("Este ticket ya expiro. Debe facturarse dentro del mismo mes de la compra.");
+    }
+
+    if (portal?.limite_tipo === 'dias' && portal.limite_dias > 0) {
+      const diffTime = Math.abs(now.getTime() - saleDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if (diffDays > portal.limite_dias) {
+        return errorResponse(`Su ticket ha expirado. El comercio permite facturar máximo ${portal.limite_dias} días después del consumo.`);
       }
     }
 
