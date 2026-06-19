@@ -61,6 +61,9 @@ const isMissingRpcError = (error: any) => {
   return /function .*claim_sale_for_invoicing|Could not find|schema cache/i.test(message);
 };
 
+const isActiveInvoiceStatus = (status: unknown) =>
+  !["CANCELADO", "CANCELLED", "ANULADO"].includes(String(status ?? "ACTIVO").toUpperCase());
+
 const MEXICO_TIME_ZONE = "America/Mexico_City";
 
 const getMexicoMonthParts = (date: Date) => {
@@ -303,18 +306,19 @@ serve(async (req) => {
     }
 
     // Paso 1.5: proteger reintentos para no timbrar duplicado.
-    const { data: existingInvoice, error: existingInvoiceErr } = await supabase
+    const { data: existingInvoices, error: existingInvoiceErr } = await supabase
       .from('invoices')
       .select('id, sale_id, user_id, uuid_cfdi, facturama_id, xml_url, pdf_url, total, status, created_at')
       .eq('sale_id', sale.id)
       .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .limit(10);
 
     if (existingInvoiceErr) {
       console.error("Error al consultar factura previa:", existingInvoiceErr);
       return errorResponse("No se pudo validar si el ticket ya estaba facturado. Intenta de nuevo.");
     }
+
+    const existingInvoice = (existingInvoices || []).find((invoice: any) => isActiveInvoiceStatus(invoice.status));
 
     if (existingInvoice) {
       return new Response(JSON.stringify({
@@ -446,13 +450,14 @@ serve(async (req) => {
     }
 
     if (!claimedSale) {
-      const { data: claimedInvoice } = await supabase
+      const { data: claimedInvoices } = await supabase
         .from('invoices')
         .select('id, sale_id, user_id, uuid_cfdi, facturama_id, xml_url, pdf_url, total, status, created_at')
         .eq('sale_id', sale.id)
         .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .limit(10);
+
+      const claimedInvoice = (claimedInvoices || []).find((invoice: any) => isActiveInvoiceStatus(invoice.status));
 
       if (claimedInvoice) {
         return new Response(JSON.stringify({

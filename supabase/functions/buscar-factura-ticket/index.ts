@@ -66,6 +66,9 @@ const firstString = (...values: unknown[]) => {
   return "";
 };
 
+const isActiveInvoiceStatus = (status: unknown) =>
+  !["CANCELADO", "CANCELLED", "ANULADO"].includes(String(status ?? "ACTIVO").toUpperCase());
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -110,18 +113,19 @@ serve(async (req) => {
       return errorResponse("El monto ingresado no coincide con el registrado en el ticket.");
     }
 
-    const { data: invoice, error: invoiceErr } = await supabase
+    const { data: invoices, error: invoiceErr } = await supabase
       .from("invoices")
       .select("id, sale_id, uuid_cfdi, facturama_id, xml_url, pdf_url, status, total, created_at")
       .eq("sale_id", sale.id)
       .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .limit(10);
 
     if (invoiceErr) {
       console.error("Error consultando factura previa:", invoiceErr);
       return errorResponse("No se pudo consultar la factura emitida. Intenta de nuevo.");
     }
+
+    const invoice = (invoices || []).find((candidate: any) => isActiveInvoiceStatus(candidate.status));
 
     if (!invoice) {
       return errorResponse("Este ticket ya fue facturado, pero no encontramos el CFDI descargable. Contacta soporte con folio, PIN y monto.");
