@@ -118,32 +118,6 @@ export default function App() {
     }
   }, []);
 
-  useEffect(() => {
-    const draftKey = getDraftKey(ticketData);
-    if (!draftKey) return;
-
-    try {
-      const savedDraft = JSON.parse(localStorage.getItem(draftKey) || '{}');
-      if (!savedDraft || typeof savedDraft !== 'object') return;
-
-      if (savedDraft.rfc) setRfc(savedDraft.rfc);
-      if (savedDraft.razonSocial) setRazonSocial(savedDraft.razonSocial);
-      if (savedDraft.codigoPostal) setCodigoPostal(savedDraft.codigoPostal);
-      if (savedDraft.regimenFiscal) setRegimenFiscal(savedDraft.regimenFiscal);
-      if (savedDraft.usoCfdi) setUsoCfdi(savedDraft.usoCfdi);
-      if (savedDraft.email) setEmail(savedDraft.email);
-    } catch (err) {
-      console.warn('No se pudo recuperar el borrador fiscal:', err);
-    }
-  }, [ticketData?.id]);
-
-  useEffect(() => {
-    const draftKey = getDraftKey(ticketData);
-    if (!draftKey) return;
-
-    const draft = { rfc, razonSocial, codigoPostal, regimenFiscal, usoCfdi, email };
-    localStorage.setItem(draftKey, JSON.stringify(draft));
-  }, [ticketData?.id, rfc, razonSocial, codigoPostal, regimenFiscal, usoCfdi, email]);
 
   const getTicketReference = () => {
     const folio = ticketData?.id || folioValue.trim();
@@ -744,7 +718,19 @@ export default function App() {
     return diffHours > 24; 
   };
 
+  const clearFiscalFields = () => {
+    setRfc('');
+    setRazonSocial('');
+    setCodigoPostal('');
+    setRegimenFiscal('601');
+    setUsoCfdi('G03');
+    setEmail('');
+  };
+
   const resetFlow = () => {
+    const draftKey = getDraftKey();
+    if (draftKey) localStorage.removeItem(draftKey);
+
     setStep(1);
     setFolioValue('');
     setPinValue('');
@@ -754,6 +740,7 @@ export default function App() {
     setInvoiceResult(null);
     setErrorMsg('');
     setProcessStep('');
+    clearFiscalFields();
   };
 
   // Ayuda y soporte mock actions
