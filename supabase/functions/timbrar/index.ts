@@ -39,6 +39,14 @@ const firstString = (...values: unknown[]) => {
   return "";
 };
 
+const normalizeFiscalName = (value: unknown) =>
+  String(value ?? "")
+    .normalize("NFKC")
+    .replace(/[\u00A0\u200B-\u200D\uFEFF]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toUpperCase();
+
 const getFacturamaResourceId = (data: any) =>
   firstString(data?.Id, data?.id, data?.CfdiId, data?.cfdiId, data?.ResourceId, data?.resourceId);
 
@@ -157,16 +165,20 @@ serve(async (req) => {
     // ─── PASO 0: Parsear body del frontend ────────────────────────
     const body = await req.json();
     const { ticket_uuid, rfc, razon_social, codigo_postal, regimen_fiscal, uso_cfdi, email } = body;
+    const receiverRfc = String(rfc ?? "").trim().toUpperCase();
+    const receiverName = normalizeFiscalName(razon_social);
     const receiverPostalCode = normalizePostalCode(codigo_postal);
+    const receiverFiscalRegime = String(regimen_fiscal ?? "").trim();
+    const receiverCfdiUse = String(uso_cfdi ?? "").trim().toUpperCase();
 
     console.log("Body recibido para Facturama Multiemisor:", JSON.stringify(body));
 
-    if (!ticket_uuid || !rfc || !razon_social || !codigo_postal || !regimen_fiscal || !uso_cfdi) {
+    if (!ticket_uuid || !receiverRfc || !receiverName || !receiverPostalCode || !receiverFiscalRegime || !receiverCfdiUse) {
       return errorResponse("Faltan campos requeridos para timbrar: ticket_uuid, rfc, razon_social, codigo_postal, regimen_fiscal, uso_cfdi");
     }
 
     if (!receiverPostalCode) {
-      return errorResponse("El código postal del receptor debe contener 5 dígitos.");
+      return errorResponse("El codigo postal del receptor debe contener 5 digitos.");
     }
 
     // ─── PASO 1: Obtener datos reales de la venta y sus productos ────
@@ -444,10 +456,10 @@ serve(async (req) => {
         FiscalRegime: issuer.regimen_fiscal
       },
       Receiver: {
-        Rfc: rfc,
-        CfdiUse: uso_cfdi,
-        Name: razon_social,
-        FiscalRegime: regimen_fiscal,
+        Rfc: receiverRfc,
+        CfdiUse: receiverCfdiUse,
+        Name: receiverName,
+        FiscalRegime: receiverFiscalRegime,
         TaxZipCode: receiverPostalCode
       },
       Items: facturamaItems
@@ -555,7 +567,10 @@ serve(async (req) => {
         errorMsg += ": " + cfdiData.Message;
       }
       if (/Nombre del emisor/i.test(errorMsg)) {
-        errorMsg += " Corrige la Razón Social SAT del emisor en Configuración > Facturas > Editar. Debe coincidir exactamente con la constancia fiscal del RFC emisor.";
+        errorMsg += " Corrige la Razon Social SAT del emisor en Configuracion > Facturas > Editar. Debe coincidir exactamente con la constancia fiscal del RFC emisor.";
+      }
+      if (/Nombre del receptor/i.test(errorMsg)) {
+        errorMsg += ` Nombre enviado a Facturama: "${receiverName}". Verifica contra la Constancia de Situacion Fiscal, no solo contra recuperacion de certificados. Si el dato coincide, el RFC puede no estar actualizado en el padron de validacion de Facturama/SAT.`;
       }
       return errorResponse(errorMsg, 200, cfdiData);
     }
@@ -604,7 +619,7 @@ serve(async (req) => {
         uuid_cfdi: cfdiUuid || resourceId,
         facturama_id: resourceId || null,
         emisor_rfc: issuer.rfc,
-        cliente_rfc: rfc,
+        cliente_rfc: receiverRfc,
         xml_url: cfdiData.Xml || null,
         pdf_url: cfdiData.Pdf || null,
         total: sale.total,
