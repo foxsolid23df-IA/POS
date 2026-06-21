@@ -7,6 +7,81 @@ const APP_NAME = import.meta.env.VITE_APP_NAME || 'NexumPOS';
 const APP_TITLE = import.meta.env.VITE_APP_TITLE || 'Auto-Facturación | NexumPos';
 const SUPPORT_EMAIL = import.meta.env.VITE_SUPPORT_EMAIL || 'soporte@nexumpos.com';
 const SUPPORT_WHATSAPP = import.meta.env.VITE_SUPPORT_WHATSAPP || '5215650607108';
+const NEXUM_WEBSITE_URL = import.meta.env.VITE_NEXUM_WEBSITE_URL || 'https://nexumpos.com';
+const NEXUM_DEMO_URL = import.meta.env.VITE_NEXUM_DEMO_URL || `https://wa.me/${SUPPORT_WHATSAPP}?text=${encodeURIComponent('Hola, quiero conocer el portal de autofactura de NexumPOS para mi negocio.')}`;
+
+const NexumPromo = ({ variant = 'compact' }) => {
+  const commonLinkProps = {
+    target: '_blank',
+    rel: 'noopener noreferrer'
+  };
+
+  if (variant === 'footer') {
+    return (
+      <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 text-center sm:text-left">
+        <span className="text-label-sm font-label-sm text-on-surface-variant/75">Powered by NexumPOS</span>
+        <a
+          href={NEXUM_DEMO_URL}
+          {...commonLinkProps}
+          className="inline-flex items-center gap-1.5 text-label-sm font-label-sm text-primary hover:underline underline-offset-4"
+        >
+          <span>Quiero autofactura para mi negocio</span>
+          <span className="material-symbols-outlined text-sm">open_in_new</span>
+        </a>
+      </div>
+    );
+  }
+
+  if (variant === 'success') {
+    return (
+      <div className="w-full border-t border-outline-variant/20 pt-5 mt-1 text-left">
+        <div className="flex items-start gap-3">
+          <span className="material-symbols-outlined text-primary text-xl mt-0.5">storefront</span>
+          <div className="min-w-0 flex-1">
+            <p className="text-label-md font-label-md text-on-surface">Este portal funciona con NexumPOS</p>
+            <p className="text-body-md text-on-surface-variant text-sm mt-1">
+              Ofrece autofactura, ventas e inventario desde un solo sistema para tu negocio.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-3">
+              <a
+                href={NEXUM_DEMO_URL}
+                {...commonLinkProps}
+                className="inline-flex items-center justify-center gap-2 text-on-primary bg-primary px-4 py-2 rounded-lg text-label-sm font-label-sm hover:brightness-110 active:scale-95 transition-all"
+              >
+                <span className="material-symbols-outlined text-base">chat</span>
+                <span>Pedir demo</span>
+              </a>
+              <a
+                href={NEXUM_WEBSITE_URL}
+                {...commonLinkProps}
+                className="inline-flex items-center justify-center gap-2 text-primary hover:text-primary-fixed transition-colors text-label-sm font-label-sm"
+              >
+                <span>Conocer NexumPOS</span>
+                <span className="material-symbols-outlined text-base">arrow_forward</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full border-t border-outline-variant/10 pt-4 text-center">
+      <p className="text-label-sm font-label-sm text-on-surface-variant">
+        Tienes negocio? Ofrece autofactura como esta con NexumPOS.
+      </p>
+      <a
+        href={NEXUM_DEMO_URL}
+        {...commonLinkProps}
+        className="mt-2 inline-flex items-center justify-center gap-1.5 text-label-sm font-label-sm text-primary hover:underline underline-offset-4"
+      >
+        <span>Quiero verlo para mi negocio</span>
+        <span className="material-symbols-outlined text-sm">open_in_new</span>
+      </a>
+    </div>
+  );
+};
 
 const parseTicketAmount = (value) => {
   if (typeof value === 'number') return Number.isFinite(value) ? value : NaN;
@@ -1021,6 +1096,7 @@ export default function App() {
                   <span>Soporte</span>
                 </button>
               </div>
+              <NexumPromo />
             </div>
           </div>
         )}
@@ -1405,6 +1481,8 @@ export default function App() {
               )}
             </div>
 
+            <NexumPromo variant="success" />
+
             {/* Back action */}
           </div>
         )}
@@ -1416,6 +1494,9 @@ export default function App() {
           <div className="flex flex-col items-center md:items-start text-center md:text-left">
             <span className="font-headline-lg text-headline-lg text-on-surface font-bold text-lg">{APP_NAME}</span>
             <p className="font-body-md text-body-md text-on-surface-variant/75 text-sm mt-0.5">© 2026 {APP_NAME}. Todos los derechos reservados.</p>
+            <div className="mt-3">
+              <NexumPromo variant="footer" />
+            </div>
           </div>
           <div className="flex gap-x-8 text-sm">
             <button onClick={showHelpAlert} className="text-on-surface-variant hover:text-primary transition-colors font-label-sm text-label-sm">Privacidad</button>
