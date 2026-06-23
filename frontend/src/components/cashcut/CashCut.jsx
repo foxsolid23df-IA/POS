@@ -6,6 +6,7 @@ import { terminalService } from "../../services/terminalService";
 import { cashSessionService } from "../../services/cashSessionService";
 import { CashMovementModal } from "../sales/CashMovementModal";
 import { useSettings } from "../../contexts/SettingsContext";
+import { buildCashCutTicketHtml, hasFullCashCutSnapshot } from "../../utils/cashCutTicketFormatter";
 import Swal from "sweetalert2";
 import "./CashCut.css";
 
@@ -32,6 +33,15 @@ export const CashCut = ({ onClose }) => {
   const [showTicket, setShowTicket] = useState(false);
   const [cutResult, setCutResult] = useState(null);
   const [mostrarModalMovimiento, setMostrarModalMovimiento] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [cutHistory, setCutHistory] = useState([]);
+  const [historyFilters, setHistoryFilters] = useState({
+    from: "",
+    to: "",
+    type: "todos",
+    staff: "",
+  });
 
   const ticketRef = useRef(null);
 
@@ -70,11 +80,15 @@ export const CashCut = ({ onClose }) => {
 
       expectedMXN += data.cashMxnExpected || 0;
 
-      // 3. Subtract/Add Manual Cash Movements (Entradas/Salidas)
+      // 3. Add entries and subtract real cash outs.
       const entradasTotal = data.entradasTotal || 0;
       const salidasTotal = data.salidasTotal || 0;
+      const expensesTotal = data.expensesTotal || 0;
+      const refundsCashTotal = data.refundsCashTotal || 0;
       expectedMXN += entradasTotal;
       expectedMXN -= salidasTotal;
+      expectedMXN -= expensesTotal;
+      expectedMXN -= refundsCashTotal;
 
       setSummary({
         ...data,
@@ -82,13 +96,30 @@ export const CashCut = ({ onClose }) => {
         expectedMXN,
         entradasTotal,
         salidasTotal,
-        expensesTotal: data.expensesTotal || 0,
+        expensesTotal,
         expenses: data.expenses || [],
         expensesByCategory: data.expensesByCategory || [],
+        withdrawals: data.withdrawals || [],
+        refundsCashTotal,
+        cashRefunds: data.cashRefunds || [],
+        cancelledSales: data.cancelledSales || [],
+        cancelledSalesCount: data.cancelledSalesCount || 0,
+        cancelledSalesTotal: data.cancelledSalesTotal || 0,
+        cancelledCashTotal: data.cancelledCashTotal || 0,
+        cancelledCardTotal: data.cancelledCardTotal || 0,
+        cancelledTransferTotal: data.cancelledTransferTotal || 0,
         cardTotal: data.cardTotal || 0,
         transferTotal: data.transferTotal || 0,
         cashTotal: data.cashTotal || 0,
         paymentTotals: data.paymentTotals || {},
+        collectedPaymentTotals: data.collectedPaymentTotals || {},
+        creditPaymentTotals: data.creditPaymentTotals || {},
+        creditPayments: data.creditPayments || [],
+        commercialSalesSummary: data.commercialSalesSummary || {},
+        otherPaymentRows: data.otherPaymentRows || [],
+        otherPaymentsIncomeTotal: data.otherPaymentsIncomeTotal || 0,
+        otherPaymentsExpenseTotal: data.otherPaymentsExpenseTotal || 0,
+        otherPaymentsNetTotal: data.otherPaymentsNetTotal || 0,
         terminalBreakdown: data.terminalBreakdown || [],
       });
       setSalesDetails(sales);
@@ -220,8 +251,22 @@ export const CashCut = ({ onClose }) => {
                     }
                     ${
                       summary.salidasTotal > 0
-                        ? `<p><strong>Salidas (Gastos):</strong> -${formatMoney(
+                        ? `<p><strong>Retiros de Caja:</strong> -${formatMoney(
                             summary.salidasTotal,
+                          )}</p>`
+                        : ""
+                    }
+                    ${
+                      summary.expensesTotal > 0
+                        ? `<p><strong>Gastos Registrados:</strong> -${formatMoney(
+                            summary.expensesTotal,
+                          )}</p>`
+                        : ""
+                    }
+                    ${
+                      summary.refundsCashTotal > 0
+                        ? `<p><strong>Devoluciones en Efectivo:</strong> -${formatMoney(
+                            summary.refundsCashTotal,
                           )}</p>`
                         : ""
                     }
@@ -280,13 +325,32 @@ export const CashCut = ({ onClose }) => {
         differenceUSD: diffUSD,
         cardTotal: summary.cardTotal,
         transferTotal: summary.transferTotal,
+        cashTotal: summary.cashTotal || 0,
+        openingFund: parseFloat(cashSession?.opening_fund) || 0,
         paymentTotals: summary.paymentTotals || {},
+        collectedPaymentTotals: summary.collectedPaymentTotals || {},
+        creditPaymentTotals: summary.creditPaymentTotals || {},
+        creditPayments: summary.creditPayments || [],
+        commercialSalesSummary: summary.commercialSalesSummary || {},
+        otherPaymentRows: summary.otherPaymentRows || [],
+        otherPaymentsIncomeTotal: summary.otherPaymentsIncomeTotal || 0,
+        otherPaymentsExpenseTotal: summary.otherPaymentsExpenseTotal || 0,
+        otherPaymentsNetTotal: summary.otherPaymentsNetTotal || 0,
         terminalBreakdown: summary.terminalBreakdown || [],
         entradas_total: summary.entradasTotal,
         salidas_total: summary.salidasTotal,
+        withdrawals: summary.withdrawals || [],
         expenses_total: summary.expensesTotal || 0,
         expenses: summary.expenses || [],
         expenses_by_category: summary.expensesByCategory || [],
+        refunds_cash_total: summary.refundsCashTotal || 0,
+        cash_refunds: summary.cashRefunds || [],
+        cancelled_sales: summary.cancelledSales || [],
+        cancelled_sales_count: summary.cancelledSalesCount || 0,
+        cancelled_sales_total: summary.cancelledSalesTotal || 0,
+        cancelled_cash_total: summary.cancelledCashTotal || 0,
+        cancelled_card_total: summary.cancelledCardTotal || 0,
+        cancelled_transfer_total: summary.cancelledTransferTotal || 0,
         notes,
       };
 
@@ -311,210 +375,85 @@ export const CashCut = ({ onClose }) => {
     }
   };
 
+  const ticketDisplayOptions = {
+    showExpectedCash,
+    showCountedCash,
+    showDifferences,
+  };
+
+  const printCashCut = async (cut, extraOptions = {}) => {
+    const { printerService } = await import("../../services/printerService");
+    const htmlPrint = buildCashCutTicketHtml(cut, {
+      storeName: storeName || "Royal Tape",
+      openingFund: extraOptions.openingFund ?? cut?.opening_fund ?? (parseFloat(cashSession?.opening_fund) || 0),
+      actualCash: extraOptions.actualCash,
+      display: ticketDisplayOptions,
+    });
+
+    printerService.printHtmlTicket(htmlPrint, {
+      paperWidth: ticketSettings?.paper_width || "58mm",
+    });
+  };
+
   const handlePrint = () => {
     if (!ticketRef.current) return;
+    printCashCut(cutResult || summary, { actualCash }).catch((error) => {
+      console.error("Error al imprimir corte:", error);
+      Swal.fire("Error", "No se pudo imprimir el corte", "error");
+    });
+  };
 
-    import("../../services/printerService").then(({ printerService }) => {
-      const ticketResult = cutResult || summary;
+  const loadCutHistory = async (filters = historyFilters) => {
+    try {
+      setHistoryLoading(true);
+      const from = filters.from ? new Date(filters.from + "T00:00:00").toISOString() : null;
+      const to = filters.to ? new Date(filters.to + "T23:59:59").toISOString() : null;
+      const cuts = await cashCutService.getCashCuts({
+        from,
+        to,
+        type: filters.type,
+        staff: filters.staff?.trim(),
+        limit: 80,
+      });
+      setCutHistory(cuts);
+    } catch (error) {
+      console.error("Error cargando historial de cortes:", error);
+      Swal.fire("Error", "No se pudo cargar el historial de cortes", "error");
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
 
-      const expectedMXN = parseFloat(
-        ticketResult.expectedCash || summary?.expectedMXN || 0,
-      );
-      const actualMXN = parseFloat(actualCash || ticketResult.actualCash || 0);
-      const diffMXN = actualMXN - expectedMXN;
+  const handleOpenHistory = () => {
+    const nextValue = !showHistory;
+    setShowHistory(nextValue);
+    if (nextValue && cutHistory.length === 0) {
+      loadCutHistory();
+    }
+  };
 
-      const transferTotal = ticketResult.transferTotal || 0;
-      const cardTotal = ticketResult.cardTotal || 0;
-      const salidasTotal =
-        ticketResult.salidas_total || summary?.salidasTotal || 0;
-      const expenses =
-        ticketResult.expenses || summary?.expenses || [];
-      const expensesByCategory =
-        ticketResult.expenses_by_category ||
-        ticketResult.expensesByCategory ||
-        summary?.expensesByCategory ||
-        [];
-      const expensesTotal =
-        ticketResult.expenses_total || summary?.expensesTotal || 0;
-      const totalSalesAmount = ticketResult.salesTotal || 0;
-      const totalSalesCount = ticketResult.salesCount || 0;
-      const terminalBreakdown =
-        ticketResult.terminalBreakdown ||
-        ticketResult.terminal_breakdown ||
-        summary?.terminalBreakdown ||
-        [];
-      const operatorName =
-        ticketResult.staffName || activeStaff?.name || "Operador";
+  const handleHistoryFilterChange = (field, value) => {
+    setHistoryFilters((current) => ({ ...current, [field]: value }));
+  };
 
-      // Withdrawals Count
-      const withdrawalsCount =
-        summary?.movements?.filter((m) => m.movement_type === "salida")
-          ?.length || 0;
-
-      let htmlPrint = `<!DOCTYPE html>
-        <html><head><title>Corte de Caja</title>
-        <style>
-          @media print {
-              @page { margin: 0; }
-              body { margin: 0; padding: 0; background: none !important; }
-          }
-          body { 
-              font-family: 'Courier New', monospace; 
-              padding: 10px; 
-              max-width: 300px;
-              margin: 0 auto;
-              font-size: 12px;
-              color: black;
-          }
-          .ticket-header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
-          .store-name { font-size: 16px; font-weight: bold; }
-          .ticket-title { font-size: 13px; margin-top: 5px; }
-          .section { margin: 10px 0; padding: 10px 0; border-bottom: 1px dashed #000; }
-          .row { display: flex; justify-content: space-between; margin: 3px 0; }
-          .label { color: #000; }
-          .value { font-weight: bold; }
-          .total-row { font-size: 13px; font-weight: bold; margin-top: 10px; }
-          .footer { text-align: center; margin-top: 15px; font-size: 12px; font-weight: bold; }
-          .difference-positive { color: black; font-weight: bold; }
-          .difference-negative { color: red; font-weight: bold; }
-          .retiros-rojo { color: red; font-weight: bold; font-size: 14px; }
-          .separator { border-top: 1px dashed #000; margin: 8px 0; }
-        </style>
-        </head><body>
-          <div class="ticket-header">
-            <div class="store-name">${storeName || "NEXUM POS"}</div>
-            <div class="ticket-title">${
-              cutType === "dia" ? "CIERRE FINAL DEL DIA" : "CORTE DE TURNO"
-            }</div>
-            <div>${new Date().toLocaleString("es-MX")}</div>
-          </div>`;
-      htmlPrint += `<div class="section">`;
-
-      if (showInitialFund) {
-        htmlPrint += `<div class="row">
-              <span class="label">FONDO INICIAL EFECTIVO:</span>
-              <span class="value">${formatMoney(
-                parseFloat(cashSession?.opening_fund) || 0,
-              )}</span>
-            </div>`;
-      }
-
-      if (showCardSales) {
-        htmlPrint += `<div class="row">
-              <span class="label">TOTAL TARJETA:</span>
-              <span class="value">${formatMoney(cardTotal)}</span>
-            </div>`;
-      }
-
-      if (showTransferSales) {
-        htmlPrint += `<div class="row">
-              <span class="label">TOTAL TRANSFERENCIA:</span>
-              <span class="value">${formatMoney(transferTotal)}</span>
-            </div>`;
-      }
-
-      htmlPrint += `<div class="separator"></div>`;
-
-      if (showWithdrawals) {
-        htmlPrint += `<div class="row retiros-rojo">
-              <span class="label retiros-rojo">RETIROS (${withdrawalsCount}):</span>
-              <span class="value retiros-rojo">-${formatMoney(
-                salidasTotal,
-              )}</span>
-            </div>
-            <div class="separator"></div>`;
-
-        if (expensesTotal > 0) {
-          htmlPrint += `<div class="row">
-              <span class="label">GASTOS REGISTRADOS (${expenses.length}):</span>
-              <span class="value">-${formatMoney(expensesTotal)}</span>
-            </div>`;
-
-          expensesByCategory.slice(0, 5).forEach((item) => {
-            htmlPrint += `<div class="row">
-              <span class="label">${item.category}</span>
-              <span class="value">-${formatMoney(item.total)}</span>
-            </div>`;
-          });
-
-          expenses.slice(0, 5).forEach((expense) => {
-            htmlPrint += `<div class="row">
-              <span class="label">${String(expense.concept || "Gasto").slice(0, 22)}</span>
-              <span class="value">-${formatMoney(expense.amount)}</span>
-            </div>`;
-          });
-
-          htmlPrint += `<div class="separator"></div>`;
-        }
-      }
-
-      htmlPrint += `<div class="row">
-              <span class="label">TOTAL DE VENTAS ${
-                showSalesCount ? `(${totalSalesCount})` : ""
-              }:</span>
-              <span class="value">${formatMoney(totalSalesAmount)}</span>
-            </div>`;
-
-      if (terminalBreakdown.length > 1) {
-        htmlPrint += `<div class="separator"></div>`;
-        terminalBreakdown.forEach((terminal) => {
-          htmlPrint += `<div class="row">
-              <span class="label">${terminal.terminal_name} (${terminal.sales_count})</span>
-              <span class="value">${formatMoney(terminal.sales_total)}</span>
-            </div>`;
+  const handleReprintCut = async (cut) => {
+    try {
+      if (!hasFullCashCutSnapshot(cut)) {
+        await Swal.fire({
+          icon: "info",
+          title: "Corte anterior al nuevo formato",
+          text: "Este corte es anterior al nuevo formato; se reimprimira con la informacion disponible.",
+          confirmButtonText: "Reimprimir",
         });
       }
 
-      htmlPrint += `
-          </div>
-          
-          <div class="section">`;
-
-      if (showExpectedCash) {
-        htmlPrint += `<div class="row">
-              <span class="label">EFECTIVO ESPERADO:</span>
-              <span class="value">${formatMoney(expectedMXN)}</span>
-            </div>`;
-      }
-
-      if (showCountedCash) {
-        htmlPrint += `<div class="row">
-              <span class="label">EFECTIVO CONTADO:</span>
-              <span class="value">${formatMoney(actualMXN)}</span>
-            </div>`;
-      }
-
-      if (showExpectedCash || showCountedCash) {
-        htmlPrint += `<div class="separator"></div>`;
-      }
-
-      if (showDifferences) {
-        htmlPrint += `<div class="row ${
-          diffMXN !== 0 ? "difference-negative" : "difference-positive"
-        }">
-              <span class="label">${
-                diffMXN === 0 ? "DIFERENCIA (CORRECTO):" : "DIFERENCIA:"
-              }</span>
-              <span class="value">${formatMoney(diffMXN)}</span>
-            </div>`;
-      }
-
-      htmlPrint += `</div>
-          <div class="footer">`;
-
-      if (showOperatorName) {
-        htmlPrint += `OPERADOR: ${operatorName.toUpperCase()}
-            <div class="separator"></div>`;
-      }
-
-      htmlPrint += `TERMINA
-          </div>
-        </body></html>`;
-
-      printerService.printHtmlTicket(htmlPrint, {
-        paperWidth: ticketSettings?.paper_width || "58mm",
+      await cashCutService.reprintCashCut(cut, ticketSettings, storeName || "Royal Tape", {
+        display: ticketDisplayOptions,
       });
-    });
+    } catch (error) {
+      console.error("Error reimprimiendo corte:", error);
+      Swal.fire("Error", "No se pudo reimprimir el corte", "error");
+    }
   };
 
   const handleFinish = async () => {
@@ -696,7 +635,7 @@ export const CashCut = ({ onClose }) => {
                 {cutResult.salidas_total > 0 && showWithdrawals && (
                   <div className="flex justify-between items-center bg-rose-50 dark:bg-rose-900/10 p-3 rounded-lg border border-rose-100 dark:border-rose-900/20">
                     <span className="text-xs uppercase font-bold text-rose-600 dark:text-rose-400">
-                      Salidas/Gastos:
+                      Retiros de Caja:
                     </span>
                     <span className="font-bold text-rose-600 dark:text-rose-400 text-lg">
                       -{formatMoney(cutResult.salidas_total)}
@@ -714,12 +653,34 @@ export const CashCut = ({ onClose }) => {
                         -{formatMoney(cutResult.expenses_total)}
                       </span>
                     </div>
-                    {(cutResult.expenses_by_category || []).slice(0, 3).map((item) => (
+                    {(cutResult.expenses_by_category || []).map((item) => (
                       <div key={item.category} className="flex justify-between text-xs text-slate-600 dark:text-slate-300">
                         <span>{item.category}</span>
                         <span>{formatMoney(item.total)}</span>
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {cutResult.refunds_cash_total > 0 && showWithdrawals && (
+                  <div className="flex justify-between items-center bg-red-50 dark:bg-red-900/10 p-3 rounded-lg border border-red-100 dark:border-red-900/20">
+                    <span className="text-xs uppercase font-bold text-red-600 dark:text-red-400">
+                      Devoluciones en efectivo:
+                    </span>
+                    <span className="font-bold text-red-600 dark:text-red-400 text-lg">
+                      -{formatMoney(cutResult.refunds_cash_total)}
+                    </span>
+                  </div>
+                )}
+
+                {cutResult.cancelled_sales_count > 0 && (
+                  <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+                    <span className="text-xs uppercase font-bold text-slate-600 dark:text-slate-300">
+                      Cancelaciones/Devoluciones ({cutResult.cancelled_sales_count}):
+                    </span>
+                    <span className="font-bold text-slate-700 dark:text-slate-200 text-lg">
+                      {formatMoney(cutResult.cancelled_sales_total)}
+                    </span>
                   </div>
                 )}
               </div>
@@ -887,9 +848,139 @@ export const CashCut = ({ onClose }) => {
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 rounded-xl text-sm font-black hover:scale-[1.02] transition-all border-2 border-emerald-100 dark:border-emerald-900/30 shadow-sm"
                 >
                   <span className="material-symbols-rounded">payments</span>
-                  REGISTRAR RETIRO / DEPÓSITO
+                  REGISTRAR RETIRO / DEPOSITO
                 </button>
               </div>
+            </div>
+
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+              <button
+                type="button"
+                onClick={handleOpenHistory}
+                className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors"
+              >
+                <span className="flex items-center gap-3">
+                  <span className="material-symbols-rounded text-slate-500">history</span>
+                  <span>
+                    <span className="block text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest">
+                      Historial / Reimprimir Cortes
+                    </span>
+                    <span className="block text-xs text-slate-500 dark:text-slate-400">
+                      Busca cierres de turno o de dia ya guardados.
+                    </span>
+                  </span>
+                </span>
+                <span className="material-symbols-rounded text-slate-400">
+                  {showHistory ? "expand_less" : "expand_more"}
+                </span>
+              </button>
+
+              {showHistory && (
+                <div className="border-t border-slate-200 dark:border-slate-700 p-5 space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <input
+                      type="date"
+                      value={historyFilters.from}
+                      onChange={(e) => handleHistoryFilterChange("from", e.target.value)}
+                      className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-700 dark:text-slate-200"
+                    />
+                    <input
+                      type="date"
+                      value={historyFilters.to}
+                      onChange={(e) => handleHistoryFilterChange("to", e.target.value)}
+                      className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-700 dark:text-slate-200"
+                    />
+                    <select
+                      value={historyFilters.type}
+                      onChange={(e) => handleHistoryFilterChange("type", e.target.value)}
+                      className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-700 dark:text-slate-200"
+                    >
+                      <option value="todos">Todos</option>
+                      <option value="turno">Turno</option>
+                      <option value="dia">Dia</option>
+                    </select>
+                    <input
+                      type="text"
+                      value={historyFilters.staff}
+                      onChange={(e) => handleHistoryFilterChange("staff", e.target.value)}
+                      placeholder="Cajero"
+                      className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-700 dark:text-slate-200"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => loadCutHistory()}
+                    disabled={historyLoading}
+                    className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-black uppercase tracking-widest disabled:opacity-50"
+                  >
+                    <span className="material-symbols-rounded text-base">search</span>
+                    {historyLoading ? "Buscando..." : "Buscar cortes"}
+                  </button>
+
+                  <div className="space-y-2 max-h-72 overflow-y-auto custom-scrollbar">
+                    {cutHistory.length === 0 && !historyLoading && (
+                      <div className="rounded-xl bg-slate-50 dark:bg-slate-900/50 px-4 py-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                        No hay cortes para los filtros seleccionados.
+                      </div>
+                    )}
+
+                    {cutHistory.map((cut) => (
+                      <div
+                        key={cut.id}
+                        className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4"
+                      >
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                          <div>
+                            <p className="font-black uppercase text-slate-400">Tipo</p>
+                            <p className="font-bold text-slate-800 dark:text-slate-100">{cut.cut_type === "dia" ? "Dia" : "Turno"}</p>
+                          </div>
+                          <div>
+                            <p className="font-black uppercase text-slate-400">Cajero</p>
+                            <p className="font-bold text-slate-800 dark:text-slate-100 truncate">{cut.staff_name || "-"}</p>
+                          </div>
+                          <div>
+                            <p className="font-black uppercase text-slate-400">Corte</p>
+                            <p className="font-bold text-slate-800 dark:text-slate-100">{formatTime(cut.end_time || cut.created_at)}</p>
+                          </div>
+                          <div>
+                            <p className="font-black uppercase text-slate-400">Diferencia</p>
+                            <p className={Number(cut.difference || 0) === 0 ? "font-bold text-emerald-600" : "font-bold text-rose-600"}>
+                              {formatMoney(cut.difference || 0)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="font-black uppercase text-slate-400">Ventas</p>
+                            <p className="font-bold text-slate-800 dark:text-slate-100">{cut.sales_count || 0} / {formatMoney(cut.sales_total || 0)}</p>
+                          </div>
+                          <div>
+                            <p className="font-black uppercase text-slate-400">Esperado</p>
+                            <p className="font-bold text-slate-800 dark:text-slate-100">{formatMoney(cut.expected_cash || 0)}</p>
+                          </div>
+                          <div>
+                            <p className="font-black uppercase text-slate-400">Contado</p>
+                            <p className="font-bold text-slate-800 dark:text-slate-100">{formatMoney(cut.actual_cash || 0)}</p>
+                          </div>
+                          <div>
+                            <p className="font-black uppercase text-slate-400">Formato</p>
+                            <p className={hasFullCashCutSnapshot(cut) ? "font-bold text-emerald-600" : "font-bold text-amber-600"}>
+                              {hasFullCashCutSnapshot(cut) ? "Completo" : "Legacy"}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleReprintCut(cut)}
+                          className="inline-flex items-center justify-center gap-2 rounded-xl bg-white dark:bg-slate-800 px-4 py-3 text-xs font-black uppercase tracking-widest text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:border-emerald-400 dark:hover:border-emerald-500"
+                        >
+                          <span className="material-symbols-rounded text-base">print</span>
+                          Reimprimir
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1029,7 +1120,7 @@ export const CashCut = ({ onClose }) => {
                   </div>
                   <div>
                     <p className="text-[9px] uppercase font-bold text-slate-400 tracking-widest">
-                      Salidas (Gastos)
+                      Retiros de Caja
                     </p>
                     <p className="text-lg font-black text-rose-600 dark:text-rose-400 leading-tight">
                       -{formatMoney(summary?.salidasTotal || 0)}
@@ -1037,6 +1128,46 @@ export const CashCut = ({ onClose }) => {
                   </div>
                 </div>
               </div>
+
+              {summary?.refundsCashTotal > 0 && (
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border-2 border-red-100 dark:border-red-900/30 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-red-100 dark:bg-red-900/30 p-2 rounded-xl">
+                      <span className="material-symbols-rounded text-red-600 dark:text-red-400 text-lg">
+                        assignment_return
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-[9px] uppercase font-bold text-slate-400 tracking-widest">
+                        Dev. Efectivo
+                      </p>
+                      <p className="text-lg font-black text-red-600 dark:text-red-400 leading-tight">
+                        -{formatMoney(summary.refundsCashTotal)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {summary?.cancelledSalesCount > 0 && (
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-slate-100 dark:bg-slate-700 p-2 rounded-xl">
+                      <span className="material-symbols-rounded text-slate-600 dark:text-slate-300 text-lg">
+                        cancel
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-[9px] uppercase font-bold text-slate-400 tracking-widest">
+                        Canceladas ({summary.cancelledSalesCount})
+                      </p>
+                      <p className="text-lg font-black text-slate-900 dark:text-white leading-tight">
+                        {formatMoney(summary.cancelledSalesTotal)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
               {summary?.totalUSD > 0 && (
                 <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border-2 border-emerald-100 dark:border-emerald-900/30 flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -1081,7 +1212,7 @@ export const CashCut = ({ onClose }) => {
                   </p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {summary.expensesByCategory.slice(0, 4).map((item) => (
+                  {summary.expensesByCategory.map((item) => (
                     <div
                       key={item.category}
                       className="flex items-center justify-between rounded-xl bg-rose-50 dark:bg-rose-950/20 px-4 py-3"
@@ -1192,10 +1323,10 @@ export const CashCut = ({ onClose }) => {
                   }`}
                 >
                   {diffMXN === 0
-                    ? "✓ MXN Correcto"
+                    ? "OK MXN Correcto"
                     : diffMXN > 0
-                    ? "⬆ Sobrante MXN"
-                    : "⬇ Faltante MXN"}
+                    ? "Sobrante MXN"
+                    : "Faltante MXN"}
                 </span>
               </div>
               <span
@@ -1243,10 +1374,10 @@ export const CashCut = ({ onClose }) => {
                     }`}
                   >
                     {diffUSD === 0
-                      ? "✓ USD Correcto"
+                      ? "OK USD Correcto"
                       : diffUSD > 0
-                      ? "⬆ Sobrante USD"
-                      : "⬇ Faltante USD"}
+                      ? "Sobrante USD"
+                      : "Faltante USD"}
                   </span>
                 </div>
                 <span
