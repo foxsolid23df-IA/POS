@@ -123,6 +123,7 @@ export const buildCashCutTicketHtml = (cut = {}, options = {}) => {
   const cashCollectedTotal = data.collectedPaymentTotals.efectivo ?? data.cashTotal;
   const cashCreditPaymentsTotal = data.creditPaymentTotals.efectivo || 0;
   const totalCash = data.expectedCash;
+  const effectiveCashCancellations = data.refundsCashTotal || data.cancelledCashTotal || 0;
   const cashFormulaTotal = data.openingFund + cashCollectedTotal + data.entradasTotal + cashCreditPaymentsTotal - data.refundsCashTotal - data.expensesTotal - data.salidasTotal;
 
   let htmlPrint = `<!DOCTYPE html>
@@ -182,21 +183,17 @@ export const buildCashCutTicketHtml = (cut = {}, options = {}) => {
       ${row("Anticipos pedidos", money(0))}
       ${row("A cta. creditos", money(creditAccountAmount))}
       ${row("Abonos", money(cashCreditPaymentsTotal))}
-      ${row("Cancelaciones", signedMoney(data.cancelledSalesTotal, "-"), "negative")}
-      ${row("Devoluciones", signedMoney(data.refundsCashTotal, "-"), "negative")}
+      ${row("Cancelaciones", signedMoney(effectiveCashCancellations, "-"), "negative")}
       ${row("Abonos cancelados", signedMoney(0, "-"), "negative")}
       ${row("Gastos", signedMoney(data.expensesTotal, "-"), "negative")}
       ${row("Retiros Efectivo", signedMoney(data.salidasTotal, "-"), "negative")}
   `;
 
-  data.cashRefunds.forEach((refund) => {
-    htmlPrint += row(movementLabel(refund, "Devolucion"), signedMoney(refund.amount, "-"));
-  });
   data.withdrawals.forEach((movement) => {
     htmlPrint += row(movementLabel(movement, "Retiro"), signedMoney(movement.amount, "-"));
   });
   if (data.cancelledSales.length > 0) {
-    htmlPrint += section("CANCELACIONES / DEVOLUCIONES");
+    htmlPrint += section("CANCELACIONES");
     data.cancelledSales.forEach((sale) => {
       htmlPrint += row(saleLabel(sale), signedMoney(sale.refunded_amount || sale.total, "-"));
     });

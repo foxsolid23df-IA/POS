@@ -26,6 +26,9 @@ describe("cashCutTicketFormatter", () => {
         expensesByCategory: [{ category: "Proveedor", count: 1, total: 20 }],
         refundsCashTotal: 30,
         cashRefunds: [{ concept: "Devolucion/cancelacion venta #5", amount: 30 }],
+        cancelledCashTotal: 30,
+        cancelledSalesTotal: 30,
+        cancelledSales: [{ id: 5, cancellation_reason: "Cancelacion de venta", refunded_amount: 30 }],
         commercialSalesSummary: {
           cash: { count: 2, total: 300 },
           credits: { count: 0, total: 0 },
@@ -45,7 +48,11 @@ describe("cashCutTicketFormatter", () => {
     expect(html).toContain("MANEJO DE EFECTIVO");
     expect(html).toContain("OTRAS FORMAS DE PAGO");
     expect(html).toContain("Proveedor");
-    expect(html).toContain("Devolucion/cancelacion venta");
+    expect(html).toContain("Cancelaciones");
+    expect(html).toContain("CANCELACIONES");
+    expect(html).toContain("#5 Cancelacion de venta");
+    expect(html).not.toContain("Devoluciones");
+    expect(html).not.toContain("Devolucion/cancelacion venta");
   });
 
   it("normaliza cortes antiguos sin snapshot con informacion disponible", () => {
