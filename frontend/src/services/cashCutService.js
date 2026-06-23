@@ -552,8 +552,12 @@ export const cashCutService = {
             const cashRefunds = activeCashMovements
                 .filter((m) => m.movement_type === 'salida' && m.is_expense !== true && isCashRefundMovement(m))
                 .sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
-            const refundsCashTotal = cashRefunds
+            const movementRefundsCashTotal = cashRefunds
                 .reduce((sum, m) => sum + parseFloat(m.amount || 0), 0);
+            const refundsCashTotal = Math.max(
+                movementRefundsCashTotal,
+                refundBreakdown.cancelledCashTotal || 0
+            );
             const withdrawals = activeCashMovements
                 .filter((m) => m.movement_type === 'salida' && m.is_expense !== true && !isCashRefundMovement(m))
                 .sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
