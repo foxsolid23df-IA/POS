@@ -1294,6 +1294,7 @@ export default function App() {
                     <option value="606">606 - Arrendamiento</option>
                     <option value="612">612 - Personas Físicas con Actividades Empresariales</option>
                     <option value="616">616 - Sin obligaciones fiscales</option>
+                    <option value="621">621 - Regimen de Incorporacion Fiscal</option>
                     <option value="626">626 - Régimen Simplificado de Confianza (RESICO)</option>
                   </select>
                 </div>
