@@ -485,7 +485,16 @@ export const cashCutService = {
                 }
             } else {
                 const lastDayCut = await cashCutService.getLastDayCut();
-                startTime = lastDayCut ? lastDayCut.end_time : getTodayStartIso();
+                
+                // Límite de seguridad: máximo 3 días hacia atrás si no hay corte previo o si es muy antiguo
+                const maxPastDate = new Date();
+                maxPastDate.setDate(maxPastDate.getDate() - 3);
+                
+                if (lastDayCut && new Date(lastDayCut.end_time) > maxPastDate) {
+                    startTime = lastDayCut.end_time;
+                } else {
+                    startTime = getTodayStartIso();
+                }
                 sales = await salesService.getSalesSince(startTime, null, true);
             }
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import { useAuth } from "../../hooks/useAuth";
+import { useSettings } from "../../contexts/SettingsContext";
 import {
   cashMovementService,
   EXPENSE_CATEGORIES,
@@ -32,6 +33,7 @@ const formatDateTime = (value) => {
 
 export const Expenses = () => {
   const { activeStaff, user } = useAuth();
+  const { ticketSettings } = useSettings();
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -42,16 +44,20 @@ export const Expenses = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [editingExpense, setEditingExpense] = useState(null);
 
-  const loadData = async () => {
+  const isDayCutEnabled = ticketSettings?.cc_enable_day_cut !== false;
+
+  const loadData = async (targetRange = range) => {
+    const selectedRange = (targetRange === "turno" || targetRange === "dia") ? targetRange : range;
     setLoading(true);
     try {
       const cashboxMode = user?.cashbox_mode || "terminal";
-      const [shiftData, dayData] = await Promise.all([
-        cashCutService.getCurrentShiftSummary("turno", cashboxMode),
-        cashCutService.getCurrentShiftSummary("dia", cashboxMode),
-      ]);
-      setSummary(shiftData);
-      setDaySummary(dayData);
+      if (selectedRange === "turno") {
+        const shiftData = await cashCutService.getCurrentShiftSummary("turno", cashboxMode);
+        setSummary(shiftData);
+      } else if (selectedRange === "dia" && isDayCutEnabled) {
+        const dayData = await cashCutService.getCurrentShiftSummary("dia", cashboxMode);
+        setDaySummary(dayData);
+      }
     } catch (error) {
       console.error("Error cargando gastos:", error);
       Swal.fire(
@@ -64,9 +70,26 @@ export const Expenses = () => {
     }
   };
 
+  // Cargar datos del turno al montar o cambiar el modo de caja
   useEffect(() => {
-    loadData();
+    setSummary(null);
+    setDaySummary(null);
+    loadData("turno");
   }, [user?.cashbox_mode]);
+
+  // Cargar datos de día bajo demanda si cambia el rango
+  useEffect(() => {
+    if (range === "dia" && !daySummary && isDayCutEnabled) {
+      loadData("dia");
+    }
+  }, [range, isDayCutEnabled]);
+
+  // Si se deshabilita el Cierre de Día en vivo, forzar rango a "turno"
+  useEffect(() => {
+    if (!isDayCutEnabled && range === "dia") {
+      setRange("turno");
+    }
+  }, [isDayCutEnabled, range]);
 
   const activeSummary = range === "dia" ? daySummary : summary;
   const expenses = activeSummary?.expenses || [];
@@ -266,13 +289,15 @@ export const Expenses = () => {
             <strong>{formatMoney(summary?.expensesTotal || 0)}</strong>
           </div>
         </div>
-        <div className="expenses-metric">
-          <span className="material-symbols-rounded">calendar_month</span>
-          <div>
-            <p>Día</p>
-            <strong>{formatMoney(daySummary?.expensesTotal || 0)}</strong>
+        {isDayCutEnabled && (
+          <div className="expenses-metric">
+            <span className="material-symbols-rounded">calendar_month</span>
+            <div>
+              <p>Día</p>
+              <strong>{formatMoney(daySummary?.expensesTotal || 0)}</strong>
+            </div>
           </div>
-        </div>
+        )}
         <div className="expenses-metric">
           <span className="material-symbols-rounded">receipt_long</span>
           <div>
@@ -379,22 +404,24 @@ export const Expenses = () => {
 
         <section className="expenses-list-panel">
           <div className="expenses-toolbar">
-            <div className="expenses-tabs" role="tablist" aria-label="Rango">
-              <button
-                type="button"
-                className={range === "turno" ? "active" : ""}
-                onClick={() => setRange("turno")}
-              >
-                Turno
-              </button>
-              <button
-                type="button"
-                className={range === "dia" ? "active" : ""}
-                onClick={() => setRange("dia")}
-              >
-                Día
-              </button>
-            </div>
+            {isDayCutEnabled && (
+              <div className="expenses-tabs" role="tablist" aria-label="Rango">
+                <button
+                  type="button"
+                  className={range === "turno" ? "active" : ""}
+                  onClick={() => setRange("turno")}
+                >
+                  Turno
+                </button>
+                <button
+                  type="button"
+                  className={range === "dia" ? "active" : ""}
+                  onClick={() => setRange("dia")}
+                >
+                  Día
+                </button>
+              </div>
+            )}
             <div className="expenses-filters">
               <select
                 value={categoryFilter}

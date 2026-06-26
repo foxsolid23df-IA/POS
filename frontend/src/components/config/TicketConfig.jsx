@@ -45,6 +45,7 @@ export const TicketConfig = () => {
     cc_show_operator_name: true,
     show_billing_section: true,
     qr_code_size: "medium",
+    cc_enable_day_cut: true,
   });
 
   const [loading, setLoading] = useState(true);
@@ -611,6 +612,7 @@ export const TicketConfig = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
+                { name: "cc_enable_day_cut", label: "Habilitar Cierre del Día" },
                 { name: "cc_show_initial_fund", label: "Ver Fondo Inicial" },
                 { name: "cc_show_card_sales", label: "Ver Pagos con Tarjeta" },
                 {

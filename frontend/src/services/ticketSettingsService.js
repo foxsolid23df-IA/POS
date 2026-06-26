@@ -45,6 +45,7 @@ export const ticketSettingsService = {
                 cc_show_counted_cash,
                 cc_show_differences,
                 cc_show_operator_name,
+                cc_enable_day_cut,
                 updated_at
             `)
             .eq('user_id', userId)
