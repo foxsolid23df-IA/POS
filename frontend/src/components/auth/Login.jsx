@@ -33,7 +33,6 @@ export const Login = () => {
 
   // Si hay código de invitación en la URL, activar modo registro y pre-llenar el código
   useEffect(() => {
-    if (webAdminMode) return;
     if (invitationCode) {
       setIsRegistering(true);
       setFormData((prev) => ({
@@ -41,7 +40,7 @@ export const Login = () => {
         invitationCode: invitationCode.toUpperCase(),
       }));
     }
-  }, [invitationCode, webAdminMode]);
+  }, [invitationCode]);
 
   if (user) {
     return <Navigate to={webAdminMode ? "/estadisticas" : "/"} />;
@@ -61,7 +60,7 @@ export const Login = () => {
     setError("");
 
     try {
-      if (webAdminMode) {
+      if (webAdminMode && !isRegistering) {
         await login(formData.email, formData.password);
       } else if (isRegistering) {
         // Validar código de invitación contra la base de datos
@@ -121,10 +120,10 @@ export const Login = () => {
           <div className="glass-panel-header">
             <h1>{isRegistering ? "Crear Cuenta" : "Bienvenido"}</h1>
             <p>
-              {webAdminMode
-                ? "Administra tu negocio desde el navegador"
-                : isRegistering
+              {isRegistering
                 ? "Registra tu negocio en NEXUM POS"
+                : webAdminMode
+                ? "Administra tu negocio desde el navegador"
                 : "Gestiona tu negocio profesionalmente"}
             </p>
           </div>
@@ -132,7 +131,7 @@ export const Login = () => {
           {error && <div className="login-error-msg">{error}</div>}
 
           <form onSubmit={handleSubmit} className="login-form">
-            {!webAdminMode && isRegistering && (
+            {isRegistering && (
               <>
                 <div className="form-group">
                   <label>Código de Invitación *</label>
@@ -263,7 +262,7 @@ export const Login = () => {
             </button>
           </form>
 
-          {!webAdminMode && isRegistering && (
+          {isRegistering && (
             <div className="login-footer-text">
               <p>
                 ¿Ya tienes cuenta?
