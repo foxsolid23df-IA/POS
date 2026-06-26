@@ -20,6 +20,7 @@ export const SuperAdminPortal = () => {
   const [newClientCode, setNewClientCode] = useState("");
   const [newClientDuration, setNewClientDuration] = useState("30");
   const [newClientLicenseType, setNewClientLicenseType] = useState("monocaja");
+  const [newClientMaxRegisters, setNewClientMaxRegisters] = useState(1);
   const [creating, setCreating] = useState(false);
   const [actionError, setActionError] = useState("");
 
@@ -27,6 +28,7 @@ export const SuperAdminPortal = () => {
   const [showEditLicenseModal, setShowEditLicenseModal] = useState(false);
   const [editingLicense, setEditingLicense] = useState(null);
   const [editLicenseType, setEditLicenseType] = useState("monocaja");
+  const [editLicenseMaxRegisters, setEditLicenseMaxRegisters] = useState(1);
   const [updatingLicense, setUpdatingLicense] = useState(false);
   const [editLicenseError, setEditLicenseError] = useState("");
 
@@ -154,7 +156,17 @@ export const SuperAdminPortal = () => {
     try {
       if (!newClientCode) throw new Error("Ingrese un nombre para el código");
       const duration = parseInt(newClientDuration);
-      const maxRegisters = newClientLicenseType === "monocaja" ? 1 : 999;
+      
+      let maxRegisters = 1;
+      if (newClientLicenseType === "monocaja") {
+        maxRegisters = 1;
+      } else if (newClientLicenseType === "multicajas") {
+        maxRegisters = 999;
+      } else if (newClientLicenseType === "personalizado") {
+        maxRegisters = parseInt(newClientMaxRegisters) || 1;
+        if (maxRegisters < 1) throw new Error("El número de cajas debe ser al menos 1");
+      }
+
       const foliosLimit = newClientAllocatedFolios.trim() !== "" ? parseInt(newClientAllocatedFolios) : null;
 
       const { error } = await supabase.from("invitation_codes").insert([
@@ -184,7 +196,17 @@ export const SuperAdminPortal = () => {
 
   const handleOpenEditLicense = (lic) => {
     setEditingLicense(lic);
-    setEditLicenseType(lic.license_type || "monocaja");
+    const maxRegs = lic.max_registers || 1;
+    if (maxRegs === 1) {
+      setEditLicenseType("monocaja");
+      setEditLicenseMaxRegisters(1);
+    } else if (maxRegs === 999) {
+      setEditLicenseType("multicajas");
+      setEditLicenseMaxRegisters(999);
+    } else {
+      setEditLicenseType("personalizado");
+      setEditLicenseMaxRegisters(maxRegs);
+    }
     setEditClientAllocatedFolios(lic.allocated_folios !== null ? String(lic.allocated_folios) : "");
     setEditLicenseError("");
     setShowEditLicenseModal(true);
@@ -196,7 +218,15 @@ export const SuperAdminPortal = () => {
     setEditLicenseError("");
 
     try {
-      const maxRegisters = editLicenseType === "monocaja" ? 1 : 999;
+      let maxRegisters = 1;
+      if (editLicenseType === "monocaja") {
+        maxRegisters = 1;
+      } else if (editLicenseType === "multicajas") {
+        maxRegisters = 999;
+      } else if (editLicenseType === "personalizado") {
+        maxRegisters = parseInt(editLicenseMaxRegisters) || 1;
+        if (maxRegisters < 1) throw new Error("El número de cajas debe ser al menos 1");
+      }
       const foliosLimit = editClientAllocatedFolios.trim() !== "" ? parseInt(editClientAllocatedFolios) : null;
 
       // 1. Actualizar el código de invitación
@@ -542,14 +572,18 @@ export const SuperAdminPortal = () => {
                           <td>
                             <span
                               className={`badge ${
-                                lic.license_type === "monocaja"
+                                lic.max_registers === 1
                                   ? "badge-blue"
-                                  : "badge-gold"
+                                  : lic.max_registers === 999
+                                  ? "badge-gold"
+                                  : "badge-purple"
                               }`}
                             >
-                              {lic.license_type === "multicajas"
+                              {lic.max_registers === 1
+                                ? "Monocaja"
+                                : lic.max_registers === 999
                                 ? "Multicajas"
-                                : "Monocaja"}
+                                : `Personalizado (${lic.max_registers} Cajas)`}
                             </span>
                           </td>
                           <td>
@@ -762,8 +796,21 @@ export const SuperAdminPortal = () => {
                 >
                   <option value="monocaja">Monocaja (1 Caja)</option>
                   <option value="multicajas">Multicajas (Ilimitado)</option>
+                  <option value="personalizado">Personalizado (Elegir cantidad)</option>
                 </select>
               </div>
+              {newClientLicenseType === "personalizado" && (
+                <div className="input-group mt-2">
+                  <label>Número de Cajas</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={newClientMaxRegisters}
+                    onChange={(e) => setNewClientMaxRegisters(e.target.value)}
+                    required
+                  />
+                </div>
+              )}
               <div className="input-group">
                 <label>Límite de Folios de Facturación (Dejar vacío para Ilimitado)</label>
                 <input
@@ -870,8 +917,21 @@ export const SuperAdminPortal = () => {
                 >
                   <option value="monocaja">Monocaja (1 Caja)</option>
                   <option value="multicajas">Multicajas (Ilimitado)</option>
+                  <option value="personalizado">Personalizado (Elegir cantidad)</option>
                 </select>
               </div>
+              {editLicenseType === "personalizado" && (
+                <div className="input-group mt-2">
+                  <label>Número de Cajas</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editLicenseMaxRegisters}
+                    onChange={(e) => setEditLicenseMaxRegisters(e.target.value)}
+                    required
+                  />
+                </div>
+              )}
               <div className="input-group mt-4">
                 <label>Límite de Folios de Facturación (Dejar vacío para Ilimitado)</label>
                 <input

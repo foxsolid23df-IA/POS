@@ -580,7 +580,7 @@ export default function BillingIssuers() {
                     className="w-full px-4 py-3 bg-[#f2f4f7] dark:bg-slate-700 border border-slate-200/50 dark:border-slate-600 rounded-xl focus:border-[#003f87] dark:focus:border-blue-500 focus:ring-4 focus:ring-[#d7e2ff] dark:focus:ring-blue-900/30 transition-all outline-none font-medium text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500"
                   />
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Debe coincidir con la constancia fiscal del RFC emisor. Para personas morales normalmente va sin S.A. de C.V.
+                    Debe coincidir con la constancia fiscal del RFC emisor, incluyendo SA DE CV si aparece en el SAT.
                   </p>
                 </div>
                 <div className="space-y-2">
