@@ -99,7 +99,7 @@ export const SuperAdminPortal = () => {
         .from("invitation_codes")
         .select(
           `
-          id, code, expires_at, created_at, used_by, license_type, allocated_folios, consumed_folios,
+          id, code, expires_at, created_at, used_by, license_type, max_registers, allocated_folios, consumed_folios,
           profiles (store_name, full_name)
         `,
         )
