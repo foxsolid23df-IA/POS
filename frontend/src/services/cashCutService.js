@@ -281,7 +281,7 @@ export const cashCutService = {
         return data;
     },
 
-    getSalesSince: async (startTime) => salesService.getSalesSince(startTime),
+    getSalesSince: async (startTime, terminalId = null, light = false) => salesService.getSalesSince(startTime, terminalId, light),
 
     getTodaySales: async () => salesService.getTodaySales(),
 
@@ -435,7 +435,7 @@ export const cashCutService = {
                 const terminalId = terminalService.getTerminalId();
                 if (!terminalId) {
                     startTime = getTodayStartIso();
-                    sales = await salesService.getSalesSince(startTime, null);
+                    sales = await salesService.getSalesSince(startTime, null, true);
                 } else if (cashboxMode === 'shared_cashbox') {
                     const { data: session, error: sessionError } = await supabase
                         .from('cash_sessions')
@@ -454,7 +454,7 @@ export const cashCutService = {
 
                     sessionId = session?.id || null;
                     startTime = session?.opened_at || getTodayStartIso();
-                    sales = await salesService.getSalesSince(startTime, null);
+                    sales = await salesService.getSalesSince(startTime, null, true);
                 } else {
                     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
                     if (!uuidRegex.test(terminalId)) {
@@ -481,12 +481,12 @@ export const cashCutService = {
                         const lastCut = await cashCutService.getLastCut();
                         startTime = lastCut ? lastCut.end_time : getTodayStartIso();
                     }
-                    sales = await salesService.getSalesSince(startTime, terminalId);
+                    sales = await salesService.getSalesSince(startTime, terminalId, true);
                 }
             } else {
                 const lastDayCut = await cashCutService.getLastDayCut();
                 startTime = lastDayCut ? lastDayCut.end_time : getTodayStartIso();
-                sales = await salesService.getSalesSince(startTime, null);
+                sales = await salesService.getSalesSince(startTime, null, true);
             }
 
             let creditPayments = [];

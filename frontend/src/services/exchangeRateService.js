@@ -24,9 +24,9 @@ export const exchangeRateService = {
                 .eq('is_active', true)
                 .order('created_at', { ascending: false })
                 .limit(1)
-                .single();
+                .maybeSingle();
 
-            if (error && error.code !== 'PGRST116') { // PGRST116 is "The result contains 0 rows"
+            if (error) {
                 console.error('[exchangeRateService] Error fetching exchange rate:', error);
                 return null;
             }
@@ -85,7 +85,7 @@ export const exchangeRateService = {
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(1)
-            .single();
+            .maybeSingle();
 
         if (currentRate) {
             const { error } = await supabase

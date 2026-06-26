@@ -170,52 +170,70 @@ export const salesService = {
         return data || [];
     },
 
-    // Obtener ventas desde una fecha (con items)
-    getSalesSince: async (startTime, terminalId = null) => {
-        // Validación de UUID para terminalId
+    // Obtener ventas desde una fecha (con items), con paginación automática
+    // para evitar errores 500 en clientes con miles de ventas.
+    getSalesSince: async (startTime, terminalId = null, light = false) => {
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-        let query = supabase
-            .from('sales')
-            .select(`
-                *,
-                sale_items (*),
-                sale_payments (*),
-                terminals (name)
-            `)
-            .gte('created_at', startTime)
-            .order('created_at', { ascending: false });
+        const selectFields = light
+            ? `*, sale_payments (*), terminals (name)`
+            : `*, sale_items (*), sale_payments (*), terminals (name)`;
 
-        if (terminalId && uuidRegex.test(terminalId)) {
-            query = query.eq('terminal_id', terminalId);
-        } else if (terminalId) {
-            console.warn('getSalesSince: terminalId provisto no es un UUID válido:', terminalId);
-        }
+        const PAGE_SIZE = 1000;
+        const MAX_PAGES = 10; // máximo 10 000 ventas por corte
+        let allData = [];
+        let page = 0;
+        let hasMore = true;
+        let usedFallback = false;
 
-        let { data, error } = await query;
-
-        if (error?.code === 'PGRST200' || error?.code === '42P01' || error?.message?.includes('relationship')) {
-            query = supabase
+        const buildQuery = (selectStr, from, to) => {
+            let q = supabase
                 .from('sales')
-                .select(`
-                    *,
-                    sale_items (*)
-                `)
+                .select(selectStr)
                 .gte('created_at', startTime)
-                .order('created_at', { ascending: false });
+                .order('created_at', { ascending: false })
+                .range(from, to);
 
             if (terminalId && uuidRegex.test(terminalId)) {
-                query = query.eq('terminal_id', terminalId);
+                q = q.eq('terminal_id', terminalId);
+            } else if (terminalId) {
+                console.warn('getSalesSince: terminalId no es un UUID válido:', terminalId);
+            }
+            return q;
+        };
+
+        while (hasMore && page < MAX_PAGES) {
+            const from = page * PAGE_SIZE;
+            const to = from + PAGE_SIZE - 1;
+
+            let { data, error } = await buildQuery(selectFields, from, to);
+
+            // Fallback sin join si hay error de relación (terminals/sale_items no disponibles)
+            if (!usedFallback && (
+                error?.code === 'PGRST200' ||
+                error?.code === '42P01' ||
+                error?.message?.includes('relationship')
+            )) {
+                usedFallback = true;
+                const fallbackSelect = light ? `*` : `*, sale_items (*)`;
+                const result = await buildQuery(fallbackSelect, from, to);
+                data = result.data;
+                error = result.error;
             }
 
-            const fallbackResult = await query;
-            data = fallbackResult.data;
-            error = fallbackResult.error;
+            if (error) throw error;
+
+            const rows = data || [];
+            allData = allData.concat(rows);
+
+            hasMore = rows.length === PAGE_SIZE;
+            page++;
         }
 
-        if (error) throw error;
-        return data || [];
+        return allData;
     },
+
+
 
     // Obtener todas las ventas (con paginación y filtros)
     getSales: async (limit = 50, filters = {}) => {

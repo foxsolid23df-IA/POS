@@ -169,7 +169,7 @@ describe('cashCutService summaries', () => {
     const { cashCutService } = await import('../cashCutService');
     const summary = await cashCutService.getCurrentShiftSummary('turno', 'shared_cashbox');
 
-    expect(mocks.getSalesSince).toHaveBeenCalledWith('2026-06-02T15:00:00.000Z', null);
+    expect(mocks.getSalesSince).toHaveBeenCalledWith('2026-06-02T15:00:00.000Z', null, true);
     expect(summary.salesCount).toBe(4);
     expect(summary.salesTotal).toBe(430);
     expect(summary.cancelledSalesCount).toBe(1);
@@ -224,6 +224,7 @@ describe('cashCutService summaries', () => {
     expect(mocks.getSalesSince).toHaveBeenCalledWith(
       '2026-06-02T16:00:00.000Z',
       '11111111-1111-4111-8111-111111111111',
+      true,
     );
   });
 
