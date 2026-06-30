@@ -53,5 +53,6 @@ skills-lock.json
 testsprite_tests\tmp\config.json
 
 # Temporary files and media
-inventario 1.xlsx
+*.xls
+*.xlsx
 *.mp4

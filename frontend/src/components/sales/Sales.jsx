@@ -1001,8 +1001,26 @@ export const Sales = () => {
     setSaldoPendiente(totalFinal - pagado);
   }, [pagosRealizados, total, facturar, user]);
 
+  // Agregar producto directo al carrito (sin modal)
+  const agregarProductoDirecto = (producto) => {
+    const unidad = (esSoloCaja(producto) || (producto.box_barcode && tieneCajaConfigurada(producto))) && tieneCajaConfigurada(producto)
+      ? "CAJA"
+      : "PZA";
+    const productoConImagen = prepararProductoCarrito(producto, unidad);
+    agregarProducto(productoConImagen, undefined, true);
+    setCodigoSku("");
+    setCodigoNombre("");
+    setSugerencias([]);
+    setMostrarSugerencias(false);
+    focusSkuInput();
+  };
+
   // Seleccionar producto de las sugerencias
   const seleccionarProducto = (producto) => {
+    if (user?.auto_add_to_cart) {
+      agregarProductoDirecto(producto);
+      return;
+    }
     setProductoParaModal(producto);
     setMostrarModalAddProduct(true);
     setCodigoSku("");
@@ -1745,7 +1763,11 @@ export const Sales = () => {
           p => p.barcode === sku || p.box_barcode === sku
         );
         if (productoLocal) {
-          seleccionarProducto(productoLocal);
+          if (user?.auto_add_to_cart) {
+            agregarProductoDirecto(productoLocal);
+          } else {
+            seleccionarProducto(productoLocal);
+          }
         } else {
           buscarProductoManual(sku);
         }
@@ -1760,7 +1782,11 @@ export const Sales = () => {
     if (e.key === "Enter" && sugerencias.length > 0) {
       e.preventDefault();
       if (indexSugerencia >= 0 && indexSugerencia < sugerencias.length) {
-        seleccionarProducto(sugerencias[indexSugerencia]);
+        if (user?.auto_add_to_cart) {
+          agregarProductoDirecto(sugerencias[indexSugerencia]);
+        } else {
+          seleccionarProducto(sugerencias[indexSugerencia]);
+        }
         return;
       }
     }
@@ -1856,10 +1882,10 @@ export const Sales = () => {
         return;
       }
 
-      // F4 o p o + o * (fuera de input): Empacar Todo (Bulk Pack)
+      // F4 o p o * (fuera de input): Empacar Todo (Bulk Pack)
       if (
         e.key === "F4" ||
-        (!isInput && (e.key.toLowerCase() === "p" || e.key === "+" || e.key === "*"))
+        (!isInput && (e.key.toLowerCase() === "p" || e.key === "*"))
       ) {
         if (carrito.length > 0) {
           e.preventDefault();
@@ -1884,11 +1910,29 @@ export const Sales = () => {
           return;
         }
 
+        // + (fuera de input): Incrementar cantidad del item activo (auto_add_to_cart)
+        // o Empacar Todo (comportamiento legacy)
+        if (e.key === "+" && carrito.length > 0) {
+          e.preventDefault();
+          if (user?.auto_add_to_cart) {
+            const targetId = activeCartItemId || carrito[carrito.length - 1].id;
+            cambiarCantidad(targetId, 1, true);
+          } else {
+            setMostrarModalPaqueteTodo(true);
+          }
+          return;
+        }
+
         // - o Delete: Quitar producto seleccionado
         if ((e.key === "-" || e.key === "Delete") && carrito.length > 0) {
           e.preventDefault();
-          const targetId = activeCartItemId || carrito[carrito.length - 1].id;
-          quitarProducto(targetId);
+          if (user?.auto_add_to_cart) {
+            const targetId = activeCartItemId || carrito[carrito.length - 1].id;
+            cambiarCantidad(targetId, -1, true);
+          } else {
+            const targetId = activeCartItemId || carrito[carrito.length - 1].id;
+            quitarProducto(targetId);
+          }
           return;
         }
 

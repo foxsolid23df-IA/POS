@@ -14,6 +14,7 @@ const InventoryConfig = () => {
   const [mode, setMode] = useState(user?.inventory_mode || "comprehensive");
   const [affectInventory, setAffectInventory] = useState(user?.affect_inventory ?? true);
   const [allowNegativeStock, setAllowNegativeStock] = useState(user?.allow_negative_stock ?? false);
+  const [autoAddToCart, setAutoAddToCart] = useState(user?.auto_add_to_cart ?? false);
   const [businessVertical, setBusinessVertical] = useState(user?.business_vertical || "general");
 
   const handleUpdateProfile = async (updates) => {
@@ -30,6 +31,7 @@ const InventoryConfig = () => {
       if (updates.inventory_mode) setMode(updates.inventory_mode);
       if (updates.affect_inventory !== undefined) setAffectInventory(updates.affect_inventory);
       if (updates.allow_negative_stock !== undefined) setAllowNegativeStock(updates.allow_negative_stock);
+      if (updates.auto_add_to_cart !== undefined) setAutoAddToCart(updates.auto_add_to_cart);
       if (updates.business_vertical) setBusinessVertical(updates.business_vertical);
 
       await fetchProfile(user.id, true);
@@ -310,6 +312,24 @@ const InventoryConfig = () => {
                     type="checkbox" 
                     checked={allowNegativeStock} 
                     onChange={(e) => handleUpdateProfile({ allow_negative_stock: e.target.checked })}
+                  />
+                  <span className="slider round"></span>
+                </label>
+              </div>
+
+              <div className="toggle-item">
+                <div className="toggle-info">
+                  <h4 className="toggle-title">Auto-Agregar al Carrito</h4>
+                  <p className="toggle-description">
+                    Al escanear o buscar un producto se agrega directo al carrito sin abrir modal.
+                    Las teclas + y - ajustan la cantidad del producto seleccionado en el carrito.
+                  </p>
+                </div>
+                <label className="switch">
+                  <input 
+                    type="checkbox" 
+                    checked={autoAddToCart} 
+                    onChange={(e) => handleUpdateProfile({ auto_add_to_cart: e.target.checked })}
                   />
                   <span className="slider round"></span>
                 </label>
