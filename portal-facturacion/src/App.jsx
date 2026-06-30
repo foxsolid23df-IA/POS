@@ -1296,6 +1296,7 @@ export default function App() {
                     <option value="616">616 - Sin obligaciones fiscales</option>
                     <option value="621">621 - Regimen de Incorporacion Fiscal</option>
                     <option value="626">626 - Régimen Simplificado de Confianza (RESICO)</option>
+                    <option value="625">625 - Régimen de las Actividades Empresariales con Ingresos a Través de Plataformas Tecnológicas</option>
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5">

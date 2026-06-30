@@ -15,6 +15,7 @@ const REGIMENES_FISCALES = [
   },
   { value: "621", label: "621 - Incorporación Fiscal" },
   { value: "626", label: "626 - Régimen Simplificado de Confianza" },
+  { value: "625", label: "625 - Régimen de las Actividades Empresariales con Ingresos a Través de Plataformas Tecnológicas" },
 ];
 
 export default function BillingIssuers() {
