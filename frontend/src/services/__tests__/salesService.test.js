@@ -66,14 +66,14 @@ describe('salesService.createSale', () => {
     const sale = await salesService.createSale(baseSaleData);
 
     expect(sale).toEqual({ id: 10, total: 100 });
-    expect(mocks.rpc).toHaveBeenNthCalledWith(1, 'validate_sale_stock', {
+    expect(mocks.rpc).toHaveBeenNthCalledWith(1, 'validate_sale_stock', expect.objectContaining({
       p_items: [
         expect.objectContaining({
           product_id: 1,
           requested_base_qty: 2,
         }),
       ],
-    });
+    }));
     expect(mocks.rpc).toHaveBeenNthCalledWith(
       2,
       'process_perfect_sale',

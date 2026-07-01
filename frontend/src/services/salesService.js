@@ -90,7 +90,8 @@ export const salesService = {
                 p_original_sale_id: parseInt(saleData.replacement_sale_id),
                 p_replacement_reason: saleData.replacement_reason || 'Reemplazo por nuevo ticket',
                 p_refund_amount: saleData.replacement_refund_amount ?? null,
-                p_restock: saleData.replacement_restock !== false
+                p_restock: saleData.replacement_restock !== false,
+                p_allow_negative_stock: saleData.allow_negative_stock === true
             });
         }
 
