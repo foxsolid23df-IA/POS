@@ -40,10 +40,11 @@ export const salesService = {
             base_quantity: parseFloat(item.base_quantity || (item.quantity * (item.conversion_factor || item.stock_multiplier || 1)))
         }));
 
-        // 1. Validar stock atómicamente vía RPC (si affect_inventory es true)
-        if (saleData.affect_inventory !== false && !isReplacement) {
+        // 1. Validar stock atómicamente vía RPC (si affect_inventory es true y allow_negative_stock es false)
+        if (saleData.affect_inventory !== false && !saleData.allow_negative_stock && !isReplacement) {
             const { data: validationErrors, error: valError } = await supabase.rpc('validate_sale_stock', {
-                p_items: itemsForValidation
+                p_items: itemsForValidation,
+                p_allow_negative_stock: saleData.allow_negative_stock === true
             });
 
             if (valError) throw valError;
@@ -80,7 +81,8 @@ export const salesService = {
             p_billing_issuer_id: saleData.billing_issuer_id || null,
             p_items: itemsJson,
             p_payments: paymentsJson,
-            p_affect_inventory: saleData.affect_inventory !== undefined ? saleData.affect_inventory : true
+            p_affect_inventory: saleData.affect_inventory !== undefined ? saleData.affect_inventory : true,
+            p_allow_negative_stock: saleData.allow_negative_stock === true
         };
 
         if (isReplacement) {
@@ -145,6 +147,7 @@ export const salesService = {
             p_items: itemsJson,
             p_payments: paymentsJson,
             p_affect_inventory: saleData.affect_inventory !== undefined ? saleData.affect_inventory : true,
+            p_allow_negative_stock: saleData.allow_negative_stock === true,
             p_customer_id: saleData.customer_id || null,
             p_paid_amount: parseFloat(saleData.paid_amount || 0),
             p_balance: parseFloat(saleData.balance || 0),

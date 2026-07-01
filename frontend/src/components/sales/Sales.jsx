@@ -1503,6 +1503,7 @@ export const Sales = () => {
         exchange_rate: null,
         billing_issuer_id: shouldFacturar ? selectedIssuer : null,
         affect_inventory: user?.affect_inventory !== undefined ? user?.affect_inventory : true,
+        allow_negative_stock: user?.allow_negative_stock === true,
         ...(replacementSale
           ? {
               replacement_sale_id: replacementSale.id,
@@ -1665,6 +1666,7 @@ export const Sales = () => {
         exchange_rate: null,
         billing_issuer_id: shouldFacturar ? selectedIssuer : null,
         affect_inventory: user?.affect_inventory !== undefined ? user?.affect_inventory : true,
+        allow_negative_stock: user?.allow_negative_stock === true,
         customer_id: datosPago.customerId,
         sale_type: 'credit',
         paid_amount: abonoInicial,
