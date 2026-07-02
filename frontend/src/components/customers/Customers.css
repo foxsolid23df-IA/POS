@@ -172,28 +172,30 @@
 .credit-status-badge.badge-danger { background: #fecaca; color: #dc2626; }
 .credit-status-badge.badge-blocked { background: #e2e8f0; color: #64748b; }
 
-@media (prefers-color-scheme: dark) {
-  .customers-container {
-    background: #0f172a;
-  }
-  .header-title h1 {
-    color: white;
-  }
-  .register-section, .search-bar, .customers-list-container, .btn-icon {
-    background: #1e293b;
-    border-color: #334155;
-  }
-  .search-bar input, .customers-table td {
-    color: #e2e8f0;
-  }
-  .customers-table th {
-    background: #334155;
-    color: #94a3b8;
-  }
-  .customers-table td {
-    border-bottom-color: #334155;
-  }
-  .customers-table tr:hover {
-    background: #1e293b;
-  }
+html.dark .customers-container {
+  background: #0f172a;
+}
+html.dark .header-title h1 {
+  color: white;
+}
+html.dark .register-section,
+html.dark .search-bar,
+html.dark .customers-list-container,
+html.dark .btn-icon {
+  background: #1e293b;
+  border-color: #334155;
+}
+html.dark .search-bar input,
+html.dark .customers-table td {
+  color: #e2e8f0;
+}
+html.dark .customers-table th {
+  background: #334155;
+  color: #94a3b8;
+}
+html.dark .customers-table td {
+  border-bottom-color: #334155;
+}
+html.dark .customers-table tr:hover {
+  background: #1e293b;
 }

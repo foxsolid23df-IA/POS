@@ -51,6 +51,66 @@ function obtenerPuertoLibre() {
 
 const isDev = process.env.NODE_ENV === 'development';
 
+// ═══════════════════════════════════════════════════════════
+// PERSISTENCIA DE ZOOM
+// ═══════════════════════════════════════════════════════════
+const ZOOM_FILE = 'zoom-settings.json';
+const ZOOM_STEP = 0.1;
+const ZOOM_MIN = 0.5;
+const ZOOM_MAX = 3.0;
+
+function getZoomSettingsPath() {
+    return path.join(app.getPath('userData'), ZOOM_FILE);
+}
+
+function loadZoomFactor() {
+    try {
+        const fs = require('fs');
+        const filePath = getZoomSettingsPath();
+        if (fs.existsSync(filePath)) {
+            const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+            const factor = parseFloat(data.zoomFactor);
+            if (!isNaN(factor) && factor >= ZOOM_MIN && factor <= ZOOM_MAX) {
+                return factor;
+            }
+        }
+    } catch (e) {
+        console.warn('[Zoom] Error al leer settings:', e.message);
+    }
+    return 1.0;
+}
+
+function saveZoomFactor(factor) {
+    try {
+        const fs = require('fs');
+        const filePath = getZoomSettingsPath();
+        fs.writeFileSync(filePath, JSON.stringify({ zoomFactor: factor }, null, 2), 'utf8');
+    } catch (e) {
+        console.warn('[Zoom] Error al guardar settings:', e.message);
+    }
+}
+
+function applyZoom(direction) {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    const current = mainWindow.webContents.getZoomFactor();
+    let next;
+    if (direction === 'in') {
+        next = Math.min(ZOOM_MAX, Math.round((current + ZOOM_STEP) * 100) / 100);
+    } else if (direction === 'out') {
+        next = Math.max(ZOOM_MIN, Math.round((current - ZOOM_STEP) * 100) / 100);
+    } else {
+        next = 1.0;
+    }
+    mainWindow.webContents.setZoomFactor(next);
+    saveZoomFactor(next);
+}
+
+function restoreZoom() {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    const factor = loadZoomFactor();
+    mainWindow.webContents.setZoomFactor(factor);
+}
+
 function generateHexSecret(bytes) {
     return crypto.randomBytes(bytes).toString('hex');
 }
@@ -375,6 +435,17 @@ function crearVentana() {
 
     mainWindow.loadURL(frontendUrl);
 
+    // Restaurar zoom guardado al cargar la ventana
+    mainWindow.webContents.on('did-finish-load', () => {
+        restoreZoom();
+    });
+
+    // Persistir zoom cuando el usuario cambia con Ctrl+/-/0
+    mainWindow.webContents.on('zoom-changed', (_event, zoomDirection) => {
+        const current = mainWindow.webContents.getZoomFactor();
+        saveZoomFactor(current);
+    });
+
     // Configurar Menú de la Aplicación Estándar
     const template = [
         {
@@ -408,9 +479,9 @@ function crearVentana() {
                 { label: 'Forzar recarga', role: 'forceReload' },
                 { label: 'Alternar herramientas de desarrollador', role: 'toggleDevTools' },
                 { type: 'separator' },
-                { label: 'Restablecer zoom', accelerator: 'CmdOrCtrl+0', role: 'resetZoom' },
-                { label: 'Acercar (+)', accelerator: 'CmdOrCtrl+Plus', role: 'zoomIn' },
-                { label: 'Alejar (-)', accelerator: 'CmdOrCtrl+-', role: 'zoomOut' },
+                { label: 'Restablecer zoom', accelerator: 'CmdOrCtrl+0', click: () => applyZoom('reset') },
+                { label: 'Acercar (+)', accelerator: 'CmdOrCtrl+Plus', click: () => applyZoom('in') },
+                { label: 'Alejar (-)', accelerator: 'CmdOrCtrl+-', click: () => applyZoom('out') },
                 { type: 'separator' },
                 { label: 'Alternar pantalla completa', role: 'togglefullscreen' }
             ]
@@ -421,9 +492,9 @@ function crearVentana() {
                 { label: 'Minimizar', role: 'minimize' },
                 { label: 'Maximizar', role: 'zoom' },
                 { type: 'separator' },
-                { label: 'Acercar (+)', accelerator: 'CmdOrCtrl+Plus', role: 'zoomIn' },
-                { label: 'Alejar (-)', accelerator: 'CmdOrCtrl+-', role: 'zoomOut' },
-                { label: 'Restablecer Zoom', accelerator: 'CmdOrCtrl+0', role: 'resetZoom' },
+                { label: 'Acercar (+)', accelerator: 'CmdOrCtrl+Plus', click: () => applyZoom('in') },
+                { label: 'Alejar (-)', accelerator: 'CmdOrCtrl+-', click: () => applyZoom('out') },
+                { label: 'Restablecer Zoom', accelerator: 'CmdOrCtrl+0', click: () => applyZoom('reset') },
                 { type: 'separator' },
                 { label: 'Cerrar', role: 'close' }
             ]
