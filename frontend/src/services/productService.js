@@ -251,29 +251,27 @@ export const productService = {
         return data;
     },
 
-    // Eliminar un producto
+    // Eliminar un producto (borra dependencias en inventory_movements, purchase_items, etc.)
     deleteProduct: async (id) => {
-        const { error } = await supabase
-            .from('products')
-            .delete()
-            .eq('id', id);
+        const { data, error } = await supabase
+            .rpc('delete_products_by_ids', { p_ids: [id] });
 
         if (error) throw error;
+        if (!data.success) throw new Error(data.message || 'Error al eliminar producto');
 
         // Actualizar caché local
         productService.updateCache({ id }, 'DELETE');
     },
 
-    // Eliminar múltiples productos por ID
+    // Eliminar múltiples productos por ID (borra dependencias primero)
     bulkDeleteProducts: async (ids) => {
         if (!ids || ids.length === 0) return;
 
-        const { error } = await supabase
-            .from('products')
-            .delete()
-            .in('id', ids);
+        const { data, error } = await supabase
+            .rpc('delete_products_by_ids', { p_ids: ids });
 
         if (error) throw error;
+        if (!data.success) throw new Error(data.message || 'Error al eliminar productos');
 
         // Invalidar caché local
         productsCache = null;
@@ -312,18 +310,26 @@ export const productService = {
 
     // Eliminar todos los productos con datos rotos (de importaciones fallidas)
     bulkDeleteBrokenProducts: async () => {
-        const { data, error } = await supabase
+        // Obtener IDs de productos rotos
+        const { data: broken, error: fetchError } = await supabase
             .from('products')
-            .delete()
-            .eq('name', 'Producto Sin Nombre')
-            .select('id');
+            .select('id')
+            .eq('name', 'Producto Sin Nombre');
+
+        if (fetchError) throw fetchError;
+        if (!broken || broken.length === 0) return 0;
+
+        const ids = broken.map(p => p.id);
+        const { data, error } = await supabase
+            .rpc('delete_products_by_ids', { p_ids: ids });
 
         if (error) throw error;
+        if (!data.success) throw new Error(data.message || 'Error al limpiar productos rotos');
 
         // Invalidar caché
         productsCache = null;
 
-        return data ? data.length : 0;
+        return data.deletedCount || 0;
     },
 
     // Crear múltiples productos (Carga Masiva) - con batching para evitar timeouts
@@ -460,11 +466,10 @@ export const productService = {
 
     // =====================================================
     // BORRADO TOTAL DE INVENTARIO (Clean Wipe)
-    // Solo elimina productos del usuario autenticado.
-    // RLS de Supabase garantiza aislamiento multi-tenant.
+    // Usa RPC para borrar dependencias (inventory_movements,
+    // purchase_items, etc.) antes de borrar productos.
     // =====================================================
     deleteAllProducts: async () => {
-        // 1. Obtener el usuario autenticado para filtrar explícitamente
         const { data: userData, error: authError } = await supabase.auth.getUser();
 
         if (authError) {
@@ -481,35 +486,22 @@ export const productService = {
 
         console.log(`🗑️ [deleteAllProducts] Iniciando borrado total para user_id: ${userId}`);
 
-        // 2. Contar productos antes del borrado (para reportar al usuario)
-        const { count, error: countError } = await supabase
-            .from('products')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', userId);
+        const { data, error } = await supabase.rpc('delete_all_user_products');
 
-        if (countError) throw countError;
-
-        if (count === 0) {
-            console.log('🗑️ [deleteAllProducts] No hay productos para eliminar.');
-            return { deletedCount: 0 };
+        if (error) {
+            console.error('❌ [deleteAllProducts] Error en borrado:', error);
+            throw error;
         }
 
-        // 3. Ejecutar DELETE masivo — filtro explícito por user_id + RLS
-        const { error: deleteError } = await supabase
-            .from('products')
-            .delete()
-            .eq('user_id', userId);
-
-        if (deleteError) {
-            console.error('❌ [deleteAllProducts] Error en borrado:', deleteError);
-            throw deleteError;
+        if (!data.success) {
+            throw new Error(data.message || 'Error al borrar inventario');
         }
 
-        // 4. Invalidar caché completamente
+        // Invalidar caché completamente
         productsCache = null;
         lastFetchTime = 0;
 
-        console.log(`✅ [deleteAllProducts] ${count} productos eliminados exitosamente.`);
-        return { deletedCount: count };
+        console.log(`✅ [deleteAllProducts] ${data.deletedCount} productos eliminados exitosamente.`);
+        return { deletedCount: data.deletedCount };
     }
 };

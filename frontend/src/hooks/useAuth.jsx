@@ -62,20 +62,14 @@ export const AuthProvider = ({ children }) => {
       });
   };
 
-  // useSessionTimeout(handleSessionTimeout, 15 * 60 * 1000);
+  // Timeout de sesión DESACTIVADO — la sesión no expira por inactividad.
+  // Se mantiene Infinity para que el hook no active ningún timer.
   const { resetTimeout } = useSessionTimeout(
     handleSessionTimeout,
     () => setShowTimeoutWarning(true),
-    12 * 60 * 60 * 1000, // 12 horas
-    15 * 60 * 1000,      // 15 minutos de advertencia
+    Infinity,
+    15 * 60 * 1000,
   );
-
-  useEffect(() => {
-    if (user && isSessionExpired(12 * 60 * 60 * 1000)) {
-      console.warn("[Auth] Sesión expirada al cargar");
-      handleSessionTimeout();
-    }
-  }, [user]);
 
   const handleExtendSession = () => {
     setShowTimeoutWarning(false);
