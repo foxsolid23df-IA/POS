@@ -25,6 +25,9 @@ export function useSessionTimeout(onTimeout, onWarning, timeoutMs = 15 * 60 * 10
         // Registrar actividad
         touchActivity();
 
+        // Si timeout está desactivado (Infinity), no programar ningún timer
+        if (!Number.isFinite(timeoutMs)) return;
+
         // Limpiar timers anteriores
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         if (warningRef.current) clearTimeout(warningRef.current);
@@ -45,6 +48,20 @@ export function useSessionTimeout(onTimeout, onWarning, timeoutMs = 15 * 60 * 10
     }, [timeoutMs, warningThresholdMs]);
 
     useEffect(() => {
+        // Si timeout desactivado (Infinity), solo trackear actividad silenciosamente
+        if (!Number.isFinite(timeoutMs)) {
+            touchActivity();
+            const handleActivity = () => touchActivity();
+            SESSION_EVENTS.forEach(event => {
+                window.addEventListener(event, handleActivity, { passive: true });
+            });
+            return () => {
+                SESSION_EVENTS.forEach(event => {
+                    window.removeEventListener(event, handleActivity);
+                });
+            };
+        }
+
         // Verificar si ya esta expirado al montar
         if (isSessionExpired(timeoutMs)) {
             console.warn('[SessionTimeout] Sesion ya expirada al iniciar');
