@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../supabase";
 import { productService } from "../../services/productService";
+import { getImportFormat } from "../../config/importFormats";
+import * as XLSX from "xlsx";
 import Swal from "sweetalert2";
 import "./InventoryConfig.css";
 
@@ -16,6 +18,20 @@ const InventoryConfig = () => {
   const [allowNegativeStock, setAllowNegativeStock] = useState(user?.allow_negative_stock ?? false);
   const [autoAddToCart, setAutoAddToCart] = useState(user?.auto_add_to_cart ?? false);
   const [businessVertical, setBusinessVertical] = useState(user?.business_vertical || "general");
+
+  const importFormat = useMemo(
+    () => getImportFormat(businessVertical),
+    [businessVertical]
+  );
+
+  const handleDownloadVerticalTemplate = () => {
+    const ws = XLSX.utils.json_to_sheet(importFormat.templateRows);
+    const colWidths = importFormat.columns.map(() => ({ wch: 18 }));
+    ws["!cols"] = colWidths;
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Plantilla");
+    XLSX.writeFile(wb, `plantilla_${businessVertical}.xlsx`);
+  };
 
   const handleUpdateProfile = async (updates) => {
     try {
@@ -271,6 +287,48 @@ const InventoryConfig = () => {
                   )}
                 </button>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ========================================
+            FORMATO DE IMPORTACIÓN POR GIRO
+        ======================================== */}
+        <section className="inventory-rules-section">
+          <div className="section-card">
+            <h2 className="section-card-title">Formato de Importación Excel</h2>
+            <p className="section-card-subtitle">
+              Columnas que espera el sistema para importar productos desde Excel según tu giro
+            </p>
+
+            <div className="import-format-info">
+              <div className="format-label">
+                <span className="material-symbols-outlined">table_chart</span>
+                <div>
+                  <h4 className="format-name">{importFormat.label}</h4>
+                  <p className="format-description">{importFormat.description}</p>
+                </div>
+              </div>
+
+              <div className="format-columns">
+                <h5>Columnas esperadas en el Excel:</h5>
+                <div className="columns-grid">
+                  {importFormat.columns.map((col, idx) => (
+                    <span key={idx} className="column-chip">
+                      {col}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                className="download-format-btn"
+                onClick={handleDownloadVerticalTemplate}
+                disabled={loading}
+              >
+                <span className="material-symbols-outlined">download</span>
+                Descargar Plantilla para {importFormat.label}
+              </button>
             </div>
           </div>
         </section>

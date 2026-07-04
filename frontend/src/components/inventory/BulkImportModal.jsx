@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import * as XLSX from "xlsx";
 import Swal from "sweetalert2";
 import {
@@ -8,8 +8,12 @@ import {
   FiCheck,
   FiAlertTriangle,
   FiDownload,
+  FiArrowRight,
+  FiArrowLeft,
+  FiInfo,
 } from "react-icons/fi";
 import { productService } from "../../services/productService";
+import { getImportFormat } from "../../config/importFormats";
 import "./BulkImportModal.css";
 
 // ===== COLUMN ALIAS MAP =====
@@ -474,59 +478,172 @@ const mapRowToProduct = (row) => {
   };
 };
 
+/**
+ * Maps a row using the import format's columnMap and transformations.
+ * Falls back to generic mapRowToProduct for unmapped fields.
+ */
+const mapRowWithFormat = (row, importFormat) => {
+  if (!importFormat?.columnMap) {
+    return mapRowToProduct(row);
+  }
+
+  const { columnMap, defaults = {}, transformations = {} } = importFormat;
+  const product = {};
+  const mappedFields = new Set();
+
+  // Apply format-specific column mapping
+  for (const [excelCol, dbField] of Object.entries(columnMap)) {
+    const rawVal = getValueFromRow(row, [excelCol]);
+    const transform = transformations[dbField];
+    product[dbField] = transform ? transform(rawVal) : rawVal;
+    if (rawVal !== null && rawVal !== undefined && rawVal !== "") {
+      mappedFields.add(dbField);
+    }
+  }
+
+  // Fill defaults for missing fields
+  for (const [field, defaultVal] of Object.entries(defaults)) {
+    if (product[field] === undefined || product[field] === null || product[field] === "") {
+      product[field] = defaultVal;
+    }
+  }
+
+  // For barcode: fallback to sku if not mapped
+  if (!product.barcode && product.sku) {
+    product.barcode = product.sku;
+  }
+
+  // Ensure name has a value
+  if (!product.name) {
+    product.name = "Producto Sin Nombre";
+  }
+
+  // Ensure numeric fields are numbers
+  const numericFields = [
+    "cost_price", "price", "wholesale_price", "stock", "min_stock",
+    "box_units", "box_price", "special_price", "special_price_2",
+    "suggested_price", "wholesale_from_qty", "special_from_qty", "iva",
+  ];
+  for (const field of numericFields) {
+    if (product[field] !== undefined && product[field] !== null) {
+      const n = parseFloat(String(product[field]).replace(/[$,\s]/g, ""));
+      product[field] = Number.isFinite(n) ? n : (defaults[field] || 0);
+    }
+  }
+
+  // Ensure stock is non-negative
+  if (product.stock !== undefined) {
+    product.stock = Math.max(0, parseInt(product.stock, 10) || 0);
+  }
+
+  // Normalize unit
+  if (product.unit) {
+    const unit = String(product.unit).trim().toUpperCase();
+    if (["PIEZA", "PIEZAS", "PZAS"].includes(unit)) {
+      product.unit = "PZA";
+    } else {
+      product.unit = unit;
+    }
+  }
+
+  // Category default
+  if (!product.category) {
+    product.category = "General";
+  }
+
+  // Build metadata
+  product.barcode = cleanText(product.barcode) || cleanText(product.sku) || null;
+  product.metadata = {
+    sku: cleanText(product.sku || product.barcode),
+    stock_source: "existencia",
+  };
+
+  // Notes default
+  product.notes = cleanText(product.notes) || "";
+
+  // Box barcode auto-generation
+  if (product.box_units && product.box_units > 1 && product.barcode && !product.box_barcode) {
+    product.box_barcode = `${product.barcode}-CAJA`;
+  }
+
+  // Box price calculation fallback
+  if (!product.box_price && product.box_units && product.box_units > 1) {
+    const unitPrice = product.price > 0 ? product.price : product.wholesale_price;
+    if (unitPrice > 0) {
+      product.box_price = Number((unitPrice * product.box_units).toFixed(2));
+    }
+  }
+
+  return product;
+};
+
+/**
+ * Generates mapping preview: shows how each Excel column was mapped.
+ */
+const generateMappingPreview = (row, importFormat) => {
+  if (!importFormat?.columnMap) {
+    // Generic mode: show all aliases detected
+    const headers = Object.keys(row);
+    return headers.map((header) => {
+      let matchedField = null;
+      for (const [field, aliases] of Object.entries(COLUMN_ALIASES)) {
+        if (aliases.some((a) => normalizeStr(a) === normalizeStr(header))) {
+          matchedField = field;
+          break;
+        }
+      }
+      return {
+        excelColumn: header,
+        systemField: matchedField || "(no detectado)",
+        sampleValue: row[header] ?? "",
+        detected: !!matchedField,
+      };
+    });
+  }
+
+  // Format-specific mode
+  const { columnMap } = importFormat;
+  return Object.entries(columnMap).map(([excelCol, dbField]) => ({
+    excelColumn: excelCol,
+    systemField: dbField,
+    sampleValue: getValueFromRow(row, [excelCol]) ?? "",
+    detected: true,
+  }));
+};
+
 const BulkImportModal = ({
   onClose,
   onSuccess,
   currentProducts = [],
   getCategory,
   getSKU,
+  businessVertical = "general",
 }) => {
-  const [step, setStep] = useState(1); // 1: Upload, 2: Preview
+  const [step, setStep] = useState(1); // 1: Upload, 2: Mapping Preview, 3: Product Preview
   const [file, setFile] = useState(null);
   const [previewData, setPreviewData] = useState([]);
-  const [mappedPreview, setMappedPreview] = useState([]); // Store already-mapped products for preview
+  const [mappedPreview, setMappedPreview] = useState([]);
+  const [mappingInfo, setMappingInfo] = useState([]); // Column mapping preview
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Download template
+  const importFormat = useMemo(
+    () => getImportFormat(businessVertical),
+    [businessVertical]
+  );
+
+  // Download template — format-specific
   const handleDownloadTemplate = () => {
-    const templateRows = [
-      {
-        SKU: "PRUEBA01",
-        Producto: "Producto de Ejemplo",
-        Notas: "",
-        Unidad: "PZA",
-        IVA: 16,
-        "Precio Compra": 10.0,
-        "Precio Venta": 15.0,
-        "Precio Mayoreo": 12.5,
-        "Piezas por Caja": 24,
-        "Precio Caja": 300.0,
-        "Código Caja": "PRUEBA01-CAJA",
-        "Precio Especial": 0,
-        "Precio Especial 2": 0,
-        "Precio Sugerido": 0,
-        "Mayoreo desde": 20,
-        "Especial desde": 48,
-        "Und. Mayoreo": "",
-        Existencia: 10,
-        "Inv. Minimo": 5,
-        Categoria: "General",
-        Marca: "",
-        Proveedor: "",
-      },
-    ];
-    const exampleProduct = mapRowToProduct(templateRows[0]);
-    const ws = XLSX.utils.json_to_sheet([
-      toSianInventoryRow(exampleProduct, {
-        category: exampleProduct.category,
-        sku: exampleProduct.metadata?.sku,
-      }),
-    ]);
+    const ws = XLSX.utils.json_to_sheet(importFormat.templateRows);
+
+    // Set column widths based on column count
+    const colWidths = importFormat.columns.map(() => ({ wch: 18 }));
+    ws["!cols"] = colWidths;
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Plantilla");
-    XLSX.writeFile(wb, "plantilla_inventario.xlsx");
+    XLSX.writeFile(wb, `plantilla_${businessVertical}.xlsx`);
   };
 
   // Export current inventory layout for easy update
@@ -617,14 +734,18 @@ const BulkImportModal = ({
           return;
         }
 
-        // Log detected headers for debugging
         const headers = Object.keys(jsonData[0]);
         console.log("📋 Excel headers detected:", headers);
         console.log("📋 First row raw data:", jsonData[0]);
+        console.log("📋 Import format:", importFormat.label);
 
-        // Map all rows immediately so we can preview the MAPPED data
+        // Generate mapping preview from first row
+        const mapInfo = generateMappingPreview(jsonData[0], importFormat);
+        setMappingInfo(mapInfo);
+
+        // Map all rows using format-aware mapping
         const mapped = jsonData
-          .map(mapRowToProduct)
+          .map((row) => mapRowWithFormat(row, importFormat))
           .filter((p) => p.name && p.price >= 0);
         console.log("📋 First mapped product:", mapped[0]);
         console.log(
@@ -633,7 +754,7 @@ const BulkImportModal = ({
 
         setPreviewData(jsonData);
         setMappedPreview(mapped);
-        setStep(2);
+        setStep(2); // Go to mapping preview
       } catch (error) {
         console.error("Error parsing excel:", error);
         Swal.fire("Error", "No se pudo leer el archivo Excel", "error");
@@ -728,7 +849,17 @@ const BulkImportModal = ({
           <h2>
             <FiUploadCloud className="icon-mr" /> Importación Masiva
           </h2>
-          <p>Sube tu inventario usando una plantilla de Excel</p>
+          <p>
+            Formato: <strong>{importFormat.label}</strong> — Sube tu inventario
+            usando una plantilla de Excel
+          </p>
+          <div className="step-indicator">
+            <span className={`step-dot ${step >= 1 ? "active" : ""}`}>1</span>
+            <span className={`step-line ${step >= 2 ? "active" : ""}`} />
+            <span className={`step-dot ${step >= 2 ? "active" : ""}`}>2</span>
+            <span className={`step-line ${step >= 3 ? "active" : ""}`} />
+            <span className={`step-dot ${step >= 3 ? "active" : ""}`}>3</span>
+          </div>
         </div>
 
         <div className="modal-body">
@@ -800,7 +931,7 @@ const BulkImportModal = ({
           )}
 
           {step === 2 && (
-            <div className="preview-step">
+            <div className="mapping-preview-step">
               <div className="preview-header">
                 <div className="file-info">
                   <FiFileText />
@@ -815,9 +946,134 @@ const BulkImportModal = ({
                     setStep(1);
                     setFile(null);
                     setMappedPreview([]);
+                    setMappingInfo([]);
                   }}
                 >
                   Cambiar archivo
+                </button>
+              </div>
+
+              <div className="mapping-format-banner">
+                <FiInfo />
+                <span>
+                  Formato detectado: <strong>{importFormat.label}</strong> —{" "}
+                  {importFormat.description}
+                </span>
+              </div>
+
+              <h3 className="mapping-section-title">
+                Mapeo de Columnas Detectado
+              </h3>
+              <p className="mapping-section-subtitle">
+                El sistema detectó las siguientes columnas en tu Excel y las
+                mapeó a los campos correspondientes:
+              </p>
+
+              <div className="mapping-table-wrapper">
+                <table className="mapping-table">
+                  <thead>
+                    <tr>
+                      <th>Columna en Excel</th>
+                      <th></th>
+                      <th>Campo del Sistema</th>
+                      <th>Ejemplo de Valor</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mappingInfo.map((m, idx) => (
+                      <tr
+                        key={idx}
+                        className={m.detected ? "detected" : "not-detected"}
+                      >
+                        <td>
+                          <strong>{m.excelColumn}</strong>
+                        </td>
+                        <td className="arrow-cell">
+                          <FiArrowRight />
+                        </td>
+                        <td>{m.systemField}</td>
+                        <td className="sample-value">
+                          {m.sampleValue !== undefined && m.sampleValue !== ""
+                            ? String(m.sampleValue).substring(0, 40)
+                            : "(vacío)"}
+                        </td>
+                        <td>
+                          {m.detected ? (
+                            <span className="status-badge success">
+                              <FiCheck /> Mapeado
+                            </span>
+                          ) : (
+                            <span className="status-badge warning">
+                              <FiAlertTriangle /> No detectado
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mapping-info-footer">
+                <p>
+                  <FiInfo /> Se mapearon{" "}
+                  <strong>
+                    {mappingInfo.filter((m) => m.detected).length} de{" "}
+                    {mappingInfo.length}
+                  </strong>{" "}
+                  columnas. Los productos se importarán con los valores
+                  mostrados.
+                </p>
+              </div>
+
+              <div className="mapping-actions">
+                <button
+                  className="text-btn outline-btn"
+                  onClick={() => {
+                    setStep(1);
+                    setFile(null);
+                    setMappedPreview([]);
+                    setMappingInfo([]);
+                  }}
+                  style={{
+                    border: "1px solid #e2e8f0",
+                    padding: "8px 16px",
+                    borderRadius: "8px",
+                    background: "#f8fafc",
+                  }}
+                >
+                  <FiArrowLeft /> Volver
+                </button>
+                <button
+                  className="confirm-btn"
+                  onClick={() => setStep(3)}
+                  style={{
+                    padding: "8px 20px",
+                    borderRadius: "8px",
+                  }}
+                >
+                  Ver Productos <FiArrowRight />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="preview-step">
+              <div className="preview-header">
+                <div className="file-info">
+                  <FiFileText />
+                  <span>{file?.name}</span>
+                  <span className="badge">
+                    {mappedPreview.length} productos válidos
+                  </span>
+                </div>
+                <button
+                  className="text-link"
+                  onClick={() => setStep(2)}
+                >
+                  ← Ver mapeo
                 </button>
               </div>
 
@@ -832,14 +1088,6 @@ const BulkImportModal = ({
                       <th>Mayoreo</th>
                       <th>Pzas/Caja</th>
                       <th>Caja</th>
-                      <th>Caja Esp.</th>
-                      <th>Desde Cajas</th>
-                      <th>Solo Caja</th>
-                      <th>P.Esp</th>
-                      <th>P.Esp2</th>
-                      <th>P.Sug</th>
-                      <th>May Desde</th>
-                      <th>Esp Desde</th>
                       <th>Stock</th>
                       <th>Und</th>
                       <th>IVA</th>
@@ -862,18 +1110,6 @@ const BulkImportModal = ({
                             ? `$${Number(product.box_price || 0).toFixed(2)}`
                             : "-"}
                         </td>
-                        <td>
-                          {product.box_special_price
-                            ? `$${Number(product.box_special_price || 0).toFixed(2)}`
-                            : "-"}
-                        </td>
-                        <td>{product.box_special_from_qty || "-"}</td>
-                        <td>{product.sell_by_box_only ? "SI" : "NO"}</td>
-                        <td>${Number(product.special_price || 0).toFixed(2)}</td>
-                        <td>${Number(product.special_price_2 || 0).toFixed(2)}</td>
-                        <td>${Number(product.suggested_price || 0).toFixed(2)}</td>
-                        <td>{product.wholesale_from_qty || "-"}</td>
-                        <td>{product.special_from_qty || "-"}</td>
                         <td>{product.stock}</td>
                         <td>{product.unit || "PZA"}</td>
                         <td>{product.iva || 0}%</td>
@@ -906,7 +1142,7 @@ const BulkImportModal = ({
           <button className="cancel-btn" onClick={onClose} disabled={uploading}>
             Cancelar
           </button>
-          {step === 2 && (
+          {step === 3 && (
             <button
               className="confirm-btn"
               onClick={handleUpload}

@@ -2732,11 +2732,11 @@ const Inventory = () => {
           onClose={() => setShowImportModal(false)}
           onSuccess={() => {
             fetchProducts();
-            // Optionally refresh categories if needed
           }}
           currentProducts={products}
           getCategory={getCategory}
           getSKU={getSKU}
+          businessVertical={user?.business_vertical || "general"}
         />
       )}
 

@@ -488,6 +488,146 @@ html.dark .inventory-config-container::-webkit-scrollbar-thumb:hover {
 }
 
 /* ===================================================================
+   FORMATO DE IMPORTACIÓN POR GIRO
+   =================================================================== */
+
+.import-format-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.format-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: var(--slate-50, #f8fafc);
+  border: 1.5px solid var(--slate-200);
+  border-radius: 1rem;
+}
+
+.format-label .material-symbols-outlined {
+  font-size: 28px;
+  color: var(--primary);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.format-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--slate-900);
+  margin: 0 0 0.25rem 0;
+}
+
+.format-description {
+  font-size: 0.875rem;
+  color: var(--slate-500);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.format-columns h5 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--slate-600);
+  margin: 0 0 0.75rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.columns-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.column-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+  background: white;
+  border: 1.5px solid var(--slate-200);
+  border-radius: 0.5rem;
+  font-size: 0.825rem;
+  font-weight: 500;
+  color: var(--slate-700);
+  transition: all 0.2s ease;
+}
+
+.column-chip:hover {
+  border-color: var(--primary);
+  background: rgba(67, 97, 238, 0.04);
+}
+
+.download-format-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(67, 97, 238, 0.3);
+  align-self: flex-start;
+}
+
+.download-format-btn:hover {
+  background: var(--primary-dark, #3451d1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(67, 97, 238, 0.4);
+}
+
+.download-format-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.download-format-btn .material-symbols-outlined {
+  font-size: 20px;
+}
+
+/* Dark mode for import format */
+html.dark .format-label {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+html.dark .format-label .material-symbols-outlined {
+  color: #60a5fa;
+}
+
+html.dark .format-name {
+  color: #f1f5f9;
+}
+
+html.dark .format-description {
+  color: #94a3b8;
+}
+
+html.dark .format-columns h5 {
+  color: #94a3b8;
+}
+
+html.dark .column-chip {
+  background: #1e293b;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+html.dark .column-chip:hover {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+/* ===================================================================
    REGLAS DE VENTA — Toggles de Configuración
    =================================================================== */
 

@@ -612,4 +612,241 @@ html:not(.dark) .bulk-import-modal .confirm-btn:disabled {
     .bulk-import-modal .modal-footer {
         flex-direction: column-reverse;
     }
+
+    .mapping-table {
+        font-size: 0.8em;
+    }
+
+    .mapping-table th,
+    .mapping-table td {
+        padding: 6px 8px;
+    }
+}
+
+/* ============================================================
+   Step Indicator
+   ============================================================ */
+.step-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-top: 10px;
+}
+
+.step-dot {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: #e2e8f0;
+    color: #94a3b8;
+    transition: all 0.3s ease;
+}
+
+.step-dot.active {
+    background: #3b82f6;
+    color: #ffffff;
+}
+
+.step-line {
+    width: 32px;
+    height: 2px;
+    background: #e2e8f0;
+    transition: background 0.3s ease;
+}
+
+.step-line.active {
+    background: #3b82f6;
+}
+
+html.dark .step-dot {
+    background: #334155;
+    color: #64748b;
+}
+
+html.dark .step-dot.active {
+    background: #3b82f6;
+    color: #ffffff;
+}
+
+html.dark .step-line {
+    background: #334155;
+}
+
+html.dark .step-line.active {
+    background: #3b82f6;
+}
+
+/* ============================================================
+   Mapping Preview Step
+   ============================================================ */
+.mapping-preview-step {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.mapping-format-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    color: #1e40af;
+    font-size: 0.88em;
+}
+
+html.dark .mapping-format-banner {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.3);
+    color: #93c5fd;
+}
+
+.mapping-section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+html.dark .mapping-section-title {
+    color: #f1f5f9;
+}
+
+.mapping-section-subtitle {
+    font-size: 0.85em;
+    color: #64748b;
+    margin: 0;
+}
+
+.mapping-table-wrapper {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+}
+
+.mapping-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88em;
+}
+
+.mapping-table th {
+    background-color: #f8fafc;
+    position: sticky;
+    top: 0;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #475569;
+    border-bottom: 2px solid #e2e8f0;
+    z-index: 1;
+}
+
+.mapping-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #374151;
+}
+
+.mapping-table tr.not-detected {
+    background-color: #fffbeb;
+}
+
+.mapping-table .arrow-cell {
+    color: #94a3b8;
+    text-align: center;
+    width: 30px;
+}
+
+.mapping-table .sample-value {
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 0.9em;
+    color: #64748b;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.status-badge.success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+html.dark .mapping-table th {
+    background-color: #1e293b;
+    color: #cbd5e1;
+    border-bottom-color: #334155;
+}
+
+html.dark .mapping-table td {
+    border-bottom-color: #1e293b;
+    color: #e2e8f0;
+}
+
+html.dark .mapping-table tr.not-detected {
+    background-color: rgba(245, 158, 11, 0.1);
+}
+
+html.dark .mapping-table-wrapper {
+    border-color: #334155;
+}
+
+html.dark .status-badge.success {
+    background: rgba(34, 197, 94, 0.15);
+    color: #86efac;
+}
+
+html.dark .status-badge.warning {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fcd34d;
+}
+
+.mapping-info-footer {
+    padding: 10px 14px;
+    background: #f8fafc;
+    border-radius: 8px;
+    font-size: 0.85em;
+    color: #64748b;
+}
+
+html.dark .mapping-info-footer {
+    background: #1e293b;
+    color: #94a3b8;
+}
+
+.mapping-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 10px;
+    border-top: 1px solid #e2e8f0;
+}
+
+html.dark .mapping-actions {
+    border-top-color: #334155;
 }
