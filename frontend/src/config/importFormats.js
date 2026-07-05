@@ -110,8 +110,7 @@ const importFormats = {
     transformations: {
       barcode: (val) => String(val || "").trim(),
       name: (val) => {
-        const cleaned = String(val || "").trim();
-        return cleaned || null; // null = será marcado como "Producto Sin Nombre"
+        return String(val || "").trim();
       },
       category: (val) => {
         const raw = String(val || "").trim();

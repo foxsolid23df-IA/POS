@@ -422,34 +422,89 @@ export const productService = {
 
         // 4. Ejecutar actualizaciones EN LOTES de 25
         const BATCH_SIZE_UPDATE = 25;
+        const failedUpdates = [];
         if (productsToUpdate.length > 0) {
             for (let i = 0; i < productsToUpdate.length; i += BATCH_SIZE_UPDATE) {
                 const batch = productsToUpdate.slice(i, i + BATCH_SIZE_UPDATE);
-                const updatePromises = batch.map(updateData => {
-                    const id = updateData.id;
-                    const dataToPatch = { ...updateData };
-                    delete dataToPatch.id;
-                    return supabase.from('products').update(dataToPatch).eq('id', id);
-                });
-                await Promise.all(updatePromises);
-                console.log(`🔄 Updated batch ${Math.floor(i / BATCH_SIZE_UPDATE) + 1}/${Math.ceil(productsToUpdate.length / BATCH_SIZE_UPDATE)}`);
+                const batchNum = Math.floor(i / BATCH_SIZE_UPDATE) + 1;
+                const totalUpdateBatches = Math.ceil(productsToUpdate.length / BATCH_SIZE_UPDATE);
+                try {
+                    const updatePromises = batch.map(updateData => {
+                        const id = updateData.id;
+                        const dataToPatch = { ...updateData };
+                        delete dataToPatch.id;
+                        return supabase.from('products').update(dataToPatch).eq('id', id);
+                    });
+                    const results = await Promise.all(updatePromises);
+                    const batchErrors = results.filter(r => r.error);
+                    if (batchErrors.length > 0) {
+                        console.warn(`⚠️ Update batch ${batchNum}/${totalUpdateBatches} had ${batchErrors.length} errors:`, batchErrors[0].error.message);
+                        failedUpdates.push(...batch);
+                    } else {
+                        console.log(`🔄 Updated batch ${batchNum}/${totalUpdateBatches}`);
+                    }
+                } catch (err) {
+                    console.error(`❌ Update batch ${batchNum}/${totalUpdateBatches} failed:`, err.message);
+                    failedUpdates.push(...batch);
+                }
             }
         }
 
-        // 5. Ejecutar inserciones EN LOTES de 50
+        // 5. Ejecutar inserciones EN LOTES de 50 — con reintento individual
         const BATCH_SIZE_INSERT = 50;
         let returnedData = [];
+        const failedProducts = [];
+        const insertBatchesFailed = [];
+
         if (productsToInsert.length > 0) {
+            const totalInsertBatches = Math.ceil(productsToInsert.length / BATCH_SIZE_INSERT);
+
+            // Primer pasaje
             for (let i = 0; i < productsToInsert.length; i += BATCH_SIZE_INSERT) {
                 const batch = productsToInsert.slice(i, i + BATCH_SIZE_INSERT);
-                const { data, error: insertError } = await supabase
-                    .from('products')
-                    .insert(batch)
-                    .select();
+                const batchNum = Math.floor(i / BATCH_SIZE_INSERT) + 1;
+                try {
+                    const { data, error: insertError } = await supabase
+                        .from('products')
+                        .insert(batch)
+                        .select();
 
-                if (insertError) throw insertError;
-                if (data) returnedData = returnedData.concat(data);
-                console.log(`✅ Inserted batch ${Math.floor(i / BATCH_SIZE_INSERT) + 1}/${Math.ceil(productsToInsert.length / BATCH_SIZE_INSERT)}`);
+                    if (insertError) {
+                        console.error(`❌ Insert batch ${batchNum}/${totalInsertBatches} error:`, insertError.message);
+                        insertBatchesFailed.push({ batchNum, products: batch, error: insertError.message });
+                    } else {
+                        if (data) returnedData = returnedData.concat(data);
+                        console.log(`✅ Inserted batch ${batchNum}/${totalInsertBatches}`);
+                    }
+                } catch (err) {
+                    console.error(`❌ Insert batch ${batchNum}/${totalInsertBatches} exception:`, err.message);
+                    insertBatchesFailed.push({ batchNum, products: batch, error: err.message });
+                }
+            }
+
+            // Reintento: lotes fallidos — intentar de 1 en 1 para maximizar inserción
+            if (insertBatchesFailed.length > 0) {
+                console.log(`🔄 Retrying ${insertBatchesFailed.length} failed batches individually...`);
+                for (const failed of insertBatchesFailed) {
+                    for (const product of failed.products) {
+                        try {
+                            const { data, error: retryError } = await supabase
+                                .from('products')
+                                .insert([product])
+                                .select();
+
+                            if (retryError) {
+                                console.warn(`⚠️ Product "${product.name}" (${product.barcode}) failed retry:`, retryError.message);
+                                failedProducts.push({ name: product.name, barcode: product.barcode, error: retryError.message });
+                            } else {
+                                if (data) returnedData = returnedData.concat(data);
+                            }
+                        } catch (err) {
+                            console.warn(`⚠️ Product "${product.name}" (${product.barcode}) retry exception:`, err.message);
+                            failedProducts.push({ name: product.name, barcode: product.barcode, error: err.message });
+                        }
+                    }
+                }
             }
         }
 
@@ -459,8 +514,10 @@ export const productService = {
         // Retornar información sobre lo que ocurrió
         return {
             insertedData: returnedData,
-            insertedCount: productsToInsert.length,
-            updatedCount: productsToUpdate.length
+            insertedCount: returnedData.length,
+            updatedCount: productsToUpdate.length - failedUpdates.length,
+            failedCount: failedProducts.length,
+            failedProducts: failedProducts,
         };
     },
 

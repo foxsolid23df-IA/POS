@@ -513,9 +513,9 @@ const mapRowWithFormat = (row, importFormat) => {
     product.barcode = product.sku;
   }
 
-  // Ensure name has a value
+  // Ensure name has a value — fallback to barcode if name is empty
   if (!product.name) {
-    product.name = "Producto Sin Nombre";
+    product.name = product.barcode || "Producto Sin Nombre";
   }
 
   // Ensure numeric fields are numbers
@@ -813,14 +813,30 @@ const BulkImportModal = ({
       // Step 2: Import products
       const result = await productService.bulkCreateProducts(mappedProducts);
 
-      Swal.fire({
-        icon: "success",
-        title: "Importación Completada",
-        html: `<div style="text-align:left;padding:0 10px;">
-          <p>✅ <strong>${result.insertedCount}</strong> productos nuevos creados</p>
-          <p>🔄 <strong>${result.updatedCount}</strong> productos existentes actualizados</p>
-        </div>`,
-      });
+      // Build result message
+      const hasFailures = result.failedCount > 0;
+      const icon = hasFailures ? "warning" : "success";
+      const title = hasFailures ? "Importación con Observaciones" : "Importación Completada";
+
+      let html = `<div style="text-align:left;padding:0 10px;">`;
+      html += `<p>✅ <strong>${result.insertedCount}</strong> productos nuevos creados</p>`;
+      html += `<p>🔄 <strong>${result.updatedCount}</strong> productos existentes actualizados</p>`;
+      if (hasFailures) {
+        html += `<p style="color:#d97706;">⚠️ <strong>${result.failedCount}</strong> productos no se pudieron insertar</p>`;
+        if (result.failedProducts && result.failedProducts.length > 0) {
+          html += `<div style="margin-top:8px;max-height:150px;overflow-y:auto;font-size:0.8em;background:#fef3c7;border-radius:6px;padding:8px;">`;
+          result.failedProducts.slice(0, 15).forEach(p => {
+            html += `<div style="border-bottom:1px solid #fde68a;padding:3px 0;">• ${p.name || 'Sin nombre'} (${p.barcode || 'sin código'})</div>`;
+          });
+          if (result.failedProducts.length > 15) {
+            html += `<div style="padding:3px 0;color:#92400e;">... y ${result.failedProducts.length - 15} más</div>`;
+          }
+          html += `</div>`;
+        }
+      }
+      html += `</div>`;
+
+      Swal.fire({ icon, title, html });
       onSuccess();
       onClose();
     } catch (error) {
