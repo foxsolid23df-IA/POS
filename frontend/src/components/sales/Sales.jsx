@@ -203,6 +203,7 @@ export const Sales = () => {
   const searchContainerRef = useRef(null);
   const replacementLoadingRef = useRef(false);
   const wasAnyModalOpenRef = useRef(false);
+  const cartRestored = useRef(false);
 
   const focusSkuInput = useCallback((delay = 50) => {
     if (isSupervising) return;
@@ -846,6 +847,36 @@ export const Sales = () => {
     }
   }, [productos.length]);
 
+  // RESTAURAR CARRITO AL MONTAR (despues de navegar a otra pestaña y volver)
+  useEffect(() => {
+    if (!user?.id || !cashSession?.id || cashSession.status !== "open") {
+      cartRestored.current = true;
+      return;
+    }
+
+    cartRestored.current = false;
+
+    const restoreCart = async () => {
+      try {
+        const saved = await activeCartService.getActiveCart(user.id, cashSession.id);
+        if (
+          saved?.cart_data &&
+          Array.isArray(saved.cart_data) &&
+          saved.cart_data.length > 0 &&
+          saved.status === "active"
+        ) {
+          reemplazarCarrito(saved.cart_data);
+        }
+      } catch (err) {
+        console.warn("No se pudo restaurar carrito:", err);
+      } finally {
+        cartRestored.current = true;
+      }
+    };
+
+    restoreCart();
+  }, [user?.id, cashSession?.id]);
+
   // SINCRONIZACIÓN CON PANTALLA CLIENTE
   // Cada vez que cambia el carrito, total o sesión, actualizamos la tabla active_carts
   useEffect(() => {
@@ -853,6 +884,9 @@ export const Sales = () => {
     if (!cashSession?.id || cashSession.status !== "open" || !user?.id) {
       return;
     }
+
+    // No sincronizar hasta que se haya intentado restaurar el carrito
+    if (!cartRestored.current) return;
 
     // Debounce: Esperar 500ms antes de enviar a la DB para evitar saturación y AbortErrors
     const syncTimer = setTimeout(() => {
@@ -933,33 +967,6 @@ export const Sales = () => {
 
 
 
-  // SINCRONIZACIÓN CON PANTALLA DEL CLIENTE
-  useEffect(() => {
-    let isMounted = true;
-
-    const syncCart = async () => {
-      if (user && !mostrarModalPago && isMounted) {
-        try {
-          await activeCartService.updateCart(
-            carrito,
-            totalVenta,
-            cashSession?.id,
-          );
-        } catch (err) {
-          // Silenciar errores si el componente se desmontó
-          if (isMounted && err.name !== "AbortError") {
-            console.error("Error sincronizando carrito:", err);
-          }
-        }
-      }
-    };
-
-    syncCart();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [carrito, totalVenta, user, cashSession, mostrarModalPago]);
 
   // Sincronizar info de pago cuando cambia
   useEffect(() => {
