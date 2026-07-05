@@ -108,7 +108,11 @@ const importFormats = {
       notes: "",
     },
     transformations: {
-      barcode: (val) => String(val || "").trim(),
+      barcode: (val) => {
+        const trimmed = String(val || "").trim();
+        const dashIndex = trimmed.indexOf("-");
+        return dashIndex !== -1 ? trimmed.substring(0, dashIndex) : trimmed;
+      },
       name: (val) => {
         return String(val || "").trim();
       },
