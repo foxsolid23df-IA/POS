@@ -36,12 +36,24 @@ export const backupService = {
   },
 
   downloadInventoryCsv: async () => {
-    const { data, error } = await supabase
-      .from('products')
-      .select('id, barcode, box_barcode, name, stock, unit, box_units, price, box_price, box_special_price, box_special_from_qty, sell_by_box_only, cost_price, margin_percent, supplier, updated_at')
-      .order('name', { ascending: true });
+    const PAGE_SIZE = 1000;
+    let from = 0;
+    let allData = [];
+    while (true) {
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, barcode, box_barcode, name, stock, unit, box_units, price, box_price, box_special_price, box_special_from_qty, sell_by_box_only, cost_price, margin_percent, supplier, updated_at')
+        .order('name', { ascending: true })
+        .range(from, from + PAGE_SIZE - 1);
 
-    if (error) throw error;
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+      allData = allData.concat(data);
+      if (data.length < PAGE_SIZE) break;
+      from += PAGE_SIZE;
+    }
+
+    const data = allData;
 
     const headers = [
       'ID',

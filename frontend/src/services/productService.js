@@ -6,6 +6,37 @@ let productsCache = null;
 let lastFetchTime = 0;
 const CACHE_DURATION = 0; // 0 para forzar siempre carga desde DB en multicaja
 
+// ============================================================
+// Helper: Obtener TODOS los productos con paginación
+// PostgREST trunca a 1000 filas por defecto. Esta función
+// usa .range() para traer todas las páginas automáticamente.
+// ============================================================
+const PAGE_SIZE = 1000;
+
+const fetchAllProducts = async (selectColumns = '*', { signal } = {}) => {
+    let from = 0;
+    let allData = [];
+    while (true) {
+        let query = supabase
+            .from('products')
+            .select(selectColumns)
+            .order('created_at', { ascending: false })
+            .range(from, from + PAGE_SIZE - 1);
+
+        if (signal) {
+            query = query.abortSignal(signal);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        allData = allData.concat(data);
+        if (data.length < PAGE_SIZE) break; // última página
+        from += PAGE_SIZE;
+    }
+    return allData;
+};
+
 export const productService = {
     // Helper para actualizar el caché localmente (útil para realtime)
     updateCache: (updatedProduct, type = 'UPDATE') => {
@@ -57,28 +88,7 @@ export const productService = {
         console.log('[ProductService] Obteniendo productos desde Supabase...', { forceRefresh });
 
         try {
-            const { data, error } = await supabase
-                .from('products')
-                .select('*')
-                .order('created_at', { ascending: false });
-
-            if (error) {
-                if (!isAbortError(error)) {
-                    console.error('[ProductService] Error fetching products:', error);
-                }
-
-                // Si hay error pero tenemos caché (aunque sea viejo), devolverlo
-                if (productsCache && productsCache.length > 0) {
-                    console.warn('[ProductService] Using stale cache due to fetch error', { count: productsCache.length });
-                    return [...productsCache];
-                }
-
-                if (isAbortError(error)) throw error; // Relanzar para que catch lo maneje (o ignore)
-
-                // Si no hay caché, retornar array vacío en lugar de lanzar error
-                console.error('[ProductService] No cache available, returning empty array');
-                return [];
-            }
+            const data = await fetchAllProducts('*');
 
             // ... (procesamiento exitoso)
             const validData = Array.isArray(data) ? data : [];
@@ -290,22 +300,30 @@ export const productService = {
         return data;
     },
 
-    // Obtener productos con poco stock (menos de 10 unidades)
+    // Obtener productos con poco stock (menos de N unidades) — con paginación
     getLowStockProducts: async (threshold = 10, signal) => {
-        let query = supabase
-            .from('products')
-            .select('*')
-            .lte('stock', threshold)
-            .order('stock', { ascending: true });
+        let from = 0;
+        let allData = [];
+        while (true) {
+            let query = supabase
+                .from('products')
+                .select('*')
+                .lte('stock', threshold)
+                .order('stock', { ascending: true })
+                .range(from, from + PAGE_SIZE - 1);
 
-        if (signal) {
-            query = query.abortSignal(signal);
+            if (signal) {
+                query = query.abortSignal(signal);
+            }
+
+            const { data, error } = await query;
+            if (error) throw error;
+            if (!data || data.length === 0) break;
+            allData = allData.concat(data);
+            if (data.length < PAGE_SIZE) break;
+            from += PAGE_SIZE;
         }
-
-        const { data, error } = await query;
-
-        if (error) throw error;
-        return data || [];
+        return allData;
     },
 
     // Eliminar todos los productos con datos rotos (de importaciones fallidas)
@@ -343,12 +361,8 @@ export const productService = {
             throw authError;
         }
 
-        // 1. Obtener todos los productos actuales para verificar códigos de barras
-        const { data: existingProducts, error: fetchError } = await supabase
-            .from('products')
-            .select('id, barcode, box_barcode');
-
-        if (fetchError) throw fetchError;
+        // 1. Obtener TODOS los productos actuales para verificar códigos de barras (con paginación)
+        const existingProducts = await fetchAllProducts('id, barcode, box_barcode');
 
         // 2. Crear mapa de barcode a ID
         const existingBarcodeMap = new Map();
