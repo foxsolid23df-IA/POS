@@ -75,6 +75,17 @@ const CustomerDisplay = () => {
     };
   }, [userId, sessionId, terminalId]);
 
+  const getScaleClass = (count) => {
+    if (count <= 3) return 'scale-large';
+    if (count <= 8) return 'scale-medium';
+    if (count <= 15) return 'scale-small';
+    if (count <= 25) return 'scale-xsmall';
+    return 'scale-xxsmall';
+  };
+
+  const itemCount = cart?.cart_data?.length || 0;
+  const isCompact = itemCount > 8;
+
   // Temporizador para regresar a pantalla de bienvenida después de completar venta
   useEffect(() => {
     if (status === "completed") {
@@ -131,37 +142,65 @@ const CustomerDisplay = () => {
   }
 
   return (
-    <div className={`customer-display-container status-${status}`}>
+    <div className={`customer-display-container status-${status} ${getScaleClass(itemCount)}`}>
       <div className="display-main">
         <div className="items-column">
-          <div className="items-header">
-            <span>Descripción del Producto</span>
-            <div className="header-right">
-              <span>Cant.</span>
-              <span>Subtotal</span>
-            </div>
-          </div>
-          <div className="items-list">
-            {cart?.cart_data.map((item, index) => (
-              <div
-                key={`${item.id}-${index}`}
-                className="item-row item-animate"
-              >
-                <div className="item-info">
-                  <span className="item-name">{item.name}</span>
-                  <span className="item-price">
-                    ${parseFloat(item.price).toFixed(2)} por unidad
-                  </span>
-                </div>
-                <div className="item-values">
-                  <span className="item-qty">x{item.quantity}</span>
-                  <span className="item-total">
-                    ${(item.price * item.quantity).toFixed(2)}
-                  </span>
+          {isCompact ? (
+            <>
+              <div className="compact-header">
+                <span className="col-num">#</span>
+                <span className="col-name">Descripción del Producto</span>
+                <span className="col-qty">Cant.</span>
+                <span className="col-total">Subtotal</span>
+              </div>
+              <div className="items-list compact-mode">
+                {cart?.cart_data.map((item, index) => (
+                  <div
+                    key={`${item.id}-${index}`}
+                    className="compact-row item-animate"
+                  >
+                    <span className="col-num">{index + 1}</span>
+                    <span className="col-name">{item.name}</span>
+                    <span className="col-qty">x{item.quantity}</span>
+                    <span className="col-total">
+                      ${(item.price * item.quantity).toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="items-header">
+                <span>Descripción del Producto</span>
+                <div className="header-right">
+                  <span>Cant.</span>
+                  <span>Subtotal</span>
                 </div>
               </div>
-            ))}
-          </div>
+              <div className="items-list spacious-mode">
+                {cart?.cart_data.map((item, index) => (
+                  <div
+                    key={`${item.id}-${index}`}
+                    className="item-row item-animate"
+                  >
+                    <div className="item-info">
+                      <span className="item-name">{item.name}</span>
+                      <span className="item-price">
+                        ${parseFloat(item.price).toFixed(2)} por unidad
+                      </span>
+                    </div>
+                    <div className="item-values">
+                      <span className="item-qty">x{item.quantity}</span>
+                      <span className="item-total">
+                        ${(item.price * item.quantity).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         <div className="summary-column">

@@ -46,6 +46,7 @@ export const TicketConfig = () => {
     show_billing_section: true,
     qr_code_size: "medium",
     cc_enable_day_cut: true,
+    auto_customer_display: false,
   });
 
   const [loading, setLoading] = useState(true);
@@ -597,6 +598,38 @@ export const TicketConfig = () => {
                   <option value="medium">Mediano</option>
                   <option value="large">Grande</option>
                 </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="printer-settings-box mt-8 p-6 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 border-b border-slate-200 dark:border-slate-700 pb-2">
+              Pantalla del Cliente
+            </h3>
+            <p className="text-sm text-slate-500 mb-6">
+              Configuración de la pantalla orientada al cliente que muestra los productos y totales en tiempo real.
+            </p>
+            <div className="grid grid-cols-1 gap-6">
+              <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div className="flex-1 mr-4">
+                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300 block">
+                    Abrir automáticamente en segunda pantalla
+                  </span>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Al iniciar la aplicación, se abrirá la pantalla del cliente en el monitor secundario detectado.
+                    Requiere una segunda pantalla conectada al equipo.
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                  <input
+                    type="checkbox"
+                    name="auto_customer_display"
+                    checked={settings.auto_customer_display || false}
+                    onChange={handleChange}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500"></div>
+                </label>
               </div>
             </div>
           </div>

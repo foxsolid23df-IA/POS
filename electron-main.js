@@ -1,7 +1,7 @@
 // ===== ELECTRON MAIN PROCESS =====
 // Este archivo inicia el backend y abre la ventana de Electron
 
-const { app, BrowserWindow, Menu, dialog, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, dialog, ipcMain, screen } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const http = require('http');
@@ -25,6 +25,7 @@ let rawPrintHelperReady = false;
 let rawPrintHelperId = 1;
 let rawPrintHelperStdout = '';
 const rawPrintPending = new Map();
+let customerDisplayWindow = null;
 
 const PRINT_WORKER_SHELL = `data:text/html;charset=utf-8,${encodeURIComponent(`<!DOCTYPE html>
 <html>
@@ -110,6 +111,92 @@ function restoreZoom() {
     const factor = loadZoomFactor();
     mainWindow.webContents.setZoomFactor(factor);
 }
+
+// ═══════════════════════════════════════════════════════════
+// PANTALLA DEL CLIENTE - SEGUNDA PANTALLA
+// ═══════════════════════════════════════════════════════════
+
+function getSecondaryDisplay() {
+    const displays = screen.getAllDisplays();
+    return displays.length > 1 ? displays[1] : null;
+}
+
+function crearVentanaCliente(params) {
+    const display = getSecondaryDisplay();
+    if (!display) {
+        console.log('[CustomerDisplay] No se detectó segunda pantalla');
+        return null;
+    }
+
+    if (customerDisplayWindow && !customerDisplayWindow.isDestroyed()) {
+        customerDisplayWindow.focus();
+        return customerDisplayWindow;
+    }
+
+    const frontendUrl = isDev
+        ? 'http://localhost:5173'
+        : `file://${path.join(__dirname, 'frontend', 'dist', 'index.html')}`;
+
+    customerDisplayWindow = new BrowserWindow({
+        x: display.bounds.x,
+        y: display.bounds.y,
+        width: display.bounds.width,
+        height: display.bounds.height,
+        fullscreen: true,
+        frame: false,
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            webSecurity: true,
+            preload: path.join(__dirname, 'preload.js')
+        },
+        title: 'NEXUM POS - Pantalla del Cliente'
+    });
+
+    const url = `${frontendUrl}#/customer-display?u=${params.userId}&s=${params.sessionId}&t=${params.terminalId || ''}`;
+    customerDisplayWindow.loadURL(url);
+
+    customerDisplayWindow.on('closed', () => {
+        customerDisplayWindow = null;
+    });
+
+    console.log('[CustomerDisplay] Ventana creada en segunda pantalla');
+    return customerDisplayWindow;
+}
+
+function cerrarVentanaCliente() {
+    if (customerDisplayWindow && !customerDisplayWindow.isDestroyed()) {
+        customerDisplayWindow.close();
+        customerDisplayWindow = null;
+    }
+}
+
+// IPC Handlers para Pantalla del Cliente
+ipcMain.handle('open-customer-display', async (event, params) => {
+    try {
+        const window = crearVentanaCliente(params);
+        return { ok: !!window, hasSecondDisplay: getSecondaryDisplay() !== null };
+    } catch (error) {
+        console.error('[CustomerDisplay] Error abriendo:', error);
+        return { ok: false, error: error.message };
+    }
+});
+
+ipcMain.handle('close-customer-display', async () => {
+    cerrarVentanaCliente();
+    return { ok: true };
+});
+
+ipcMain.handle('get-customer-display-status', async () => {
+    return {
+        isOpen: customerDisplayWindow && !customerDisplayWindow.isDestroyed(),
+        hasSecondDisplay: getSecondaryDisplay() !== null
+    };
+});
+
+ipcMain.handle('has-second-display', async () => {
+    return getSecondaryDisplay() !== null;
+});
 
 function generateHexSecret(bytes) {
     return crypto.randomBytes(bytes).toString('hex');
@@ -446,6 +533,13 @@ function crearVentana() {
         saveZoomFactor(current);
     });
 
+    // Notificar al renderer que la app está lista para auto-abrir pantalla cliente
+    mainWindow.webContents.on('did-finish-load', () => {
+        setTimeout(() => {
+            mainWindow.webContents.send('app-ready-for-customer-display');
+        }, 1500);
+    });
+
     // Configurar Menú de la Aplicación Estándar
     const template = [
         {
@@ -536,6 +630,7 @@ function crearVentana() {
     }
 
     mainWindow.on('closed', () => {
+        cerrarVentanaCliente();
         mainWindow = null;
         resetPrintWorker();
         stopRawPrintHelper();
@@ -1299,6 +1394,7 @@ app.whenReady().then(async () => {
 
 // Cerrar la aplicación cuando todas las ventanas estén cerradas
 app.on('window-all-closed', () => {
+    cerrarVentanaCliente();
     // Detener el servidor backend
     if (backendProcess) {
         console.log('🛑 Deteniendo servidor backend...');
@@ -1312,6 +1408,7 @@ app.on('window-all-closed', () => {
 
 // Asegurarse de cerrar el backend cuando la app se cierre
 app.on('quit', () => {
+    cerrarVentanaCliente();
     stopRawPrintHelper();
     if (backendProcess) {
         backendProcess.kill();

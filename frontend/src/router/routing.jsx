@@ -22,6 +22,7 @@ import { ScrollTopButton } from "../components/common/ScrollTopButton";
 import { ProductProvider } from "../contexts/ProductContext";
 import { SettingsProvider } from "../contexts/SettingsContext";
 import { useAndroidBackButton } from "../hooks/useAndroidBackButton";
+import { useAutoCustomerDisplay } from "../hooks/useAutoCustomerDisplay";
 import { isWebAdminMode } from "../utils/appMode";
 
 const Sales = lazy(() => import("../components/sales/Sales").then(m => ({ default: m.Sales })));
@@ -243,11 +244,17 @@ const DesktopPOSLayout = ({ children }) => {
   );
 };
 
+// Componente wrapper que integra el hook de auto-pantalla del cliente
+const DesktopPOSLayoutWithAutoDisplay = ({ children }) => {
+  useAutoCustomerDisplay();
+  return <DesktopPOSLayout>{children}</DesktopPOSLayout>;
+};
+
 const PrivateLayout = ({ children }) =>
   isWebAdminMode() ? (
     <WebAdminLayout>{children}</WebAdminLayout>
   ) : (
-    <DesktopPOSLayout>{children}</DesktopPOSLayout>
+    <DesktopPOSLayoutWithAutoDisplay>{children}</DesktopPOSLayoutWithAutoDisplay>
   );
 
 const AdminRoute = ({ children }) => {

@@ -18,6 +18,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Obtener la URL de la API del backend dinámica
     getApiUrlSync: () => ipcRenderer.sendSync('get-api-url-sync'),
 
+    // Pantalla del Cliente - Segunda pantalla
+    openCustomerDisplay: (params) => ipcRenderer.invoke('open-customer-display', params),
+    closeCustomerDisplay: () => ipcRenderer.invoke('close-customer-display'),
+    getCustomerDisplayStatus: () => ipcRenderer.invoke('get-customer-display-status'),
+    onAutoOpenCustomerDisplay: (callback) => {
+        if (typeof callback !== 'function') return () => {};
+        const listener = () => callback();
+        ipcRenderer.on('auto-open-customer-display', listener);
+        return () => ipcRenderer.removeListener('auto-open-customer-display', listener);
+    },
+    hasSecondDisplay: () => ipcRenderer.invoke('has-second-display'),
+
     // Actualizaciones de la app instalada
     getVersion: () => ipcRenderer.invoke('updates:get-current-version'),
     checkForUpdates: () => ipcRenderer.invoke('updates:check'),
