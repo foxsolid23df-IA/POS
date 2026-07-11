@@ -48,6 +48,7 @@ const Inventory = () => {
 
   // Actions Menu State
   const [activeMenuId, setActiveMenuId] = useState(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
 
   // Filters State
   const [showFiltersModal, setShowFiltersModal] = useState(false);
@@ -1491,13 +1492,17 @@ const Inventory = () => {
                               className="actions-button"
                               onClick={(e) => {
                                 e.stopPropagation();
+                                if (!isMenuOpen) {
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  setMenuPosition({ top: rect.bottom + 4, left: rect.right - 160 });
+                                }
                                 setActiveMenuId(isMenuOpen ? null : product.id);
                               }}
                             >
                               <FiMoreVertical />
                             </button>
                             {isMenuOpen && (
-                              <div className="actions-dropdown">
+                              <div className="actions-dropdown" style={{ top: menuPosition.top, left: menuPosition.left }}>
                                 <button
                                   className="dropdown-item"
                                   onClick={() => {

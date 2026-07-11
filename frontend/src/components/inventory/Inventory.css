@@ -716,15 +716,13 @@
 }
 
 .actions-dropdown {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    margin-top: 4px;
+    position: fixed;
+    right: auto;
     background-color: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    z-index: 50;
+    z-index: 1000;
     min-width: 160px;
     overflow: hidden;
 }

@@ -1,8 +1,8 @@
 .customer-display-container {
     height: 100vh;
     width: 100vw;
-    background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
-    color: white;
+    background: #f8fafc;
+    color: #1e293b;
     font-family: 'Outfit', sans-serif;
     display: flex;
     flex-direction: column;
@@ -26,7 +26,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(circle at center, #1f2937 0%, #111827 100%);
+    background: radial-gradient(circle at center, #ffffff 0%, #f1f5f9 100%);
     text-align: center;
     padding: 2rem;
     position: relative;
@@ -41,7 +41,7 @@
 .welcome-brand-logo {
     width: clamp(150px, 25vw, 300px);
     height: auto;
-    filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.5));
+    filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.15));
     border-radius: 2rem;
 }
 
@@ -60,30 +60,29 @@
     background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 1.5rem;
-    filter: drop-shadow(0 10px 10px rgba(0,0,0,0.3));
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
 }
 
 .welcome-subtext {
     font-size: 1.5rem;
-    color: #94a3b8;
+    color: #64748b;
     max-width: 600px;
 }
 
 /* Items Column */
 .items-column {
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 2.5rem;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: #ffffff;
+    border-radius: 2rem;
+    border: 1px solid #e2e8f0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    backdrop-filter: blur(20px);
-    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.08);
 }
 
 .items-header {
     padding: 2rem 2.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 2px solid #e2e8f0;
     display: flex;
     justify-content: space-between;
     font-weight: 700;
@@ -112,13 +111,13 @@
     background: transparent;
 }
 .items-list::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.15);
+    background: rgba(0,0,0,0.15);
     border-radius: 2px;
 }
 
 .item-row {
     padding: 2rem 1.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid #f1f5f9;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -139,7 +138,7 @@
 
 .item-price {
     font-size: 1.3rem;
-    color: #64748b;
+    color: #94a3b8;
 }
 
 .item-values {
@@ -173,11 +172,11 @@
 .total-card {
     background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     padding: 4rem 2rem;
-    border-radius: 2.5rem;
+    border-radius: 2rem;
     display: flex;
     flex-direction: column;
     align-items: center;
-    box-shadow: 0 30px 60px -15px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 8px 30px -8px rgba(59, 130, 246, 0.35);
     position: relative;
     overflow: hidden;
 }
@@ -210,10 +209,10 @@
 }
 
 .payment-info {
-    background: rgba(255, 255, 255, 0.04);
-    border-radius: 2.5rem;
+    background: #f8fafc;
+    border-radius: 2rem;
     padding: 2.5rem;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid #e2e8f0;
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -227,7 +226,7 @@
 
 .info-label {
     font-size: 1.25rem;
-    color: #64748b;
+    color: #94a3b8;
     font-weight: 600;
 }
 
@@ -239,7 +238,7 @@
 .change-row {
     margin-top: 1.5rem;
     padding-top: 1.5rem;
-    border-top: 2px dashed rgba(255, 255, 255, 0.08);
+    border-top: 2px dashed #e2e8f0;
 }
 
 .cambio-value {
@@ -255,9 +254,9 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: rgba(59, 130, 246, 0.1);
-    border: 3px solid rgba(59, 130, 246, 0.3);
-    border-radius: 2.5rem;
+    background: #eff6ff;
+    border: 3px solid #bfdbfe;
+    border-radius: 2rem;
     text-align: center;
     padding: 2rem;
 }
@@ -283,21 +282,21 @@
 
 .thanks-card p {
     font-size: 1.5rem;
-    color: #94a3b8;
+    color: #64748b;
 }
 
 /* Footer */
 .display-footer {
     padding: 1.5rem 3rem;
-    background: rgba(0, 0, 0, 0.4);
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    background: #ffffff;
+    border-top: 1px solid #e2e8f0;
 }
 
 .footer-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    color: #475569;
+    color: #64748b;
     font-weight: 600;
     font-size: 1.1rem;
     letter-spacing: 1px;
@@ -313,7 +312,7 @@
     height: 32px;
     width: auto;
     object-fit: contain;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
 }
 
 .store-name-footer {
@@ -352,7 +351,7 @@
     text-transform: uppercase;
     letter-spacing: 1.5px;
     font-size: 0.85rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 2px solid #e2e8f0;
 }
 
 .items-list.compact-mode {
@@ -365,13 +364,13 @@
     grid-template-columns: 40px 1fr 60px 110px;
     padding: 0.65rem 1.5rem;
     font-size: 1.1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid #f1f5f9;
     align-items: center;
     transition: all 0.2s ease;
 }
 
 .compact-row:hover {
-    background: rgba(255, 255, 255, 0.03);
+    background: #f8fafc;
 }
 
 .compact-row .col-num {
@@ -413,7 +412,7 @@
 .status-completed .total-card {
     opacity: 0.5;
     filter: grayscale(0.5);
-    background: #1f2937;
+    background: #94a3b8;
     box-shadow: none;
 }
 

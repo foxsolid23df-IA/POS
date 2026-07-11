@@ -1144,6 +1144,9 @@ export const Sales = () => {
         "El código ingresado no tiene un formato válido. Por favor, verifica el código e intenta nuevamente.",
         "error",
       );
+      setCodigoSku("");
+      setCodigoNombre("");
+      focusSkuInput();
       return;
     }
 
@@ -1157,6 +1160,9 @@ export const Sales = () => {
             ? "CAJA"
             : "PZA";
         agregarProducto(prepararProductoCarrito(productoLocal, unidadEscaneada), undefined, true);
+        setCodigoSku("");
+        setCodigoNombre("");
+        focusSkuInput();
         return;
       }
 
@@ -1167,10 +1173,15 @@ export const Sales = () => {
             ? "CAJA"
             : "PZA";
         agregarProducto(prepararProductoCarrito(producto, unidadEscaneada), undefined, true);
-        // Producto agregado exitosamente - no necesitamos notificación ya que se ve en el carrito
       });
+      setCodigoSku("");
+      setCodigoNombre("");
+      focusSkuInput();
     } catch (error) {
       mostrarAvisoProducto();
+      setCodigoSku("");
+      setCodigoNombre("");
+      focusSkuInput();
     }
   };
 

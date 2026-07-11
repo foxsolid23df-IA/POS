@@ -59,7 +59,7 @@ export const SalesHeader = ({ onOpenReportModal }) => {
           <button
             onClick={() => {
               const terminalId = terminalService.getTerminalId();
-              const url = `${window.location.origin}${window.location.pathname}#/customer-display?u=${user?.id}&s=${cashSession?.id}&t=${terminalId || ""}`;
+              const url = `${window.location.origin}${window.location.pathname}#/customer-display?u=${user?.id}&s=${cashSession?.id}&t=${terminalId || ""}&te=${user?.tax_enabled !== false}`;
               window.open(url, "_blank", "width=1024,height=768");
             }}
             className="header-action-btn monitor flex-shrink-0"

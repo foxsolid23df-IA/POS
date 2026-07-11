@@ -41,9 +41,10 @@ const CartSidebar = ({
   const [quickAddSaving, setQuickAddSaving] = useState(false);
   const customerSearchRef = useRef(null);
   
-  // Cálculos básicos
-  const subtotal = total / 1.16;
-  const iva = total - subtotal;
+  // Cálculos básicos - respetar configuración de impuestos
+  const taxEnabled = user?.tax_enabled !== false;
+  const subtotal = taxEnabled ? total / 1.16 : total;
+  const iva = taxEnabled ? total - subtotal : 0;
   const totalPiezas = carrito.reduce((acc, item) => acc + item.quantity, 0);
 
   // Estado para controlar los avisos de stock bajo
@@ -398,14 +399,18 @@ const CartSidebar = ({
       {/* Footer con totales y acciones */}
       <div className="cart-table-footer">
         <div className="cart-table-summary">
-          <div className="ct-summary-row">
-            <span className="ct-summary-label">Subtotal</span>
-            <span className="ct-summary-value">{formatearDinero(subtotal)}</span>
-          </div>
-          <div className="ct-summary-row">
-            <span className="ct-summary-label">IVA (16%)</span>
-            <span className="ct-summary-value">{formatearDinero(iva)}</span>
-          </div>
+          {taxEnabled && (
+            <>
+              <div className="ct-summary-row">
+                <span className="ct-summary-label">Subtotal</span>
+                <span className="ct-summary-value">{formatearDinero(subtotal)}</span>
+              </div>
+              <div className="ct-summary-row">
+                <span className="ct-summary-label">IVA (16%)</span>
+                <span className="ct-summary-value">{formatearDinero(iva)}</span>
+              </div>
+            </>
+          )}
           <motion.div 
             key={total}
             initial={{ scale: 0.95 }}
