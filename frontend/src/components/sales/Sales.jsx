@@ -196,6 +196,8 @@ export const Sales = () => {
     type: "info", // 'info', 'error', 'success', 'warning'
   });
 
+  const [avisoProducto, setAvisoProducto] = useState({ visible: false });
+
   // REFERENCIAS
   const ticketRef = useRef(null);
   const campoSkuRef = useRef(null);
@@ -242,6 +244,15 @@ export const Sales = () => {
       message: "",
       type: "info",
     });
+  };
+
+  // AVISO MINIMALISTA: PRODUCTO NO DADO DE ALTA
+  const mostrarAvisoProducto = () => {
+    setAvisoProducto({ visible: true });
+  };
+
+  const cerrarAvisoProducto = () => {
+    setAvisoProducto({ visible: false });
   };
 
   // HANDLERS PARA BOTONES EXTRA
@@ -1114,19 +1125,7 @@ export const Sales = () => {
         agregarProducto(prepararProductoCarrito(producto, unidadEscaneada), undefined, true);
       });
     } catch (error) {
-      if (error.message && error.message.includes("404")) {
-        mostrarModalPersonalizado(
-          "Producto no encontrado",
-          `No se encontró un producto con el código escaneado: ${codigo}`,
-          "error",
-        );
-      } else {
-        mostrarModalPersonalizado(
-          "Error",
-          "Ocurrió un error al buscar el producto. Intenta nuevamente.",
-          "error",
-        );
-      }
+      mostrarAvisoProducto();
     }
   };
 
@@ -1171,22 +1170,7 @@ export const Sales = () => {
         // Producto agregado exitosamente - no necesitamos notificación ya que se ve en el carrito
       });
     } catch (error) {
-      // Manejar error de producto no encontrado
-      if (error.message && error.message.includes("404")) {
-        mostrarModalPersonalizado(
-          "Producto no encontrado",
-          `No se encontró un producto con el código ingresado: ${codigo}`,
-          "error",
-        );
-      } else {
-        // Los errores de stock se manejan en el hook useCart
-        // Otros errores generales
-        mostrarModalPersonalizado(
-          "Error",
-          "Ocurrió un error al buscar el producto. Intenta nuevamente.",
-          "error",
-        );
-      }
+      mostrarAvisoProducto();
     }
   };
 
@@ -2060,19 +2044,11 @@ export const Sales = () => {
             "success",
           );
         } else {
-          mostrarModalPersonalizado(
-            "Producto no encontrado",
-            `No se encontró un producto con el código: ${codigoLimpio}`,
-            "error",
-          );
+          mostrarAvisoProducto();
         }
       });
     } catch (error) {
-      mostrarModalPersonalizado(
-        "Producto no encontrado",
-        `No se encontró un producto con el código escaneado: ${codigoLimpio}`,
-        "error",
-      );
+      mostrarAvisoProducto();
     }
   };
 
@@ -2586,6 +2562,15 @@ export const Sales = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* AVISO: PRODUCTO NO DADO DE ALTA */}
+      {avisoProducto.visible && (
+        <div className="aviso-producto-toast" onClick={cerrarAvisoProducto}>
+          <span className="material-symbols-outlined aviso-producto-icon">info</span>
+          <span className="aviso-producto-text">Producto no dado de alta</span>
+          <button className="aviso-producto-close" onClick={cerrarAvisoProducto}>×</button>
         </div>
       )}
 

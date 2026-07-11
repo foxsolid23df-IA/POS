@@ -197,7 +197,7 @@ export const TicketConfig = () => {
                       value={settings.business_name || ""}
                       onChange={handleChange}
                       placeholder="Ej: DISTRIBUIDORA DE ADHESIVOS 'ROYAL TAPE'"
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm dark:text-white"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white"
                     />
                   </div>
                   <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700/50 pt-2">
@@ -225,7 +225,7 @@ export const TicketConfig = () => {
                       value={settings.owner_name || ""}
                       onChange={handleChange}
                       placeholder="Ej: VICTOR GERARDO MIRANDA VEGA"
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm dark:text-white"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white"
                     />
                   </div>
                   <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700/50 pt-2">
@@ -253,7 +253,7 @@ export const TicketConfig = () => {
                       value={settings.rfc || ""}
                       onChange={handleChange}
                       placeholder="Ej: MIVV570323EX5"
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm dark:text-white"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white"
                     />
                   </div>
                   <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700/50 pt-2">
@@ -281,7 +281,7 @@ export const TicketConfig = () => {
                       value={settings.curp || ""}
                       onChange={handleChange}
                       placeholder="Ej: MIVV570323HDFRGC08"
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm dark:text-white"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white"
                     />
                   </div>
                   <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700/50 pt-2">
@@ -309,7 +309,7 @@ export const TicketConfig = () => {
                       value={settings.phone || ""}
                       onChange={handleChange}
                       placeholder="Ej: 10549550-10549551"
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm dark:text-white"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white"
                     />
                   </div>
                   <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700/50 pt-2">
@@ -337,7 +337,7 @@ export const TicketConfig = () => {
                       value={settings.email || ""}
                       onChange={handleChange}
                       placeholder="Ej: royaltape@hotmail.com"
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm dark:text-white"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white"
                     />
                   </div>
                   <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700/50 pt-2">
@@ -364,7 +364,7 @@ export const TicketConfig = () => {
                       value={settings.address || ""}
                       onChange={handleChange}
                       placeholder="Ej: Roldan No. 100 Loc B, Col. Centro, Deleg. Cuauhtémoc C.P. 06010 México D.F."
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm dark:text-white"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white"
                       rows="3"
                     />
                   </div>
