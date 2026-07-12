@@ -1289,7 +1289,7 @@ const Inventory = () => {
                   <th>Producto</th>
                   <th>Categoría</th>
                   <th>SKU</th>
-                  {!isSimplified && <th>Costo</th>}
+                  <th>Precio de Costo</th>
                   <th>Venta</th>
                   {!isSimplified && <th>Pzas/Caja</th>}
                   {!isSimplified && <th>Precio Caja</th>}
@@ -1373,11 +1373,9 @@ const Inventory = () => {
                           </span>
                         </td>
                         <td className="sku-cell">{sku}</td>
-                        {!isSimplified && (
-                          <td className="price-cell text-slate-500">
-                            ${parseFloat(product.cost_price || 0).toFixed(2)}
-                          </td>
-                        )}
+                        <td className="price-cell text-slate-500">
+                          ${parseFloat(product.cost_price || 0).toFixed(2)}
+                        </td>
                         <td className="price-cell font-medium">
                           ${parseFloat(product.price || 0).toFixed(2)}
                         </td>
@@ -1878,25 +1876,45 @@ const Inventory = () => {
                     </label>
                     <div className="grid grid-cols-12 gap-4">
                       {isSimplified ? (
-                        /* Venta Simplificado */
-                        <div className="col-span-12">
-                          <label className="text-xs text-gray-500 mb-1 block">
-                            Precio de Venta <span className="text-red-500">*</span>
-                          </label>
-                          <div className="new-product-price-wrapper">
-                            <span className="new-product-price-symbol">$</span>
-                            <input
-                              className="new-product-input new-product-price-input"
-                              type="number"
-                              name="price"
-                              value={formData.price}
-                              onChange={handleInputChange}
-                              placeholder="0.00"
-                              step="0.01"
-                              required
-                            />
+                        /* Precios Simplificado */
+                        <>
+                          <div className="col-span-12 md:col-span-6">
+                            <label className="text-xs text-gray-500 mb-1 block">
+                              Precio de Costo
+                            </label>
+                            <div className="new-product-price-wrapper">
+                              <span className="new-product-price-symbol">$</span>
+                              <input
+                                className="new-product-input new-product-price-input"
+                                type="number"
+                                name="cost_price"
+                                value={formData.cost_price}
+                                onChange={handleInputChange}
+                                placeholder="0.00"
+                                step="0.01"
+                                min="0"
+                              />
+                            </div>
                           </div>
-                        </div>
+                          <div className="col-span-12 md:col-span-6">
+                            <label className="text-xs text-gray-500 mb-1 block">
+                              Precio de Venta <span className="text-red-500">*</span>
+                            </label>
+                            <div className="new-product-price-wrapper">
+                              <span className="new-product-price-symbol">$</span>
+                              <input
+                                className="new-product-input new-product-price-input"
+                                type="number"
+                                name="price"
+                                value={formData.price}
+                                onChange={handleInputChange}
+                                placeholder="0.00"
+                                step="0.01"
+                                required
+                              />
+                            </div>
+                          </div>
+                        </>
                       ) : (
                         /* Modo Completo - Grid Multicolumna de Precios */
                         <>
