@@ -42,16 +42,12 @@
     font-weight: 600;
     outline: none;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    background: #ffffff;
-    color: #1e293b !important;
 }
 
 .dark .ticket-config-form input,
 .dark .ticket-config-form textarea,
 .dark .ticket-config-form select {
     border-color: #374151;
-    background: #1f2937;
-    color: white !important;
 }
 
 .ticket-config-form input:focus,
@@ -59,14 +55,12 @@
 .ticket-config-form select:focus {
     border-color: #3b82f6;
     box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
-    background: #ffffff;
 }
 
 .dark .ticket-config-form input:focus,
 .dark .ticket-config-form textarea:focus,
 .dark .ticket-config-form select:focus {
     border-color: #3b82f6;
-    background: #111827;
 }
 
 .form-grid {

@@ -113,10 +113,67 @@ function restoreZoom() {
 }
 
 // ═══════════════════════════════════════════════════════════
+// PERSISTENCIA DE CONFIGURACION DE PANTALLAS
+// ═══════════════════════════════════════════════════════════
+const DISPLAY_SETTINGS_FILE = 'display-settings.json';
+
+function getDisplaySettingsPath() {
+    return path.join(app.getPath('userData'), DISPLAY_SETTINGS_FILE);
+}
+
+function loadDisplaySettings() {
+    try {
+        const fs = require('fs');
+        const filePath = getDisplaySettingsPath();
+        if (fs.existsSync(filePath)) {
+            const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+            return {
+                cashierDisplayIndex: typeof data.cashierDisplayIndex === 'number' ? data.cashierDisplayIndex : 0,
+                clientDisplayIndex: typeof data.clientDisplayIndex === 'number' ? data.clientDisplayIndex : 1
+            };
+        }
+    } catch (e) {
+        console.warn('[Display] Error al leer settings:', e.message);
+    }
+    return { cashierDisplayIndex: 0, clientDisplayIndex: 1 };
+}
+
+function saveDisplaySettings(settings) {
+    try {
+        const fs = require('fs');
+        const filePath = getDisplaySettingsPath();
+        fs.writeFileSync(filePath, JSON.stringify(settings, null, 2), 'utf8');
+    } catch (e) {
+        console.warn('[Display] Error al guardar settings:', e.message);
+    }
+}
+
+function getAvailableDisplays() {
+    const displays = screen.getAllDisplays();
+    return displays.map((d, i) => ({
+        index: i,
+        id: d.id,
+        label: d.label || `Pantalla ${i + 1}`,
+        bounds: d.bounds,
+        isPrimary: d.isPrimary,
+        size: `${d.bounds.width}x${d.bounds.height}`
+    }));
+}
+
+function getDisplayByIndex(index) {
+    const displays = screen.getAllDisplays();
+    return displays[index] || null;
+}
+
+// ═══════════════════════════════════════════════════════════
 // PANTALLA DEL CLIENTE - SEGUNDA PANTALLA
 // ═══════════════════════════════════════════════════════════
 
 function getSecondaryDisplay() {
+    const settings = loadDisplaySettings();
+    const display = getDisplayByIndex(settings.clientDisplayIndex);
+    if (display) return display;
+    // Fallback: buscar segunda pantalla disponible
     const displays = screen.getAllDisplays();
     return displays.length > 1 ? displays[1] : null;
 }
@@ -196,6 +253,57 @@ ipcMain.handle('get-customer-display-status', async () => {
 
 ipcMain.handle('has-second-display', async () => {
     return getSecondaryDisplay() !== null;
+});
+
+// ═══════════════════════════════════════════════════════════
+// IPC HANDLERS - CONFIGURACION DE PANTALLAS
+// ═══════════════════════════════════════════════════════════
+
+ipcMain.handle('get-available-displays', async () => {
+    return getAvailableDisplays();
+});
+
+ipcMain.handle('get-display-assignment', async () => {
+    return loadDisplaySettings();
+});
+
+ipcMain.handle('set-display-assignment', async (event, assignment) => {
+    const settings = {
+        cashierDisplayIndex: typeof assignment.cashierDisplayIndex === 'number' ? assignment.cashierDisplayIndex : 0,
+        clientDisplayIndex: typeof assignment.clientDisplayIndex === 'number' ? assignment.clientDisplayIndex : 1
+    };
+    saveDisplaySettings(settings);
+
+    // Reposicionar ventana principal si está abierta
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        const display = getDisplayByIndex(settings.cashierDisplayIndex);
+        if (display) {
+            mainWindow.setBounds({
+                x: display.bounds.x,
+                y: display.bounds.y,
+                width: mainWindow.getBounds().width,
+                height: mainWindow.getBounds().height
+            });
+            console.log(`[MainWindow] Movida a pantalla: ${display.label || display.index}`);
+        }
+    }
+
+    // Reposicionar ventana del cliente si está abierta
+    if (customerDisplayWindow && !customerDisplayWindow.isDestroyed()) {
+        const display = getDisplayByIndex(settings.clientDisplayIndex);
+        if (display) {
+            customerDisplayWindow.setBounds({
+                x: display.bounds.x,
+                y: display.bounds.y,
+                width: display.bounds.width,
+                height: display.bounds.height
+            });
+            customerDisplayWindow.setFullScreen(true);
+            console.log(`[CustomerDisplay] Movida a pantalla: ${display.label || display.index}`);
+        }
+    }
+
+    return { ok: true, settings };
 });
 
 function generateHexSecret(bytes) {
@@ -499,7 +607,10 @@ function iniciarBackend() {
 
 // Función para crear la ventana principal
 function crearVentana() {
-    mainWindow = new BrowserWindow({
+    const displaySettings = loadDisplaySettings();
+    const display = getDisplayByIndex(displaySettings.cashierDisplayIndex);
+
+    const windowOptions = {
         width: 1400,
         height: 900,
         minWidth: 1024,
@@ -511,9 +622,17 @@ function crearVentana() {
             preload: path.join(__dirname, 'preload.js')
         },
         icon: path.join(__dirname, 'icon.ico'),
-        autoHideMenuBar: false, // Menú siempre visible para facilitar la navegación
+        autoHideMenuBar: false,
         title: 'NEXUM POS'
-    });
+    };
+
+    if (display) {
+        windowOptions.x = display.bounds.x;
+        windowOptions.y = display.bounds.y;
+        console.log(`[MainWindow] Abriendo en pantalla: ${display.label || display.index} (${display.bounds.width}x${display.bounds.height})`);
+    }
+
+    mainWindow = new BrowserWindow(windowOptions);
 
     // Cargar el frontend
     const frontendUrl = isDev

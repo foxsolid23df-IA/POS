@@ -53,10 +53,50 @@ export const TicketConfig = () => {
   const [saving, setSaving] = useState(false);
   const [printMode, setPrintMode] = useState(() => printerService.getTicketPrintMode());
   const fileInputRef = useRef(null);
+  const [displayAssignment, setDisplayAssignment] = useState({ cashierDisplayIndex: 0, clientDisplayIndex: 1 });
+  const [availableDisplays, setAvailableDisplays] = useState([]);
+  const [savingDisplays, setSavingDisplays] = useState(false);
 
   useEffect(() => {
     fetchSettings();
+    loadDisplayConfig();
   }, []);
+
+  const loadDisplayConfig = async () => {
+    if (!window.electronAPI?.isElectron) return;
+    try {
+      const displays = await window.electronAPI.getAvailableDisplays();
+      setAvailableDisplays(displays);
+      const assignment = await window.electronAPI.getDisplayAssignment();
+      setDisplayAssignment(assignment);
+    } catch (error) {
+      console.error('Error loading display config:', error);
+    }
+  };
+
+  const handleDisplayChange = (key, value) => {
+    setDisplayAssignment(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleApplyDisplaySettings = async () => {
+    if (!window.electronAPI?.isElectron) return;
+    setSavingDisplays(true);
+    try {
+      await window.electronAPI.setDisplayAssignment(displayAssignment);
+      Swal.fire({
+        title: '¡Aplicado!',
+        text: 'La configuración de pantallas se aplicó correctamente.',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    } catch (error) {
+      console.error('Error applying display settings:', error);
+      Swal.fire('Error', 'No se pudo aplicar la configuración.', 'error');
+    } finally {
+      setSavingDisplays(false);
+    }
+  };
 
   const fetchSettings = async () => {
     try {
@@ -197,7 +237,7 @@ export const TicketConfig = () => {
                       value={settings.business_name || ""}
                       onChange={handleChange}
                       placeholder="Ej: DISTRIBUIDORA DE ADHESIVOS 'ROYAL TAPE'"
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white shadow-sm"
                     />
                   </div>
                   <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700/50 pt-2">
@@ -225,7 +265,7 @@ export const TicketConfig = () => {
                       value={settings.owner_name || ""}
                       onChange={handleChange}
                       placeholder="Ej: VICTOR GERARDO MIRANDA VEGA"
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white shadow-sm"
                     />
                   </div>
                   <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700/50 pt-2">
@@ -253,7 +293,7 @@ export const TicketConfig = () => {
                       value={settings.rfc || ""}
                       onChange={handleChange}
                       placeholder="Ej: MIVV570323EX5"
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white shadow-sm"
                     />
                   </div>
                   <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700/50 pt-2">
@@ -281,7 +321,7 @@ export const TicketConfig = () => {
                       value={settings.curp || ""}
                       onChange={handleChange}
                       placeholder="Ej: MIVV570323HDFRGC08"
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white shadow-sm"
                     />
                   </div>
                   <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700/50 pt-2">
@@ -309,7 +349,7 @@ export const TicketConfig = () => {
                       value={settings.phone || ""}
                       onChange={handleChange}
                       placeholder="Ej: 10549550-10549551"
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white shadow-sm"
                     />
                   </div>
                   <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700/50 pt-2">
@@ -337,7 +377,7 @@ export const TicketConfig = () => {
                       value={settings.email || ""}
                       onChange={handleChange}
                       placeholder="Ej: royaltape@hotmail.com"
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white shadow-sm"
                     />
                   </div>
                   <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700/50 pt-2">
@@ -364,7 +404,7 @@ export const TicketConfig = () => {
                       value={settings.address || ""}
                       onChange={handleChange}
                       placeholder="Ej: Roldan No. 100 Loc B, Col. Centro, Deleg. Cuauhtémoc C.P. 06010 México D.F."
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white shadow-sm"
                       rows="3"
                     />
                   </div>
@@ -449,7 +489,7 @@ export const TicketConfig = () => {
                 value={settings.footer_message}
                 onChange={handleChange}
                 placeholder="¡Gracias por su compra!"
-                className="dark:bg-slate-800 dark:text-white"
+                className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                 rows="2"
               />
             </div>
@@ -462,7 +502,7 @@ export const TicketConfig = () => {
                   Seleccionar Impresora
                 </label>
                 <div className="flex gap-2">
-                  <select className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-medium dark:text-white outline-none ring-primary/20 focus:ring-4 transition-all appearance-none cursor-pointer">
+                  <select className="flex-1 bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm font-medium outline-none ring-primary/20 focus:ring-4 transition-all appearance-none cursor-pointer">
                     <option>Impresora Predeterminada</option>
                   </select>
                   <button
@@ -490,7 +530,7 @@ export const TicketConfig = () => {
                 <select
                   value={printMode}
                   onChange={handlePrintModeChange}
-                  className="w-full bg-white dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 rounded-xl px-4 py-2 text-sm dark:text-white"
+                  className="w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white border-none ring-1 ring-slate-200 dark:ring-slate-700 rounded-xl px-4 py-2 text-sm"
                 >
                   <option value={TICKET_PRINT_MODES.AUTO}>AutomÃ¡tico rÃ¡pido</option>
                   <option value={TICKET_PRINT_MODES.RAW}>ESC/POS raw</option>
@@ -503,7 +543,7 @@ export const TicketConfig = () => {
                   name="paper_width"
                   value={settings.paper_width}
                   onChange={handleChange}
-                  className="w-full bg-white dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 rounded-xl px-4 py-2 text-sm dark:text-white"
+                  className="w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white border-none ring-1 ring-slate-200 dark:ring-slate-700 rounded-xl px-4 py-2 text-sm"
                 >
                   <option value="58mm">58 mm (Mini)</option>
                   <option value="80mm">80 mm (Estándar)</option>
@@ -516,7 +556,7 @@ export const TicketConfig = () => {
                   name="font_size"
                   value={settings.font_size}
                   onChange={handleChange}
-                  className="w-full bg-white dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 rounded-xl px-4 py-2 text-sm dark:text-white text-center"
+                  className="w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white border-none ring-1 ring-slate-200 dark:ring-slate-700 rounded-xl px-4 py-2 text-sm text-center"
                 />
               </div>
               <div className="form-group">
@@ -526,7 +566,7 @@ export const TicketConfig = () => {
                   name="margin"
                   value={settings.margin}
                   onChange={handleChange}
-                  className="w-full bg-white dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 rounded-xl px-4 py-2 text-sm dark:text-white text-center"
+                  className="w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white border-none ring-1 ring-slate-200 dark:ring-slate-700 rounded-xl px-4 py-2 text-sm text-center"
                 />
               </div>
               <div className="form-group">
@@ -535,7 +575,7 @@ export const TicketConfig = () => {
                   name="font_family"
                   value={settings.font_family}
                   onChange={handleChange}
-                  className="w-full bg-white dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 rounded-xl px-4 py-2 text-sm dark:text-white"
+                  className="w-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white border-none ring-1 ring-slate-200 dark:ring-slate-700 rounded-xl px-4 py-2 text-sm"
                 >
                   <option value="Sistema">Sistema</option>
                   <option value="Monospace">Monospace</option>
@@ -604,34 +644,90 @@ export const TicketConfig = () => {
 
           <div className="printer-settings-box mt-8 p-6 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50">
             <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 border-b border-slate-200 dark:border-slate-700 pb-2">
-              Pantalla del Cliente
+              Configuración de Pantallas
             </h3>
             <p className="text-sm text-slate-500 mb-6">
-              Configuración de la pantalla orientada al cliente que muestra los productos y totales en tiempo real.
+              Selecciona en qué pantalla se mostrará cada ventana. El orden respeta la configuración de Windows.
             </p>
-            <div className="grid grid-cols-1 gap-6">
-              <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                <div className="flex-1 mr-4">
-                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300 block">
-                    Abrir automáticamente en segunda pantalla
-                  </span>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    Al iniciar la aplicación, se abrirá la pantalla del cliente en el monitor secundario detectado.
-                    Requiere una segunda pantalla conectada al equipo.
-                  </p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
-                  <input
-                    type="checkbox"
-                    name="auto_customer_display"
-                    checked={settings.auto_customer_display || false}
-                    onChange={handleChange}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500"></div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Pantalla del Cajero */}
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <label className="text-xs font-bold text-slate-600 dark:text-slate-400 block mb-2">
+                  Pantalla del Cajero (Principal)
                 </label>
+                <select
+                  value={displayAssignment.cashierDisplayIndex}
+                  onChange={(e) => handleDisplayChange('cashierDisplayIndex', parseInt(e.target.value))}
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white"
+                >
+                  {availableDisplays.map((d) => (
+                    <option key={d.index} value={d.index}>
+                      {d.label} ({d.size}) {d.isPrimary ? '- Primaria' : ''}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-slate-500 mt-2">
+                  Ventana principal del sistema POS
+                </p>
+              </div>
+
+              {/* Pantalla del Cliente */}
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <label className="text-xs font-bold text-slate-600 dark:text-slate-400 block mb-2">
+                  Pantalla del Cliente
+                </label>
+                <select
+                  value={displayAssignment.clientDisplayIndex}
+                  onChange={(e) => handleDisplayChange('clientDisplayIndex', parseInt(e.target.value))}
+                  disabled={availableDisplays.length < 2}
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white disabled:opacity-50"
+                >
+                  {availableDisplays.map((d) => (
+                    <option key={d.index} value={d.index}>
+                      {d.label} ({d.size}) {d.isPrimary ? '- Primaria' : ''}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-slate-500 mt-2">
+                  {availableDisplays.length < 2
+                    ? 'Conecta una segunda pantalla para habilitar'
+                    : 'Pantalla orientada al cliente'}
+                </p>
               </div>
             </div>
+
+            {/* Toggle auto-abrir */}
+            <div className="mt-6 flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+              <div className="flex-1 mr-4">
+                <span className="text-sm font-bold text-slate-700 dark:text-slate-300 block">
+                  Abrir automáticamente en segunda pantalla
+                </span>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Al iniciar la aplicación, se abrirá la pantalla del cliente automáticamente.
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                <input
+                  type="checkbox"
+                  name="auto_customer_display"
+                  checked={settings.auto_customer_display || false}
+                  onChange={handleChange}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500"></div>
+              </label>
+            </div>
+
+            {/* Botón aplicar */}
+            <button
+              type="button"
+              onClick={handleApplyDisplaySettings}
+              disabled={savingDisplays}
+              className="mt-4 w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2"
+            >
+              {savingDisplays ? 'Aplicando...' : 'Aplicar Configuración de Pantallas'}
+            </button>
           </div>
 
           <div className="printer-settings-box mt-8 p-6 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50">

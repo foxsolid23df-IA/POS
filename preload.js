@@ -30,6 +30,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
     hasSecondDisplay: () => ipcRenderer.invoke('has-second-display'),
 
+    // Configuración de pantallas
+    getAvailableDisplays: () => ipcRenderer.invoke('get-available-displays'),
+    getDisplayAssignment: () => ipcRenderer.invoke('get-display-assignment'),
+    setDisplayAssignment: (assignment) => ipcRenderer.invoke('set-display-assignment', assignment),
+
     // Actualizaciones de la app instalada
     getVersion: () => ipcRenderer.invoke('updates:get-current-version'),
     checkForUpdates: () => ipcRenderer.invoke('updates:check'),
