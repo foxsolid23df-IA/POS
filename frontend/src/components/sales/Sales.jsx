@@ -426,6 +426,7 @@ export const Sales = () => {
   const [selectedIssuerId, setSelectedIssuerId] = useState("");
   const [stockDisplayMode, setStockDisplayMode] = useState("mixed"); // 'pieces', 'mixed', 'boxes'
   const [showTableDetails, setShowTableDetails] = useState(true); // Controla la visibilidad de detalles extra en la tabla
+  const [showTaxes, setShowTaxes] = useState(false); // Controla visibilidad de impuestos en pantalla del cliente
   const [mostrarModalAddProduct, setMostrarModalAddProduct] = useState(false);
   const [productoParaModal, setProductoParaModal] = useState(null);
 
@@ -921,6 +922,19 @@ export const Sales = () => {
     // Limpiar timer si el carrito cambia antes de los 500ms
     return () => clearTimeout(syncTimer);
   }, [carrito, totalVenta, cashSession, user]);
+
+  // SINCRONIZACIÓN DE VISIBILIDAD DE IMPUESTOS CON PANTALLA CLIENTE
+  useEffect(() => {
+    if (!cashSession?.id || cashSession.status !== "open" || !user?.id) return;
+
+    activeCartService
+      .updateShowTaxes(showTaxes, cashSession.id)
+      .catch((err) => {
+        if (!err?.message?.includes("aborted") && err?.name !== "AbortError") {
+          console.error("Error sincronizando showTaxes:", err);
+        }
+      });
+  }, [showTaxes, cashSession, user]);
 
   // BÚSQUEDA DUAL - SKU por código de barras, Nombre por descripción
   useEffect(() => {
@@ -2482,6 +2496,8 @@ export const Sales = () => {
             onCotizar={generarCotizacion}
             selectedCustomer={selectedCustomer}
             onSelectCustomer={setSelectedCustomer}
+            showTaxes={showTaxes}
+            onToggleShowTaxes={() => setShowTaxes(prev => !prev)}
           />
       </div>
 

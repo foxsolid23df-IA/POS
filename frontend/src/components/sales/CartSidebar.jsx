@@ -27,7 +27,9 @@ const CartSidebar = ({
   abrirModalPago,
   onCotizar,
   selectedCustomer,
-  onSelectCustomer
+  onSelectCustomer,
+  showTaxes,
+  onToggleShowTaxes
 }) => {
   const { activeStaff } = useAuth();
   const [toasts, setToasts] = useState([]);
@@ -147,7 +149,28 @@ const CartSidebar = ({
           </div>
         </div>
         <div className="cart-sidebar-stats" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button 
+          <button
+            onClick={onToggleShowTaxes}
+            title={showTaxes ? "Ocultar impuestos en pantalla del cliente" : "Mostrar impuestos en pantalla del cliente"}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '4px',
+              borderRadius: '50%',
+              color: showTaxes ? '#6366f1' : 'var(--text-muted, #9ca3af)',
+              backgroundColor: showTaxes ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>
+              receipt_long
+            </span>
+          </button>
+          <button
             onClick={() => setShowLowStockWarning(!showLowStockWarning)}
             title={showLowStockWarning ? "Ocultar avisos de stock bajo" : "Mostrar avisos de stock bajo"}
             style={{ 

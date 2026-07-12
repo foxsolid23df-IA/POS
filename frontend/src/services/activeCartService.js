@@ -134,6 +134,47 @@ export const activeCartService = {
         });
     },
 
+    // Actualizar visibilidad de impuestos en pantalla del cliente
+    updateShowTaxes: async (showTaxes, sessionId = null) => {
+        return safeSupabaseOperation(async () => {
+            const authResult = await supabase.auth.getUser();
+            const user = handleAuthError(authResult, '[activeCartService]');
+            
+            if (!user) return null;
+
+            let query = supabase
+                .from('active_carts')
+                .update({
+                    show_taxes: showTaxes,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('user_id', user.id);
+
+            if (sessionId) {
+                query = query.eq('session_id', sessionId);
+            }
+            const terminalId = terminalService.getTerminalId();
+            if (terminalId) {
+                query = query.eq('terminal_id', terminalId);
+            }
+
+            const { data, error } = await query.select().maybeSingle();
+
+            if (isMissingColumnError(error, 'terminal_id') || isMissingColumnError(error, 'show_taxes')) {
+                // Column doesn't exist yet, silently ignore
+                return null;
+            }
+
+            if (error) throw error;
+            return data;
+        }, {
+            context: '[activeCartService.updateShowTaxes]',
+            defaultValue: null,
+            throwOnError: false,
+            ignoreAbort: true
+        });
+    },
+
     // Limpiar el carrito (al completar o cancelar)
     clearCart: async (status = 'completed', sessionId = null) => {
         return safeSupabaseOperation(async () => {

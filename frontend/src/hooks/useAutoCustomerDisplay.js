@@ -35,7 +35,8 @@ export const useAutoCustomerDisplay = () => {
                 const result = await window.electronAPI.openCustomerDisplay({
                     userId: user.id,
                     sessionId: cashSession.id,
-                    terminalId: terminalId || ''
+                    terminalId: terminalId || '',
+                    taxPercentage: user?.tax_percentage || 16
                 });
 
                 if (result.ok) {

@@ -153,7 +153,7 @@ function crearVentanaCliente(params) {
         title: 'NEXUM POS - Pantalla del Cliente'
     });
 
-    const url = `${frontendUrl}#/customer-display?u=${params.userId}&s=${params.sessionId}&t=${params.terminalId || ''}`;
+    const url = `${frontendUrl}#/customer-display?u=${params.userId}&s=${params.sessionId}&t=${params.terminalId || ''}&tp=${params.taxPercentage || 16}`;
     customerDisplayWindow.loadURL(url);
 
     customerDisplayWindow.on('closed', () => {

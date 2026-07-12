@@ -9,7 +9,7 @@ const CustomerDisplay = () => {
   const userId = searchParams.get("u");
   const terminalId = searchParams.get("t");
   const sessionId = searchParams.get("s");
-  const taxEnabled = searchParams.get("te") !== "false";
+  const taxPercentage = parseFloat(searchParams.get("tp")) || 16;
   const [cart, setCart] = useState(null);
   const [status, setStatus] = useState("active"); // active, processing, completed
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -86,6 +86,7 @@ const CustomerDisplay = () => {
 
   const itemCount = cart?.cart_data?.length || 0;
   const isCompact = itemCount > 8;
+  const taxEnabled = cart?.show_taxes === true;
 
   // Temporizador para regresar a pantalla de bienvenida después de completar venta
   useEffect(() => {
@@ -210,13 +211,13 @@ const CustomerDisplay = () => {
               <div className="flex justify-between items-center mb-2">
                 <span className="text-indigo-200 text-sm font-medium">Subtotal</span>
                 <span className="text-white text-lg font-semibold">
-                  ${(parseFloat(cart?.total || 0) / 1.16).toFixed(2)}
+                  ${(parseFloat(cart?.total || 0) / (1 + taxPercentage / 100)).toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-indigo-200 text-sm font-medium">Impuestos (16%)</span>
+                <span className="text-indigo-200 text-sm font-medium">Impuestos ({taxPercentage}%)</span>
                 <span className="text-white text-lg font-semibold">
-                  ${(parseFloat(cart?.total || 0) - (parseFloat(cart?.total || 0) / 1.16)).toFixed(2)}
+                  ${(parseFloat(cart?.total || 0) - (parseFloat(cart?.total || 0) / (1 + taxPercentage / 100))).toFixed(2)}
                 </span>
               </div>
             </div>

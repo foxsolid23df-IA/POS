@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import "./Inventory.css";
 import { productService } from "../../services/productService";
 import CameraScanner from "../common/CameraScanner";
@@ -839,7 +840,10 @@ const Inventory = () => {
   // Cerrar menú de acciones al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (!event.target.closest(".actions-menu-container")) {
+      if (
+        !event.target.closest(".actions-menu-container") &&
+        !event.target.closest(".actions-dropdown")
+      ) {
         setActiveMenuId(null);
       }
     };
@@ -1501,31 +1505,36 @@ const Inventory = () => {
                             >
                               <FiMoreVertical />
                             </button>
-                            {isMenuOpen && (
-                              <div className="actions-dropdown" style={{ top: menuPosition.top, left: menuPosition.left }}>
-                                <button
-                                  className="dropdown-item"
-                                  onClick={() => {
-                                    handleOpenModal(product);
-                                    setActiveMenuId(null);
-                                  }}
-                                >
-                                  <FiEdit2 />
-                                  Editar
-                                </button>
-                                <button
-                                  className="dropdown-item danger"
-                                  onClick={() => {
-                                    handleDelete(product.id);
-                                    setActiveMenuId(null);
-                                  }}
-                                >
-                                  <FiTrash2 />
-                                  Eliminar
-                                </button>
-                              </div>
-                            )}
                           </div>
+                          {isMenuOpen && createPortal(
+                            <div
+                              className="actions-dropdown"
+                              style={{ position: 'fixed', top: menuPosition.top, left: menuPosition.left, zIndex: 10000 }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                className="dropdown-item"
+                                onClick={() => {
+                                  handleOpenModal(product);
+                                  setActiveMenuId(null);
+                                }}
+                              >
+                                <FiEdit2 />
+                                Editar
+                              </button>
+                              <button
+                                className="dropdown-item danger"
+                                onClick={() => {
+                                  handleDelete(product.id);
+                                  setActiveMenuId(null);
+                                }}
+                              >
+                                <FiTrash2 />
+                                Eliminar
+                              </button>
+                            </div>,
+                            document.body
+                          )}
                         </td>
                       </tr>
                     );
